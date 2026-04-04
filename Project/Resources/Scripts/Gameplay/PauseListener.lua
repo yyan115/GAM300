@@ -65,7 +65,7 @@ return Component {
             self._pauseTimer = self._pauseTimer - unscaledDt
         end
 
-        local isPressed = Input.IsActionJustPressed("Pause")
+        local isPressed = Input.IsActionPressed("Pause")
         -- Only fire if the button is pressed AND our cooldown has expired AND the player is not dead
         if isPressed and self._pauseTimer <= 0 and not self._playerDead then
             self._pauseTimer = 0.1  -- Cooldown to prevent double-fire

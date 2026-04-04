@@ -513,7 +513,7 @@ return Component {
 
         self._motionID = self._rb and self._rb.motionID or nil
 
-        if Input.IsActionJustPressed("Interact") then
+        if Input.IsActionPressed("Interact") then
             self:ApplyHook(self.HookedDuration)
         end
 

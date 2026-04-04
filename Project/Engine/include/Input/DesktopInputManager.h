@@ -41,8 +41,8 @@ public:
     ~DesktopInputManager() override = default;
 
     // InputManager interface implementation
+    bool IsActionHeld(const std::string& action) override;
     bool IsActionPressed(const std::string& action) override;
-    bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
     glm::vec2 GetActionTouchPosition(const std::string& action) override;
     glm::vec2 GetAxis(const std::string& axisName) override;

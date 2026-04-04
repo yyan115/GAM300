@@ -58,7 +58,7 @@ return Component {
     Update = function(self, dt)
         if not self._sprite or #self._frames == 0 then return end
 
-        if Input.IsActionJustPressed(self.actionName) then
+        if Input.IsActionPressed(self.actionName) then
             print(string.format("[AndroidButtonAnim] Press! action=%s starting %d-frame anim",
                 self.actionName, #self._frames))
             self._playing = true

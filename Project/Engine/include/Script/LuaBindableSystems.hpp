@@ -38,14 +38,14 @@ struct TouchInfo {
 
 namespace InputWrappers {
     // Action-based input (platform-agnostic)
+    inline bool IsActionHeld(const std::string& action) {
+        if (!g_inputManager) return false;
+        return g_inputManager->IsActionHeld(action);
+    }
+
     inline bool IsActionPressed(const std::string& action) {
         if (!g_inputManager) return false;
         return g_inputManager->IsActionPressed(action);
-    }
-
-    inline bool IsActionJustPressed(const std::string& action) {
-        if (!g_inputManager) return false;
-        return g_inputManager->IsActionJustPressed(action);
     }
 
     inline bool IsActionJustReleased(const std::string& action) {
@@ -194,7 +194,7 @@ namespace InputWrappers {
 // ============================================================================
 // WARNING: These wrappers bypass the unified input system and are PC/desktop
 // only — they will always return false on Android. Prefer using the unified
-// Input system (Input.IsActionPressed, Input.GetAxis, etc.) for any code
+// Input system (Input.IsActionHeld, Input.GetAxis, etc.) for any code
 // that needs to run on both platforms. Only use these when you have a good
 // reason, e.g. debug tools, editor-only features, or PC-exclusive shortcuts.
 #include "Platform/IPlatform.h"

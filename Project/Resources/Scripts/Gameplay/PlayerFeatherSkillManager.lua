@@ -63,7 +63,7 @@ return Component {
         end
 
         if _G._numFeathers >= self.FeatherSkillRequirement and self._featherSkillCooldown <= 0 then
-            if Input and Input.IsActionPressed and Input.IsActionJustPressed("FeatherSkill") then
+            if Input and Input.IsActionHeld and Input.IsActionPressed("FeatherSkill") then
                 
                 local canCast = not _G.player_is_jumping and 
                                 not _G.player_is_rolling and 

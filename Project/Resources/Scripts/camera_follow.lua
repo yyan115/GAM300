@@ -346,8 +346,8 @@ return Component {
 
         -- Re-lock cursor when attacking (keeps it locked if the player clicks out)
         if Input then
-            if (Input.IsActionJustPressed and Input.IsActionJustPressed("Attack"))
-            or (Input.IsActionPressed    and Input.IsActionPressed("Attack")) then
+            if (Input.IsActionPressed and Input.IsActionPressed("Attack"))
+            or (Input.IsActionHeld    and Input.IsActionHeld("Attack")) then
                 local isPaused = Time and Time.IsPaused and Time.IsPaused()
                 if not isPaused
                 and Screen and Screen.SetCursorLocked and Screen.IsCursorLocked

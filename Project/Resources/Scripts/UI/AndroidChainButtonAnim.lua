@@ -81,7 +81,7 @@ return Component {
     Update = function(self, dt)
         if not self._sprite then return end
 
-        if Input.IsActionJustPressed("ChainAttack") then
+        if Input.IsActionPressed("ChainAttack") then
             print(string.format("[AndroidChainButtonAnim] Press! starting %d-frame anim", #self._current))
             self._playing = true
             self._frame   = 1

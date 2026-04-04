@@ -267,7 +267,7 @@ return Component {
         self._wasGrounded = self._isGrounded
 
         -- Jump input (unified input system) - disabled while attacking
-        local jumpPressed = Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump")
+        local jumpPressed = Input and Input.IsActionPressed and Input.IsActionPressed("Jump")
         if self._isGrounded and jumpPressed and not isAttacking then
             self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
