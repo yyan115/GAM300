@@ -1501,8 +1501,8 @@ return Component {
             -- Slam landing: vertical squash (crash impact)
             self:_squashTrigger("vertical", 0.8)
             print("[EnemyAI] SLAMMED")
-            self._animator:SetTrigger("Slammed")
             self:_publishSFX("groundSlam")
+            self._animator:SetTrigger("Slammed")
             
         --Publish VFX EVENT (GroundSlamVFX)
             if _G.event_bus and _G.event_bus.publish then

@@ -1222,6 +1222,7 @@ return Component {
 
             if self._animator then
                 if mode == "hook_slam" then
+                    self:_publishSFX("groundSlam")
                     self._animator:SetTrigger("Slammed")
                 end
             end
@@ -2406,6 +2407,7 @@ return Component {
                 local slashAt = m.slashAt or 0.85 -- fraction of dash
                 if not m.slashed and m.dashT >= (dashDur * slashAt) then
                     m.slashed = true
+                    self:_publishSFX("meleeAttack")
 
                     if _G.event_bus and _G.event_bus.publish then
                         local ex, ey, ez = self:GetPosition()
@@ -3071,7 +3073,6 @@ return Component {
     end,
 
     FateSealed = function(self, chargeTime)
-        self:_publishSFX("meleeAttack")
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,
