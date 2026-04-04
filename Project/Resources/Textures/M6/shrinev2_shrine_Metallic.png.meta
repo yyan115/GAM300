@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00724aba8fce5f0c-0004b980de014e75",
+        "source": "../../Resources/Textures/M6/shrinev2_shrine_Metallic.png",
+        "compiled": "../../Resources/Textures/M6/shrinev2_shrine_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00724abaa89b1767-0004b980dc014e73",
+        "source": "../../Resources/Textures/M6/shrinev2_shrine_Height.png",
+        "compiled": "../../Resources/Textures/M6/shrinev2_shrine_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
