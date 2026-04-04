@@ -16,16 +16,16 @@ return Component {
 
     Awake = function(self)
         if event_bus and event_bus.subscribe then
-            print("[GameOverMenu] Subscribing to playerDead")
+            --print("[GameOverMenu] Subscribing to playerDead")
             self._playerDeadSub = event_bus.subscribe("playerDead", function(dead)
                 if dead then
                     self._playerDead = dead
-                    print("[GameOverMenu] playerDead received: ", self._playerDead)
+                    --print("[GameOverMenu] playerDead received: ", self._playerDead)
                 end
             end)
-            print("[GameOverMenu] Subscription token: " .. tostring(self._playerDeadSub))
+            --print("[GameOverMenu] Subscription token: " .. tostring(self._playerDeadSub))
 
-            print("[GameOverMenu] Subscribing to respawnPlayer")
+            --print("[GameOverMenu] Subscribing to respawnPlayer")
             self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
                 if respawn then
                     if self._fadeActive then
@@ -59,7 +59,7 @@ return Component {
                 end
             end)
         else
-            print("[GameOverMenu] ERROR: event_bus not available!")
+            --print("[GameOverMenu] ERROR: event_bus not available!")
         end
     end,
 

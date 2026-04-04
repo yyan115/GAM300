@@ -3,7 +3,7 @@ local ChaseState = {}
 
 function ChaseState:Enter(ai)
     -- Optional: force first repath on enter
-    print("[GroundChaseState] ENTER")
+    --print("[GroundChaseState] ENTER")
     ai:ClearPath()
     ai:StopCC()
     ai._pathRepathT = 999
@@ -74,7 +74,7 @@ function ChaseState:Update(ai, dt)
         local pathFound = ai:RequestPathToXZ(px, pz)
         
         if not pathFound then
-            print("[Chase] NO PATH to player - stopping movement")
+            --print("[Chase] NO PATH to player - stopping movement")
             ai:StopCC()
             return
         end

@@ -33,7 +33,7 @@ local function log(fmt, ...)
     if cpp_log then
         cpp_log(string.format(fmt, ...))
     else
-        print(string.format(fmt, ...))
+        --print(string.format(fmt, ...))
     end
 end
 

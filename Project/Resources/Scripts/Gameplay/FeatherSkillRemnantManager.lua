@@ -91,7 +91,7 @@ return Component {
     OnCollisionEnter = function(self, otherEntityId)
         local otherEntityLayer = Engine.GetEntityLayer(otherEntityId)
         if otherEntityLayer == "Ground" then
-            print("[FeatherSkillRemnant] Collided with ground")
+            --print("[FeatherSkillRemnant] Collided with ground")
             self._rb = self:GetComponent("RigidBodyComponent")
             self._collider = self:GetComponent("ColliderComponent")
 

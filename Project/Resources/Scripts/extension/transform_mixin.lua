@@ -73,13 +73,13 @@ function M.apply(instance)
     function instance:Move(dx, dy, dz)
         local t = self:GetTransform()
         if not t then
-            print("[Transform] Warning: No Transform component available")
+            --print("[Transform] Warning: No Transform component available")
             return false
         end
         
         local pos = t.localPosition
         if not pos then
-            print("[Transform] Warning: Transform has no localPosition")
+            --print("[Transform] Warning: Transform has no localPosition")
             return false
         end
         
@@ -108,7 +108,7 @@ function M.apply(instance)
     function instance:SetPosition(x, y, z)
         local t = self:GetTransform()
         if not t then
-            print("[Transform] Warning: No Transform component available")
+            --print("[Transform] Warning: No Transform component available")
             return false
         end
         
@@ -150,7 +150,7 @@ function M.apply(instance)
     function instance:SetRotation(w, x, y, z)
         local t = self:GetTransform()
         if not t then 
-            print("[Transform] Warning: No Transform component available")
+            --print("[Transform] Warning: No Transform component available")
             return false 
         end
         
@@ -183,7 +183,7 @@ function M.apply(instance)
     function instance:SetScale(x, y, z)
         local t = self:GetTransform()
         if not t then 
-            print("[Transform] Warning: No Transform component available")
+            --print("[Transform] Warning: No Transform component available")
             return false 
         end
         
@@ -211,14 +211,14 @@ function M.apply(instance)
     function instance:DebugTransform()
         local t = self:GetTransform()
         if not t then
-            print("[Transform] No transform available")
+            --print("[Transform] No transform available")
             return
         end
         
-        print("[Transform] Position: " .. vec3_str(t.localPosition))
-        print("[Transform] Rotation: " .. vec3_str(t.localRotation))
-        print("[Transform] Scale: " .. vec3_str(t.localScale))
-        print("[Transform] isDirty: " .. tostring(t.isDirty))
+        --print("[Transform] Position: " .. vec3_str(t.localPosition))
+        --print("[Transform] Rotation: " .. vec3_str(t.localRotation))
+        --print("[Transform] Scale: " .. vec3_str(t.localScale))
+        --print("[Transform] isDirty: " .. tostring(t.isDirty))
     end
 end
 

@@ -24,7 +24,7 @@ return Component {
 
     Start = function(self)
         if not GameSettings then
-            print("[MainMenuSettingsSlider] Warning: GameSettings not available")
+            --print("[MainMenuSettingsSlider] Warning: GameSettings not available")
             return
         end
         GameSettings.Init()
@@ -88,14 +88,14 @@ return Component {
                 local fillEntity  = Engine.GetEntityByName(def.prefix .. "Fill")
 
                 if not notchEntity or not fillEntity then
-                    print("[MainMenuSettingsSlider] Warning: Missing entities for " .. def.prefix)
+                    --print("[MainMenuSettingsSlider] Warning: Missing entities for " .. def.prefix)
                 else
                     local notchTransform = GetComponent(notchEntity, "Transform")
                     local fillTransform  = GetComponent(fillEntity,  "Transform")
                     local fillSprite     = GetComponent(fillEntity,  "SpriteRenderComponent")
 
                     if not notchTransform or not fillTransform then
-                        print("[MainMenuSettingsSlider] Warning: Missing Transform on " .. def.prefix .. " entities")
+                        --print("[MainMenuSettingsSlider] Warning: Missing Transform on " .. def.prefix .. " entities")
                     else
                         local offsetX = fillTransform.localScale.x / 2.0
                         local offsetY = fillTransform.localScale.y / 2.0

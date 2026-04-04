@@ -149,7 +149,7 @@ return Component {
         end
 
         if not self.leftTransform or not self.rightTransform then
-            print("[DoorTrigger] ERROR: Door transforms not found")
+            --print("[DoorTrigger] ERROR: Door transforms not found")
             self.initFailed = true
             return
         end
@@ -264,7 +264,7 @@ return Component {
                 _G.playerHasWeapon = true
                 local playerAnim = GetComponent(playerEnt, "AnimationComponent")
                 if playerAnim then playerAnim:SetBool("IsArmed", true) end
-                print("[DoorTrigger] Weapon successfully caught!")
+                --print("[DoorTrigger] Weapon successfully caught!")
             end
         end
 
@@ -327,7 +327,7 @@ return Component {
                     if rightCol then rightCol.enabled = false end
                 end
 
-                print("[DoorTrigger] Doors fully opened and colliders disabled")
+                --print("[DoorTrigger] Doors fully opened and colliders disabled")
             end
         end
 

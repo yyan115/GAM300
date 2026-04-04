@@ -18,14 +18,14 @@ return Component {
         if event_bus and event_bus.subscribe then
             -- Prevent double-subscription on the SAME instance
             if self._featherCollectedSub then 
-                print("[PlayerFeathersManager] Already subscribed. Skipping.")
+                --print("[PlayerFeathersManager] Already subscribed. Skipping.")
                 return 
             end
 
-            print("[PlayerFeathersManager] Subscribing to featherCollected")
+            --print("[PlayerFeathersManager] Subscribing to featherCollected")
             self._featherCollectedSub = event_bus.subscribe("featherCollected", function(payload)
                 if payload then
-                    print(string.format("[PlayerFeathersManager] Event Received! EntityID: %s", tostring(self.entityId)))
+                    --print(string.format("[PlayerFeathersManager] Event Received! EntityID: %s", tostring(self.entityId)))
                     _G._numFeathers = _G._numFeathers + 1
                     if self._feathersCollectedTextComponent then
                         self._feathersCollectedTextComponent.text = string.format("x%d", _G._numFeathers)
@@ -43,21 +43,21 @@ return Component {
 
             -- Prevent double-subscription on the SAME instance
             if self._activatedFeatherSkillSub then 
-                print("[PlayerFeathersManager] Already subscribed. Skipping.")
+                --print("[PlayerFeathersManager] Already subscribed. Skipping.")
                 return 
             end
 
-            print("[PlayerFeathersManager] Subscribing to _activatedFeatherSkillSub")
+            --print("[PlayerFeathersManager] Subscribing to _activatedFeatherSkillSub")
             self._activatedFeatherSkillSub = event_bus.subscribe("activated_feather_skill", function(payload)
                 if payload then
-                    print(string.format("[PlayerFeathersManager] Event Received! EntityID: %s", tostring(self.entityId)))
+                    --print(string.format("[PlayerFeathersManager] Event Received! EntityID: %s", tostring(self.entityId)))
                     if self._feathersCollectedTextComponent then
                         self._feathersCollectedTextComponent.text = string.format("x%d", _G._numFeathers)
                     end
                 end
             end)
         else
-            print("[PlayerFeathersManager] ERROR: event_bus not available!")
+            --print("[PlayerFeathersManager] ERROR: event_bus not available!")
         end
     end,
 
@@ -90,7 +90,7 @@ return Component {
 
     OnDisable = function(self)
         if self._featherCollectedSub and _G.event_bus then
-            print("[PlayerFeathersManager] Unsubscribing token: " .. tostring(self._featherCollectedSub))
+            --print("[PlayerFeathersManager] Unsubscribing token: " .. tostring(self._featherCollectedSub))
             _G.event_bus.unsubscribe(self._featherCollectedSub)
             self._featherCollectedSub = nil
         end

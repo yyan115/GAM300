@@ -289,7 +289,7 @@ return Component {
             --print("[PlayerMovement] Animator found, playing IDLE clip")
             --self._animator:PlayClip(IDLE, true)
         else
-            print("[PlayerMovement] ERROR: Animator is nil!")
+            --print("[PlayerMovement] ERROR: Animator is nil!")
         end
 
         self._animator:SetBool("PatrolEnabled", self.EnablePatrol)
@@ -419,7 +419,7 @@ return Component {
                 if distSq <= range * range then
                     local dmg = (payload and payload.damage)    or 15
                     local kb  = (payload and payload.knockback) or 0
-                    print(string.format("[EnemyAI] lift_attack_active proximity HIT: entity=%s distSq=%.2f", tostring(self.entityId), distSq))
+                    --print(string.format("[EnemyAI] lift_attack_active proximity HIT: entity=%s distSq=%.2f", tostring(self.entityId), distSq))
                     self:ApplyHit(dmg, "LIFT", kb)
                 end
             end)
@@ -427,14 +427,14 @@ return Component {
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if not payload then return end
                 if payload.rootName ~= self._entityName then return end
-                print("[EnemyAI] chain.endpoint_hit_entity received")
+                --print("[EnemyAI] chain.endpoint_hit_entity received")
                 self._animator:SetTrigger("Hooked")
             end)
 
             self._chainHookSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
                 if not payload then return end
                 if payload.entityId ~= self.entityId then return end
-                print("[EnemyAI] chain.enemy_hooked received — calling ApplyHook duration=" .. tostring(payload.duration))
+                --print("[EnemyAI] chain.enemy_hooked received — calling ApplyHook duration=" .. tostring(payload.duration))
                 pcall(function() self:ApplyHook(payload.duration) end)
             end)
 
@@ -457,7 +457,7 @@ return Component {
         -- Clamp patrol points slightly inward
         self._patrolA = { x = self.PatrolPointA_X, y = y, z = self.PatrolPointA_Z }
         self._patrolB = { x = self.PatrolPointB_X, y = y, z = self.PatrolPointB_Z }
-        print("[EnemyAI] Patrol points set")
+        --print("[EnemyAI] Patrol points set")
 
         self._patrolWhich = 2
         self._patrolTarget = self._patrolB
@@ -503,7 +503,7 @@ return Component {
                     CharacterController.SetPosition(self._controller, self._transform)
                 end)
             end
-            print(string.format("[EnemyAI] Teleported enemy %d to %f %f %f", self.entityId, self._initialPos.x, self._initialPos.y, self._initialPos.z))
+            --print(string.format("[EnemyAI] Teleported enemy %d to %f %f %f", self.entityId, self._initialPos.x, self._initialPos.y, self._initialPos.z))
             self.fsm:ForceChange("Idle", self.states.Idle)
 
             self._playerRespawned = false
@@ -654,7 +654,7 @@ return Component {
                     if self._collider and self._transform and CharacterController and CharacterController.Create then
                         local ctrl = self:CreateCharacterController()
                         if not ctrl then
-                            print("[EnemyAI] Juggle land: CC recreate failed")
+                            --print("[EnemyAI] Juggle land: CC recreate failed")
                         end
                     end
                     self:_squashTrigger("vertical", 0.8)
@@ -699,7 +699,7 @@ return Component {
 
                 local ctrl = self:CreateCharacterController()
                 if not ctrl then
-                    print("[EnemyAI] Knockup land: CC recreate failed")
+                    --print("[EnemyAI] Knockup land: CC recreate failed")
                 end
 
                 self:_squashTrigger("vertical", 0.7)
@@ -856,7 +856,7 @@ return Component {
             return ctrl
         end
 
-        print("[EnemyAI] CreateCharacterController FAILED")
+        --print("[EnemyAI] CreateCharacterController FAILED")
         self._controller = nil
         return nil
     end,
@@ -897,7 +897,7 @@ return Component {
 
     _ClearHurtAnims = function(self)
         if not self._animator then return end
-        print("[EnemyAI] _ClearHurtAnims Animator:SetBool(Hurt, false)")
+        --print("[EnemyAI] _ClearHurtAnims Animator:SetBool(Hurt, false)")
         self._animator:SetBool("Hurt1", false)
         self._animator:SetBool("Hurt2", false)
         self._animator:SetBool("Hurt3", false)
@@ -912,7 +912,7 @@ return Component {
         self._animator:SetBool("ReadyToAttack", false)
 
         -- clear hurt bools too; we will re-apply the one we want explicitly
-        print("[EnemyAI] _ResetCombatAnimatorParams Animator:SetBool(Hurt, false)")
+        --print("[EnemyAI] _ResetCombatAnimatorParams Animator:SetBool(Hurt, false)")
         self._animator:SetBool("Hurt1", false)
         self._animator:SetBool("Hurt2", false)
         self._animator:SetBool("Hurt3", false)
@@ -1033,7 +1033,7 @@ return Component {
             self._dbgNoCCT = (self._dbgNoCCT or 0) + (dt or 0)
             if self._dbgNoCCT > 1.0 then
                 self._dbgNoCCT = 0
-                print("[EnemyAI] MoveCC called but _controller is NIL")
+                --print("[EnemyAI] MoveCC called but _controller is NIL")
             end
             return
         end
@@ -1101,13 +1101,13 @@ return Component {
 
     RequestPathToXZ = function(self, goalX, goalZ)
         if not Nav then
-            print("[Nav] ERROR: Nav is NIL! Nav system not bound to Lua!")
+            --print("[Nav] ERROR: Nav is NIL! Nav system not bound to Lua!")
             self:ClearPath()
             return false
         end
         
         if not Nav.RequestPathXZ then
-            print("[Nav] ERROR: Nav.RequestPathXZ is NIL! Function not bound!")
+            --print("[Nav] ERROR: Nav.RequestPathXZ is NIL! Function not bound!")
             self:ClearPath()
             return false
         end
@@ -1460,7 +1460,7 @@ return Component {
             self:SetPosition(x, y, z)
             local ctrl = self:CreateCharacterController()
             if not ctrl then
-                print("[EnemyAI] ConvertToGroundEnemy: CharacterController.Create failed")
+                --print("[EnemyAI] ConvertToGroundEnemy: CharacterController.Create failed")
             end
         end
 
@@ -1482,7 +1482,7 @@ return Component {
 
     BeginSlamDown = function(self)
         if not self:IsFlying() then return end
-        print("[EnemyAI] PULLDOWN")
+        --print("[EnemyAI] PULLDOWN")
         self._animator:SetTrigger("Pulldown")
 
         self._slamActive = true
@@ -1523,7 +1523,7 @@ return Component {
             self._slamVy = 0
             -- Slam landing: vertical squash (crash impact)
             self:_squashTrigger("vertical", 0.8)
-            print("[EnemyAI] SLAMMED")
+            --print("[EnemyAI] SLAMMED")
             self:_publishSFX("groundSlam")
             self._animator:SetTrigger("Slammed")
             
@@ -1775,7 +1775,7 @@ return Component {
 
     ApplyJuggleAirHit = function(self)
         if not self._isJuggled then
-            print(string.format("[EnemyAI] AIR hit BLOCKED: enemy is not airborne (isJuggled=false)"))
+            --print(string.format("[EnemyAI] AIR hit BLOCKED: enemy is not airborne (isJuggled=false)"))
             return
         end
         self._kbT = 0
@@ -1791,7 +1791,7 @@ return Component {
         -- Driving a grounded enemy underground then snapping back looked like a lift.
         -- Just apply strong downward knockback visually — no arc needed.
         if not self._isJuggled then
-            print(string.format("[EnemyAI] SLAM BLOCKED: enemy is not airborne — applying ground knockback instead"))
+            --print(string.format("[EnemyAI] SLAM BLOCKED: enemy is not airborne — applying ground knockback instead"))
             self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
             return
         end
@@ -1855,7 +1855,7 @@ return Component {
 
     ApplyHit = function(self, dmg, hitType, knockback)
         if self.dead then
-            print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: enemy is already dead", tostring(hitType)))
+            --print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: enemy is already dead", tostring(hitType)))
             return
         end
 
@@ -1865,7 +1865,7 @@ return Component {
         local isJuggleHit = (hitType == "LIFT" or hitType == "AIR" or hitType == "SLAM")
 
         if not isJuggleHit and (self._hitLockTimer or 0) > 0 then
-            print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: iFrame active (%.3fs remaining)", tostring(hitType), self._hitLockTimer or 0))
+            --print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: iFrame active (%.3fs remaining)", tostring(hitType), self._hitLockTimer or 0))
             return
         end
         if self._featherSkillBufferTimer <= 0 then
@@ -1878,7 +1878,7 @@ return Component {
         end
 
         self.health = self.health - (dmg or 1)
-        print(string.format("[EnemyAI] Remaining health: %d", self.health))
+        --print(string.format("[EnemyAI] Remaining health: %d", self.health))
 
         -- Juggle hit types: LIFT/AIR/SLAM are fully owned by the juggle system.
         -- They MUST return after their juggle call — the hurt FSM block below
@@ -1910,7 +1910,7 @@ return Component {
             if self:IsFlying() then
                 -- Flying enemy is airborne via hover, not the juggle system.
                 -- Skip juggle boost and fall through to the normal hurt FSM below.
-                print(string.format("[EnemyAI] AIR hit on flying enemy — treating as normal hit"))
+                --print(string.format("[EnemyAI] AIR hit on flying enemy — treating as normal hit"))
                 self:ApplyKnockback(knockback or self.KnockbackStrength, self.KnockbackDuration)
                 -- intentional fall-through: no return here
             else
@@ -1987,13 +1987,13 @@ return Component {
         if not self._hurtTriggeredByFeather then
             local myRandomValue = math.random(1, 3)
             if myRandomValue == 1 then
-                print("[EnemyAI] Animator:SetBool(Hurt1, true)")
+                --print("[EnemyAI] Animator:SetBool(Hurt1, true)")
                 self._animator:SetBool("Hurt1", true)
             elseif myRandomValue == 2 then
-                print("[EnemyAI] Animator:SetBool(Hurt2, true)")
+                --print("[EnemyAI] Animator:SetBool(Hurt2, true)")
                 self._animator:SetBool("Hurt2", true)
             elseif myRandomValue == 3 then
-                print("[EnemyAI] Animator:SetBool(Hurt3, true)")
+                --print("[EnemyAI] Animator:SetBool(Hurt3, true)")
                 self._animator:SetBool("Hurt3", true)
             end
 
@@ -2294,7 +2294,7 @@ return Component {
     end,
 
     Despawn = function(self)
-        print("[EnemyAI] Despawn called for entity =", tostring(self.entityId))
+        --print("[EnemyAI] Despawn called for entity =", tostring(self.entityId))
         if self._despawned then return end
         self._despawned = true
         --self._softDespawned = true
@@ -2340,9 +2340,9 @@ return Component {
             local ok, err = pcall(function()
                 _G.Engine.DestroyEntityDup(self.entityId)
             end)
-            print("[EnemyAI] DestroyEntityDup ok =", tostring(ok), " err =", tostring(err), " entity =", tostring(self.entityId))
+            --print("[EnemyAI] DestroyEntityDup ok =", tostring(ok), " err =", tostring(err), " entity =", tostring(self.entityId))
         else
-            print("[EnemyAI] WARNING: DestroyEntityDup not available, falling back to soft despawn")
+            --print("[EnemyAI] WARNING: DestroyEntityDup not available, falling back to soft despawn")
         end
     end,
 
@@ -2350,7 +2350,7 @@ return Component {
         if self._softDespawned then return end
         self._softDespawned = true
 
-        print("[EnemyAI] SoftDespawn entity=", tostring(self.entityId))
+        --print("[EnemyAI] SoftDespawn entity=", tostring(self.entityId))
 
         -- Stop FSM/AI updates from doing anything
         self._freezeAI = true

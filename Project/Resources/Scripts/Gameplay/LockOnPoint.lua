@@ -39,15 +39,15 @@ return Component {
             if partName and partName ~= "" then
                 
                 -- Search the hierarchy starting from parentId
-                print("Calling Engine.FindChildByName")
+                --print("Calling Engine.FindChildByName")
                 local childId = Engine.FindChildByName(parentId, partName)
                 
                 if childId ~= -1 then
                     -- Store it in the dictionary using the name as the key
                     self.PartEntityIds[partName] = childId
-                    print("[LockOnPoint] Found body part: " .. partName .. " (ID: " .. childId .. ")")
+                    --print("[LockOnPoint] Found body part: " .. partName .. " (ID: " .. childId .. ")")
                 else
-                    print("[LockOnPoint] WARNING: Could not find child named: " .. partName)
+                    --print("[LockOnPoint] WARNING: Could not find child named: " .. partName)
                 end
             end
         end

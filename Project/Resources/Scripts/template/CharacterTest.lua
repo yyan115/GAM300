@@ -12,23 +12,23 @@ return Component {
     },
     
     Awake = function(self)
-        print("[LUA] CharacterControllerTest Awake - Creating Controller")
+        --print("[LUA] CharacterControllerTest Awake - Creating Controller")
         
         -- Step 1: Create controller
         self._controller = CharacterController.new()
         self._isInitialized = false  -- Track initialization state
         
         if self._controller == nil then
-            print("[LUA ERROR] Failed to create CharacterController!")
+            --print("[LUA ERROR] Failed to create CharacterController!")
             return
         end
         
-        print("[LUA] CharacterController created successfully!")
+        --print("[LUA] CharacterController created successfully!")
     end,
     
     Start = function(self)
         if not self._controller then
-            print("[LUA ERROR] Controller is nil in Start!")
+            --print("[LUA ERROR] Controller is nil in Start!")
             return
         end
         
@@ -38,28 +38,28 @@ return Component {
         
         -- Validate components exist
         if not collider then
-            print("[LUA ERROR] ColliderComponent not found!")
+            --print("[LUA ERROR] ColliderComponent not found!")
             return
         end
         
         if not transform then
-            print("[LUA ERROR] Transform not found!")
+            --print("[LUA ERROR] Transform not found!")
             return
         end
         
-        print("[LUA] Initializing CharacterController with collider and transform")
+        --print("[LUA] Initializing CharacterController with collider and transform")
         
         -- Initialise CharacterController
         local success = CharacterController.Initialise(self._controller, collider, transform)
         
         -- Check if initialization succeeded (if Initialise returns a value)
         if success == false then
-            print("[LUA ERROR] CharacterController initialization failed!")
+            --print("[LUA ERROR] CharacterController initialization failed!")
             return
         end
         
         self._isInitialized = true
-        print("[LUA] CharacterController initialized successfully!")
+        --print("[LUA] CharacterController initialized successfully!")
     end,
     
     Update = function(self, dt)
@@ -74,12 +74,12 @@ return Component {
         
         -- Validate components exist
         if not collider then
-            print("[LUA ERROR] ColliderComponent not found!")
+            --print("[LUA ERROR] ColliderComponent not found!")
             return
         end
         
         if not transform then
-            print("[LUA ERROR] Transform not found!")
+            --print("[LUA ERROR] Transform not found!")
             return
         end
 
@@ -89,7 +89,7 @@ return Component {
         
         -- Move once
         if not hasMoved then
-            print("[LUA] Moving character")
+            --print("[LUA] Moving character")
             CharacterController.Move(self._controller, 0, -1, 0)
             hasMoved = true
         end
@@ -99,7 +99,7 @@ return Component {
         if position then
             self:SetPosition(position.x, position.y, position.z)
         else
-            print("[LUA WARNING] GetPosition returned nil")
+            --print("[LUA WARNING] GetPosition returned nil")
         end
         
         -- Jump when grounded
@@ -122,7 +122,7 @@ return Component {
     end,
     
     OnDisable = function(self)
-        print("[LUA] OnDisable called - cleaning up controller")
+        --print("[LUA] OnDisable called - cleaning up controller")
         
         if self._controller then
             CharacterController.Destroy(self._controller)

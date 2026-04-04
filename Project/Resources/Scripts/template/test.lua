@@ -63,7 +63,7 @@ return Component {
     end,
 
     Start = function(self)
-        print("SphericalMover started (radius =", tostring(self.radius) .. ")")
+        --print("SphericalMover started (radius =", tostring(self.radius) .. ")")
 
         -- Determine center
         local worldPos = self:_safeGetPosition()

@@ -29,7 +29,7 @@ return Component {
     Awake = function(self)
         self._disableHover = false
 
-        print("[PickupHover] Subscribing to picked_up_weapon")
+        --print("[PickupHover] Subscribing to picked_up_weapon")
             self._pickedUpWeaponSub = event_bus.subscribe("picked_up_weapon", function(payload)
                 if payload then
                     self._disableHover = true

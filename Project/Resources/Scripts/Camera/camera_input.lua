@@ -12,13 +12,13 @@ local M = {}
 -- Also publishes camera_yaw to event_bus and _G.CAMERA_YAW.
 function M.updateMouseLook(self, dt)
     if not (Input and Input.GetAxis) then
-        print("[CameraFollow] ERROR: Input.GetAxis not available")
+        --print("[CameraFollow] ERROR: Input.GetAxis not available")
         return
     end
 
     local lookAxis = Input.GetAxis("Look")
     if not lookAxis then
-        print("[CameraFollow] Look axis returned nil")
+        --print("[CameraFollow] Look axis returned nil")
         return
     end
 
@@ -34,9 +34,9 @@ function M.updateMouseLook(self, dt)
     if not self._logCount then self._logCount = 0 end
     self._logCount = self._logCount + 1
     if self._logCount % 30 == 1 and (lookAxis.x ~= 0 or lookAxis.y ~= 0) then
-        print("[CameraFollow] SENS=" .. sensitivity
-            .. " offset=(" .. xoffset .. "," .. yoffset .. ")"
-            .. " yaw=" .. self._yaw)
+        --print("[CameraFollow] SENS=" .. sensitivity
+        --    .. " offset=(" .. xoffset .. "," .. yoffset .. ")"
+        --    .. " yaw=" .. self._yaw)
     end
 
     local shouldLock = self.lockCameraRotation

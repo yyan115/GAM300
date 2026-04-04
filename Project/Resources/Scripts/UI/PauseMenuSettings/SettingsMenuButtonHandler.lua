@@ -57,7 +57,7 @@ return Component {
                     wasHovered = false
                 }
             else
-                print("[SettingsMenuButtonHandler] Warning: Missing entity " .. config.base)
+                --print("[SettingsMenuButtonHandler] Warning: Missing entity " .. config.base)
             end
         end
     end,
@@ -140,7 +140,7 @@ return Component {
             event_bus.publish("settings_reset", {})
         end
 
-        print("[SettingsMenuButtonHandler] All settings reset to defaults")
+        --print("[SettingsMenuButtonHandler] All settings reset to defaults")
     end,
 
     OnClickBackButton = function(self)

@@ -62,15 +62,15 @@ function M.updateEnemyProximity(self, dt)
             local dist = M.getDistanceToEnemy(self, self._triggeringEnemyId)
 
             if self.debugEnemyDetection then
-                print(string.format("[CameraFollow] Action mode active - dist to trigger enemy: %.1f", dist))
+                --print(string.format("[CameraFollow] Action mode active - dist to trigger enemy: %.1f", dist))
             end
 
             if dist > self.enemyDisengageRange then
                 self._enemyDisengageTimer = self._enemyDisengageTimer + dt
 
                 if self.debugEnemyDetection and self._enemyDisengageTimer > 0.1 then
-                    print(string.format("[CameraFollow] Enemy beyond disengage range - timer: %.1fs / %.1fs",
-                        self._enemyDisengageTimer, self.enemyDisengageDelay))
+                    --print(string.format("[CameraFollow] Enemy beyond disengage range - timer: %.1fs / %.1fs",
+                    --    self._enemyDisengageTimer, self.enemyDisengageDelay))
                 end
 
                 if self._enemyDisengageTimer >= self.enemyDisengageDelay then
@@ -79,13 +79,13 @@ function M.updateEnemyProximity(self, dt)
                     self._enemyDisengageTimer      = 0.0
                     self._triggeringEnemyId        = nil
                     if self.debugEnemyDetection then
-                        print("[CameraFollow] Action Mode DISABLED - enemy left range")
+                        --print("[CameraFollow] Action Mode DISABLED - enemy left range")
                     end
                 end
             else
                 -- Enemy returned within range; reset timer
                 if self._enemyDisengageTimer > 0 and self.debugEnemyDetection then
-                    print("[CameraFollow] Enemy returned within range - timer reset")
+                    --print("[CameraFollow] Enemy returned within range - timer reset")
                 end
                 self._enemyDisengageTimer = 0.0
             end
@@ -96,14 +96,14 @@ function M.updateEnemyProximity(self, dt)
                 self._triggeringEnemyId   = closestEnemy
                 self._enemyDisengageTimer = 0.0
                 if self.debugEnemyDetection then
-                    print(string.format("[CameraFollow] Locked onto new enemy: %d at %.1fu", closestEnemy, closestDist))
+                    --print(string.format("[CameraFollow] Locked onto new enemy: %d at %.1fu", closestEnemy, closestDist))
                 end
             else
                 self._actionModeActive        = false
                 self._enemyTriggeredActionMode = false
                 self._triggeringEnemyId        = nil
                 if self.debugEnemyDetection then
-                    print("[CameraFollow] Action Mode DISABLED - no enemies found")
+                    --print("[CameraFollow] Action Mode DISABLED - no enemies found")
                 end
             end
         end
@@ -117,8 +117,8 @@ function M.updateEnemyProximity(self, dt)
     self._enemyInRange    = closestEnemy ~= nil and closestDist <= self.enemyDetectionRange
 
     if self.debugEnemyDetection and self._enemyInRange ~= wasInRange then
-        print(string.format("[CameraFollow] Enemy proximity changed: %s (%.1fu)",
-            tostring(self._enemyInRange), closestDist))
+        --print(string.format("[CameraFollow] Enemy proximity changed: %s (%.1fu)",
+        --    tostring(self._enemyInRange), closestDist))
     end
 
     if self._enemyInRange then
@@ -128,8 +128,8 @@ function M.updateEnemyProximity(self, dt)
             self._enemyTriggeredActionMode = true
             self._triggeringEnemyId        = closestEnemy
             if self.debugEnemyDetection then
-                print(string.format("[CameraFollow] Action Mode ENABLED by enemy %d at %.1fu",
-                    closestEnemy, closestDist))
+                --print(string.format("[CameraFollow] Action Mode ENABLED by enemy %d at %.1fu",
+                --    closestEnemy, closestDist))
             end
         end
     end
