@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 328,
+            "id": 0,
             "guid": "0000e174a990a962-000479c8dc000117",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/VFXPrefabs/ChainSparks.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "ChainSparks"
                 },
