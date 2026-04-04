@@ -24,6 +24,7 @@ private:
     static constexpr int FPS_HISTORY_SIZE = 120;
     float m_fpsHistory[FPS_HISTORY_SIZE] = {};
     int   m_fpsHistoryOffset = 0;
+    int   m_shadowQuality = 1;  // 0=Low(128), 1=Medium(256), 2=High(512)
 
 #ifdef _WIN32
     HANDLE tracyProcessHandle = nullptr;
