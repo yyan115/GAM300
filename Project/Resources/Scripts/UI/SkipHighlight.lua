@@ -8,8 +8,11 @@ return Component {
         spriteGUIDs = {},
         -- SFX GUIDs: [1] = hover SFX, [2] = click SFX
         HoverSFX = {},
-        -- BGM fade settings
-        bgmFadeDuration = 1.0,  -- How long to fade out BGM when skipping
+        -- SFX played when clicking anywhere on screen to advance a board
+        selectSFXGUID = {},
+        -- Fade durations when skipping
+        bgmFadeDuration = 1.0,    -- How long to fade out BGM
+        skipFadeDuration = 1.0,   -- How long to fade screen to black
     },
 
     Start = function(self)
@@ -40,11 +43,21 @@ return Component {
             self._bgmAudio = GetComponent(bgmEntity, "AudioComponent")
         end
 
+        -- Get the Blackscreen sprite for Lua-controlled fade-to-black on skip
+        local blackscreenEntity = Engine.GetEntityByName("Blackscreen")
+        if blackscreenEntity then
+            self._blackscreenSprite = GetComponent(blackscreenEntity, "SpriteRenderComponent")
+        end
+
         self._isHovered = false
         self._isSkipTriggered = false
+
         self._isFadingBGM = false
         self._bgmFadeTimer = 0
         self._originalBGMVolume = 1.0
+
+        self._isFadingScreen = false
+        self._screenFadeTimer = 0
     end,
 
     Update = function(self, dt)
@@ -52,12 +65,29 @@ return Component {
             return
         end
 
-        -- Handle BGM fade out
+        -- Handle screen fade to black (runs even after skip triggered)
+        if self._isFadingScreen then
+            self._screenFadeTimer = self._screenFadeTimer + dt
+            local progress = math.min(self._screenFadeTimer / self.skipFadeDuration, 1.0)
+
+            if self._blackscreenSprite then
+                self._blackscreenSprite.alpha = progress
+            end
+
+            if progress >= 1.0 then
+                self._isFadingScreen = false
+                -- Screen is fully black — safe to end the cutscene now
+                if self.videoComp then
+                    self.videoComp.cutsceneEnded = true
+                end
+            end
+        end
+
+        -- Handle BGM fade out (runs even after skip triggered)
         if self._isFadingBGM and self._bgmAudio then
             self._bgmFadeTimer = self._bgmFadeTimer + dt
             local fadeProgress = math.min(self._bgmFadeTimer / self.bgmFadeDuration, 1.0)
 
-            -- Fade volume from original to 0
             local newVolume = self._originalBGMVolume * (1.0 - fadeProgress)
             self._bgmAudio:SetVolume(newVolume)
 
@@ -112,6 +142,13 @@ return Component {
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
             end
         end
+
+        -- Play select SFX when clicking outside the skip button (board advance click)
+        if Input.IsPointerJustPressed() and not isHovering then
+            if self._audio and self.selectSFXGUID and #self.selectSFXGUID > 0 then
+                self._audio:PlayOneShot(self.selectSFXGUID[1])
+            end
+        end
     end,
 
     OnSkipClicked = function(self)
@@ -137,10 +174,10 @@ return Component {
             self._sprite.isVisible = false
         end
 
-        -- Trigger cutscene end through VideoComponent
-        -- The C++ VideoSystem will detect this and start the skip fade
-        if self.videoComp then
-            self.videoComp.cutsceneEnded = true
-        end
+        -- Start Lua-controlled screen fade to black.
+        -- cutsceneEnded is set only after the fade completes, ensuring the scene
+        -- never loads before the screen is fully black (bypasses disableFadeOut).
+        self._isFadingScreen = true
+        self._screenFadeTimer = 0
     end,
 }

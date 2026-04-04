@@ -84,14 +84,20 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
+        CandleLightUpDelay = 0.5,
         CandleLightUpInterval = 0.3,
+        StationaryCinematicDuration = 3.0,
+        PanDuration = 0.0,
     },
 
     Awake = function(self)
+        self._beginLightUpDelay = false
         self._beginLightUpSequence = false
         self._lightUpSequenceFinished = false
+        self._currentLightUpDelay = 0.0
         self._currentInterval = 0.0
         self._currentPairIndex = 0
+        self._currentCinematicDuration = 0.0
     end,
 
     Start = function(self)
@@ -99,6 +105,16 @@ return Component {
     end,
 
     Update = function(self, dt)
+        -- Phase 1: Slight delay before starting the candle light up sequence
+        if self._beginLightUpDelay and not self._beginLightUpSequence then
+            self._currentLightUpDelay = self._currentLightUpDelay + dt
+            if self._currentLightUpDelay >= self.CandleLightUpDelay then
+                self._beginLightUpDelay = false
+                self._beginLightUpSequence = true
+            end
+        end
+
+        -- Phase 2: Actual candle light up sequence
         if self._beginLightUpSequence and not self._lightUpSequenceFinished then
             self._currentInterval = self._currentInterval + dt
             if self._currentInterval >= self.CandleLightUpInterval then
@@ -127,6 +143,16 @@ return Component {
                 end
             end
         end
+
+        -- Phase 3: End camera cinematic
+        if self._currentCinematicDuration < self.StationaryCinematicDuration + self.PanDuration then
+            self._currentCinematicDuration = self._currentCinematicDuration + dt
+            if self._currentCinematicDuration >= self.StationaryCinematicDuration + self.PanDuration then
+                if event_bus and event_bus.publish then
+                    event_bus.publish("set_attacks_enabled", true)
+                end
+            end
+        end
     end,
 
     _toRoot = function(self, entityId)
@@ -148,7 +174,14 @@ return Component {
         local tagComp = GetComponent(rootId, "TagComponent")
 
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
-            self._beginLightUpSequence = true
+            self._beginLightUpDelay = true
+
+            if event_bus and event_bus.publish then
+                event_bus.publish("set_attacks_enabled", false)
+                event_bus.publish("cinematic.trigger", true)
+                event_bus.publish("cinematic.stayDuration", self.StationaryCinematicDuration)
+                event_bus.publish("cinematic.transitionDuration", self.PanDuration)
+            end
         end
     end,
 
