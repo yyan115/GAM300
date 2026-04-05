@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAM300 - Team Marbles</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e8;
+            --muted: #8888a0;
+            --accent: #6c8cff;
+            --accent-hover: #8ca8ff;
+            --win: #4a9eff;
+            --android: #66bb6a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px 60px;
+            background: linear-gradient(180deg, #10102080, var(--bg));
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .hero .team {
+            color: var(--muted);
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+        }
+
+        .hero .tagline {
+            font-size: 1.25rem;
+            color: var(--accent);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Downloads */
+        .downloads {
+            padding: 40px 0 60px;
+        }
+
+        .downloads h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .version-info {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+
+        .download-cards {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            min-width: 240px;
+            transition: border-color 0.2s;
+        }
+
+        .download-card:hover {
+            border-color: var(--accent);
+        }
+
+        .download-card .platform {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .download-card .platform.windows { color: var(--win); }
+        .download-card .platform.android { color: var(--android); }
+
+        .download-card .file-info {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        .btn-windows {
+            background: var(--win);
+            color: #fff;
+        }
+        .btn-windows:hover { background: #3a8aee; }
+
+        .btn-android {
+            background: var(--android);
+            color: #fff;
+        }
+        .btn-android:hover { background: #56ab5a; }
+
+        /* About */
+        .about {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .about h2 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .about p {
+            color: var(--muted);
+            max-width: 700px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        .feature {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .feature h3 {
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+
+        .feature p {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        /* Trailer placeholder */
+        .trailer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            display: none; /* hidden until you add a trailer URL */
+        }
+
+        .trailer h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .trailer iframe {
+            width: 100%;
+            max-width: 720px;
+            aspect-ratio: 16/9;
+            border: none;
+            border-radius: 10px;
+        }
+
+        /* Screenshots placeholder */
+        .screenshots {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            display: none; /* hidden until you add screenshots */
+        }
+
+        .screenshots h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .screenshot-grid img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .no-release {
+            text-align: center;
+            color: var(--muted);
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 2rem; }
+            .download-card { min-width: 100%; padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1>GAM300</h1>
+        <div class="team">Team Marbles</div>
+        <p class="tagline">An action platformer with chain-based combat, built on a custom cross-platform engine.</p>
+    </section>
+
+    <!-- Downloads -->
+    <section class="downloads">
+        <div class="container">
+            <h2>Download</h2>
+            <div class="version-info" id="version-info">Checking for latest release...</div>
+            <div class="download-cards" id="download-cards">
+                <div class="loading">Loading release info...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section class="about">
+        <div class="container">
+            <h2>About the Game</h2>
+            <p>
+                A 3D action platformer featuring chain-based combat mechanics, feather skill abilities,
+                and a variety of enemy types across multiple levels. Built from scratch with a custom
+                ECS game engine supporting Windows and Android.
+            </p>
+            <div class="features">
+                <div class="feature">
+                    <h3>Chain Combat</h3>
+                    <p>Chain attacks, dash, dodge, and grapple your way through enemies and bosses.</p>
+                </div>
+                <div class="feature">
+                    <h3>Feather Skills</h3>
+                    <p>Collect feathers to unlock and use special abilities throughout the game.</p>
+                </div>
+                <div class="feature">
+                    <h3>Cross-Platform</h3>
+                    <p>Play on Windows or Android, built on a custom engine with platform-specific optimizations.</p>
+                </div>
+                <div class="feature">
+                    <h3>Custom Engine</h3>
+                    <p>ECS architecture with Lua scripting, Jolt physics, and OpenGL/ES rendering.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trailer (unhide when you have a YouTube link) -->
+    <!--
+    <section class="trailer" id="trailer-section" style="display:block;">
+        <div class="container">
+            <h2>Trailer</h2>
+            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" allowfullscreen></iframe>
+        </div>
+    </section>
+    -->
+
+    <!-- Screenshots (unhide and add images when ready) -->
+    <!--
+    <section class="screenshots" id="screenshots-section" style="display:block;">
+        <div class="container">
+            <h2>Screenshots</h2>
+            <div class="screenshot-grid">
+                <img src="screenshots/screenshot1.png" alt="Screenshot 1">
+                <img src="screenshots/screenshot2.png" alt="Screenshot 2">
+            </div>
+        </div>
+    </section>
+    -->
+
+    <!-- Footer -->
+    <section class="footer">
+        <p>
+            GAM300 &mdash; Team Marbles &mdash;
+            <a href="https://github.com/yyan115/GAM300">GitHub Repository</a> &mdash;
+            <a href="https://github.com/yyan115/GAM300/releases">All Releases</a>
+        </p>
+    </section>
+
+    <script>
+        const REPO = 'yyan115/GAM300';
+
+        async function loadRelease() {
+            const cardsEl = document.getElementById('download-cards');
+            const versionEl = document.getElementById('version-info');
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
+
+                if (res.status === 404) {
+                    versionEl.textContent = 'No releases published yet.';
+                    cardsEl.innerHTML = '<p class="no-release">Downloads will appear here once a release is published.</p>';
+                    return;
+                }
+
+                if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+
+                const release = await res.json();
+                versionEl.textContent = `Latest: ${release.tag_name} — ${release.name}`;
+
+                const winAsset = release.assets.find(a => a.name.includes('Windows') && a.name.endsWith('.zip'));
+                const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
+
+                let html = '';
+
+                if (winAsset) {
+                    const sizeMB = (winAsset.size / (1024 * 1024)).toFixed(1);
+                    html += `
+                        <div class="download-card">
+                            <div class="platform windows">Windows</div>
+                            <div class="file-info">${winAsset.name} (${sizeMB} MB)</div>
+                            <a href="${winAsset.browser_download_url}" class="btn btn-windows">Download .zip</a>
+                        </div>`;
+                }
+
+                if (apkAsset) {
+                    const sizeMB = (apkAsset.size / (1024 * 1024)).toFixed(1);
+                    html += `
+                        <div class="download-card">
+                            <div class="platform android">Android</div>
+                            <div class="file-info">${apkAsset.name} (${sizeMB} MB)</div>
+                            <a href="${apkAsset.browser_download_url}" class="btn btn-android">Download .apk</a>
+                        </div>`;
+                }
+
+                if (!html) {
+                    html = '<p class="no-release">Release found but no downloadable assets.</p>';
+                }
+
+                cardsEl.innerHTML = html;
+
+            } catch (err) {
+                console.error('Failed to load release:', err);
+                versionEl.textContent = '';
+                cardsEl.innerHTML = `
+                    <p class="no-release">
+                        Could not load release info. Visit
+                        <a href="https://github.com/${REPO}/releases" style="color:var(--accent);">GitHub Releases</a>
+                        to download directly.
+                    </p>`;
+            }
+        }
+
+        loadRelease();
+    </script>
+
+</body>
+</html>
