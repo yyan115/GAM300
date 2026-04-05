@@ -16,16 +16,16 @@ return Component {
         self._fadeTimer = 0
         self._wasActive = false
 
-        print("[CreditsHandler] Start called")
+        --print("[CreditsHandler] Start called")
 
         -- Cache entity references
         self._creditsTextEntity = Engine.GetEntityByName("CreditsFullText")
         self._creditsBGEntity = Engine.GetEntityByName("CreditsBG")
         self._creditsUIEntity = Engine.GetEntityByName("CreditsUI")
 
-        print("[CreditsHandler] CreditsText entity: " .. tostring(self._creditsTextEntity))
-        print("[CreditsHandler] CreditsBG entity: " .. tostring(self._creditsBGEntity))
-        print("[CreditsHandler] CreditsUI entity: " .. tostring(self._creditsUIEntity))
+        --print("[CreditsHandler] CreditsText entity: " .. tostring(self._creditsTextEntity))
+        --print("[CreditsHandler] CreditsBG entity: " .. tostring(self._creditsBGEntity))
+        --print("[CreditsHandler] CreditsUI entity: " .. tostring(self._creditsUIEntity))
 
         -- Cache component references
         if self._creditsTextEntity then
@@ -66,11 +66,11 @@ return Component {
             local isActive = self._creditsUIActive.isActive
 
             if isActive and not self._wasActive then
-                print("[CreditsHandler] CreditsUI activated! Starting scroll...")
+                --print("[CreditsHandler] CreditsUI activated! Starting scroll...")
                 self:_resetCredits()
                 self._isScrolling = true
                 self._isFading = false
-                print("[CreditsHandler] _isScrolling set to: " .. tostring(self._isScrolling))
+                --print("[CreditsHandler] _isScrolling set to: " .. tostring(self._isScrolling))
 
                 -- Hide main menu button highlight sprites while credits is open
                 local mainButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
@@ -100,7 +100,7 @@ return Component {
                 self._isScrolling = false
                 self._isFading = true
                 self._fadeTimer = 0
-                print("[CreditsHandler] Reached end position, starting fade")
+                --print("[CreditsHandler] Reached end position, starting fade")
             end
 
             -- Update position (modify in-place)

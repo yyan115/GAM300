@@ -107,7 +107,7 @@ return Component {
         if _G.PendingFeatherBombs and _G.PendingFeatherBombs[self.entityId] then
             local data = _G.PendingFeatherBombs[self.entityId]
             
-            print("[MinibossFeatherBombProjectile] Read blackboard, launching now!")
+            --print("[MinibossFeatherBombProjectile] Read blackboard, launching now!")
             
             self:Launch(
                 data.sx, data.sy, data.sz, 
@@ -118,7 +118,7 @@ return Component {
             -- Clean up the note so we don't leak memory
             _G.PendingFeatherBombs[self.entityId] = nil
         else
-            print("[MinibossFeatherBombProjectile] Warning: Woke up but found no launch data!")
+            --print("[MinibossFeatherBombProjectile] Warning: Woke up but found no launch data!")
         end
 
         -- Instantiate the Feather Bomb Target prefab

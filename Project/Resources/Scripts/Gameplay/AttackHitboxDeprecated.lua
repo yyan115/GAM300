@@ -24,10 +24,10 @@ return Component {
                 self:OnAttackPerformed(data)
             end)
         else
-            print("[AttackHitbox] ERROR: event_bus not available!")
+            --print("[AttackHitbox] ERROR: event_bus not available!")
         end
         
-        print("[AttackHitbox] Initialized")
+        --print("[AttackHitbox] Initialized")
     end,
 
     Update = function(self)
@@ -44,7 +44,7 @@ return Component {
         self.isActive = true
         self.hitEnemies = {}
         
-        print("[AttackHitbox] Attack activated: " .. tostring(attackData.state))
+        --print("[AttackHitbox] Attack activated: " .. tostring(attackData.state))
         
         -- Disable after one frame
         self:After(0.1, function()
@@ -155,7 +155,7 @@ return Component {
                             attackerPosition = { x = px, y = py, z = pz }
                         })
                         
-                        print("[AttackHitbox] Hit enemy " .. enemyId)
+                        --print("[AttackHitbox] Hit enemy " .. enemyId)
                     end
                     
                     self.hitEnemies[enemyId] = true

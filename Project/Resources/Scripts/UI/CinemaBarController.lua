@@ -48,13 +48,13 @@ return Component {
         self._hudActive = hudEnt and GetComponent(hudEnt, "ActiveComponent")
 
         if not self._topTr then
-            print("[CinemaBarController] WARNING: TopBar transform not found")
+            --print("[CinemaBarController] WARNING: TopBar transform not found")
         end
         if not self._btmTr then
-            print("[CinemaBarController] WARNING: BtmBar transform not found")
+            --print("[CinemaBarController] WARNING: BtmBar transform not found")
         end
         if not self._hudActive then
-            print("[CinemaBarController] WARNING: PlayerHUD ActiveComponent not found")
+            --print("[CinemaBarController] WARNING: PlayerHUD ActiveComponent not found")
         end
 
         -- State
@@ -78,12 +78,12 @@ return Component {
                         setLocalY(self._topTr, self.topBarTargetY)
                         setLocalY(self._btmTr, self.btmBarTargetY)
                         self._animating = false
-                        print("[CinemaBarController] Cinematic ON - bars snapped in, HUD hidden")
+                        --print("[CinemaBarController] Cinematic ON - bars snapped in, HUD hidden")
                     else
                         self._direction = 1
                         self._timer     = 0.0
                         self._animating = true
-                        print("[CinemaBarController] Cinematic ON - bars animating in, HUD hidden")
+                        --print("[CinemaBarController] Cinematic ON - bars animating in, HUD hidden")
                     end
 
                 elseif not active and self._cinematicOn then
@@ -95,18 +95,18 @@ return Component {
                         setLocalY(self._topTr, self.topBarRestY)
                         setLocalY(self._btmTr, self.btmBarRestY)
                         self._animating = false
-                        print("[CinemaBarController] Cinematic OFF - bars snapped out, HUD restored")
+                        --print("[CinemaBarController] Cinematic OFF - bars snapped out, HUD restored")
                     else
                         self._direction = -1
                         self._timer     = self.transitionOutDuration
                         self._animating = true
-                        print("[CinemaBarController] Cinematic OFF - bars animating out, HUD restored")
+                        --print("[CinemaBarController] Cinematic OFF - bars animating out, HUD restored")
                     end
                 end
             end)
         end
 
-        print("[CinemaBarController] Initialized")
+        --print("[CinemaBarController] Initialized")
     end,
 
     Update = function(self, dt)
@@ -133,10 +133,10 @@ return Component {
         -- Stop when animation is complete
         if self._direction == 1 and self._timer >= dur then
             self._animating = false
-            print("[CinemaBarController] Bars fully closed")
+            --print("[CinemaBarController] Bars fully closed")
         elseif self._direction == -1 and self._timer <= 0.0 then
             self._animating = false
-            print("[CinemaBarController] Bars fully open")
+            --print("[CinemaBarController] Bars fully open")
         end
     end,
 }

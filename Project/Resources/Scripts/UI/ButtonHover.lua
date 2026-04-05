@@ -22,11 +22,11 @@ return Component {
     end,
 
     _enableHoverComponent = function(self)
-        print("Hover ON")
+        --print("Hover ON")
     end,
 
     _disableHoverComponent = function(self)
-        print("Hover OFF")
+        --print("Hover OFF")
     end,
 
     Update = function(self, dt)

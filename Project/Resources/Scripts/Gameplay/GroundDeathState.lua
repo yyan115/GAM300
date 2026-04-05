@@ -35,7 +35,7 @@ function DeathState:Update(ai, dt)
 
     if ai._deathTimer >= ai._deathLifetime then
         if not ai._despawned and not ai._softDespawned then
-            print("[DeathState] Despawn trigger entity=", tostring(ai.entityId))
+            --print("[DeathState] Despawn trigger entity=", tostring(ai.entityId))
 
             if ai.Despawn then
                 ai:Despawn()

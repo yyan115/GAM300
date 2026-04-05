@@ -86,7 +86,7 @@ local function checkDodge(self, attackType, payload)
             payload    = payload,
         })
     end
-    print(string.format("[PlayerHealth] Dodge! Blocked '%s' during dash i-frame", attackType))
+    --print(string.format("[PlayerHealth] Dodge! Blocked '%s' during dash i-frame", attackType))
     return true
 end
 
@@ -349,7 +349,7 @@ return Component {
             -- then _isIFrame check, then PlayerTakeDmg. Follow the pattern above.
 
         else
-            print("[PlayerHealth] ERROR: event_bus not available!")
+            --print("[PlayerHealth] ERROR: event_bus not available!")
         end
     end,
 

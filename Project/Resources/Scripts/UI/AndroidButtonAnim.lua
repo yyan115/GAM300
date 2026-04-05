@@ -43,11 +43,11 @@ return Component {
         self._frame   = 1
         self._timer   = 0
 
-        print(string.format("[AndroidButtonAnim] Start | actionName=%s frames=%d sprite=%s",
-            action, #self._frames, tostring(self._sprite ~= nil)))
+        --print(string.format("[AndroidButtonAnim] Start | actionName=%s frames=%d sprite=%s",
+        --    action, #self._frames, tostring(self._sprite ~= nil)))
 
         if #self._frames == 0 then
-            print("[AndroidButtonAnim] WARNING: no frames found - is actionName set correctly?")
+            --print("[AndroidButtonAnim] WARNING: no frames found - is actionName set correctly?")
         end
 
         if self._sprite and #self._frames > 0 then
@@ -58,9 +58,9 @@ return Component {
     Update = function(self, dt)
         if not self._sprite or #self._frames == 0 then return end
 
-        if Input.IsActionJustPressed(self.actionName) then
-            print(string.format("[AndroidButtonAnim] Press! action=%s starting %d-frame anim",
-                self.actionName, #self._frames))
+        if Input.IsActionPressed(self.actionName) then
+            --print(string.format("[AndroidButtonAnim] Press! action=%s starting %d-frame anim",
+            --    self.actionName, #self._frames))
             self._playing = true
             self._frame   = 1
             self._timer   = 0
@@ -77,7 +77,7 @@ return Component {
             self._frame = self._frame + 1
 
             if self._frame > #self._frames then
-                print("[AndroidButtonAnim] Animation done, back to frame 1")
+                --print("[AndroidButtonAnim] Animation done, back to frame 1")
                 self._playing = false
                 self._frame   = 1
                 self._sprite:SetTextureFromPath(self._frames[1])

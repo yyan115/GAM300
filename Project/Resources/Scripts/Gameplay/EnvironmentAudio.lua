@@ -75,7 +75,7 @@ return Component {
         end
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[EnvironmentAudio] WARNING: event_bus not available in Awake")
+            --print("[EnvironmentAudio] WARNING: event_bus not available in Awake")
             return
         end
 
@@ -208,7 +208,7 @@ return Component {
         -- AudioEnvManager's own AudioComponent (for pickup + door SFX)
         self._audio = self:GetComponent("AudioComponent")
         if not self._audio then
-            print("[EnvironmentAudio] WARNING: no AudioComponent found on AudioEnvManager entity")
+            --print("[EnvironmentAudio] WARNING: no AudioComponent found on AudioEnvManager entity")
         end
 
         -- WeaponPickup entity's AudioComponent (positional looping hover SFX)
@@ -218,10 +218,10 @@ return Component {
             if self._pickupAudio then
                 self._pickupAudio:Play()
             else
-                print("[EnvironmentAudio] WARNING: no AudioComponent on " .. self.weaponPickupEntityName)
+                --print("[EnvironmentAudio] WARNING: no AudioComponent on " .. self.weaponPickupEntityName)
             end
         else
-            print("[EnvironmentAudio] WARNING: entity not found: " .. self.weaponPickupEntityName)
+            --print("[EnvironmentAudio] WARNING: entity not found: " .. self.weaponPickupEntityName)
         end
     end,
 

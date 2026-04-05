@@ -78,11 +78,11 @@ return Component {
     end,
 
     OnTriggerEnter = function(self, otherEntityId)
-        print("[FeatherSkillExplosion] ONTRIGGERENTER")
+        --print("[FeatherSkillExplosion] ONTRIGGERENTER")
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
         local tagName = tagComp:GetTagName()
-        print(string.format("[FeatherSkillExplosion] Tag Name: %s", tagName))
+        --print(string.format("[FeatherSkillExplosion] Tag Name: %s", tagName))
 
         if tagComp and (Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Boss")) then
             if event_bus and event_bus.publish then 

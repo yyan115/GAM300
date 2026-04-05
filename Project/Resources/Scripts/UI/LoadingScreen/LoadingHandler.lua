@@ -73,7 +73,7 @@ return Component {
     Update = function(self, dt)
         -- Kick off async load on the first Update frame
         if not self._started then
-            print("[Loading] Starting LoadAsync")
+            --print("[Loading] Starting LoadAsync")
             Scene.LoadAsync(self.targetScene)
             self._started = true
             return

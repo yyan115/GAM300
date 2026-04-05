@@ -120,7 +120,7 @@ return Component {
     -- Lifecycle: Awake
     ----------------------------------------------------------------------
     Awake = function(self)
-        print("[LUA][PlayerMovement] Awake")
+        --print("[LUA][PlayerMovement] Awake")
         
         -- Movement state
         self._velY       = 0
@@ -167,7 +167,7 @@ return Component {
     -- Lifecycle: Start
     ----------------------------------------------------------------------
     Start = function(self)
-        print("[LUA][PlayerMovement] Start")
+        --print("[LUA][PlayerMovement] Start")
 
         -- Cache component references
         self._animator = self:GetComponent("AnimationComponent")
@@ -267,7 +267,7 @@ return Component {
         self._wasGrounded = self._isGrounded
 
         -- Jump input (unified input system) - disabled while attacking
-        local jumpPressed = Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump")
+        local jumpPressed = Input and Input.IsActionPressed and Input.IsActionPressed("Jump")
         if self._isGrounded and jumpPressed and not isAttacking then
             self._velY       = self.jumpSpeed or 5.0
             self._isGrounded = false
@@ -282,7 +282,7 @@ return Component {
             -- Play jump SFX
             playRandomSFX(audio, self.jumpSFXClips)
 
-            print("[LUA][PlayerMovement] Jump!")
+            --print("[LUA][PlayerMovement] Jump!")
         end
 
         -- Apply gravity when in air (still allowed during attack)
@@ -306,7 +306,7 @@ return Component {
                 if self._isJumping then
                     playRandomSFX(audio, self.landingSFXClips)
                     self._isJumping = false
-                    print("[LUA][PlayerMovement] Landed!")
+                    --print("[LUA][PlayerMovement] Landed!")
 
                     -- Signal grounded state to state machine (it will auto-transition to Idle/Walk)
                     if animator and not isAttacking then
@@ -360,9 +360,9 @@ return Component {
             if animator and not isAttacking then
                 animator:SetBool("IsWalking", isWalkingNow)
                 if isWalkingNow then
-                    print("[LUA][PlayerMovement] Walking")
+                    --print("[LUA][PlayerMovement] Walking")
                 else
-                    print("[LUA][PlayerMovement] Idle")
+                    --print("[LUA][PlayerMovement] Idle")
                 end
             end
         end
@@ -403,7 +403,7 @@ return Component {
     -- Lifecycle: OnDisable
     ----------------------------------------------------------------------
     OnDisable = function(self)
-        print("[LUA][PlayerMovement] OnDisable")
+        --print("[LUA][PlayerMovement] OnDisable")
 
         -- Unsubscribe from camera yaw updates
         if event_bus and event_bus.unsubscribe and self._cameraYawSub then

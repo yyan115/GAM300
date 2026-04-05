@@ -90,11 +90,11 @@ return Component {
     OnTriggerEnter = function(self, otherEntityId)
         local rootId = self:_toRoot(otherEntityId)
         local name = Engine.GetEntityName(otherEntityId)
-        print(string.format("Collided with entity entity %s", name))
+        --print(string.format("Collided with entity entity %s", name))
         local tagComp = GetComponent(rootId, "TagComponent")
         
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
-            print("ONTRIGGERENTER")
+            --print("ONTRIGGERENTER")
             -- Trigger the damage logic via Event Bus
             local x,y,z = self:GetPosition()
             if _G.event_bus and _G.event_bus.publish then

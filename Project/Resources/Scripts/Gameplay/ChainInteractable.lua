@@ -64,7 +64,7 @@ return Component {
         self._endpointPrev = nil
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[ChainInteractable] WARNING: event_bus not available — no interactions will fire")
+            --print("[ChainInteractable] WARNING: event_bus not available — no interactions will fire")
             return
         end
 
@@ -84,14 +84,14 @@ return Component {
         end)
 
         self._subDetached = _G.event_bus.subscribe("chain.detached", function()
-            print("[ChainInteractable] Chain detached/flopped — clearing veto (hit detection disarmed until retract)")
+            --print("[ChainInteractable] Chain detached/flopped — clearing veto (hit detection disarmed until retract)")
             pcall(function() self:_onDetach() end)
         end)
 
         local rawMode = self.BehaviorMode or "Hit"
         local mode = string.gsub(rawMode, '["\']', '')
-        print(string.format("[ChainInteractable] Ready — mode=%s radius=%.2f entityId=%s",
-            tostring(mode), tonumber(self.HitRadius) or 0.35, tostring(self._entityId)))
+        --print(string.format("[ChainInteractable] Ready — mode=%s radius=%.2f entityId=%s",
+        --    tostring(mode), tonumber(self.HitRadius) or 0.35, tostring(self._entityId)))
     end,
 
     -- =========================================================================
@@ -145,7 +145,7 @@ return Component {
         if mode == "Pull" and self._isHooked and not self._actionFired then
             if payload.isRetracting then
                 self._actionFired = true
-                print("[ChainInteractable] Pull — OnBehaviourPull firing (via fallback)")
+                --print("[ChainInteractable] Pull — OnBehaviourPull firing (via fallback)")
                 pcall(function() self:OnBehaviourPull() end)
             end
         end
@@ -163,7 +163,7 @@ return Component {
 
         local ox, oy, oz = self:_getWorldPos()
         if not ox then
-            print("[ChainInteractable] WARNING: could not read own world position — check transform")
+            --print("[ChainInteractable] WARNING: could not read own world position — check transform")
             return
         end
 
@@ -199,8 +199,8 @@ return Component {
         -- ── HIT confirmed ────────────────────────────────────────────────
         self._hitFired = true
         self._isHooked = true
-        print(string.format("[ChainInteractable] HIT detected — mode=%s dist=%.3f radius=%.3f",
-            mode, math.sqrt(distSq), radius))
+        --print(string.format("[ChainInteractable] HIT detected — mode=%s dist=%.3f radius=%.3f",
+        --    mode, math.sqrt(distSq), radius))
 
         -- Force ChainBootstrap to lock the chain onto this interactable
         --if _G.event_bus and _G.event_bus.publish then
@@ -233,7 +233,7 @@ return Component {
                 -- 3. If it's "Mash", veto until count is reached
                 return (self._mashCurrent < self.MashCount)
             end
-            print("[ChainInteractable] Pull — Veto installed. Waiting for player to pull.")
+            --print("[ChainInteractable] Pull — Veto installed. Waiting for player to pull.")
 
         elseif mode == "Mash" then
             self._mashProgress = 0
@@ -243,7 +243,7 @@ return Component {
             _G.chain_retract_veto = function()
                 return self._isHooked and not self._mashDone
             end
-            print("[ChainInteractable] Mash — veto installed")
+            --print("[ChainInteractable] Mash — veto installed")
         end
     end,
 
@@ -257,8 +257,8 @@ return Component {
         if mode == "Mash" and self._isHooked and not self._mashDone then
             -- Fallback path: retraction completed mid-mash.
             -- Re-arm so the next throw can land and count as the next mash.
-            print(string.format("[ChainInteractable] Mash — retracted at progress %d/%d, re-arming",
-                self._mashProgress, math.max(1, tonumber(self.MashCount) or 3)))
+            --print(string.format("[ChainInteractable] Mash — retracted at progress %d/%d, re-arming",
+            --    self._mashProgress, math.max(1, tonumber(self.MashCount) or 3)))
             self._hitFired        = false
             self._mashCounted     = false
             self._detachDisarmed  = false   -- re-arm hit detection for the next throw
@@ -304,7 +304,7 @@ return Component {
         if mode == "Pull" and not self._actionFired then
             self._actionFired = true
             _G.chain_retract_veto = nil -- Drop the veto!
-            print("[ChainInteractable] Pull — Authorized! Firing OnBehaviourPull")
+            --print("[ChainInteractable] Pull — Authorized! Firing OnBehaviourPull")
             pcall(function() self:OnBehaviourPull() end)
             return
         end
@@ -314,13 +314,13 @@ return Component {
 
         self._mashProgress = self._mashProgress + 1
         local max = math.max(1, tonumber(self.MashCount) or 3)
-        print(string.format("[ChainInteractable] Mash primary %d/%d", self._mashProgress, max))
+        --print(string.format("[ChainInteractable] Mash primary %d/%d", self._mashProgress, max))
         pcall(function() self:OnBehaviourMash(self._mashProgress, max) end)
 
         if self._mashProgress >= max then
             self._mashDone = true
             _G.chain_retract_veto = nil -- Drop the veto!
-            print("[ChainInteractable] Mash FINAL — Authorized! OnBehaviourMashFinal firing")
+            --print("[ChainInteractable] Mash FINAL — Authorized! OnBehaviourMashFinal firing")
             pcall(function() self:OnBehaviourMashFinal() end)
         end
     end,
@@ -358,21 +358,21 @@ return Component {
 
     -- [Hit] Fires once when the chain endpoint enters HitRadius.
     OnBehaviourHit = function(self)
-        print("[ChainInteractable] OnBehaviourHit — TODO: replace this stub")
+        --print("[ChainInteractable] OnBehaviourHit — TODO: replace this stub")
     end,
 
     -- [Pull] Fires the moment the chain starts retracting after a hit.
     OnBehaviourPull = function(self)
-        print("[ChainInteractable] OnBehaviourPull — TODO: replace this stub")
+        --print("[ChainInteractable] OnBehaviourPull — TODO: replace this stub")
     end,
 
     -- [Mash] Fires once per tap/retract (progress = 1…MashCount).
     OnBehaviourMash = function(self, progress, maxCount)
-        print(string.format("[ChainInteractable] OnBehaviourMash %d/%d — TODO: replace this stub", progress, maxCount))
+        --print(string.format("[ChainInteractable] OnBehaviourMash %d/%d — TODO: replace this stub", progress, maxCount))
     end,
 
     -- [Mash] Fires after the final mash. Chain can now retract.
     OnBehaviourMashFinal = function(self)
-        print("[ChainInteractable] OnBehaviourMashFinal — TODO: replace this stub")
+        --print("[ChainInteractable] OnBehaviourMashFinal — TODO: replace this stub")
     end,
 }

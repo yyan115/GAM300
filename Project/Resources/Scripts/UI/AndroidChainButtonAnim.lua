@@ -33,38 +33,38 @@ return Component {
         self._frame    = 1
         self._timer    = 0
 
-        print(string.format("[AndroidChainButtonAnim] Start | sprite=%s hookFrames=%d pullFrames=%d slamFrames=%d",
-            tostring(self._sprite ~= nil), #HOOK_FRAMES, #PULL_FRAMES, #SLAM_FRAMES))
+        --print(string.format("[AndroidChainButtonAnim] Start | sprite=%s hookFrames=%d pullFrames=%d slamFrames=%d",
+        --    tostring(self._sprite ~= nil), #HOOK_FRAMES, #PULL_FRAMES, #SLAM_FRAMES))
 
         if self._sprite then
             self._sprite:SetTextureFromPath(HOOK_FRAMES[1])
         end
 
         if not _G.event_bus or not _G.event_bus.subscribe then
-            print("[AndroidChainButtonAnim] WARNING: event_bus not available")
+            --print("[AndroidChainButtonAnim] WARNING: event_bus not available")
             return
         end
 
         self._subPull = _G.event_bus.subscribe("chain.pull_chain", function(p)
             if p then
-                print("[AndroidChainButtonAnim] State -> PULL")
+                --print("[AndroidChainButtonAnim] State -> PULL")
                 self:_setState(PULL_FRAMES)
             end
         end)
         self._subSlam = _G.event_bus.subscribe("chain.slam_chain", function(p)
             if p then
-                print("[AndroidChainButtonAnim] State -> SLAM")
+                --print("[AndroidChainButtonAnim] State -> SLAM")
                 self:_setState(SLAM_FRAMES)
             end
         end)
         self._subRetract = _G.event_bus.subscribe("chain.retract_chain", function(p)
             if p then
-                print("[AndroidChainButtonAnim] State -> HOOK (retract)")
+                --print("[AndroidChainButtonAnim] State -> HOOK (retract)")
                 self:_setState(HOOK_FRAMES)
             end
         end)
         self._subDetach = _G.event_bus.subscribe("chain.detached", function()
-            print("[AndroidChainButtonAnim] State -> HOOK (detach)")
+            --print("[AndroidChainButtonAnim] State -> HOOK (detach)")
             self:_setState(HOOK_FRAMES)
         end)
     end,
@@ -81,8 +81,8 @@ return Component {
     Update = function(self, dt)
         if not self._sprite then return end
 
-        if Input.IsActionJustPressed("ChainAttack") then
-            print(string.format("[AndroidChainButtonAnim] Press! starting %d-frame anim", #self._current))
+        if Input.IsActionPressed("ChainAttack") then
+            --print(string.format("[AndroidChainButtonAnim] Press! starting %d-frame anim", #self._current))
             self._playing = true
             self._frame   = 1
             self._timer   = 0
@@ -99,7 +99,7 @@ return Component {
             self._frame = self._frame + 1
 
             if self._frame > #self._current then
-                print("[AndroidChainButtonAnim] Animation done, back to frame 1")
+                --print("[AndroidChainButtonAnim] Animation done, back to frame 1")
                 self._playing = false
                 self._frame   = 1
                 self._sprite:SetTextureFromPath(self._current[1])

@@ -20,7 +20,7 @@ return Component {
     
     -- Called once when the component is created
     Start = function(self)
-        print("SimpleMover started with speed: " .. tostring(self.speed))
+        --print("SimpleMover started with speed: " .. tostring(self.speed))
     end,
     
     -- Called every frame

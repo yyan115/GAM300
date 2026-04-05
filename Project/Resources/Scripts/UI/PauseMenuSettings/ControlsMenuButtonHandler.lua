@@ -55,7 +55,7 @@ return Component {
                     wasHovered = false
                 }
             else
-                print("[ControlssMenuButtonHandler] Warning: Missing entity " .. config.base)
+                --print("[ControlssMenuButtonHandler] Warning: Missing entity " .. config.base)
             end
         end
     end,

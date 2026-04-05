@@ -31,16 +31,16 @@ return Component {
             -- Set the audio clip if provided
             if self.testAudioClip ~= "" then
                 self.audio:SetClip(self.testAudioClip)
-                print("Set audio clip to: " .. self.testAudioClip)
+                --print("Set audio clip to: " .. self.testAudioClip)
             else
-                print("No testAudioClip set, using component's existing clip")
+                --print("No testAudioClip set, using component's existing clip")
             end
 
-            print("AudioComponent enabled: " .. tostring(self.audio.enabled))
-            print("AudioComponent PlayOnAwake set to: " .. tostring(self.audio.PlayOnAwake))
-            print("AudioComponent Volume set to: " .. tostring(self.audio.Volume))
+            --print("AudioComponent enabled: " .. tostring(self.audio.enabled))
+            --print("AudioComponent PlayOnAwake set to: " .. tostring(self.audio.PlayOnAwake))
+            --print("AudioComponent Volume set to: " .. tostring(self.audio.Volume))
         else
-            print("Warning: No AudioComponent found on entity")
+            --print("Warning: No AudioComponent found on entity")
         end
 
         -- Initialize timer for sound playback
@@ -64,9 +64,9 @@ return Component {
         if self.audio and #self.enemyHurtSFXClips > 0 then
             local index = math.random(1, #self.enemyHurtSFXClips)
             self.audio:PlayOneShot(self.enemyHurtSFXClips[index])
-            print("Playing random hurt sound: " .. tostring(index) .. " (every 2 seconds)")
+            --print("Playing random hurt sound: " .. tostring(index) .. " (every 2 seconds)")
         else
-            print("No audio component or no hurt clips available")
+            --print("No audio component or no hurt clips available")
         end
     end,
 
@@ -74,20 +74,20 @@ return Component {
     StopAudio = function(self)
         if self.audio then
             self.audio:stop()
-            print("Audio stopped")
+            --print("Audio stopped")
         end
     end,
 
     -- Function to test all clips in sequence
     TestAllClips = function(self)
         if self.audio and #self.enemyHurtSFXClips > 0 then
-            print("Testing all " .. #self.enemyHurtSFXClips .. " hurt clips")
+            --print("Testing all " .. #self.enemyHurtSFXClips .. " hurt clips")
             for i, clipGuid in ipairs(self.enemyHurtSFXClips) do
                 if clipGuid ~= "" then
                     self.audio:SetClip(clipGuid)
                     self.audio:Play()
                     -- In a real game, you'd add delays between plays
-                    print("Playing clip " .. i)
+                    --print("Playing clip " .. i)
                 end
             end
         end

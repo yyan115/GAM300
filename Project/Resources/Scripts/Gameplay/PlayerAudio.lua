@@ -117,7 +117,7 @@ return Component {
         -- end
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[PlayerAudio] WARNING: event_bus not available in Awake")
+            --print("[PlayerAudio] WARNING: event_bus not available in Awake")
             return
         end
 
@@ -184,7 +184,7 @@ return Component {
             self._playerTr = GetComponent(playerEntityId, "Transform")
         end
         if not self._audio then
-            print("[PlayerAudio] WARNING: no AudioComponent found on Player entity")
+            --print("[PlayerAudio] WARNING: no AudioComponent found on Player entity")
         end
     end,
 

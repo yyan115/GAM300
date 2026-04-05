@@ -105,10 +105,10 @@ return Component {
                             wasHovered = false
                         }
                     else
-                        print("[PauseMenuButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
+                        --print("[PauseMenuButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
                     end
                 else
-                    print("[PauseMenuButtonHandler] Warning: Missing entity " .. config.base)
+                    --print("[PauseMenuButtonHandler] Warning: Missing entity " .. config.base)
                 end
             end
         end

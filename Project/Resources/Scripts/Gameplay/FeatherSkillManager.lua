@@ -278,7 +278,7 @@ return Component {
                 baseRot = { w = zQuat.w, x = zQuat.x, y = zQuat.y, z = zQuat.z }
             })
 
-            print(string.format("[FeatherSkillManager] Spawned feather projectile entity %d at %f %f %f", newFeatherId, childTransform.localPosition.x, childTransform.localPosition.y, childTransform.localPosition.z))
+            --print(string.format("[FeatherSkillManager] Spawned feather projectile entity %d at %f %f %f", newFeatherId, childTransform.localPosition.x, childTransform.localPosition.y, childTransform.localPosition.z))
         end
 
         if index == 0 then
@@ -435,7 +435,7 @@ return Component {
 
             if not anyFeathersAlive then
                 if Engine and Engine.DestroyEntity then
-                    print("[FeatherSkillManager] All feathers destroyed. Cleaning up parent entity: " .. tostring(self.entityId))
+                    --print("[FeatherSkillManager] All feathers destroyed. Cleaning up parent entity: " .. tostring(self.entityId))
                     Engine.DestroyEntity(self.entityId)
                 end
             end

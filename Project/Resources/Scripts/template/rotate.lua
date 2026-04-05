@@ -35,7 +35,7 @@ return Component {
     
     Start = function(self)
         self.currentAngle = 0
-        print("Rotate behavior started! Speed: " .. tostring(self.rotationSpeed) .. " deg/s around " .. self.axis .. " axis")
+        --print("Rotate behavior started! Speed: " .. tostring(self.rotationSpeed) .. " deg/s around " .. self.axis .. " axis")
     end,
     
     Update = function(self, dt)

@@ -61,14 +61,14 @@ function M.PlayRandomSFX(audio, clips, volume)
     if not clip or clip == "" then return end
 
     if _isDebugEnabled(clips) then
-        print(string.format(
-            "[AudioHelper] idx=%s prevIdx=%s changed=%s clip=%s volume=%.2f",
-            tostring(idx),
-            tostring(prevIdx),
-            tostring(prevIdx ~= idx),
-            tostring(clip),
-            volumeClamped
-        ))
+        --print(string.format(
+        --    "[AudioHelper] idx=%s prevIdx=%s changed=%s clip=%s volume=%.2f",
+        --    tostring(idx),
+        --    tostring(prevIdx),
+        --    tostring(prevIdx ~= idx),
+        --    tostring(clip),
+        --    volumeClamped
+        --))
     end
 
     pcall(function()
@@ -102,15 +102,15 @@ function M.PlayRandomSFXPitched(audio, clips, pitchVar, volume)
     pitch = _clamp(pitch, 0.5, 2.0)
 
     if _isDebugEnabled(clips) then
-        print(string.format(
-            "[AudioHelper] idx=%s prevIdx=%s changed=%s clip=%s volume=%.2f pitch=%.2f",
-            tostring(idx),
-            tostring(prevIdx),
-            tostring(prevIdx ~= idx),
-            tostring(clip),
-            volumeClamped,
-            pitch
-        ))
+        --print(string.format(
+        --    "[AudioHelper] idx=%s prevIdx=%s changed=%s clip=%s volume=%.2f pitch=%.2f",
+        --    tostring(idx),
+        --    tostring(prevIdx),
+        --    tostring(prevIdx ~= idx),
+        --    tostring(clip),
+        --    volumeClamped,
+        --    pitch
+        --))
     end
 
     pcall(function()

@@ -20,7 +20,7 @@
  * - Unhandled touch drag (for camera rotation)
  *
  * Game code flow:
- * 1. Check if action is pressed: Input.IsActionPressed("Attack")
+ * 1. Check if action is pressed: Input.IsActionHeld("Attack")
  * 2. For joysticks, get touch position: Input.GetActionTouchPosition("Movement")
  * 3. For camera, check unhandled drag: Input.IsDragging(), Input.GetDragDelta()
  */
@@ -30,8 +30,8 @@ public:
     ~AndroidInputManager() override = default;
 
     // InputManager interface implementation
+    bool IsActionHeld(const std::string& action) override;
     bool IsActionPressed(const std::string& action) override;
-    bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
     glm::vec2 GetActionTouchPosition(const std::string& action) override;
     glm::vec2 GetAxis(const std::string& axisName) override;
