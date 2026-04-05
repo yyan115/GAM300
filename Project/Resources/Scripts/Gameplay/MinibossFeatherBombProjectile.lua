@@ -106,15 +106,15 @@ return Component {
         -- Check the global blackboard for launch instructions addressed to us!
         if _G.PendingFeatherBombs and _G.PendingFeatherBombs[self.entityId] then
             local data = _G.PendingFeatherBombs[self.entityId]
-            
+
             --print("[MinibossFeatherBombProjectile] Read blackboard, launching now!")
-            
+
             self:Launch(
-                data.sx, data.sy, data.sz, 
-                data.tx, data.ty, data.tz, 
+                data.sx, data.sy, data.sz,
+                data.tx, data.ty, data.tz,
                 data.targetCell
             )
-            
+
             -- Clean up the note so we don't leak memory
             _G.PendingFeatherBombs[self.entityId] = nil
         else
@@ -171,6 +171,12 @@ return Component {
 
         -- Apply the rising rotation immediately
         self:SetRotation(self.riseQuat.w, self.riseQuat.x, self.riseQuat.y, self.riseQuat.z)
+
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("miniboss_sfx", {
+                sfxType = "explosionSkillStart",
+            })
+        end
 
         self.state = "RISING"
         self.timer = 0

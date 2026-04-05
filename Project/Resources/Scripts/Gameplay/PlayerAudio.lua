@@ -151,7 +151,7 @@ return Component {
             if #self.staircaseFootstepSFX > 0 and self:_isOnStaircase() then
                 clips = self.staircaseFootstepSFX
             end
-            AudioHelper.PlayRandomSFX(self._audio, clips, self.FootstepVolume)
+            AudioHelper.PlayRandomSFX(self._audio, clips, 0.7)
         end)
 
         -- ── Feather skill ─────────────────────────────────────────────────────

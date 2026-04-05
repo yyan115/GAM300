@@ -11,24 +11,28 @@ SINGLE RESPONSIBILITY: Play miniboss SFX. Nothing else.
 
 EVENTS CONSUMED:
     miniboss_sfx → play SFX based on sfxType:
-        "hurt"         → enemyHurtSFX
-        "death"        → enemyDeathSFX
-        "taunt"        → enemyTauntSFX
-        "meleeAttack"  → enemyMeleeAttackSFX
-        "meleeHit"     → enemyMeleeHitSFX
-        "rangedAttack" → enemyRangedAttackSFX
-        "rangedHit"    → enemyRangedHitSFX
-        "groundSlam"   → enemyGroundSlamSFX
+        "hurt"                → enemyHurtSFX
+        "death"               → enemyDeathSFX
+        "taunt"               → enemyTauntSFX
+        "meleeAttack"         → enemyMeleeAttackSFX
+        "meleeHit"            → enemyMeleeHitSFX
+        "rangedAttack"        → enemyRangedAttackSFX
+        "rangedHit"           → enemyRangedHitSFX
+        "groundSlam"          → enemyGroundSlamSFX
+        "explosionSkillStart" → ExplosionSkillStartSFX
+        "explosionSkillRelease" → ExplosionSkillReleaseSFX
 
 FIELDS (populate clip arrays in editor with audio GUIDs):
-    enemyHurtSFX         — hurt sounds
-    enemyDeathSFX        — death sounds
-    enemyTauntSFX        — battlecry / taunt sounds
-    enemyMeleeAttackSFX  — melee swing sounds
-    enemyMeleeHitSFX     — melee hit impact sounds
-    enemyRangedAttackSFX — ranged attack sounds (direct boss audio; not knife spatial)
-    enemyRangedHitSFX    — ranged hit impact sounds
-    enemyGroundSlamSFX   — ground slam impact sounds
+    enemyHurtSFX            — hurt sounds
+    enemyDeathSFX           — death sounds
+    enemyTauntSFX           — battlecry / taunt sounds
+    enemyMeleeAttackSFX     — melee swing sounds
+    enemyMeleeHitSFX        — melee hit impact sounds
+    enemyRangedAttackSFX    — ranged attack sounds (direct boss audio; not knife spatial)
+    enemyRangedHitSFX       — ranged hit impact sounds
+    enemyGroundSlamSFX      — ground slam impact sounds
+    ExplosionSkillStartSFX  — feather bomb launched sounds
+    ExplosionSkillReleaseSFX — feather bomb exploded sounds
 
 NOTE: enemyRangedAttackSFX here covers boss-played ranged SFX (e.g. Phase 3
 feather bomb). The knife-throw spatial audio uses a separate field still on
@@ -45,15 +49,22 @@ local AudioHelper = require("extension.audio_helper")
 return Component {
 
     fields = {
-        enemyHurtSFX         = {},
-        enemyDeathSFX        = {},
-        enemyTauntSFX        = {},
-        enemyMeleeAttackSFX  = {},
-        enemyMeleeHitSFX     = {},
-        enemyRangedAttackSFX = {},
-        enemyRangedHitSFX    = {},
-        enemyGroundSlamSFX   = {},
+        enemyHurtSFX             = {},
+        enemyDeathSFX            = {},
+        enemyTauntSFX            = {},
+        enemyMeleeAttackSFX      = {},
+        enemyMeleeHitSFX         = {},
+        enemyRangedAttackSFX     = {},
+        enemyRangedHitSFX        = {},
+        enemyGroundSlamSFX       = {},
+        ExplosionSkillStartSFX   = {},
+        ExplosionSkillReleaseSFX = {},
     },
+
+    Start = function(self)
+        local bossId = Engine.GetEntityByName("Miniboss")
+        self._bossAudio = bossId and GetComponent(bossId, "AudioComponent") or nil
+    end,
 
     Awake = function(self)
         -- Guard against double-Awake (hot-reload / stop-play cycle)
@@ -66,9 +77,14 @@ return Component {
             return
         end
 
+        if self.ExplosionSkillReleaseSFX then
+            self.ExplosionSkillStartSFX._debug = true
+            self.ExplosionSkillReleaseSFX._debug = true
+        end
+
         self._sfxSub = _G.event_bus.subscribe("miniboss_sfx", function(data)
             if not data then return end
-            local audio = GetComponent(data.entityId, "AudioComponent")
+            local audio = data.entityId and GetComponent(data.entityId, "AudioComponent") or nil
             local t = data.sfxType
             if t == "hurt" then
                 AudioHelper.PlayRandomSFX(audio, self.enemyHurtSFX)
@@ -86,7 +102,11 @@ return Component {
                 AudioHelper.PlayRandomSFX(audio, self.enemyRangedHitSFX)
             elseif t == "groundSlam" then
                 AudioHelper.PlayRandomSFX(audio, self.enemyGroundSlamSFX)
-            end         
+            elseif t == "explosionSkillStart" then
+                AudioHelper.PlayRandomSFX(self._bossAudio, self.ExplosionSkillStartSFX)
+            elseif t == "explosionSkillRelease" then
+                AudioHelper.PlayRandomSFX(self._bossAudio, self.ExplosionSkillReleaseSFX)
+            end
         end)
     end,
 
