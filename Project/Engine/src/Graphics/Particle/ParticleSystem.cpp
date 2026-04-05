@@ -111,6 +111,12 @@ bool ParticleSystem::InitialiseParticles(bool forceInit)
         // UV attribute (location 1) - vec2
         particleComp.particleVAO->LinkAttrib(*particleComp.quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+        // Cap maxParticles on Android to avoid oversized buffers on mobile GPU
+#ifdef __ANDROID__
+        if (particleComp.maxParticles > 300)
+            particleComp.maxParticles = 300;
+#endif
+
         // Create instance VBO (per-particle data, updated every frame)
         particleComp.instanceVBO = new VBO(particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
         particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
@@ -190,6 +196,12 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
 
     particleComp.particleVAO->LinkAttrib(*particleComp.quadVBO, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
     particleComp.particleVAO->LinkAttrib(*particleComp.quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    // Cap maxParticles on Android to avoid oversized buffers on mobile GPU
+#ifdef __ANDROID__
+    if (particleComp.maxParticles > 300)
+        particleComp.maxParticles = 300;
+#endif
 
     particleComp.instanceVBO = new VBO( particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
     particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
@@ -272,6 +284,27 @@ void ParticleSystem::Update()
 
         if (!particleComp.isVisible) continue;
 
+#ifdef __ANDROID__
+        // Distance culling: skip simulation + rendering for emitters far from camera
+        if (ecsManager.HasComponent<Transform>(entity))
+        {
+            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            Camera* cam = gfxManager.GetCurrentCamera();
+            if (cam)
+            {
+                glm::vec3 pos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
+                glm::vec3 diff = pos - cam->Position;
+                float distSq = glm::dot(diff, diff);
+                if (distSq > 900.0f) // 30 units
+                    continue;
+            }
+        }
+
+        // Halve emission rate on Android to reduce per-frame particle count
+        float originalRate = particleComp.emissionRate;
+        particleComp.emissionRate *= 0.5f;
+#endif
+
         // Only update particle physics if:
         // 1. Game is running (NOT paused), OR
         // 2. Playing in editor AND not paused in editor
@@ -351,6 +384,11 @@ void ParticleSystem::Update()
         }
 
         gfxManager.Submit(std::move(renderItem));
+
+#ifdef __ANDROID__
+        // Restore original emission rate so the halving doesn't compound
+        particleComp.emissionRate = originalRate;
+#endif
     }
 }
 
@@ -512,8 +550,9 @@ void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
 {
     if (comp.particles.empty()) return;
 
-    // Prepare instance data array
-    std::vector<ParticleInstanceData> instanceData;
+    // Reuse static buffer to avoid per-frame heap allocation per emitter
+    static std::vector<ParticleInstanceData> instanceData;
+    instanceData.clear();
     instanceData.reserve(comp.particles.size());
 
     for (const auto& particle : comp.particles)

@@ -14,7 +14,7 @@ env:
   VCPKG_COMMIT: 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
 
 jobs:
-  # ── Windows Release Build ──────────────────────────────────────────
+  # ── Windows Installer Build ────────────────────────────────────────
   windows-build:
     runs-on: windows-2022
     steps:
@@ -64,23 +64,33 @@ jobs:
       run: cmake --build --preset release --parallel
       working-directory: Project
 
-    - name: Package Windows build
+    - name: Stage game files for installer
       run: |
-        mkdir -p staging/GAM300-Windows
-        cp Project/Build/Release/*.exe staging/GAM300-Windows/
-        cp Project/Build/Release/*.dll staging/GAM300-Windows/ 2>/dev/null || true
-        cp -r Project/Build/Release/Resources staging/GAM300-Windows/ 2>/dev/null || true
-      shell: bash
+        mkdir Installer\GAMEDIRECTORY
+        copy Project\Build\Release\*.exe Installer\GAMEDIRECTORY\
+        copy Project\Build\Release\*.dll Installer\GAMEDIRECTORY\
+        xcopy Project\Build\Release\Resources Installer\GAMEDIRECTORY\Resources\ /E /I /Y
+      shell: cmd
 
-    - name: Zip Windows build
-      run: Compress-Archive -Path staging/GAM300-Windows -DestinationPath staging/GAM300-Windows-${{ github.event.inputs.version }}.zip
-      shell: pwsh
+    - name: Install Inno Setup
+      run: choco install innosetup -y --no-progress
+      shell: cmd
 
-    - name: Upload Windows artifact
+    - name: Build installer
+      run: |
+        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" Installer\InstallScript.iss
+      shell: cmd
+
+    - name: Rename installer
+      run: |
+        move Installer\INSTALLER\Kusane_Setup.exe Installer\INSTALLER\Kusane-Setup-${{ github.event.inputs.version }}.exe
+      shell: cmd
+
+    - name: Upload installer artifact
       uses: actions/upload-artifact@v4
       with:
         name: windows-release
-        path: staging/GAM300-Windows-${{ github.event.inputs.version }}.zip
+        path: Installer/INSTALLER/Kusane-Setup-${{ github.event.inputs.version }}.exe
         retention-days: 1
 
   # ── Android APK Build ──────────────────────────────────────────────
@@ -144,7 +154,7 @@ jobs:
       run: |
         cd release-files
         for f in *.apk; do
-          mv "$f" "GAM300-Android-${{ github.event.inputs.version }}.apk"
+          mv "$f" "Kusane-Android-${{ github.event.inputs.version }}.apk"
         done
 
     - name: Create GitHub Release
@@ -158,8 +168,8 @@ jobs:
           **Version:** `${{ github.event.inputs.version }}`
 
           ### Downloads
-          - **Windows** — `GAM300-Windows-${{ github.event.inputs.version }}.zip`
-          - **Android** — `GAM300-Android-${{ github.event.inputs.version }}.apk`
+          - **Windows** — `Kusane-Setup-${{ github.event.inputs.version }}.exe` (installer)
+          - **Android** — `Kusane-Android-${{ github.event.inputs.version }}.apk`
 
           ---
           *Built automatically from `${{ github.sha }}` on `${{ github.ref_name }}`*

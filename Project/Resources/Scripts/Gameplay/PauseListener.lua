@@ -88,6 +88,9 @@ return Component {
                 self._pauseComp.isActive = false
                 Time.SetPaused(false)
 
+                -- Re-lock cursor when unpausing via Esc
+                if Screen then Screen.SetCursorLocked(true) end
+
                 -- Unpause all game audio
                 Audio.SetBusPaused("BGM", false)
                 Audio.SetBusPaused("SFX", false)

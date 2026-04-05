@@ -266,9 +266,11 @@ static bool s_cursorPausedByUser = false;    // User pressed ESC to temporarily 
 
 void WindowManager::SetCursorLocked(bool locked) {
     s_cursorLockRequested = locked;
-    // Note: We do NOT clear s_cursorPausedByUser here.
-    // If user pressed ESC to pause, only clicking in game panel (ResumeCursorLock) can resume.
-    // This prevents Lua scripts from overriding user's ESC.
+    // When game code explicitly requests locking (e.g. unpausing), clear the
+    // "paused by user" flag so UpdateCursorState() will actually lock the cursor.
+    if (locked) {
+        s_cursorPausedByUser = false;
+    }
     // Actual locking happens in UpdateCursorState() each frame
 }
 

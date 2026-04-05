@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Sprites/ParticleSprites/Rock Particle.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": false,
+        "type": "sprite",
+        "flipUVs": true,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",
         "maxSize": 2048

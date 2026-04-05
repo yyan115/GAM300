@@ -4,7 +4,7 @@
 #include "Logging.hpp"
 
 // Comment out to hide console window
-#define SHOW_CONSOLE
+// #define SHOW_CONSOLE
 
 #ifdef _WIN32
 #ifdef SHOW_CONSOLE
