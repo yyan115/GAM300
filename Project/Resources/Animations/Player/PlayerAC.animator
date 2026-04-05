@@ -150,8 +150,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1052.023193359375,
-                "y": -384.7625427246094
+                "x": 1058.023193359375,
+                "y": -381.4293212890625
             }
         },
         {
@@ -392,8 +392,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": 1056.2880859375,
-                "y": -175.53965759277344
+                "x": 1057.802734375,
+                "y": -185.31243896484375
             }
         },
         {
@@ -2414,6 +2414,181 @@
                     "paramName": "IsDashing",
                     "mode": "Equals",
                     "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "SlamChain",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Air Slam",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20999999344348907,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
                 }
             ]
         }

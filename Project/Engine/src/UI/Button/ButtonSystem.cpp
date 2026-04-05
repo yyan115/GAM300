@@ -3,6 +3,7 @@
 #include "UI/Button/ButtonSystem.hpp"
 #include "UI/Button/ButtonComponent.hpp"
 #include "ECS/ECSManager.hpp"
+#include "ECS/ActiveComponent.hpp"
 #include "Logging.hpp"
 #include "TimeManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -61,6 +62,8 @@ void ButtonSystem::UpdateButtonStates() {
 
         for (Entity e : m_ecs->GetActiveEntities()) {
             if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
+            // Skip buttons on inactive entities or those with an inactive parent
+            if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;
             HandlePointerClick(e, pointerPosInGameSpace);
         }
     }
