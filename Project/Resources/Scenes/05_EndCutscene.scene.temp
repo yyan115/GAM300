@@ -660,7 +660,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 5
+                                            "data": 4
                                         },
                                         {
                                             "type": "float",
@@ -692,7 +692,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00272304a85787d1-0004a4106a000031"
+                                            "data": "001684cdec3326c2-0004bb3bea0095b9"
                                         }
                                     ]
                                 },
@@ -706,6 +706,63 @@
                                         {
                                             "type": "std::string",
                                             "data": "Kusane does not raise her blade.\nShe reaches..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 30
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "001684cd844fdd7d-0004bb3bea0095bb"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_3.PNG"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "From the darkness, she draws them forth-her stolen wings."
                                         },
                                         {
                                             "type": "float",
@@ -749,64 +806,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00272304b5497ce1-0004a4106a000033"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "CutsceneBoard",
-                                    "data": [
-                                        {
-                                            "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_3.PNG"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": "From the darkness, she draws them forth-her stolen wings."
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 30
-                                        },
-                                        {
-                                            "type": "bool",
-                                            "data": false
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 7
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0.5
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 2
-                                        },
-                                        {
-                                            "type": "int",
-                                            "data": 2
-                                        },
-                                        {
-                                            "type": "bool",
-                                            "data": true
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": "00272304b7586431-0004a4106a000035"
+                                            "data": "001684cd8313b1bb-0004bb3bec0095bd"
                                         }
                                     ]
                                 },
@@ -831,7 +831,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 7
+                                            "data": 5
                                         },
                                         {
                                             "type": "float",
@@ -863,7 +863,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00272304eedb517a-0004a4106a000037"
+                                            "data": "001684cdfb140214-0004bb3bec0095bf"
                                         }
                                     ]
                                 },
@@ -920,7 +920,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00272304e06c79f9-0004a4106a000039"
+                                            "data": "001684cdb95ed31b-0004bb3bee0095c1"
                                         }
                                     ]
                                 },
@@ -945,7 +945,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
@@ -1034,7 +1034,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "0027230492a7f8ea-0004a4106a00003b"
+                                            "data": "001684cdb9ded6cc-0004bb3bf00095c3"
                                         }
                                     ]
                                 },
@@ -1091,7 +1091,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "002723048b1b8f39-0004a4106a00003d"
+                                            "data": "001684cdefd002db-0004bb3bf00095c5"
                                         }
                                     ]
                                 },
@@ -1148,7 +1148,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00272304fd254a41-0004a4106a00003f"
+                                            "data": "001684cdf87de58a-0004bb3bf20095c7"
                                         }
                                     ]
                                 },
@@ -1157,7 +1157,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00003.png"
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Opening_Final_11.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -1173,7 +1173,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 1
                                         },
                                         {
                                             "type": "float",

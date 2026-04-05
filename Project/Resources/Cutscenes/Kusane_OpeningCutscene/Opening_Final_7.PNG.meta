@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001684cdcd6b64f4-0004bb1b96000041",
+        "source": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Opening_Final_7.PNG",
+        "compiled": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Opening_Final_7.dds"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
