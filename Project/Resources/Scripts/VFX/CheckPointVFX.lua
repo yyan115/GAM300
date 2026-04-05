@@ -70,10 +70,12 @@ end,
 
     ActivateCheckPointVFX = function(self)
         if not self._cpEnt then return end
-            
             local children = Engine.GetChildrenEntities(self._cpEnt)
             local deactivatedVFXEnt = children[7]
             local activatedVFXEnt = children[11]
+
+            print("activated VFX is ", activatedVFXEnt)
+            print("deactivated VFX is ", deactivatedVFXEnt)
             -- --- 1. STOP DEACTIVATED VFX (Index 7) ---
             if deactivatedVFXEnt then
                 local subChildren = Engine.GetChildrenEntities(deactivatedVFXEnt)
