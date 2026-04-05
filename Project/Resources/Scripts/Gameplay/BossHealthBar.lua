@@ -5,6 +5,7 @@ local Component = require("extension.mono_helper")
 local event_bus = _G.event_bus
 
 local function setEntityActiveByName(name, active)
+    print(string.format("[setEntityActiveByName] name: %s", name))
     local ent = Engine.GetEntityByName(name)
     if not ent then return end
 
@@ -19,12 +20,12 @@ return Component {
         followDelay = 0.5,
         followSpeed = 2.0,
 
-        healthBarFillName = "BossHealthBarGhostFill",
+        healthBarFillName = "MinibossHealthBarFillGhost",
 
         -- root objects to toggle on/off
-        rootEntityName = "BossHealthBarRoot",
-        ghostEntityName = "BossHealthBarGhostFill",
-        immediateEntityName = "BossHealthBarFill",
+        rootEntityName = "MinibossHealthBarBack",
+        ghostEntityName = "MinibossHealthBarFillGhost",
+        immediateEntityName = "MinibossHealthBarFill",
     },
 
     Awake = function(self)
