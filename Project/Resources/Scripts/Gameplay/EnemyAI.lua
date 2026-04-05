@@ -1416,7 +1416,7 @@ return Component {
 
     IsFlying = function(self)
         local t = tostring(self.EnemyType or "")
-        t = string.lower(string.gsub(t, "%s+", ""))
+        t = string.lower(string.gsub(t, '[\"%s]+', ""))
         return t == "flying"
     end,
 
