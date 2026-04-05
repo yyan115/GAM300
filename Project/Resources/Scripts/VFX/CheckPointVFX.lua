@@ -74,8 +74,8 @@ end,
             local deactivatedVFXEnt = children[7]
             local activatedVFXEnt = children[11]
 
-            print("activated VFX is ", activatedVFXEnt)
-            print("deactivated VFX is ", deactivatedVFXEnt)
+            -- print("activated VFX is ", activatedVFXEnt)
+            -- print("deactivated VFX is ", deactivatedVFXEnt)
             -- --- 1. STOP DEACTIVATED VFX (Index 7) ---
             if deactivatedVFXEnt then
                 local subChildren = Engine.GetChildrenEntities(deactivatedVFXEnt)
@@ -83,6 +83,7 @@ end,
                     local particleComp = GetComponent(subChildren[i], "ParticleComponent")
                     if particleComp then
                         particleComp.isVisible = false
+                        particleComp.isEmitting = false
                     end
                 end
             end
@@ -94,6 +95,7 @@ end,
                     local particleComp = GetComponent(subChildren[i], "ParticleComponent")
                     if particleComp then
                         particleComp.isVisible = true
+                        particleComp.isEmitting = true
                     end
                 end
             end
