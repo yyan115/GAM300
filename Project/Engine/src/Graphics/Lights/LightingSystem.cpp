@@ -11,11 +11,6 @@ bool LightingSystem::Initialise()
 {
     //std::cout << "[LightingSystem] Initializing..." << std::endl;
 
-#ifdef ANDROID
-    shadowsEnabled = false;
-    return true;
-#endif
-
     // Initialize directional shadow map
     if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
@@ -44,6 +39,12 @@ bool LightingSystem::Initialise()
         pointShadowMaps[i].SetPhaseOffset(0);
 #endif
     }
+
+#ifdef ANDROID
+    // Textures are allocated above so samplers have valid objects at units 9-12.
+    // Disable rendering into them — RenderShadowMaps and ApplyShadows both early-out.
+    shadowsEnabled = false;
+#endif
 
     //std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
