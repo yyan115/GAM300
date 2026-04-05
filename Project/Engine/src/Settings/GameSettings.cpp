@@ -4,6 +4,7 @@
 #include "Sound/AudioManager.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
@@ -66,9 +67,14 @@ void GameSettingsManager::Shutdown() {
 
 std::string GameSettingsManager::GetSettingsFilePath() const {
     namespace fs = std::filesystem;
-    fs::path exePath = fs::current_path();
-    fs::path settingsPath = exePath / "Resources" / SETTINGS_FILENAME;
-    return settingsPath.string();
+#ifdef ANDROID
+    IPlatform* platform = WindowManager::GetPlatform();
+    std::string writableRoot = platform ? platform->GetWritablePath() : "";
+    fs::path base = writableRoot.empty() ? fs::current_path() : fs::path(writableRoot);
+#else
+    fs::path base = fs::current_path();
+#endif
+    return (base / "Resources" / SETTINGS_FILENAME).string();
 }
 
 bool GameSettingsManager::LoadSettings() {
@@ -142,7 +148,12 @@ bool GameSettingsManager::SaveSettings() {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     std::string filePath = GetSettingsFilePath();
-    fs::create_directories(fs::path(filePath).parent_path());
+    try {
+        fs::create_directories(fs::path(filePath).parent_path());
+    } catch (const std::filesystem::filesystem_error& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GameSettings] Cannot create settings directory (", e.what(), ") — skipping save\n");
+        return false;
+    }
 
     rapidjson::Document doc;
     doc.SetObject();

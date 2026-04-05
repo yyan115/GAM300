@@ -19,7 +19,7 @@ return Component {
                 if currentHealth then self._currentHealth = currentHealth end
             end)
         else
-            print("[PlayerHealthBar] ERROR: event_bus not available!")
+            --print("[PlayerHealthBar] ERROR: event_bus not available!")
         end
     end,
 
@@ -32,7 +32,7 @@ return Component {
         if ghostEnt then
             self._ghostSprite = GetComponent(ghostEnt, "SpriteRenderComponent")
         else
-            print("[PlayerHealthBar] WARNING: Could not find ghost bar: " .. self.healthBarFillName)
+            --print("[PlayerHealthBar] WARNING: Could not find ghost bar: " .. self.healthBarFillName)
         end
 
         self._delayTimer = 0.0

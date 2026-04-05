@@ -164,6 +164,8 @@ return Component {
 
         -- Ranged charge (phase 1 Move1)
         P1_RangedCharge = 0.75,
+        -- Duration in melee range before firing the feather bomb punisher move in phase 1
+        P1_MeleePunishTime = 5.0,
 
         -- Shout AOE
         ShoutRadius = 4.0,
@@ -236,6 +238,7 @@ return Component {
 
         P3_FeatherCastTime = 0.25,         -- longer "windup" before firing all 5
         P3_FeatherCooldown = 2.00,         -- longer cooldown after firing (between rounds)
+        FeatherBombProjectilePrefab = "Resources/Prefabs/Knife_FeatherBomb.prefab",
         P3_FeatherBombExplosionPrefabPath = "Resources/Prefabs/MinibossFeatherBombExplosion.prefab",
 
         -- Tile activation timing (keep activating tile, but slower)
@@ -289,6 +292,7 @@ return Component {
         self._lockReason   = nil
         self._lockTimer    = 0
         self._combatActive = false
+        self._bossHealthBarShown = false
 
         -- phase tracking
         self._phase = 1                 -- current phase id
@@ -351,7 +355,7 @@ return Component {
                 self._controller = ctrl
                 pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
             else
-                print("[MinibossAI] CharacterController.Create failed")
+                --print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
             end
         end
@@ -443,14 +447,14 @@ return Component {
         self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
             if not payload then return end
             if payload.rootName ~= self._entityName then return end
-            print("[MinibossAI] chain.endpoint_hit_entity received")
+            --print("[MinibossAI] chain.endpoint_hit_entity received")
             self._animator:SetTrigger("Hooked")
         end)
 
         self._chainEnemyHookedSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
             if not payload then return end
             if payload.entityId ~= self.entityId then return end
-            print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
+            --print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
             pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
         end)
 
@@ -487,6 +491,10 @@ return Component {
         -- no old FSM combat loop
         self._postIntroRecoverT = 0
         self._phaseRecoverT = 0
+
+        self:_publishBossHealth()
+        self:_setBossHealthBarVisible(false)
+        self._bossHealthBarShown = false
     end,
 
     Update = function(self, dt)
@@ -509,47 +517,54 @@ return Component {
             self:ForceNextPhase()
         end
 
-        -- Tick pending rain explosion "land" events
-        do
-            local q = self._pendingRainExplosions
-            if q and #q > 0 then
-                for i = #q, 1, -1 do
-                    local e = q[i]
-                    e.t = (e.t or 0) - dtSec
-                    if e.t <= 0 then
-                        -- The payload contains an array of 5 targeted cells. 
-                        -- We must spawn an explosion for each one.
-                        if e.payload and e.payload.cells then
-                            for _, cellNum in ipairs(e.payload.cells) do
-                                
-                                -- 1. Calculate the exact world X and Z for this specific cell
-                                local gx, gz = self:_GetGridXZ(cellNum)
-                                
-                                -- 2. Get the ground Y level
-                                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
-                                
-                                -- 3. Instantiate the prefab
-                                local explosionPrefabId = Prefab.InstantiatePrefab(self.P3_FeatherBombExplosionPrefabPath)
-                                local explosionPrefabTr = GetComponent(explosionPrefabId, "Transform")
-
-                                -- 4. Set the prefab's position to the ground at the cell's center
-                                if explosionPrefabTr then
-                                    explosionPrefabTr.localPosition.x = gx
-                                    explosionPrefabTr.localPosition.y = gy
-                                    explosionPrefabTr.localPosition.z = gz
-                                    explosionPrefabTr.isDirty = true
-                                end
-                            end
-                        end
-
-                        if _G.event_bus and _G.event_bus.publish then
-                            _G.event_bus.publish("boss_rain_explosives", e.payload)
-                        end
-                        table.remove(q, i)
-                    end
-                end
-            end
+        -- Show boss HP bar only after the intro/cinematic is fully over
+        if self._introDone and (not self._inIntro) and (not self.dead) and (not self._bossHealthBarShown) then
+            self._bossHealthBarShown = true
+            self:_publishBossHealth()
+            self:_setBossHealthBarVisible(true)
         end
+
+        -- -- Tick pending rain explosion "land" events
+        -- do
+        --     local q = self._pendingRainExplosions
+        --     if q and #q > 0 then
+        --         for i = #q, 1, -1 do
+        --             local e = q[i]
+        --             e.t = (e.t or 0) - dtSec
+        --             if e.t <= 0 then
+        --                 -- The payload contains an array of 5 targeted cells. 
+        --                 -- We must spawn an explosion for each one.
+        --                 if e.payload and e.payload.cells then
+        --                     for _, cellNum in ipairs(e.payload.cells) do
+                                
+        --                         -- 1. Calculate the exact world X and Z for this specific cell
+        --                         local gx, gz = self:_GetGridXZ(cellNum)
+                                
+        --                         -- 2. Get the ground Y level
+        --                         local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+                                
+        --                         -- 3. Instantiate the prefab
+        --                         local explosionPrefabId = Prefab.InstantiatePrefab(self.P3_FeatherBombExplosionPrefabPath)
+        --                         local explosionPrefabTr = GetComponent(explosionPrefabId, "Transform")
+
+        --                         -- 4. Set the prefab's position to the ground at the cell's center
+        --                         if explosionPrefabTr then
+        --                             explosionPrefabTr.localPosition.x = gx
+        --                             explosionPrefabTr.localPosition.y = gy
+        --                             explosionPrefabTr.localPosition.z = gz
+        --                             explosionPrefabTr.isDirty = true
+        --                         end
+        --                     end
+        --                 end
+
+        --                 if _G.event_bus and _G.event_bus.publish then
+        --                     _G.event_bus.publish("boss_rain_explosives", e.payload)
+        --                 end
+        --                 table.remove(q, i)
+        --             end
+        --         end
+        --     end
+        -- end
 
         -- 1) Ground physics only when NOT in air
         if not self._inAir then
@@ -693,7 +708,7 @@ return Component {
                 if (dx*dx + dz*dz) <= (r*r) then
                     self._introDone = true
                     self._inIntro = true
-                    print(string.format("[Miniboss][Aggro] Player in range. Starting Battlecry."))
+                    --print(string.format("[Miniboss][Aggro] Player in range. Starting Battlecry."))
                     self.fsm:Change("Battlecry", self.states.Battlecry)
                     return
                 end
@@ -782,7 +797,7 @@ return Component {
         self._collider  = self._collider  or self:GetComponent("ColliderComponent")
         self._transform = self._transform or self:GetComponent("Transform")
         if not (self._collider and self._transform) then
-            print("[Miniboss] CreateCC failed: missing collider/transform")
+            --print("[Miniboss] CreateCC failed: missing collider/transform")
             return false
         end
 
@@ -803,7 +818,7 @@ return Component {
         end
 
         self._controller = nil
-        print("[Miniboss] CreateCC failed: CharacterController.Create error")
+        --print("[Miniboss] CreateCC failed: CharacterController.Create error")
         return false
     end,
 
@@ -972,7 +987,7 @@ return Component {
         
         -- If we can't find the player, don't try to rotate
         if not px or not pz then 
-            print("[Miniboss] Can't find player")
+            --print("[Miniboss] Can't find player")
             return 
         end
 
@@ -1014,6 +1029,19 @@ return Component {
     _publishSFX = function(self, sfxType)
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("miniboss_sfx", { entityId = self.entityId, sfxType = sfxType })
+        end
+    end,
+
+    _publishBossHealth = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("bossMaxhealth", self.MaxHealth or 1)
+            _G.event_bus.publish("bossCurrentHealth", self.health or 0)
+        end
+    end,
+
+    _setBossHealthBarVisible = function(self, visible)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("bossHealthBarVisible", visible == true)
         end
     end,
 
@@ -1076,12 +1104,12 @@ return Component {
     _SetInAir = function(self, inAir)
         if inAir then
             if not self._inAir then
-                print("[Miniboss] -> AIR MODE (destroy CC)")
+                --print("[Miniboss] -> AIR MODE (destroy CC)")
                 self:_EnterAirMode()
             end
         else
             if self._inAir then
-                print("[Miniboss] -> GROUND MODE (create CC)")
+                --print("[Miniboss] -> GROUND MODE (create CC)")
                 self:_EnterGroundMode()
             end
         end
@@ -1263,7 +1291,7 @@ return Component {
         self:LockActions("PHASE_TRANSFORM", self.PhaseTransformDuration or 2.2)
 
         if self._animator then self._animator:SetTrigger("Taunt") end
-        print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
+        --print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
         self:_publishSFX("taunt")
 
         self:_TriggerBossPhaseShake()
@@ -1277,7 +1305,7 @@ return Component {
         self._transforming = false
         self._immuneDamage = false
 
-        print("[Miniboss] FinishBossPhaseTransition -> phase=", tostring(newPhase))
+        --print("[Miniboss] FinishBossPhaseTransition -> phase=", tostring(newPhase))
 
         if newPhase == 2 then
             self:EnterPhase2_Air()
@@ -1296,7 +1324,7 @@ return Component {
         local nextPhase = curPhase + 1
 
         if nextPhase > 3 then
-            print("[Miniboss][Cheat] Already at final phase.")
+            --print("[Miniboss][Cheat] Already at final phase.")
             return
         end
 
@@ -1315,10 +1343,10 @@ return Component {
         self._moveQueue = {}
         self:_EndMove()
 
-        print(string.format(
-            "[Miniboss][Cheat] Forcing phase %d at hp=%.2f/%.2f",
-            nextPhase, self.health, maxHp
-        ))
+        --print(string.format(
+        --    "[Miniboss][Cheat] Forcing phase %d at hp=%.2f/%.2f",
+        --    nextPhase, self.health, maxHp
+        --))
 
         self:StartBossPhaseTransition(nextPhase)
     end,
@@ -1433,26 +1461,28 @@ return Component {
         if self.dead then return end
         
         if self._inIntro then
-            print("[MinibossAI] ApplyHit blocked: _inIntro")
+            --print("[MinibossAI] ApplyHit blocked: _inIntro")
             return
         end
         if self._transforming then
-            print("[MinibossAI] ApplyHit blocked: _transforming")
+            --print("[MinibossAI] ApplyHit blocked: _transforming")
             return
         end
         if self._immuneDamage then
-            print("[MinibossAI] ApplyHit blocked: _immuneDamage")
+            --print("[MinibossAI] ApplyHit blocked: _immuneDamage")
             return
         end
         if (self._hitLockTimer or 0) > 0 then
-            print("[MinibossAI] ApplyHit blocked: iFrame", self._hitLockTimer)
+            --print("[MinibossAI] ApplyHit blocked: iFrame", self._hitLockTimer)
             return
         end
 
-        print("[MinibossAI] ApplyHit called", dmg, hitType)
+        --print("[MinibossAI] ApplyHit called", dmg, hitType)
 
         self._hitLockTimer = self.HitIFrame or 0.2
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
+
+        self:_publishBossHealth()
 
         local myRandomValue = math.random(1, 3)
         if myRandomValue == 1 then
@@ -1463,18 +1493,33 @@ return Component {
             self._animator:SetTrigger("Hurt3")
         end
 
-        print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
+        --print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
 
         if self.health <= 0 then
             self:Die()
             return
         end
 
-        -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
-        self:_CancelCurrentAttackMove("HURT")
+        -- [NEW] Check for Super Armor!
+        local isUninterruptible = self:IsInMove("P1FeatherBombPunish")
 
-        -- 1) Always queue a short “hurt reaction window”
-        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+        -- Only play hurt animations and interrupt moves if NOT in super armor
+        if not isUninterruptible then
+            local myRandomValue = math.random(1, 3)
+            if myRandomValue == 1 then
+                self._animator:SetTrigger("Hurt1")
+            elseif myRandomValue == 2 then
+                self._animator:SetTrigger("Hurt2")
+            else
+                self._animator:SetTrigger("Hurt3")
+            end
+
+            -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
+            self:_CancelCurrentAttackMove("HURT")
+
+            -- Always queue a short “hurt reaction window”
+            self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+        end
 
         -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
         if (self._phase or self:_ComputePhase()) == 1 then
@@ -1488,7 +1533,7 @@ return Component {
                     dmg       = self.ShoutDamage or 2,
                     kb        = self.ShoutKnockback or 240.0,
                 })
-                print("[MinibossAI] Queued ShoutAOE")
+                --print("[MinibossAI] Queued ShoutAOE")
             end
 
             if (not self._p1DidShout90) and hpPct <= (self.P1_Shout1Pct or 0.90) then
@@ -1538,14 +1583,14 @@ return Component {
             -- Start falling RIGHT NOW
             self:BeginSlamDown("Pulldown")
 
-            print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            --print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
             return
         end
 
         if self._phase == 3 and not self._inAir then
             -- If hooked during Death Lotus, interrupt it immediately and schedule Fate Sealed
             if self:IsInMove("DeathLotus") then
-                print("[Miniboss][P3] Hooked DURING DeathLotus -> INTERRUPT")
+                --print("[Miniboss][P3] Hooked DURING DeathLotus -> INTERRUPT")
                 self._p3LotusInterrupted = true
                 self._p3PendingFate = true
                 self._p3FateDelayT = self.P3_FateAfterHookDelay or 2.0
@@ -1564,12 +1609,16 @@ return Component {
             self:PlayClip(self.ClipHooked, true)
         end
 
-        print(string.format("[Miniboss][Hooked] START %.2fs", dur))
+        --print(string.format("[Miniboss][Hooked] START %.2fs", dur))
     end,
 
     Die = function(self)
         if self.dead then return end
         self.dead = true
+
+        self:_publishBossHealth()
+        self:_setBossHealthBarVisible(false)
+        self._bossHealthBarShown = false
 
         -- Play death SFX
         self:_publishSFX("death")
@@ -1594,7 +1643,7 @@ return Component {
             _G.event_bus.publish("boss_killed")
         end
 
-        print("[Miniboss][Death] DEAD")
+        --print("[Miniboss][Death] DEAD")
     end,
 
     -------------------------------------------------
@@ -1737,7 +1786,7 @@ return Component {
 
     _LaunchKnife = function(self, knife, sx, sy, sz, tx, ty, tz, token, tag)
         if not knife then
-            print("[Miniboss][Knife] Launch FAILED: knife=nil")
+            --print("[Miniboss][Knife] Launch FAILED: knife=nil")
             return false
         end
 
@@ -1768,7 +1817,7 @@ return Component {
 
         local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, "BOSS")
         if not ok then
-            print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
+            --print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
         return ok
     end,
@@ -1779,7 +1828,7 @@ return Component {
 
         local knives = requestUpTo(3)
         if not knives then
-            print("[Miniboss][Knife] No knives available in pool")
+            --print("[Miniboss][Knife] No knives available in pool")
             return false
         end
 
@@ -1840,7 +1889,7 @@ return Component {
     SpawnKnifeSingleAtPlayer = function(self)
         local knives = KnifePool.RequestMany(1)
         if not knives or not knives[1] then 
-            print("[Miniboss][Knife] RequestMany(1) FAILED")
+            --print("[Miniboss][Knife] RequestMany(1) FAILED")
             return false
         end
         local k = knives[1]
@@ -1876,7 +1925,7 @@ return Component {
     SpawnKnifeSingleAtWorld = function(self, tx, ty, tz, tag)
         local knives = KnifePool.RequestMany(1)
         if not knives or not knives[1] then
-            print("[Miniboss][Knife] RequestMany(1) FAILED (world)")
+            --print("[Miniboss][Knife] RequestMany(1) FAILED (world)")
             return false
         end
         local k = knives[1]
@@ -1910,7 +1959,7 @@ return Component {
 
         local knives = KnifePool.RequestMany(8)
         if not knives then
-            print("[Miniboss][Knife] RequestMany(8) FAILED")
+            --print("[Miniboss][Knife] RequestMany(8) FAILED")
             return false
         end
 
@@ -1970,7 +2019,7 @@ return Component {
 
         local knives = KnifePool.RequestMany(1)
         if not knives or not knives[1] then
-            print("[Miniboss][Knife] RequestMany(1) FAILED")
+            --print("[Miniboss][Knife] RequestMany(1) FAILED")
             return false
         end
 
@@ -2021,7 +2070,7 @@ return Component {
 
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
-            print("[MinibossAI] Casting boss_shout_aoe")
+            --print("[MinibossAI] Casting boss_shout_aoe")
             _G.event_bus.publish("boss_shout_aoe", {
                 entityId = self.entityId,
                 x=x,y=y,z=z,
@@ -2085,13 +2134,13 @@ return Component {
     _DoMeleeAttack = function(self)
 
         -- longer windup + further range
-        print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
+        --print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
         if self._animator then self._animator:SetTrigger("Melee") end
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
             range  = self.BossMeleeRange or 2.95,
             dmg    = 4,
-            postDelay = 0.4
+            postDelay = 1.0
         })
     end,
 
@@ -2178,7 +2227,7 @@ return Component {
 
                 if _G.event_bus and _G.event_bus.publish then
                     local x,y,z = self:GetPosition()
-                    print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
+                    --print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
                     _G.event_bus.publish("boss_shout_aoe", {
                         entityId = self.entityId,
                         x=x,y=y,z=z,
@@ -2205,7 +2254,7 @@ return Component {
             if not m.didHit and m.t >= (m.hitAt or 0) then
                 m.didHit = true
 
-                print("Do u see this?")
+                --print("Do u see this?")
                 -- CLAW VFX HERE
                 if _G.event_bus then
                     local x, y, z = self:GetPosition()
@@ -2240,6 +2289,66 @@ return Component {
             return
         end
 
+        -------------------------------------------------
+        -- Phase 1: Melee Punish (Single Feather Bomb)
+        -------------------------------------------------
+        if m.kind == "P1FeatherBombPunish" then
+            if m.step == 0 then
+                self:FacePlayer()
+                if self._animator then self._animator:SetTrigger("FeatherBomb") end
+                self:_publishSFX("rangedAttack")
+                
+                m.step = 1
+                m.fireAt = (m.charge or 0.5)
+            end
+
+            if not m.didFire and m.t >= m.fireAt then
+                m.didFire = true
+                
+                -- Find the specific grid cell the player is standing on
+                local cellNum = self:_GetPlayerGridNumpad()
+                local yOff = self.P3_FeatherTargetYOffset or 0.25
+                local gx, gz = self:_GetGridXZ(cellNum)
+                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+                local sx, sy, sz = self:_GetSpawnPos()
+                
+                -- 1. Spawn the new smart projectile
+                local bombId = Prefab.InstantiatePrefab(self.FeatherBombProjectilePrefab)
+                
+                -- 2. Leave a note on the Global Blackboard
+                _G.PendingFeatherBombs = _G.PendingFeatherBombs or {}
+                _G.PendingFeatherBombs[bombId] = {
+                    sx = sx, sy = sy, sz = sz,
+                    tx = gx, ty = gy + yOff, tz = gz,
+                    targetCell = cellNum
+                }
+                
+                -- -- Shoot the knife to that exact cell
+                -- self:SpawnKnifeSingleAtWorld(gx, gy + (self.P3_FeatherTargetYOffset or 0.25), gz, "P3F_Punish")
+
+                -- -- Queue the explosion when the knife "lands"
+                -- local delay = self.P3_FeatherActivateDelay or 0.90
+                -- self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
+                --     t = delay,
+                --     payload = {
+                --         entityId = self.entityId,
+                --         cells = { cellNum }, -- Targets only the player's cell
+                --         dmg = 2,
+                --         step = self.GridStep or 4.0,
+                --         cx = self.GridCenterX or 0.0,
+                --         cz = self.GridCenterZ or 0.0,
+                --     }
+                -- }
+                
+                m.doneAt = m.t + (m.postDelay or 0.75)
+            end
+
+            if m.doneAt and m.t >= m.doneAt then
+                self:_EndMove()
+            end
+            return
+        end
+
         if m.kind == "P1RangedCharged" then
             if m.step == 0 then
                 self:FacePlayer()
@@ -2263,7 +2372,7 @@ return Component {
             -- fire once at start
             if m.step == 0 then
                 self:FacePlayer()
-                print("[MinibossAI] SPAWNING BASIC")
+                --print("[MinibossAI] SPAWNING BASIC")
                 self:SpawnKnifeVolley3(m.spread or 1.0)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.35)
@@ -2289,7 +2398,7 @@ return Component {
 
             if m.t >= (m.nextShotT or 0) and (m.shotsDone or 0) < bursts then
                 self:FacePlayer()
-                print("[MinibossAI] SPAWNING BURSTFIRE")
+                --print("[MinibossAI] SPAWNING BURSTFIRE")
                 self:SpawnKnifeSingleAtPlayer()
                 m.shotsDone = m.shotsDone + 1
                 m.nextShotT = m.t + burstInterval
@@ -2311,7 +2420,7 @@ return Component {
         if m.kind == "AntiDodge" then
             if m.step == 0 then
                 self:FacePlayer()
-                print("[MinibossAI] SPAWNING AntiDodge")
+                --print("[MinibossAI] SPAWNING AntiDodge")
                 self:SpawnKnifeFan8_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8, m.spread3 or 2.7, m.spread4 or 3.6)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.45)
@@ -2338,7 +2447,7 @@ return Component {
                 -- OPTIONAL: play charge animation / VFX / SFX once
                 if not m.chargeStarted then
                     m.chargeStarted = true
-                    print("[Miniboss] FateSealed: SetTrigger(Melee)")
+                    --print("[Miniboss] FateSealed: SetTrigger(Melee)")
                     self._animator:SetTrigger("Melee")
                 end
 
@@ -2472,7 +2581,7 @@ return Component {
             m.fireAcc = (m.fireAcc or 0) + dtSec
             while m.fireAcc >= fireInterval do
                 m.fireAcc = m.fireAcc - fireInterval
-                print("[MinibossAI] SPAWNING DEATHLOTUS")
+                --print("[MinibossAI] SPAWNING DEATHLOTUS")
                 self:SpawnForwardSingle(fx, fz, m.range or 12.0, m.lotusYOffset or 0.0)
             end
             
@@ -2513,20 +2622,56 @@ return Component {
     end,
 
     _UpdatePhase1 = function(self, dtSec)
-        -- If any queued reaction exists, run it first
-        if self:TryStartQueuedMove() then return end
+        -- =========================================================
+        -- 1. ALWAYS TRACK THE PLAYER (Even during other attacks)
+        -- =========================================================
+        local px,py,pz = self:GetPlayerPosForAI()
+        local inMeleeRange = false
+        
+        if px then
+            local ex,ez = self:GetEnemyPosXZ()
+            local dx,dz = px-ex, pz-ez
+            local d2 = dx*dx + dz*dz
+            local meleeR = self.BossMeleeRange or 2.2
+            
+            if d2 <= meleeR*meleeR then
+                inMeleeRange = true
+            end
+        end
 
+        if inMeleeRange then
+            self._p1MeleeTimer = (self._p1MeleeTimer or 0) + dtSec
+        else
+            self._p1MeleeTimer = 0 -- Reset instantly if they run away
+        end
+
+        -- =========================================================
+        -- 2. GUARDS: Stop here if the boss is mid-attack or locked
+        -- =========================================================
+        if self:TryStartQueuedMove() then return end
         if not self:IsCurrentMoveFinished() then return end
         if self:IsActionLocked() then return end
-
-        local px,py,pz = self:GetPlayerPosForAI()
         if not px then return end
-        local ex,ez = self:GetEnemyPosXZ()
-        local dx,dz = px-ex, pz-ez
-        local d2 = dx*dx + dz*dz
+        if self:IsInMove("HurtReact") or (self._hitLockTimer > 0) then return end
 
-        local meleeR = self.BossMeleeRange or 2.2
-        if d2 <= meleeR*meleeR then
+        -- =========================================================
+        -- 3. CHOOSE NEXT MOVE (Boss is idle and ready)
+        -- =========================================================
+        
+        -- PRIORITY 1: Anti-Camper Punish
+        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0) then
+            self._p1MeleeTimer = 0 -- Reset so it doesn't chain-cast
+            self._meleeCdT = self.BossMeleeCooldown or 2.5 -- Reset normal melee cooldown so it doesn't chain cast
+            
+            self:_BeginMove("P1FeatherBombPunish", {
+                charge = 1.0,
+                postDelay = 0.75
+            })
+            return
+        end
+
+        -- PRIORITY 2: Normal Melee
+        if inMeleeRange then
             if (self._meleeCdT or 0) <= 0 then
                 self._meleeCdT = self.BossMeleeCooldown or 2.5
                 self:_DoMeleeAttack()
@@ -2534,7 +2679,7 @@ return Component {
             return
         end
 
-        -- ranged w/ charge
+        -- PRIORITY 3: Normal Ranged
         self:_BeginMove("P1RangedCharged", {
             charge = self.P1_RangedCharge or 0.75,
             spread = 0.6,
@@ -2543,7 +2688,7 @@ return Component {
     end,
 
     EnterPhase2_Air = function(self)
-        print("[Miniboss] EnterPhase2_Air")
+        --print("[Miniboss] EnterPhase2_Air")
         self:_SetInAir(true)
 
         local x,y,z = self:GetPosition()
@@ -2704,33 +2849,54 @@ return Component {
     end,
 
     _DoRainExplosives = function(self)
-        -- Phase 3 "feathers": shoot knives to 5 random cells
+        -- -- Phase 3 "feathers": shoot knives to 5 random cells
+        -- local cells = self:_PickRainCells5()
+        -- local yOff = self.P3_FeatherTargetYOffset or 0.25
+
+        -- for i=1,#cells do
+        --     local n = cells[i]
+        --     local gx, gz = self:_GetGridXZ(n)
+        --     local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+        --     self:SpawnKnifeSingleAtWorld(gx, (gy or 0) + yOff, gz, "P3F"..tostring(n))
+        -- end
+
+        -- -- Queue the explosion check to happen when bombs "land"
+        -- local delay = self.P3_FeatherActivateDelay or 0.90
+
+        -- self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
+        --     t = delay,
+        --     payload = {
+        --         entityId = self.entityId,
+        --         cells = cells,
+        --         dmg = 2,
+
+        --         -- grid config so PlayerHealth can compute what cell they’re in
+        --         step = self.GridStep or 4.0,
+        --         cx = self.GridCenterX or 0.0,
+        --         cz = self.GridCenterZ or 0.0,
+        --     }
+        -- }
+
         local cells = self:_PickRainCells5()
         local yOff = self.P3_FeatherTargetYOffset or 0.25
+        local sx, sy, sz = self:_GetSpawnPos()
 
         for i=1,#cells do
-            local n = cells[i]
-            local gx, gz = self:_GetGridXZ(n)
+            local cellNum = cells[i]
+            local gx, gz = self:_GetGridXZ(cellNum)
             local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
-            self:SpawnKnifeSingleAtWorld(gx, (gy or 0) + yOff, gz, "P3F"..tostring(n))
-        end
-
-        -- Queue the explosion check to happen when bombs "land"
-        local delay = self.P3_FeatherActivateDelay or 0.90
-
-        self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
-            t = delay,
-            payload = {
-                entityId = self.entityId,
-                cells = cells,
-                dmg = 2,
-
-                -- grid config so PlayerHealth can compute what cell they’re in
-                step = self.GridStep or 4.0,
-                cx = self.GridCenterX or 0.0,
-                cz = self.GridCenterZ or 0.0,
+            
+            -- 1. Spawn the new smart projectile
+            local bombId = Prefab.InstantiatePrefab(self.FeatherBombProjectilePrefab)
+            
+            -- 2. Leave a note on the Global Blackboard for when the bomb wakes up
+            _G.PendingFeatherBombs = _G.PendingFeatherBombs or {}
+            _G.PendingFeatherBombs[bombId] = {
+                sx = sx, sy = sy, sz = sz,
+                tx = gx, ty = gy + yOff, tz = gz,
+                targetCell = cellNum
             }
-        }
+        end
     end,
 
     _GetPlayerGridNumpad = function(self)
@@ -2902,7 +3068,7 @@ return Component {
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
 
-                print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
+                --print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
                 self:_publishSFX("rangedAttack")
 
@@ -2991,7 +3157,7 @@ return Component {
     end,
 
     ResetBossToIdle = function(self)
-        print("[MinibossAI] ResetBossToIdle")
+        --print("[MinibossAI] ResetBossToIdle")
 
         self._move = nil
         self._moveFinished = true
@@ -3039,6 +3205,10 @@ return Component {
             pcall(function() self._animator:ResetTrigger("Taunt") end)
             pcall(function() self._animator:ResetTrigger("Hooked") end)
         end
+
+        self:_publishBossHealth()
+        self:_setBossHealthBarVisible(false)
+        self._bossHealthBarShown = false
     end,
 
     -------------------------------------------------

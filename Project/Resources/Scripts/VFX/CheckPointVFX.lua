@@ -27,22 +27,22 @@ return Component {
         self._healingActive = false
 
         if not self._playerTr then
-            print("PlayerHealingVFX: Player transform not found")
+            --print("PlayerHealingVFX: Player transform not found")
         end
 
         if not self._healingVFXTr then
-            print("PlayerHealingVFX: HealingVFX transform not found")
+            --print("PlayerHealingVFX: HealingVFX transform not found")
         else
             self:SetHealingEmitters(false)  -- ensure off at start
         end
 
         if not _G.event_bus then
-            print("event_bus NOT FOUND")
+            --print("event_bus NOT FOUND")
             return
         end
 
         _G.event_bus.subscribe("activatedCheckpoint", function(data)
-            print("PARENT ENTITY IS: " .. tostring(data.parent))
+            --print("PARENT ENTITY IS: " .. tostring(data.parent))
             self._cpEnt = data.parent
 
             self._cpParticle = GetComponent(self._cpEnt, "ParticleComponent")

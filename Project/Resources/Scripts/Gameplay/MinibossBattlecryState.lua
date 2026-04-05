@@ -16,7 +16,15 @@ function BattlecryState:Enter(ai)
     if _bossAudio then _bossAudio.SpatialBlend = 0 end  -- play as 2D (bypasses distance rolloff)
     ai:_publishSFX("taunt")
 
-    print("[Miniboss] Intro START (battlecry)")
+    -- Add the same screen shake / FX used by the phase
+    if ai._TriggerBossPhaseShake then
+        ai:_TriggerBossPhaseShake()
+    end
+    if ai._TriggerBossPhaseFx then
+        ai:_TriggerBossPhaseFx()
+    end
+
+    --print("[Miniboss] Intro START (battlecry)")
 end
 
 function BattlecryState:Update(ai, dt)
@@ -32,7 +40,7 @@ function BattlecryState:Update(ai, dt)
         -- NEW SYSTEM: just use a timer, no FSM combat states
         ai._postIntroRecoverT = math.max(ai.RecoverDuration or 0.6, 0.35)
 
-        print("[Miniboss] Intro END -> Combat (new system)")
+        --print("[Miniboss] Intro END -> Combat (new system)")
 
         local _bossAudio = GetComponent(ai.entityId, "AudioComponent")
         if _bossAudio then _bossAudio.SpatialBlend = 1 end

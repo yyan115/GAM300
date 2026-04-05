@@ -399,8 +399,8 @@ return Component {
 
         elseif len > 1e-4 and not isRet and not isExt then
             -- Tap on extended idle chain.
-            print(string.format("[ChainBootstrap] TAP extended idle: hookedIsThrowable=%s hookedId=%s len=%.3f",
-                tostring(self._hookedIsThrowable), tostring(self._hookedThrowableEntityId), len))
+            --print(string.format("[ChainBootstrap] TAP extended idle: hookedIsThrowable=%s hookedId=%s len=%.3f",
+            --    tostring(self._hookedIsThrowable), tostring(self._hookedThrowableEntityId), len))
             if self._hookedIsThrowable and self._hookedThrowableEntityId then
                 -- Throw direction: throwable toward player
                 local ep = self.controller.lockedEndPoint
@@ -415,8 +415,8 @@ return Component {
                     local cf = self._cameraForward
                     tdx, tdy, tdz = cf[1], cf[2], cf[3]
                 end
-                print(string.format("[ChainBootstrap] THROW publishing: entityId=%s dir=(%.2f,%.2f,%.2f)",
-                    tostring(self._hookedThrowableEntityId), tdx, tdy, tdz))
+                --print(string.format("[ChainBootstrap] THROW publishing: entityId=%s dir=(%.2f,%.2f,%.2f)",
+                --    tostring(self._hookedThrowableEntityId), tdx, tdy, tdz))
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.throwable_throw", {
                         entityId = self._hookedThrowableEntityId,
@@ -431,7 +431,7 @@ return Component {
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.pull_chain", true)
                 end
-                print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
+                --print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
             else
                 -- Normal (enemy or no hook): retract.
                 -- Determine what we are attached to.
@@ -485,7 +485,7 @@ return Component {
                             _G.event_bus.publish("chain.retract_chain", true)
                         end
                     end
-                    print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
+                    --print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
                 end
             end
         end
@@ -784,7 +784,7 @@ return Component {
                             _G.event_bus.publish("chain.throwable_attached", {
                                 entityId = self._hookedThrowableEntityId,
                             })
-                            print(string.format("[ChainBootstrap] throwable_attached published for id=%s", tostring(self._hookedThrowableEntityId)))
+                            --print(string.format("[ChainBootstrap] throwable_attached published for id=%s", tostring(self._hookedThrowableEntityId)))
                         end
                     end
                 end)
@@ -1139,8 +1139,8 @@ return Component {
         local nowExtended = (self.controller.chainLen or 0) > 1e-4 or self.controller.isExtending or false
         if nowExtended ~= self._lastPublishedExtended then
             self._lastPublishedExtended = nowExtended
-            print(string.format("[ChainBootstrap] chain.extended_changed -> isExtended=%s (chainLen=%.3f)",
-                tostring(nowExtended), self.controller.chainLen or 0))
+            --print(string.format("[ChainBootstrap] chain.extended_changed -> isExtended=%s (chainLen=%.3f)",
+            --    tostring(nowExtended), self.controller.chainLen or 0))
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("chain.extended_changed", { isExtended = nowExtended })
             end
@@ -1180,14 +1180,14 @@ return Component {
             self._spinLogTimer = (self._spinLogTimer or 0) + 1
             if self._spinLogTimer >= 30 then
                 self._spinLogTimer = 0
-                print(string.format("[SpinDBG] facingX=%.3f facingZ=%.3f locked=%s | angle=%.2f | tip=(%.2f,%.2f,%.2f) | start=(%.2f,%.2f,%.2f)",
-                    self._spinFacingX or 0, self._spinFacingZ or 0,
-                    tostring(self._spinFacingLocked),
-                    self._spinAngle,
-                    scripted[spinActiveN] and scripted[spinActiveN][1] or 0,
-                    scripted[spinActiveN] and scripted[spinActiveN][2] or 0,
-                    scripted[spinActiveN] and scripted[spinActiveN][3] or 0,
-                    startPos[1], startPos[2], startPos[3]))
+                --print(string.format("[SpinDBG] facingX=%.3f facingZ=%.3f locked=%s | angle=%.2f | tip=(%.2f,%.2f,%.2f) | start=(%.2f,%.2f,%.2f)",
+                --    self._spinFacingX or 0, self._spinFacingZ or 0,
+                --    tostring(self._spinFacingLocked),
+                --    self._spinAngle,
+                --    scripted[spinActiveN] and scripted[spinActiveN][1] or 0,
+                --    scripted[spinActiveN] and scripted[spinActiveN][2] or 0,
+                --    scripted[spinActiveN] and scripted[spinActiveN][3] or 0,
+                --    startPos[1], startPos[2], startPos[3]))
             end
 
             -- Blend: spinVerletBlend=1 → full Verlet, =0 → full scripted
@@ -1356,7 +1356,7 @@ return Component {
 
         if (nowFlopping and not self._wasFlopping) then
             local reason = nowFlopping and "flop" or "wall-snap"
-            print(string.format("[ChainBootstrap] Chain entered %s — publishing chain.detached to clear interactable veto", reason))
+            --print(string.format("[ChainBootstrap] Chain entered %s — publishing chain.detached to clear interactable veto", reason))
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("chain.detached", {})
             end

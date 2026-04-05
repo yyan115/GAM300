@@ -86,7 +86,7 @@ local function checkDodge(self, attackType, payload)
             payload    = payload,
         })
     end
-    print(string.format("[PlayerHealth] Dodge! Blocked '%s' during dash i-frame", attackType))
+    --print(string.format("[PlayerHealth] Dodge! Blocked '%s' during dash i-frame", attackType))
     return true
 end
 
@@ -280,22 +280,23 @@ return Component {
 
             self._bossRainExplosivesSub = event_bus.subscribe("boss_rain_explosives", function(payload)
                 if not payload then return end
-                if self.CurrentHealth <= 0 then return end
                 if checkDodge(self, "boss_rain_explosives", payload) then return end
                 if self._isIFrame or self._isSlamIFrame then return end
 
                 local px, py, pz = self:GetPosition()
                 if not px then return end
 
-                local cell = playerCellFromXZ(px, pz, payload.cx or 0, payload.cz or 0, payload.step or 4.0)
-                local cells = payload.cells or {}
-                local onDanger = false
-                for i = 1, #cells do
-                    if cells[i] == cell then onDanger = true; break end
-                end
+                local dx = px - (payload.x or 0)
+                local dz = pz - (payload.z or 0)
+                local r  = payload.radius or 5.5
 
-                if onDanger then
-                    PlayerTakeDmg(self, payload.dmg or 1)
+                if (dx*dx + dz*dz) <= (r*r) then
+                    local kbx, kbz = dx, dz
+                    local len = math.sqrt(kbx*kbx + kbz*kbz)
+                    if len > 1e-4 then kbx = kbx/len; kbz = kbz/len
+                    else kbx, kbz = 0, 1 end
+
+                    PlayerTakeDmg(self, payload.dmg or 1, kbx, kbz)
                     self._isIFrame = true
                 end
             end)
@@ -348,7 +349,7 @@ return Component {
             -- then _isIFrame check, then PlayerTakeDmg. Follow the pattern above.
 
         else
-            print("[PlayerHealth] ERROR: event_bus not available!")
+            --print("[PlayerHealth] ERROR: event_bus not available!")
         end
     end,
 

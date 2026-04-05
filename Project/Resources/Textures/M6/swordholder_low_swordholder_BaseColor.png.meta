@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00112163b2385e97-0004b999f002142d",
+        "source": "../../Resources/Textures/M6/swordholder_low_swordholder_BaseColor.png",
+        "compiled": "../../Resources/Textures/M6/swordholder_low_swordholder_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -61,9 +61,9 @@ function M:Update(dt)
     local axisY = axis and axis.y or 0
 
     -- Check if joystick is being used (any non-zero input)
-    local isActive = (axisX ~= 0 or axisY ~= 0) or Input.IsActionPressed("Movement")
+    local isActive = (axisX ~= 0 or axisY ~= 0) or Input.IsActionHeld("Movement")
 
-    if isActive and Input.IsActionPressed("Movement") then
+    if isActive and Input.IsActionHeld("Movement") then
         -- Convert normalized axis (-1 to 1) to visual offset
         local visualX = axisX * self.joystickRadius
         local visualY = axisY * self.joystickRadius

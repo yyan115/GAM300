@@ -176,7 +176,7 @@ return Component {
                     if input:HasBufferedDash() then
                         input:ConsumeBufferedDash()
                         self._queuedCombo = nil
-                        print("[ComboManager] DASH CANCEL: heavy_charge -> dash")
+                        --print("[ComboManager] DASH CANCEL: heavy_charge -> dash")
                         self:_transitionTo("dash")
                         return
                     end
@@ -184,7 +184,7 @@ return Component {
                     -- Jump cancel: exit charge cleanly; PlayerMovement fires the jump this frame
                     if input:IsJumpJustPressed() and not _G.player_is_jumping then
                         self._queuedCombo = nil
-                        print("[ComboManager] JUMP CANCEL: heavy_charge -> idle")
+                        --print("[ComboManager] JUMP CANCEL: heavy_charge -> idle")
                         self:_transitionTo("idle")
                         return
                     end
@@ -230,7 +230,7 @@ return Component {
                             lunge         = self.COMBO_TREE["heavy_release"].lunge,
                         })
                     end
-                    print("[ComboManager] Heavy released: " .. math.floor(chargePercent * 100) .. "% charge")
+                    --print("[ComboManager] Heavy released: " .. math.floor(chargePercent * 100) .. "% charge")
                 end,
 
                 transitions = {
@@ -383,21 +383,21 @@ return Component {
     Start = function(self)
         local playerEntityId = Engine.GetEntityByName("Player")
         if not playerEntityId then
-            print("[ComboManager] ERROR: Player entity not found!")
+            --print("[ComboManager] ERROR: Player entity not found!")
             return
         end
         self._playerEntityId = playerEntityId
-        print("[ComboManager] Player entity found (ID: " .. tostring(playerEntityId) .. ")")
+        --print("[ComboManager] Player entity found (ID: " .. tostring(playerEntityId) .. ")")
 
         self._animator = Engine.FindAnimatorByName("Player")
         if not self._animator then
-            print("[ComboManager] ERROR: Player AnimationComponent not found!")
+            --print("[ComboManager] ERROR: Player AnimationComponent not found!")
             return
         end
 
         self._inputInterpreter = _G.InputInterpreter
         if not self._inputInterpreter then
-            print("[ComboManager] ERROR: InputInterpreter not found!")
+            --print("[ComboManager] ERROR: InputInterpreter not found!")
             return
         end
 
@@ -413,19 +413,19 @@ return Component {
             self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if payload and payload.isThrowable then
                     self._chainHasThrowable = true
-                    print("[ComboManager] Throwable hooked - chain_attack blocked")
+                    --print("[ComboManager] Throwable hooked - chain_attack blocked")
                 end
             end)
             self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function()
                 if self._chainHasThrowable then
                     self._chainHasThrowable = false
-                    print("[ComboManager] Throwable released - chain_attack unblocked")
+                    --print("[ComboManager] Throwable released - chain_attack unblocked")
                 end
             end)
             self._subThrowFired = _G.event_bus.subscribe("chain.throwable_throw", function()
                 if self._chainHasThrowable then
                     self._chainHasThrowable = false
-                    print("[ComboManager] Throwable thrown - chain_attack unblocked")
+                    --print("[ComboManager] Throwable thrown - chain_attack unblocked")
                 end
             end)
             self._chainExtendedSub = _G.event_bus.subscribe("chain.extended_changed", function(payload)
@@ -440,7 +440,7 @@ return Component {
         if _G.event_bus and _G.event_bus.subscribe then
             self._attacksEnabledSub = _G.event_bus.subscribe("set_attacks_enabled", function(enabled)
                 self.AttacksEnabled = (enabled ~= false)
-                print("[ComboManager] AttacksEnabled = " .. tostring(self.AttacksEnabled))
+                --print("[ComboManager] AttacksEnabled = " .. tostring(self.AttacksEnabled))
             end)
         end
 
@@ -470,7 +470,7 @@ return Component {
             end)
         end
 
-        print("[ComboManager] Initialized successfully")
+        --print("[ComboManager] Initialized successfully")
     end,
 
     Update = function(self, dt)
@@ -489,8 +489,8 @@ return Component {
                 -- Always allow if chain is already extended (retract path).
                 -- Block only if retracted and cooldown is active (would start new extension).
                 local chainIsOut = self._chainIsExtended
-                print(string.format("[ComboManager] chain press: cooldown=%.2f isExtended=%s",
-                    self._chainAttackCooldown, tostring(chainIsOut)))
+                --print(string.format("[ComboManager] chain press: cooldown=%.2f isExtended=%s",
+                --    self._chainAttackCooldown, tostring(chainIsOut)))
                 if self._chainAttackCooldown <= 0 or chainIsOut then
                     event_bus.publish("chain.down", {})
                     self._chainPressBlocked = false
@@ -557,7 +557,7 @@ return Component {
         -- Block all combo input during dash
         if _G.player_is_dashing then
             if self._queuedCombo then
-                print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
+                --print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
                 self._queuedCombo = nil
             end
             return
@@ -636,7 +636,7 @@ return Component {
             if input:HasBufferedDash() and state.transitions.dash then
                 input:ConsumeBufferedDash()
                 self._queuedCombo = nil
-                print("[ComboManager] DASH CANCEL: " .. state.id .. " -> dash")
+                --print("[ComboManager] DASH CANCEL: " .. state.id .. " -> dash")
                 self:_transitionTo("dash")
                 return
             end
@@ -645,14 +645,14 @@ return Component {
                 if state.transitions.jump then
                     -- Lift attack: this state explicitly launches into an aerial state
                     self._queuedCombo = nil
-                    print("[ComboManager] LIFT ATTACK: " .. state.id .. " -> " .. state.transitions.jump)
+                    --print("[ComboManager] LIFT ATTACK: " .. state.id .. " -> " .. state.transitions.jump)
                     self:_transitionTo(state.transitions.jump)
                     return
                 elseif not state.isAerial then
                     -- Jump cancel: no lift on this state — exit to idle so
                     -- PlayerMovement's jump check fires naturally this frame.
                     self._queuedCombo = nil
-                    print("[ComboManager] JUMP CANCEL: " .. state.id .. " -> idle")
+                    --print("[ComboManager] JUMP CANCEL: " .. state.id .. " -> idle")
                     self:_transitionTo("idle")
                     return
                 end
@@ -744,7 +744,7 @@ return Component {
                     input:ConsumeBufferedChain()
                 end
             else
-                print("[ComboManager] chain input suppressed - throwable hooked")
+                --print("[ComboManager] chain input suppressed - throwable hooked")
             end
 
         elseif input:HasBufferedDash() then
@@ -768,7 +768,7 @@ return Component {
             input:ConsumeBufferedDash()
         end
 
-        print("[ComboManager] Candidate: " .. tostring(candidateStateId) .. " from: " .. state.id)
+        --print("[ComboManager] Candidate: " .. tostring(candidateStateId) .. " from: " .. state.id)
 
         -- Idle → transition immediately
         if state.id == "idle" then
@@ -814,14 +814,14 @@ return Component {
     _transitionTo = function(self, stateId, data)
         local newState = self.COMBO_TREE[stateId]
         if not newState then
-            print("[ComboManager] ERROR: Invalid state: " .. tostring(stateId))
+            --print("[ComboManager] ERROR: Invalid state: " .. tostring(stateId))
             return
         end
         if stateId == "chain_attack" then
             self._chainAttackCooldown = self.ChainAttackCooldown or 0.6
         end
         if not self._animator then
-            print("[ComboManager] ERROR: Animator not available for transition")
+            --print("[ComboManager] ERROR: Animator not available for transition")
             return
         end
 
@@ -900,8 +900,8 @@ return Component {
             })
         end
 
-        print("[ComboManager] " .. oldState.id .. " -> " .. stateId
-            .. " (ComboStep: " .. newState.animParam .. ")")
+        --print("[ComboManager] " .. oldState.id .. " -> " .. stateId
+        --    .. " (ComboStep: " .. newState.animParam .. ")")
 
         -- ── State entry callbacks ─────────────────────────────────────────
         if newState.onEnter then

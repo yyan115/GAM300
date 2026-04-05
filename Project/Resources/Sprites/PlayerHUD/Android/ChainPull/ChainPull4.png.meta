@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c73b4b29bd-0004b907dc000019",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/ChainPull/ChainPull4.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/ChainPull/ChainPull4.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

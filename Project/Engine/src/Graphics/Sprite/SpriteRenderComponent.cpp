@@ -31,6 +31,20 @@ REFL_REGISTER_START(SpriteRenderComponent)
 REFL_REGISTER_END
 #pragma endregion
 
+void SpriteRenderComponent::SetTextureFromPath(const std::string& path) {
+	if (path.empty()) {
+		ENGINE_LOG_ERROR("[SpriteRenderComponent] SetTextureFromPath called with empty path");
+		return;
+	}
+	auto loadedTexture = ResourceManager::GetInstance().GetResource<Texture>(path);
+	if (!loadedTexture) {
+		ENGINE_LOG_ERROR("[SpriteRenderComponent] SetTextureFromPath: Failed to load texture: " + path);
+		return;
+	}
+	texture = loadedTexture;
+	texturePath = path;
+}
+
 void SpriteRenderComponent::SetTextureFromGUID(const std::string& guidString) {
 	if (guidString.empty()) {
 		ENGINE_LOG_ERROR("[SpriteRenderComponent] SetTextureFromGUID called with empty GUID string");

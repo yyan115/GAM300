@@ -53,10 +53,10 @@ return Component {
                         wasHovered = false
                     }
                 else
-                    print("[SettingsButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
+                    --print("[SettingsButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
                 end
             else
-                print("[SettingsButtonHandler] Warning: Missing entity " .. config.base)
+                --print("[SettingsButtonHandler] Warning: Missing entity " .. config.base)
             end
         end
     end,

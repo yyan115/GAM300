@@ -46,7 +46,7 @@ return Component {
                         config.storage[buttonName] = buttonComp
                     end
                 else
-                    print("[ButtonStateHandler] Warning: Entity " .. buttonName .. " not found")
+                    --print("[ButtonStateHandler] Warning: Entity " .. buttonName .. " not found")
                 end
             end
         end

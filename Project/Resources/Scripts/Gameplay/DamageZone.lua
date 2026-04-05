@@ -85,7 +85,7 @@ return Component {
         self._lastHit[entityId] = t
 
         if self.Debug then
-            print(string.format("[DamageZone] DAMAGE -> entity=%s dmg=%s", tostring(entityId), tostring(self.Damage)))
+            --print(string.format("[DamageZone] DAMAGE -> entity=%s dmg=%s", tostring(entityId), tostring(self.Damage)))
         end
 
         if event_bus and event_bus.publish then

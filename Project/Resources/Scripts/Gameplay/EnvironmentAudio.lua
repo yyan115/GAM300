@@ -17,6 +17,7 @@ EVENTS CONSUMED:
     game_paused            → Pause/UnPause the WeaponPickup hover audio
     door_mash_sound        → play MashSoundClip on the breakable door entity
     door_final_mash_sound  → play FinalMashSoundClip on the breakable door entity
+    candle_lit             → play CandleLitSFX (fires once per candle pair during boss room sequence)
     boss_narrative_started → fade BGM bus down to BGMNarrativeVolume
     boss_narrative_ended   → stop BGM1, play BossBGM, fade BGM bus back to full
     boss_killed            → stop BossBGM, unmute+play BGM1, fade BGM bus back to full
@@ -46,6 +47,7 @@ return Component {
         doorOpenSFX            = {},
         MashSoundClip          = {},
         FinalMashSoundClip     = {},
+        CandleLitSFX           = {},
         BGMFadeDuration        = 2.0,
         BGMNarrativeVolume     = 0.1,
     },
@@ -65,7 +67,7 @@ return Component {
         if _G.event_bus and _G.event_bus.unsubscribe then
             local stale = {
                 "_pickupAuraSub", "_pickupSub", "_doorSub", "_gamePausedSub",
-                "_doorMashSub", "_doorFinalMashSub",
+                "_doorMashSub", "_doorFinalMashSub", "_candleLitSub",
                 "_narrativeStartedSub", "_narrativeEndedSub",
                 "_bossKilledSub", "_playerDeadSub", "_respawnPlayerSub",
             }
@@ -75,7 +77,7 @@ return Component {
         end
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[EnvironmentAudio] WARNING: event_bus not available in Awake")
+            --print("[EnvironmentAudio] WARNING: event_bus not available in Awake")
             return
         end
 
@@ -105,6 +107,11 @@ return Component {
         -- Door opened
         self._doorSub = _G.event_bus.subscribe("env_door_opened", function(_)
             AudioHelper.PlayRandomSFX(self._audio, self.doorOpenSFX)
+        end)
+
+        -- Candle lit — fires once per candle pair during the boss room light-up sequence
+        self._candleLitSub = _G.event_bus.subscribe("candle_lit", function(_)
+            AudioHelper.PlayRandomSFX(self._audio, self.CandleLitSFX)
         end)
 
         -- Breakable door mash sound — clips configured here, played on the door entity
@@ -150,9 +157,9 @@ return Component {
                 if bossBGMAudio then bossBGMAudio:Play() end
             end
 
-            -- Fade BGM bus back to full — BossBGM fades in
+            -- Fade BGM bus back to user's configured volume — BossBGM fades in
             self._bgmFadeFrom   = Audio.GetBusVolume("BGM")
-            self._bgmFadeTo     = 1.0
+            self._bgmFadeTo     = GameSettings.GetBGMVolume()
             self._bgmFadeTimer  = 0.0
             self._bgmFadeActive = true
         end)
@@ -171,7 +178,7 @@ return Component {
                 local bossBGMAudio = GetComponent(bossBGMEnt, "AudioComponent")
                 if bossBGMAudio then bossBGMAudio:Stop() end
             end
-            Audio.SetBusVolume("BGM", 1.0)
+            Audio.SetBusVolume("BGM", GameSettings.GetBGMVolume())
         end)
 
         -- Respawn — restore BGM1 fully (mute state persists across respawn)
@@ -199,7 +206,7 @@ return Component {
         end
 
         self._bgmFadeFrom   = Audio.GetBusVolume("BGM")
-        self._bgmFadeTo     = 1.0
+        self._bgmFadeTo     = GameSettings.GetBGMVolume()
         self._bgmFadeTimer  = 0.0
         self._bgmFadeActive = true
     end,
@@ -208,7 +215,7 @@ return Component {
         -- AudioEnvManager's own AudioComponent (for pickup + door SFX)
         self._audio = self:GetComponent("AudioComponent")
         if not self._audio then
-            print("[EnvironmentAudio] WARNING: no AudioComponent found on AudioEnvManager entity")
+            --print("[EnvironmentAudio] WARNING: no AudioComponent found on AudioEnvManager entity")
         end
 
         -- WeaponPickup entity's AudioComponent (positional looping hover SFX)
@@ -218,10 +225,10 @@ return Component {
             if self._pickupAudio then
                 self._pickupAudio:Play()
             else
-                print("[EnvironmentAudio] WARNING: no AudioComponent on " .. self.weaponPickupEntityName)
+                --print("[EnvironmentAudio] WARNING: no AudioComponent on " .. self.weaponPickupEntityName)
             end
         else
-            print("[EnvironmentAudio] WARNING: entity not found: " .. self.weaponPickupEntityName)
+            --print("[EnvironmentAudio] WARNING: entity not found: " .. self.weaponPickupEntityName)
         end
     end,
 
@@ -241,7 +248,7 @@ return Component {
         if _G.event_bus and _G.event_bus.unsubscribe then
             local subs = {
                 "_pickupAuraSub", "_pickupSub", "_doorSub", "_gamePausedSub",
-                "_doorMashSub", "_doorFinalMashSub",
+                "_doorMashSub", "_doorFinalMashSub", "_candleLitSub",
                 "_narrativeStartedSub", "_narrativeEndedSub",
                 "_bossKilledSub", "_playerDeadSub", "_respawnPlayerSub",
             }

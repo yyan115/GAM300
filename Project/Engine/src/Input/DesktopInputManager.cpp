@@ -17,11 +17,11 @@ DesktopInputManager::DesktopInputManager(IPlatform* platform)
 
 // ========== IInputSystem Interface Implementation ==========
 
-bool DesktopInputManager::IsActionPressed(const std::string& action) {
+bool DesktopInputManager::IsActionHeld(const std::string& action) {
     return m_currentActions.count(action) > 0;
 }
 
-bool DesktopInputManager::IsActionJustPressed(const std::string& action) {
+bool DesktopInputManager::IsActionPressed(const std::string& action) {
     return m_currentActions.count(action) > 0 &&
            m_previousActions.count(action) == 0;
 }
@@ -312,7 +312,7 @@ std::unordered_map<std::string, bool> DesktopInputManager::GetAllActionStates() 
 
     // Include all configured actions (false if not pressed)
     for (const auto& [actionName, binding] : m_actionBindings) {
-        states[actionName] = IsActionPressed(actionName);
+        states[actionName] = IsActionHeld(actionName);
     }
 
     return states;

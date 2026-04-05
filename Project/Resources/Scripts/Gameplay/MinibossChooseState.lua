@@ -19,7 +19,7 @@ function ChooseState:Update(ai, dt)
         ai._noMoveLogT = (ai._noMoveLogT or 0) + (dt or 0)
         if ai._noMoveLogT >= 0.5 then
             ai._noMoveLogT = 0
-            print(string.format("[Miniboss][Pick] phase=%d NO AVAILABLE MOVES -> recover %.2fs", ai:GetPhase(), wait))
+            --print(string.format("[Miniboss][Pick] phase=%d NO AVAILABLE MOVES -> recover %.2fs", ai:GetPhase(), wait))
         end
 
         ai._recoverTimer = wait

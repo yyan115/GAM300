@@ -125,7 +125,7 @@ return Component {
         if self.Health <= 0 then
             newState = FALL
         -- Debug key removed - use proper damage system instead
-        -- elseif Input.IsActionJustPressed("DebugDamage") then
+        -- elseif Input.IsActionPressed("DebugDamage") then
         --     TakeDamage(self)
         --     newState = TAKE_DAMAGE
         elseif IsPlayerInRange() then

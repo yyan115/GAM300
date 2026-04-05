@@ -17,7 +17,7 @@ return Component {
     -- Called every frame
     Update = function(self, dt)
         if not self._rb then 
-            print("rigidbody cant be found")
+            --print("rigidbody cant be found")
             return
         end
 

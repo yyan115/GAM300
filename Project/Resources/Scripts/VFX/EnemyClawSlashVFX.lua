@@ -54,7 +54,7 @@ return Component {
 
         if _G.event_bus then
             self._slashSub = _G.event_bus.subscribe("onClawSlashTrigger", function(data)
-                print(string.format("[EnemyClawSlashVFX] Entity %d onClawSlashTrigger received", self.entityId))
+                --print(string.format("[EnemyClawSlashVFX] Entity %d onClawSlashTrigger received", self.entityId))
                 self:OnEventReceived(data)
             end)
         end
@@ -104,7 +104,7 @@ return Component {
         self.timer = 0
         self.slashTriggered = true
         self.isEventPending = false
-        print(string.format("[EnemyClawSlashVFX] Entity %d set visible", self.entityId));
+        --print(string.format("[EnemyClawSlashVFX] Entity %d set visible", self.entityId));
         self.model = self:GetComponent("ModelRenderComponent")
         if self.model then self.model.isVisible = true end
     end,

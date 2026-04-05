@@ -256,7 +256,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 15
+                            "data": 25
                         },
                         {
                             "type": "std::string",
@@ -319,6 +319,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 70
                         },
                         {
                             "type": "Vector3D",

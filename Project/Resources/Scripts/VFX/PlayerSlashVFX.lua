@@ -50,7 +50,7 @@ return Component {
         local daggerEntityId = Engine.GetEntityByName("LowPolyFeatherChain")
 
         if not playerEntityId or not daggerEntityId then
-            print("[SlashVFX] ERROR: Player or Dagger not found!")
+            --print("[SlashVFX] ERROR: Player or Dagger not found!")
             return
         end
 

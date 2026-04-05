@@ -2,7 +2,7 @@
 local HurtState = {}
 
 function HurtState:Enter(ai)
-    print("[GroundHurtState] ENTER")
+    --print("[GroundHurtState] ENTER")
     ai:FacePlayer()
 
     --print("[GroundHurtState] FACED PLAYER")
@@ -47,7 +47,7 @@ function HurtState:Update(ai, dt)
 end
 
 function HurtState:Exit(ai)
-    print("[GroundHurtState] Animator:SetBool(Hurt, false)")
+    --print("[GroundHurtState] Animator:SetBool(Hurt, false)")
     ai._animator:SetBool("Hurt1", false)
     ai._animator:SetBool("Hurt2", false)
     ai._animator:SetBool("Hurt3", false)

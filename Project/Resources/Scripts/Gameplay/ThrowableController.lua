@@ -16,13 +16,13 @@ return Component {
     },
 
     Start = function(self)
-        print("[TC:Start] ---- ThrowableController booting ----")
+        --print("[TC:Start] ---- ThrowableController booting ----")
 
         self._rigidbody = self:GetComponent("RigidBodyComponent")
         if self._rigidbody then
-            print(string.format("[TC:Start] RigidBodyComponent FOUND. motionID=%s", tostring(self._rigidbody.motionID)))
+            --print(string.format("[TC:Start] RigidBodyComponent FOUND. motionID=%s", tostring(self._rigidbody.motionID)))
         else
-            print("[TC:Start] ERROR: RigidBodyComponent NOT FOUND")
+            --print("[TC:Start] ERROR: RigidBodyComponent NOT FOUND")
         end
 
         self._entityId = nil
@@ -48,8 +48,8 @@ return Component {
             pcall(function() self._transform = Engine.FindTransformByID(self._rootEntityId) end)
         end
 
-        print(string.format("[TC:Start] rootEntityId=%s transform=%s",
-            tostring(self._rootEntityId), tostring(self._transform)))
+        --print(string.format("[TC:Start] rootEntityId=%s transform=%s",
+        --    tostring(self._rootEntityId), tostring(self._transform)))
 
         self._attached      = false
         self._isBeingThrown = false
@@ -64,7 +64,7 @@ return Component {
         self._dbgTimer      = 0
 
         if not _G.event_bus then
-            print("[TC:Start] ERROR: _G.event_bus is NIL")
+            --print("[TC:Start] ERROR: _G.event_bus is NIL")
             return
         end
 
@@ -75,8 +75,8 @@ return Component {
 
         self._subThrow = _G.event_bus.subscribe("chain.throwable_throw", function(payload)
             if not payload or payload.entityId ~= self._rootEntityId then return end
-            print(string.format("[TC:Event] throwable_throw dir=(%.2f,%.2f,%.2f)",
-                payload.dirX or 0, payload.dirY or 0, payload.dirZ or 0))
+            --print(string.format("[TC:Event] throwable_throw dir=(%.2f,%.2f,%.2f)",
+            --    payload.dirX or 0, payload.dirY or 0, payload.dirZ or 0))
             pcall(function() self:_onThrow(payload) end)
         end)
 
@@ -101,7 +101,7 @@ return Component {
             end
         end)
 
-        print("[TC:Start] subscriptions OK. rootEntityId=" .. tostring(self._rootEntityId))
+        --print("[TC:Start] subscriptions OK. rootEntityId=" .. tostring(self._rootEntityId))
     end,
 
     _onAttached = function(self)
@@ -115,13 +115,13 @@ return Component {
         self._chainLength   = 0
         if self._rigidbody then
             self._rigidbody.motionID = 2
-            print("[TC:_onAttached] motionID -> 2 (DYNAMIC)")
+            --print("[TC:_onAttached] motionID -> 2 (DYNAMIC)")
         end
     end,
 
     _onThrow = function(self, payload)
         if not self._rigidbody then
-            print("[TC:_onThrow] ERROR: _rigidbody nil")
+            --print("[TC:_onThrow] ERROR: _rigidbody nil")
             return
         end
 
@@ -148,7 +148,7 @@ return Component {
         if lv then lv.x,lv.y,lv.z = 0,0,0 end
         if av then av.x,av.y,av.z = 0,0,0 end
 
-        print(string.format("[TC:_onThrow] throw started dir=(%.2f,%.2f,%.2f) lift=%.2f", dx, dy, dz, liftBias))
+        --print(string.format("[TC:_onThrow] throw started dir=(%.2f,%.2f,%.2f) lift=%.2f", dx, dy, dz, liftBias))
     end,
 
     _onDetached = function(self)
@@ -161,7 +161,7 @@ return Component {
             local lv = self._rigidbody.linearVel; if lv then lv.x,lv.y,lv.z = 0,0,0 end
             local av = self._rigidbody.angularVel; if av then av.x,av.y,av.z = 0,0,0 end
         end
-        print(string.format("[TC:_onDetached] id=%s", tostring(self._rootEntityId)))
+        --print(string.format("[TC:_onDetached] id=%s", tostring(self._rootEntityId)))
     end,
 
     _readWorldPos = function(self, transform)
@@ -191,9 +191,9 @@ return Component {
             local vy = lv and (lv.y or 0) or 0
             local vz = lv and (lv.z or 0) or 0
             local stretch = math.max(0, (self._effectiveDist or 0) - (self._chainLength or 0))
-            print(string.format("[TC:Update] attached=%s stretch=%.3f effDist=%.2f chainLen=%.2f | vel=(%.2f,%.2f,%.2f)",
-                tostring(self._attached), stretch,
-                self._effectiveDist or 0, self._chainLength or 0, vx, vy, vz))
+            --print(string.format("[TC:Update] attached=%s stretch=%.3f effDist=%.2f chainLen=%.2f | vel=(%.2f,%.2f,%.2f)",
+            --    tostring(self._attached), stretch,
+            --    self._effectiveDist or 0, self._chainLength or 0, vx, vy, vz))
         end
 
         -- ── SPRING PULL ────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ return Component {
             end)
             if t >= 1.0 then
                 self._isBeingThrown = false
-                print("[TC:Update] throw force ramp complete")
+                --print("[TC:Update] throw force ramp complete")
             end
         end
 
@@ -282,7 +282,7 @@ return Component {
                     self._restTimer = nil
                     local lv = self._rigidbody.linearVel; if lv then lv.x,lv.y,lv.z = 0,0,0 end
                     local av = self._rigidbody.angularVel; if av then av.x,av.y,av.z = 0,0,0 end
-                    print(string.format("[TC:Update] object at rest (speed=%.4f)", speed))
+                    --print(string.format("[TC:Update] object at rest (speed=%.4f)", speed))
                 end
             end
         end

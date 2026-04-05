@@ -24,6 +24,11 @@ return Component {
         if swEntity then
             self._soundwaveAnim = GetComponent(swEntity, "SpriteAnimationComponent")
         end
+
+        local speakerEnt = Engine.GetEntityByName("SpeakerText")
+        if speakerEnt then
+            self._speakerText = GetComponent(speakerEnt, "TextRenderComponent")
+        end
     end,
 
     _setVisualsActive = function(self, active)
@@ -47,10 +52,17 @@ return Component {
             self._isHidden = false
 
             if currentIndex >= 0 then
+                -- Update speaker name
+                if self._speakerText then
+                    local isBoss = (currentIndex >= 5 and currentIndex <= 7)
+                               or (currentIndex >= 9 and currentIndex <= 11)
+                    self._speakerText.text = isBoss and "Boss" or "Kusane"
+                end
+
                 -- Resolve display duration from dialogue entry (Time mode) or fallback
                 local autoTime = DialogueManager.GetCurrentEntryAutoTime(self.dialogueName)  
                 self._currentDisplayTime = (autoTime > 0) and autoTime or self.entryDisplayTime
-                print("Current Dialogue Index:", currentIndex, "AutoTime:", autoTime, "Set display time to:", self._currentDisplayTime)
+                --print("Current Dialogue Index:", currentIndex, "AutoTime:", autoTime, "Set display time to:", self._currentDisplayTime)
 
                 -- Play VO for this entry
                 local guidIndex = currentIndex + 1  -- Lua is 1-indexed
