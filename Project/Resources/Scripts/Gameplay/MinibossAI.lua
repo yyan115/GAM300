@@ -3184,7 +3184,8 @@ return Component {
         self._meleeCdT = 0
 
         -- no cutscene replay, but boss must re-aggro later
-        self._introDone = true
+        -- Keep _introDone as-is: if intro never played, stay false so HP bar gate (line 521) stays blocked
+        -- self._introDone = true
         self._inIntro = false
         self._combatActive = false
 
