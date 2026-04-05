@@ -22,10 +22,26 @@ return Component {
         -- Seconds the collider stays expanded before snapping back to normal.
         -- Set this to roughly half your lift/air/slam attack animation window.
         ExpandDuration        = 0.500,
-        -- How much to add to capsule/sphere/cylinder radius during the expand window.
+        -- How much to add to capsule/sphere/cylinder radius during the expand window
+        -- for LIFT and SLAM hit types.
         ActiveRadiusBonus     = 2.400,
-        -- How much to add to capsule/cylinder half-height during the expand window.
+        -- How much to add to capsule/cylinder half-height for LIFT and SLAM.
         ActiveHalfHeightBonus = 1.600,
+
+        -- AIR hits use separate (larger) expansion values because the player is
+        -- airborne and offset vertically from the enemy. Bigger reach = easier hits.
+        AirActiveRadiusBonus     = 3.200,
+        AirActiveHalfHeightBonus = 2.800,
+
+        -- SLAM hits use their own expansion values. The player is diving downward
+        -- so the collider needs extra reach in both radius and height to catch
+        -- enemies the player passes through or is already overlapping.
+        SlamActiveRadiusBonus     = 3.500,
+        SlamActiveHalfHeightBonus = 3.000,
+
+        -- Proximity range for the slam_attack_active broadcast (world units).
+        -- Matches the same fallback logic LIFT uses when OnTriggerEnter is unreliable.
+        SlamProximityRange = 3.5,
     },
 
     Awake = function(self)
@@ -102,8 +118,8 @@ return Component {
                     self._isExpanded  = true
                 end
 
-                --print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d knockback=%.1f",
-                --    self._currentHitType, self._currentDamage, self._currentKnockback))
+                print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d knockback=%.1f",
+                    self._currentHitType, self._currentDamage, self._currentKnockback))
 
                 -- LIFT: the weapon sweeps upward so OnTriggerEnter may never fire
                 -- against a grounded enemy. Broadcast a proximity event instead —
@@ -114,6 +130,20 @@ return Component {
                         event_bus.publish("lift_attack_active", {
                             damage    = self._currentDamage,
                             knockback = self._currentKnockback,
+                        })
+                    end
+                end
+
+                -- SLAM: player is diving downward through the enemy so OnTriggerEnter
+                -- is unreliable (enemy may already be inside the collider when the RB
+                -- is enabled). Broadcast a proximity event so each airborne EnemyAI
+                -- can self-check and apply the SLAM hit if in range.
+                if self._currentHitType == "SLAM" then
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("slam_attack_active", {
+                            damage    = self._currentDamage,
+                            knockback = self._currentKnockback,
+                            range     = tonumber(self.SlamProximityRange) or 3.5,
                         })
                     end
                 end
@@ -174,14 +204,25 @@ return Component {
     end,
 
     -- Expand capsule / sphere / cylinder by the Active*Bonus fields.
+    -- AIR hit type uses its own (larger) set of bonus values so the weapon
+    -- collider reaches the enemy while both are airborne at different heights.
     -- Values are written BEFORE the RigidBody is enabled. The RB enable creates
     -- a fresh physics body that reads the current collider dimensions at that moment,
     -- so no collider toggle is needed — toggling it while the RB is off causes
     -- the trigger to stop firing entirely.
     _expandCollider = function(self)
         if not self._collider then return end
-        local rBonus  = tonumber(self.ActiveRadiusBonus)     or 0
-        local hhBonus = tonumber(self.ActiveHalfHeightBonus) or 0
+        local rBonus, hhBonus
+        if self._currentHitType == "AIR" then
+            rBonus  = tonumber(self.AirActiveRadiusBonus)     or 0
+            hhBonus = tonumber(self.AirActiveHalfHeightBonus) or 0
+        elseif self._currentHitType == "SLAM" then
+            rBonus  = tonumber(self.SlamActiveRadiusBonus)     or 0
+            hhBonus = tonumber(self.SlamActiveHalfHeightBonus) or 0
+        else
+            rBonus  = tonumber(self.ActiveRadiusBonus)     or 0
+            hhBonus = tonumber(self.ActiveHalfHeightBonus) or 0
+        end
         pcall(function()
             if self._baseCapR  ~= nil then self._collider.capsuleRadius      = self._baseCapR  + rBonus  end
             if self._baseCapHH ~= nil then self._collider.capsuleHalfHeight  = self._baseCapHH + hhBonus end
@@ -222,12 +263,18 @@ return Component {
 
         local targetId = self:_toRoot(otherEntityId)
 
-        --print(string.format("[AttackHitbox] OnTriggerEnter: targetId=%s hitType=%s active=%s",
-        --    tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
+        print(string.format("[AttackHitbox] OnTriggerEnter: targetId=%s hitType=%s active=%s",
+            tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
 
         if self._playerEntityId and targetId == self._playerEntityId then return end
+
         local targetTagComp = GetComponent(targetId, "TagComponent")
-        if not (targetTagComp and Tag and Tag.Compare and (Tag.Compare(targetTagComp.tagIndex, "Enemy") or Tag.Compare(targetTagComp.tagIndex, "Boss"))) then return end
+        local isEnemy = targetTagComp and Tag and Tag.Compare
+            and (Tag.Compare(targetTagComp.tagIndex, "Enemy") or Tag.Compare(targetTagComp.tagIndex, "Boss"))
+        local isProp  = targetTagComp and Tag and Tag.Compare
+            and Tag.Compare(targetTagComp.tagIndex, "Prop")
+
+        if not isEnemy and not isProp then return end
         if self._hitThisSwing[targetId] then return end
         self._hitThisSwing[targetId] = true
 
@@ -238,8 +285,8 @@ return Component {
                 hitType   = self._currentHitType or "COMBO",
                 knockback = self._currentKnockback or 0,
             })
-            --print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f",
-            --    tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))
+            print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f",
+                tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))
         end
     end,
 }

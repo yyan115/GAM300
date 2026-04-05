@@ -1292,7 +1292,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "int",
@@ -1623,7 +1623,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 88
+                            "data": 90
                         },
                         {
                             "type": "int",
@@ -1642,7 +1642,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 8.5
                                 }
                             ]
                         },

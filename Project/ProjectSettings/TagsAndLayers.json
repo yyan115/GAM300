@@ -21,7 +21,8 @@
         "Vfx",
         "NoCameraCollision",
         "Staircase",
-        "Interactable"
+        "Interactable",
+        "Prop"
     ],
     "layers": [
         {

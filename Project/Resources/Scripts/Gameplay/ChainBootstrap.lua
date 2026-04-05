@@ -275,6 +275,7 @@ return Component {
             -- _pendingSpinRelease lets Update keep spinning until the tip
             -- points at camera forward within SpinReleaseAngleTolerance.
             self._pendingSpinRelease = true
+            self._spinReleaseTimer  = 0
             dbg("[ChainBootstrap] SpinRelease pending — waiting for correct angle window")
             -- Held from retracted: fire toward crosshair world point on release.
             local dir = self:_directionToAimPoint()
@@ -931,10 +932,12 @@ return Component {
 
         -- Angle continuity: when facing rotates mid-spin, adjust _spinAngle so the
         -- tip stays at the same world position instead of teleporting.
+        -- Skip this correction once the button is released (_pendingSpinRelease),
+        -- so the angle can advance freely to hit the release window.
         local prevFX = self._spinPrevFacingX or fx
         local prevFZ = self._spinPrevFacingZ or fz
         local facingChanged = math.abs(prevFX - fx) > 1e-4 or math.abs(prevFZ - fz) > 1e-4
-        if facingChanged and self._spinTime > 0.05 then
+        if facingChanged and self._spinTime > 0.05 and not self._pendingSpinRelease then
             local prevCa = math.cos(angle)
             local prevSa = math.sin(angle)
             local tipFwdComponent = (prevFX * fx + prevFZ * fz) * prevCa
@@ -972,6 +975,7 @@ return Component {
         self._spinCurrentSpeed   = 0
         self._spinVerletBlend    = 1.0
         self._pendingSpinRelease = false
+        self._spinReleaseTimer   = 0
         self._spinFacingX        = 0
         self._spinFacingZ        = 1
         self._spinFacingLocked   = false
@@ -1257,6 +1261,10 @@ return Component {
 
             -- Release window check (only when button has been released)
             if spinPending then
+                -- Safety timeout: if spin release never finds the angle window
+                -- (e.g. facing jitter on Android), force release after 0.5s
+                self._spinReleaseTimer = (self._spinReleaseTimer or 0) + dt
+
                 local tolRad = math.rad(tonumber(self.SpinReleaseAngleTolerance) or 20.0)
                 -- At high spin speeds the tip can skip past the window in a single frame.
                 -- Extend the window by half the frame's angular step to guarantee it
@@ -1268,8 +1276,8 @@ return Component {
                 local a = self._spinAngle % (2 * math.pi)
                 if a > math.pi then a = a - 2 * math.pi end
 
-                if math.abs(a) <= extendedTol then
-                    dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f", a, extendedTol))
+                if math.abs(a) <= extendedTol or self._spinReleaseTimer > 0.5 then
+                    --dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f timeout=%s", a, extendedTol, tostring(self._spinReleaseTimer > 0.5)))
                     local cf = self:_directionToAimPoint()
                     local wt = self._cameraAimWorldPoint
                     self:_resetSpin()
