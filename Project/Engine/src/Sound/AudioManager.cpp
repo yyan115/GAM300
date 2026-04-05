@@ -204,6 +204,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     chd.Id = chId;
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
+    chd.BaseVolume = volume;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
@@ -261,11 +262,12 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     chd.Id = chId;
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
+    chd.BaseVolume = volume;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
 
-    // ENGINE_PRINT(EngineLogging::LogLevel::Info, 
+    // ENGINE_PRINT(EngineLogging::LogLevel::Info,
     //     "[AudioManager] Playing 3D audio at (", position.x, ",", position.y, ",", position.z, 
     //     ") with spatial blend:", attenuation, "\n");
 
@@ -328,6 +330,7 @@ ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audi
     chd.Id = chId;
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
+    chd.BaseVolume = volume;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
@@ -374,6 +377,7 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
     chd.Id = chId;
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
+    chd.BaseVolume = volume;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
@@ -599,12 +603,10 @@ void AudioManager::SetMasterVolume(float volume) {
     std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System) return;
 
-    // Update all existing channels
+    // Update all existing channels using their base volume (pre-master)
     for (auto& kv : ChannelMap) {
         if (kv.second.Channel) {
-            float currentVolume;
-            FMOD_Channel_GetVolume(kv.second.Channel, &currentVolume);
-            FMOD_Channel_SetVolume(kv.second.Channel, currentVolume * volume);
+            FMOD_Channel_SetVolume(kv.second.Channel, kv.second.BaseVolume * volume);
         }
     }
 }
@@ -942,6 +944,19 @@ void AudioManager::ApplyBatchUpdates() {
 
         if (update.flags & UPDATE_DOPPLER_LEVEL) {
             FMOD_Channel_Set3DDopplerLevel(fmodChannel, update.dopplerLevel);
+        }
+    }
+
+    // Sync BaseVolume for any channels whose volume was explicitly updated
+    {
+        std::unique_lock<std::shared_mutex> writeLock(Mutex);
+        for (const auto& updatePair : updatesToProcess) {
+            if (updatePair.second.flags & UPDATE_VOLUME) {
+                auto it = ChannelMap.find(updatePair.first);
+                if (it != ChannelMap.end()) {
+                    it->second.BaseVolume = updatePair.second.volume;
+                }
+            }
         }
     }
 }

@@ -143,6 +143,7 @@ private:
         ChannelHandle Id = 0;
         AudioSourceState State = AudioSourceState::Stopped;
         std::string AssetPath; // For debugging
+        float BaseVolume = 1.0f; // Original volume before master multiplier
     };
 
     // Thread safety - upgraded to shared_mutex for better concurrency
