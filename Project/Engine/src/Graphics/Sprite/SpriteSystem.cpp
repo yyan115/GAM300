@@ -136,9 +136,9 @@ void SpriteSystem::Update()
                     spriteComponent.hasMigratedToTransform = true;
 
                     // Log the migration (only once)
-                    std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
-                              << "pos(" << spriteComponent.position.x << "," << spriteComponent.position.y << ") "
-                              << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;
+                    //std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
+                    //          << "pos(" << spriteComponent.position.x << "," << spriteComponent.position.y << ") "
+                    //          << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;
                 }
 
                 spriteRenderItem->position = Vector3D::ConvertGLMToVector3D(transformPos);
@@ -206,7 +206,7 @@ void SpriteSystem::Update()
 void SpriteSystem::Shutdown()
 {
     CleanupSpriteQuad();
-    std::cout << "[SpriteSystem] Shutdown" << std::endl;
+    //std::cout << "[SpriteSystem] Shutdown" << std::endl;
 }
 
 void SpriteSystem::InitializeSpriteQuad()
@@ -264,10 +264,10 @@ void SpriteSystem::InitializeSpriteQuad()
 
     spriteQuadInitialized = true;
 
-#ifdef ANDROID
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[SpriteSystem] Sprite quad initialized using VBO/VAO/EBO classes with indices");
-#endif
-    std::cout << "[SpriteSystem] Sprite quad initialized with indexed rendering" << std::endl;
+//#ifdef ANDROID
+//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[SpriteSystem] Sprite quad initialized using VBO/VAO/EBO classes with indices");
+//#endif
+    //std::cout << "[SpriteSystem] Sprite quad initialized with indexed rendering" << std::endl;
 }
 
 void SpriteSystem::CleanupSpriteQuad()
@@ -290,6 +290,6 @@ void SpriteSystem::CleanupSpriteQuad()
             spriteEBO.reset();
         }
         spriteQuadInitialized = false;
-        std::cout << "[SpriteSystem] Sprite quad cleaned up" << std::endl;
+        //std::cout << "[SpriteSystem] Sprite quad cleaned up" << std::endl;
     }
 }

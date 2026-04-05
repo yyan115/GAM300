@@ -25,7 +25,7 @@
 // ========== Constructor ==========
 
 AndroidInputManager::AndroidInputManager() {
-    LOGI("[AndroidInputManager] Initialized (entity-based with full touch tracking)");
+    //LOGI("[AndroidInputManager] Initialized (entity-based with full touch tracking)");
 }
 
 // ========== IInputSystem Interface Implementation ==========
@@ -72,12 +72,12 @@ glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
                     normY = glm::clamp(normY, -1.0f, 1.0f);
 
                     // Debug log periodically
-                    static int moveLogCount = 0;
-                    if (++moveLogCount % 30 == 1) {
-                        LOGI("[AndroidInput] GetAxis(Movement) = (%.2f, %.2f) relPos=(%.1f,%.1f) halfSize=(%.1f,%.1f)",
-                             normX, normY, entityAction.touchPositionRelative.x, entityAction.touchPositionRelative.y,
-                             halfWidth, halfHeight);
-                    }
+                    //static int moveLogCount = 0;
+                    //if (++moveLogCount % 30 == 1) {
+                    //    LOGI("[AndroidInput] GetAxis(Movement) = (%.2f, %.2f) relPos=(%.1f,%.1f) halfSize=(%.1f,%.1f)",
+                    //         normX, normY, entityAction.touchPositionRelative.x, entityAction.touchPositionRelative.y,
+                    //         halfWidth, halfHeight);
+                    //}
 
                     return glm::vec2(normX, normY);
                 }
@@ -99,11 +99,11 @@ glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
             float normDeltaX = m_committedDragDelta.x / viewportWidth;
             float normDeltaY = m_committedDragDelta.y / viewportHeight;
 
-            static int lookLogCount = 0;
-            if (++lookLogCount % 30 == 1) {
-                LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) committed=(%.1f,%.1f)",
-                     normDeltaX, normDeltaY, m_committedDragDelta.x, m_committedDragDelta.y);
-            }
+            //static int lookLogCount = 0;
+            //if (++lookLogCount % 30 == 1) {
+            //    LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) committed=(%.1f,%.1f)",
+            //         normDeltaX, normDeltaY, m_committedDragDelta.x, m_committedDragDelta.y);
+            //}
             return glm::vec2(normDeltaX, normDeltaY);
         }
         return glm::vec2(0.0f);
@@ -334,31 +334,31 @@ void AndroidInputManager::Update(float deltaTime) {
 }
 
 bool AndroidInputManager::LoadConfig(const std::string& path) {
-    LOGI("[AndroidInputManager] Loading config from: %s", path.c_str());
+    //LOGI("[AndroidInputManager] Loading config from: %s", path.c_str());
 
     // Get platform instance
     IPlatform* platform = WindowManager::GetPlatform();
     if (!platform) {
-        LOGE("[AndroidInputManager] ERROR: Platform is null!");
+        //LOGE("[AndroidInputManager] ERROR: Platform is null!");
         return false;
     }
 
     // Load file using platform
     std::vector<uint8_t> configData = platform->ReadAsset(path);
     if (configData.empty()) {
-        LOGE("[AndroidInputManager] ERROR: Failed to read config file: %s", path.c_str());
+        //LOGE("[AndroidInputManager] ERROR: Failed to read config file: %s", path.c_str());
         return false;
     }
 
-    LOGI("[AndroidInputManager] Config file loaded, size: %zu bytes", configData.size());
+    //LOGI("[AndroidInputManager] Config file loaded, size: %zu bytes", configData.size());
 
     // Parse JSON
     rapidjson::Document doc;
     doc.Parse(reinterpret_cast<const char*>(configData.data()), configData.size());
 
     if (doc.HasParseError()) {
-        LOGE("[AndroidInputManager] ERROR: JSON parse error at offset %zu: %s",
-             doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        //LOGE("[AndroidInputManager] ERROR: JSON parse error at offset %zu: %s",
+        //     doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
         return false;
     }
 
@@ -372,7 +372,7 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
 
             // Skip if no android binding
             if (!actionData.HasMember("android") || !actionData["android"].IsObject()) {
-                LOGI("[AndroidInputManager] Skipping action '%s' (no android binding)", actionName.c_str());
+                //LOGI("[AndroidInputManager] Skipping action '%s' (no android binding)", actionName.c_str());
                 continue;
             }
 
@@ -389,8 +389,8 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
                 }
 
                 m_entityActions.push_back(entityAction);
-                LOGI("[AndroidInputManager] Loaded entity action: %s -> %s",
-                     actionName.c_str(), entityAction.entityName.c_str());
+                //LOGI("[AndroidInputManager] Loaded entity action: %s -> %s",
+                //     actionName.c_str(), entityAction.entityName.c_str());
             }
 
             // Load gesture binding
@@ -429,13 +429,13 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
                 }
 
                 m_gestures.push_back(gesture);
-                LOGI("[AndroidInputManager] Loaded gesture for action: %s", actionName.c_str());
+                //LOGI("[AndroidInputManager] Loaded gesture for action: %s", actionName.c_str());
             }
         }
     }
 
-    LOGI("[AndroidInputManager] Config loaded: %zu entity actions, %zu gestures",
-         m_entityActions.size(), m_gestures.size());
+    //LOGI("[AndroidInputManager] Config loaded: %zu entity actions, %zu gestures",
+    //     m_entityActions.size(), m_gestures.size());
 
     return true;
 }
@@ -510,8 +510,8 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
     float gameY = static_cast<float>(gameResHeight) - (pixelPos.y / viewportHeight) * static_cast<float>(gameResHeight);
     glm::vec2 gamePos(gameX, gameY);
 
-    LOGI("[AndroidInput] TouchDown id=%d norm=(%.3f,%.3f) pixel=(%.1f,%.1f) game=(%.1f,%.1f) viewport=(%.0f,%.0f) gameRes=(%d,%d)",
-         pointerId, x, y, pixelPos.x, pixelPos.y, gameX, gameY, viewportWidth, viewportHeight, gameResWidth, gameResHeight);
+    //LOGI("[AndroidInput] TouchDown id=%d norm=(%.3f,%.3f) pixel=(%.1f,%.1f) game=(%.1f,%.1f) viewport=(%.0f,%.0f) gameRes=(%d,%d)",
+    //     pointerId, x, y, pixelPos.x, pixelPos.y, gameX, gameY, viewportWidth, viewportHeight, gameResWidth, gameResHeight);
 
     // When the game is paused, only process the Pause entity action so UI buttons
     // (ButtonSystem) can receive touches instead of game buttons consuming them.
@@ -522,11 +522,11 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
         if (gamePaused && entityAction.actionName != "Pause") continue;
 
         if (!entityAction.entityFound) {
-            LOGI("[AndroidInput]   Skipping '%s' - entity not found", entityAction.entityName.c_str());
+            //LOGI("[AndroidInput]   Skipping '%s' - entity not found", entityAction.entityName.c_str());
             continue;
         }
         if (entityAction.isPressed) {
-            LOGI("[AndroidInput]   Skipping '%s' - already pressed", entityAction.entityName.c_str());
+            //LOGI("[AndroidInput]   Skipping '%s' - already pressed", entityAction.entityName.c_str());
             continue;
         }
 
@@ -537,9 +537,9 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
             float dx = gamePos.x - entityAction.entityCenter.x;
             float dy = gamePos.y - entityAction.entityCenter.y;
             hit = (dx * dx + dy * dy) <= (radius * radius);
-            LOGI("[AndroidInput]   Checking '%s' (circle r=%.1f): center=(%.1f,%.1f) touch=(%.1f,%.1f)",
-                 entityAction.entityName.c_str(), radius,
-                 entityAction.entityCenter.x, entityAction.entityCenter.y, gamePos.x, gamePos.y);
+            //LOGI("[AndroidInput]   Checking '%s' (circle r=%.1f): center=(%.1f,%.1f) touch=(%.1f,%.1f)",
+            //     entityAction.entityName.c_str(), radius,
+            //     entityAction.entityCenter.x, entityAction.entityCenter.y, gamePos.x, gamePos.y);
         } else {
             float halfWidth  = entityAction.entitySize.x / 2.0f;
             float halfHeight = entityAction.entitySize.y / 2.0f;
@@ -549,8 +549,8 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
             float maxY = entityAction.entityCenter.y + halfHeight;
             hit = gamePos.x >= minX && gamePos.x <= maxX &&
                   gamePos.y >= minY && gamePos.y <= maxY;
-            LOGI("[AndroidInput]   Checking '%s' (rect): bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
-                 entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
+            //LOGI("[AndroidInput]   Checking '%s' (rect): bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
+            //     entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
         }
 
         if (hit) {
@@ -562,9 +562,9 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
             touch.isHandled = true;
             touch.entityName = entityAction.entityName;
 
-            LOGI("[AndroidInput] HIT! Touch %d on entity '%s' for action '%s' relPos=(%.1f,%.1f)",
-                 pointerId, entityAction.entityName.c_str(), entityAction.actionName.c_str(),
-                 entityAction.touchPositionRelative.x, entityAction.touchPositionRelative.y);
+            //LOGI("[AndroidInput] HIT! Touch %d on entity '%s' for action '%s' relPos=(%.1f,%.1f)",
+            //     pointerId, entityAction.entityName.c_str(), entityAction.actionName.c_str(),
+            //     entityAction.touchPositionRelative.x, entityAction.touchPositionRelative.y);
             break;
         }
     }
@@ -574,7 +574,7 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
         if (m_dragTouchId == -1) {
             m_dragTouchId = pointerId;
             m_isDragging = true;
-            LOGI("[AndroidInput] Touch %d BEGAN - no entity hit, using for camera drag", pointerId);
+            //LOGI("[AndroidInput] Touch %d BEGAN - no entity hit, using for camera drag", pointerId);
         }
     }
 
@@ -633,8 +633,8 @@ void AndroidInputManager::ProcessTouchUp(int pointerId, float x, float y) {
     endedTouch.duration = m_currentTime - endedTouch.startTime;
     m_endedTouches.push_back(endedTouch);
 
-    LOGI("[AndroidInputManager] Touch %d ENDED on entity '%s' (duration: %.2fs)",
-         pointerId, endedTouch.entityName.c_str(), endedTouch.duration);
+    //LOGI("[AndroidInputManager] Touch %d ENDED on entity '%s' (duration: %.2fs)",
+    //     pointerId, endedTouch.entityName.c_str(), endedTouch.duration);
 
     // Release entity actions
     for (auto& entityAction : m_entityActions) {
@@ -671,8 +671,8 @@ void AndroidInputManager::UpdateEntityTransforms() {
     const auto& entities = ecs->GetActiveEntities();
 
     // Debug: log entity search periodically
-    static int entityLogCount = 0;
-    bool shouldLog = (++entityLogCount % 300 == 1);  // Log every ~5 seconds at 60fps
+    //static int entityLogCount = 0;
+    //bool shouldLog = (++entityLogCount % 300 == 1);  // Log every ~5 seconds at 60fps
 
     for (auto& entityAction : m_entityActions) {
         bool wasFound = entityAction.entityFound;
@@ -693,20 +693,20 @@ void AndroidInputManager::UpdateEntityTransforms() {
             entityAction.entityFound = true;
 
             // Log when entity is first found or periodically
-            if (!wasFound || shouldLog) {
-                LOGI("[AndroidInput] Entity '%s' for action '%s': center=(%.1f,%.1f) size=(%.1f,%.1f)",
-                     entityAction.entityName.c_str(), entityAction.actionName.c_str(),
-                     entityAction.entityCenter.x, entityAction.entityCenter.y,
-                     entityAction.entitySize.x, entityAction.entitySize.y);
-            }
+            //if (!wasFound || shouldLog) {
+            //    LOGI("[AndroidInput] Entity '%s' for action '%s': center=(%.1f,%.1f) size=(%.1f,%.1f)",
+            //         entityAction.entityName.c_str(), entityAction.actionName.c_str(),
+            //         entityAction.entityCenter.x, entityAction.entityCenter.y,
+            //         entityAction.entitySize.x, entityAction.entitySize.y);
+            //}
             break;
         }
 
         // Log if entity not found
-        if (!entityAction.entityFound && wasFound) {
-            LOGI("[AndroidInput] Entity '%s' for action '%s' NOT FOUND",
-                 entityAction.entityName.c_str(), entityAction.actionName.c_str());
-        }
+        //if (!entityAction.entityFound && wasFound) {
+        //    LOGI("[AndroidInput] Entity '%s' for action '%s' NOT FOUND",
+        //         entityAction.entityName.c_str(), entityAction.actionName.c_str());
+        //}
     }
 }
 

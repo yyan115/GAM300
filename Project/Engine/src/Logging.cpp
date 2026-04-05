@@ -73,7 +73,7 @@ namespace EngineLogging {
 
             // Format the message and send to logcat
             std::string message = fmt::to_string(msg.payload);
-            __android_log_print(priority, "GAM300", "%s", message.c_str());
+            //__android_log_print(priority, "GAM300", "%s", message.c_str());
         }
 
         void flush_() override {
@@ -190,7 +190,7 @@ namespace EngineLogging {
             initialized = true;
             
             // Log initialization message
-            LogInfo("Engine logging system initialized");
+            //LogInfo("Engine logging system initialized");
             
             return true;
         }
@@ -240,7 +240,7 @@ namespace EngineLogging {
                 case LogLevel::Error:    priority = ANDROID_LOG_ERROR; break;
                 case LogLevel::Critical: priority = ANDROID_LOG_FATAL; break;
             }
-            __android_log_print(priority, "GAM300", "%s", message.c_str());
+            //__android_log_print(priority, "GAM300", "%s", message.c_str());
 #endif
             return;
         }
@@ -277,7 +277,7 @@ namespace EngineLogging {
     void PrintOutput(const std::string& message, LogLevel logType, bool toEditor)
     {
         if (!toEditor)
-            std::cout << message << std::endl;
+            {} //std::cout << message << std::endl;
         else
             LogInternal(logType, message);
     }

@@ -290,7 +290,7 @@ namespace PhysicsSystemWrappers {
 
     // Simple test function to verify Lua bindings work
     inline float TestBinding() {
-        std::cout << "[Physics] TestBinding called from Lua!" << std::endl;
+        //std::cout << "[Physics] TestBinding called from Lua!" << std::endl;
         return 42.0f;
     }
 
@@ -451,7 +451,7 @@ namespace CharacterControllerWrappers {
             std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
             return nullptr;
         }
-        std::cout << "UPDATED 0" << std::endl;
+        //std::cout << "UPDATED 0" << std::endl;
         //call system to create controller
         return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
 
@@ -1300,7 +1300,7 @@ namespace EntityQueryWrappers {
                         results.push_back(entity);
                     }
                     else {
-                        printf("[C++ DEBUG]  Entity has NO Transform - SKIPPING\n");
+                        //printf("[C++ DEBUG]  Entity has NO Transform - SKIPPING\n");
                     }
                     break;
                 }
@@ -1338,7 +1338,7 @@ namespace EntityQueryWrappers {
 
         const char* scriptPath = luaL_checkstring(L, 1);
         if (!scriptPath) {
-            printf("[C++ DEBUG] ERROR: luaL_checkstring returned NULL!\n");
+            //printf("[C++ DEBUG] ERROR: luaL_checkstring returned NULL!\n");
             lua_newtable(L);
             return 1;
         }
@@ -1374,11 +1374,11 @@ namespace EntityQueryWrappers {
                 return 1;
             }
             else {
-                printf("[C++ DEBUG] Cache expired - updating\n");
+                //printf("[C++ DEBUG] Cache expired - updating\n");
             }
         }
         else {
-            printf("[C++ DEBUG] No cache exists - creating new cache\n");
+            //printf("[C++ DEBUG] No cache exists - creating new cache\n");
         }
 
         // Cache expired or doesn't exist - update it

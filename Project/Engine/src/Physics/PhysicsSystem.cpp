@@ -154,12 +154,12 @@ bool PhysicsSystem::InitialiseJolt() {
 
     if (!joltTypesInitialized) {
 #ifdef __ANDROID__
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Starting Jolt initialization...");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Starting Jolt initialization...");
 #ifndef JPH_DISABLE_CUSTOM_ALLOCATOR
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering default allocator...");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering default allocator...");
         JPH::RegisterDefaultAllocator();
 #endif
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Setting trace and assert handlers...");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Setting trace and assert handlers...");
 #else
         JPH::RegisterDefaultAllocator();
 #endif
@@ -167,26 +167,27 @@ bool PhysicsSystem::InitialiseJolt() {
         JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = JoltAssertFailed; )
 
 #ifdef __ANDROID__
-            __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Creating Factory instance...");
+            //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Creating Factory instance...");
 #endif
         JPH::Factory::sInstance = new JPH::Factory();
 
 #ifdef __ANDROID__
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering Jolt types...");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering Jolt types...");
 #ifdef JPH_PROFILE_ENABLED
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", 1);
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", 1);
 #else
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", 0);
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", 0);
 #endif
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_STREAM=%d", JPH_OBJECT_STREAM);
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_FLOATING_POINT_EXCEPTIONS_ENABLED=%d", JPH_FLOATING_POINT_EXCEPTIONS_ENABLED);
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_DISABLE_CUSTOM_ALLOCATOR=%d",
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_DISABLE_CUSTOM_ALLOCATOR=%d",
 #ifdef JPH_DISABLE_CUSTOM_ALLOCATOR
-            1
+        //    1
 #else
-            0
+        //    0
 #endif
-        );
+        //);
+        (void)0;
 
 
 
@@ -207,14 +208,14 @@ bool PhysicsSystem::InitialiseJolt() {
             JPH::RegisterTypes();
 
 #ifdef __ANDROID__
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Jolt initialization complete!");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Jolt initialization complete!");
 #endif
         joltTypesInitialized = true;
     }
 
     // Only initialize THIS instance's physics system once (calling physics.Init() again would wipe all bodies!)
     if (!m_joltInitialized) {
-        std::cout << "[Physics] InitialiseJolt: Creating physics world for this instance..." << std::endl;
+        //std::cout << "[Physics] InitialiseJolt: Creating physics world for this instance..." << std::endl;
 
         if (!temp) temp = std::make_unique<JPH::TempAllocatorImpl>(16 * 1024 * 1024);
         if (!jobs) jobs = std::make_unique<JPH::JobSystemThreadPool>(
@@ -235,11 +236,11 @@ bool PhysicsSystem::InitialiseJolt() {
         settings.mLinearCastThreshold = 0.75f; // CCD threshold
         physics.SetPhysicsSettings(settings);
 
-#ifdef __ANDROID__
-        JPH::Vec3 gravity = physics.GetGravity();
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Gravity set to: (%f, %f, %f)",
-            gravity.GetX(), gravity.GetY(), gravity.GetZ());
-#endif
+//#ifdef __ANDROID__
+//        JPH::Vec3 gravity = physics.GetGravity();
+//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Gravity set to: (%f, %f, %f)",
+//            gravity.GetX(), gravity.GetY(), gravity.GetZ());
+//#endif
 
         // Create contact listener with access to the same map
         contactListener = std::make_unique<MyContactListener>(bodyToEntityMap);
@@ -247,7 +248,7 @@ bool PhysicsSystem::InitialiseJolt() {
 
         m_joltInitialized = true;
     } else {
-        std::cout << "[Physics] InitialiseJolt: This instance already initialized, skipping Init()" << std::endl;
+        //std::cout << "[Physics] InitialiseJolt: This instance already initialized, skipping Init()" << std::endl;
     }
 
     return true;
@@ -255,9 +256,9 @@ bool PhysicsSystem::InitialiseJolt() {
 
 
 void PhysicsSystem::Initialise(ECSManager& ecsManager) {
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
-#endif
+//#ifdef __ANDROID__
+//    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] physicsAuthoring called, entities=%zu", entities.size());
+//#endif
 
     if (ecsManager.characterControllerSystem)
         ecsManager.characterControllerSystem->Shutdown();
@@ -325,12 +326,12 @@ void PhysicsSystem::PostInitialize(ECSManager& ecsManager) {
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
     const float safeFixedDt = GetSafePhysicsDt(fixedDt);
-#ifdef __ANDROID__
-    static int updateCount = 0;
-    if (updateCount++ % 60 == 0) {
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, fixedDt=%f, entities=%zu", fixedDt, entities.size());
-    }
-#endif
+//#ifdef __ANDROID__
+//    static int updateCount = 0;
+//    if (updateCount++ % 60 == 0) {
+//        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, fixedDt=%f, entities=%zu", fixedDt, entities.size());
+//    }
+//#endif
 
     // =========================================================================================
     // 0. CLEANUP DESTROYED / ORPHANED ENTITIES (GHOST COLLIDER FIX)
@@ -691,13 +692,13 @@ void PhysicsSystem::EditorUpdate(ECSManager& ecs) {
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
     auto& bi = physics.GetBodyInterface();
 
-#ifdef __ANDROID__
-    static int syncCount = 0;
-    if (syncCount++ % 60 == 0) {
-        __android_log_print(ANDROID_LOG_INFO, "GAM300",
-            "[Physics] physicsSyncBack called, entities=%zu", entities.size());
-    }
-#endif
+//#ifdef __ANDROID__
+//    static int syncCount = 0;
+//    if (syncCount++ % 60 == 0) {
+//        __android_log_print(ANDROID_LOG_INFO, "GAM300",
+//            "[Physics] physicsSyncBack called, entities=%zu", entities.size());
+//    }
+//#endif
 
     for (auto& e : entities) {
         // Skip entities without a body in our map
@@ -751,13 +752,13 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
                 ecsManager.transformSystem->SetLocalRotation(e, entityWorldRot);
             }
 
-#ifdef __ANDROID__
-            if (syncCount % 60 == 0) {
-                __android_log_print(ANDROID_LOG_INFO, "GAM300",
-                    "[Physics] Dynamic body pos: (%f, %f, %f)",
-                    p.GetX(), p.GetY(), p.GetZ());
-            }
-#endif
+//#ifdef __ANDROID__
+//            if (syncCount % 60 == 0) {
+//                __android_log_print(ANDROID_LOG_INFO, "GAM300",
+//                    "[Physics] Dynamic body pos: (%f, %f, %f)",
+//                    p.GetX(), p.GetY(), p.GetZ());
+//            }
+//#endif
         }
     }
 }

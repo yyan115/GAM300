@@ -105,7 +105,7 @@ public:
     {
         if (enableDetailedLogging) {
             int otherEntity = GetEntityID(inBodyID2);
-            std::cout << "[Character] Validating contact with entity " << otherEntity << std::endl;
+            //std::cout << "[Character] Validating contact with entity " << otherEntity << std::endl;
         }
     }
 
@@ -136,21 +136,21 @@ public:
                 groundBodyID = inBodyID2;
                 groundNormal = inContactNormal;
 
-                if (enableLogging) {
-                    std::cout << "[Character] Grounded on entity " << otherEntity
-                        << " (slope: " << std::fixed << std::setprecision(1)
-                        << slopeAngle << "°)" << std::endl;
-                }
+                //if (enableLogging) {
+                //    std::cout << "[Character] Grounded on entity " << otherEntity
+                //        << " (slope: " << std::fixed << std::setprecision(1)
+                //        << slopeAngle << "deg)" << std::endl;
+                //}
             }
         }
 
         // Log contact
-        if (enableLogging && isNewContact) {
-            std::cout << "[Character] Contact added with entity " << otherEntity;
-            if (isValidGround) std::cout << " [GROUND]";
-            else if (isSteep) std::cout << " [STEEP SLOPE]";
-            std::cout << std::endl;
-        }
+        //if (enableLogging && isNewContact) {
+        //    std::cout << "[Character] Contact added with entity " << otherEntity;
+        //    if (isValidGround) std::cout << " [GROUND]";
+        //    else if (isSteep) std::cout << " [STEEP SLOPE]";
+        //    std::cout << std::endl;
+        //}
 
         // Trigger callbacks
         if (isNewContact && onContactAdded) {
@@ -211,9 +211,9 @@ public:
                 onGroundContactRemoved(event);
             }
 
-            if (enableLogging) {
-                std::cout << "[Character] Left ground (entity " << GetEntityID(groundBodyID) << ")" << std::endl;
-            }
+            //if (enableLogging) {
+            //    std::cout << "[Character] Left ground (entity " << GetEntityID(groundBodyID) << ")" << std::endl;
+            //}
         }
 
         isGrounded = grounded;
@@ -287,18 +287,18 @@ private:
         bool isGround,
         bool isSteep) const
     {
-        std::cout << "========= CHARACTER CONTACT DETAIL =========" << std::endl;
-        std::cout << "Character Entity: " << characterEntityID << std::endl;
-        std::cout << "Other Entity: " << GetEntityID(bodyID) << std::endl;
-        std::cout << "Position: (" << std::fixed << std::setprecision(2)
-            << position.GetX() << ", " << position.GetY() << ", " << position.GetZ() << ")" << std::endl;
-        std::cout << "Normal: (" << normal.GetX() << ", " << normal.GetY() << ", " << normal.GetZ() << ")" << std::endl;
-        std::cout << "Slope angle: " << std::setprecision(1) << slopeAngle << "°" << std::endl;
-        std::cout << "Type: ";
-        if (isGround) std::cout << "GROUND";
-        else if (isSteep) std::cout << "STEEP SLOPE";
-        else std::cout << "WALL";
-        std::cout << std::endl;
-        std::cout << "============================================" << std::endl;
+        //std::cout << "========= CHARACTER CONTACT DETAIL =========" << std::endl;
+        //std::cout << "Character Entity: " << characterEntityID << std::endl;
+        //std::cout << "Other Entity: " << GetEntityID(bodyID) << std::endl;
+        //std::cout << "Position: (" << std::fixed << std::setprecision(2)
+        //    << position.GetX() << ", " << position.GetY() << ", " << position.GetZ() << ")" << std::endl;
+        //std::cout << "Normal: (" << normal.GetX() << ", " << normal.GetY() << ", " << normal.GetZ() << ")" << std::endl;
+        //std::cout << "Slope angle: " << std::setprecision(1) << slopeAngle << "deg" << std::endl;
+        //std::cout << "Type: ";
+        //if (isGround) std::cout << "GROUND";
+        //else if (isSteep) std::cout << "STEEP SLOPE";
+        //else std::cout << "WALL";
+        //std::cout << std::endl;
+        //std::cout << "============================================" << std::endl;
     }
 };

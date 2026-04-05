@@ -111,7 +111,7 @@ namespace {
                 // parse this json...
                 rj::Document doc;
                 if (!detail::loadDoc(documentPath.string(), doc)) {
-                    std::cout << "Something went wrong when opening/parsing: " << audioFileName << "\n";
+                    //std::cout << "Something went wrong when opening/parsing: " << audioFileName << "\n";
                     return audioSettings;
                 }
 
@@ -124,7 +124,7 @@ namespace {
             }
         }
         catch (std::exception const& ex) {
-            std::cout << "Exception caught: " << ex.what() << "\n";
+            //std::cout << "Exception caught: " << ex.what() << "\n";
         }
 
         return audioSettings;
@@ -219,8 +219,8 @@ void serialiseConfig(std::string const& audioFileName, float bgmPercentage, floa
         }
     }
     catch (std::exception const& ex) {
-        ENGINE_PRINT(
-        std::cout << "Exception caught: " << ex.what() << "\n";
+        //ENGINE_PRINT(
+        //std::cout << "Exception caught: " << ex.what() << "\n";
     }
 }
 

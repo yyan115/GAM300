@@ -271,15 +271,15 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 
 	// Basic validation
 	if (vertices.empty()) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MESH] No vertices to draw, returning");
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MESH] No vertices to draw, returning");
 		return;
 	}
 	if (indices.empty()) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MESH] No indices to draw, returning");
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MESH] No indices to draw, returning");
 		return;
 	}
 	if (shader.ID == 0) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MESH] Invalid shader ID, returning");
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MESH] Invalid shader ID, returning");
 		return;
 	}
 #endif
@@ -353,32 +353,32 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 
 	// Check if we have valid indices
 	if (indices.empty()) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Empty indices vector!");
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Empty indices vector!");
 		return;
 	}
 
 	// Check if VAO is valid
 	if (vao.ID == 0 || !glIsVertexArray(vao.ID)) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Invalid VAO ID: %u", vao.ID);
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Invalid VAO ID: %u", vao.ID);
 		return;
 	}
 
 	// Check if EBO is valid
 	if (ebo.ID == 0 || !glIsBuffer(ebo.ID)) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Invalid EBO ID: %u", ebo.ID);
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Invalid EBO ID: %u", ebo.ID);
 		return;
 	}
 
 	// Check if shader program is valid
 	if (shader.ID == 0 || !glIsProgram(shader.ID)) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Invalid shader ID: %u", shader.ID);
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "ERROR: Invalid shader ID: %u", shader.ID);
 		return;
 	}
 
 	// Check for any OpenGL errors before drawing
 	GLenum err = glGetError();
 	if (err != GL_NO_ERROR) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "GL Error before DrawElements: 0x%x", err);
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "GL Error before DrawElements: 0x%x", err);
 		return;
 	}
 #endif
@@ -390,8 +390,8 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 #ifdef __ANDROID__
 GLenum err2;
 while ((err2 = glGetError()) != GL_NO_ERROR) {
-    __android_log_print(ANDROID_LOG_ERROR, "GAM300", "GL Error after DrawElements: 0x%x (count=%zu, VAO=%u)",
-                       err2, indices.size(), vao.ID);
+    //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "GL Error after DrawElements: 0x%x (count=%zu, VAO=%u)",
+    //                   err2, indices.size(), vao.ID);
 }
 
 //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Mesh::Draw completed successfully - drew %zu triangles", indices.size() / 3);

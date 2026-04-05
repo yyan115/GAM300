@@ -56,7 +56,7 @@ bool PointShadowMap::Initialize(int res)
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        std::cout << "[PointShadowMap] Framebuffer not complete!" << std::endl;
+        //std::cout << "[PointShadowMap] Framebuffer not complete!" << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return false;
     }
@@ -76,7 +76,7 @@ bool PointShadowMap::Initialize(int res)
 
     if (!depthShader)
     {
-        std::cout << "[PointShadowMap] Failed to load shader: " << shaderPath << std::endl;
+        //std::cout << "[PointShadowMap] Failed to load shader: " << shaderPath << std::endl;
         return false;
     }
 
@@ -86,8 +86,8 @@ bool PointShadowMap::Initialize(int res)
     m_forceDirty = true;
     m_framesSinceUpdate = 999;
 
-    std::cout << "[PointShadowMap] Initialized - Resolution: " << resolution
-        << ", FBO: " << depthMapFBO << ", Cubemap: " << depthCubemap << std::endl;
+    //std::cout << "[PointShadowMap] Initialized - Resolution: " << resolution
+    //    << ", FBO: " << depthMapFBO << ", Cubemap: " << depthCubemap << std::endl;
     return true;
 }
 

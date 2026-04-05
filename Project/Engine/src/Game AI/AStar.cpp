@@ -68,7 +68,7 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
         GridPos nearestGoal = FindNearestWalkable(grid, goal);
 
         if (nearestGoal.row == -1) {
-            std::cout << "[AStar] ERROR: No walkable cells near goal!\n";
+            //std::cout << "[AStar] ERROR: No walkable cells near goal!\n";
             return {};
         }
 
@@ -78,17 +78,17 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
     }
 
     if (!grid.InBounds(start.row, start.col)) {
-        std::cout << "[AStar] ERROR: Start out of bounds!\n";
+        //std::cout << "[AStar] ERROR: Start out of bounds!\n";
         return {};
     }
 
     if (!grid.InBounds(goal.row, goal.col)) {
-        std::cout << "[AStar] ERROR: Goal out of bounds!\n";
+        //std::cout << "[AStar] ERROR: Goal out of bounds!\n";
         return {};
     }
 
     if (!grid.Walkable(start.row, start.col)) {
-        std::cout << "[AStar] ERROR: Start cell NOT walkable!\n";
+        //std::cout << "[AStar] ERROR: Start cell NOT walkable!\n";
         return {};
     }
 

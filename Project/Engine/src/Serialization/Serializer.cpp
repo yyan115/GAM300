@@ -260,8 +260,8 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         ofs << buffer.GetString();
         ofs.close();
 
-        std::cout << "[SaveScene] wrote scene JSON to: " << outPathP.string()
-            << " (" << buffer.GetSize() << " bytes)\n";
+        //std::cout << "[SaveScene] wrote scene JSON to: " << outPathP.string()
+        //    << " (" << buffer.GetSize() << " bytes)\n";
     }
 }
 
@@ -2426,7 +2426,7 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
         }
     }
 
-    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
+    //std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }
 
 void Serializer::DeserializeSceneMetadata(
@@ -2858,7 +2858,7 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
         }
     }
 
-    std::cout << "[CreateEntitiesFromJson] loaded entities from: " << tempScenePath << "\n";
+    //std::cout << "[CreateEntitiesFromJson] loaded entities from: " << tempScenePath << "\n";
 }
 
 GUID_128 Serializer::DeserializeEntityGUID(const rapidjson::Value& entityJSON) {

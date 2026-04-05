@@ -24,15 +24,15 @@ void EBO::Bind()
 {
 	if (!isSetup && ID == 0) {
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Setting up EBO for first time - %zu indices", indices.size());
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Setting up EBO for first time - %zu indices", indices.size());
 
 		// Validate indices before upload
 		if (indices.empty()) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Cannot setup EBO with empty indices vector!");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Cannot setup EBO with empty indices vector!");
 			return;
 		}
 		if (indices.size() > 1000000) {  // Sanity check
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Indices count %zu seems corrupted, aborting EBO setup", indices.size());
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Indices count %zu seems corrupted, aborting EBO setup", indices.size());
 			return;
 		}
 
@@ -40,7 +40,7 @@ void EBO::Bind()
 		EGLDisplay display = eglGetCurrentDisplay();
 		EGLContext context = eglGetCurrentContext();
 		if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Trying to setup EBO without active OpenGL context!");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Trying to setup EBO without active OpenGL context!");
 			return;
 		}
 #else
@@ -51,21 +51,21 @@ void EBO::Bind()
 #endif
 		glGenBuffers(1, &ID);
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Generated EBO ID: %u", ID);
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Generated EBO ID: %u", ID);
 #endif
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
 
 		GLsizeiptr bufferSize = indices.size() * sizeof(GLuint);
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Buffer size calculation: %zu indices * %zu bytes = %ld total", indices.size(), sizeof(GLuint), bufferSize);
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Buffer size calculation: %zu indices * %zu bytes = %ld total", indices.size(), sizeof(GLuint), bufferSize);
 #endif
 
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufferSize, indices.data(), GL_STATIC_DRAW);
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Uploaded %zu indices to EBO ID: %u", indices.size(), ID);
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[EBO] Uploaded %zu indices to EBO ID: %u", indices.size(), ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Error setting up EBO: 0x%x", error);
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[EBO] Error setting up EBO: 0x%x", error);
 			return;
 		}
 #endif

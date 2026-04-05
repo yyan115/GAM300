@@ -109,7 +109,7 @@ bool Shader::SetupShader(const std::string& path) {
 	auto platform = WindowManager::GetPlatform();
 	if (platform) {
 		if (!platform->MakeContextCurrent()) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make OpenGL context current for shader compilation");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make OpenGL context current for shader compilation");
 			return false;
 		}
 	}
@@ -124,7 +124,7 @@ bool Shader::SetupShader(const std::string& path) {
 	std::string geometryFile = genericPath + ".geom";  // NEW: Geometry shader path
 
 #ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading shader files: %s and %s", vertexFile.c_str(), fragmentFile.c_str());
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Loading shader files: %s and %s", vertexFile.c_str(), fragmentFile.c_str());
 #endif
 
 	// Read vertexFile and fragmentFile and store the strings
@@ -163,7 +163,7 @@ bool Shader::SetupShader(const std::string& path) {
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
 #ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling vertex shader with %d chars", (int)strlen(vertexSource));
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling vertex shader with %d chars", (int)strlen(vertexSource));
 #endif
 	glCompileShader(vertexShader);
 	glFlush();
@@ -201,7 +201,7 @@ bool Shader::SetupShader(const std::string& path) {
 		geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
 		glShaderSource(geometryShader, 1, &geometrySource, NULL);
 #ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling geometry shader with %d chars", (int)strlen(geometrySource));
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling geometry shader with %d chars", (int)strlen(geometrySource));
 #endif
 		glCompileShader(geometryShader);
 		glFlush();
@@ -221,7 +221,7 @@ bool Shader::SetupShader(const std::string& path) {
 				errorLog[actualLength] = '\0';
 				ENGINE_PRINT("ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n", &errorLog[0], "\n");
 #ifdef __ANDROID__
-				__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Geometry shader compilation failed: %s", &errorLog[0]);
+				//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Geometry shader compilation failed: %s", &errorLog[0]);
 #endif
 			}
 			else {
@@ -242,7 +242,7 @@ bool Shader::SetupShader(const std::string& path) {
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 #ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling fragment shader with %d chars", (int)strlen(fragmentSource));
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling fragment shader with %d chars", (int)strlen(fragmentSource));
 #endif
 	glCompileShader(fragmentShader);
 	glFlush();
@@ -295,7 +295,7 @@ bool Shader::SetupShader(const std::string& path) {
 	GLint linkSuccess = GL_FALSE;
 	glGetProgramiv(ID, GL_LINK_STATUS, &linkSuccess);
 #ifdef __ANDROID__
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Link status: %d (GL_TRUE=%d)", linkSuccess, GL_TRUE);
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Link status: %d (GL_TRUE=%d)", linkSuccess, GL_TRUE);
 #endif
 
 	if (linkSuccess != GL_TRUE) {
@@ -308,7 +308,7 @@ bool Shader::SetupShader(const std::string& path) {
 			infoLog[actualLength] = '\0';
 			ENGINE_PRINT("ERROR::SHADER::PROGRAM::LINKING_FAILED\n", &infoLog[0], "\n");
 #ifdef __ANDROID__
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Shader program linking failed: %s", &infoLog[0]);
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Shader program linking failed: %s", &infoLog[0]);
 #endif
 		}
 		glDeleteShader(vertexShader);
@@ -330,10 +330,10 @@ bool Shader::SetupShader(const std::string& path) {
 
 #ifdef __ANDROID__
 	// Log all active attributes for debugging
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] === Shader ID=%u linked successfully ===", ID);
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] === Shader ID=%u linked successfully ===", ID);
 	GLint numAttribs = 0;
 	glGetProgramiv(ID, GL_ACTIVE_ATTRIBUTES, &numAttribs);
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Active attributes: %d", numAttribs);
+	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Active attributes: %d", numAttribs);
 	for (int i = 0; i < numAttribs; i++) {
 		char name[128];
 		GLsizei length;
@@ -352,8 +352,8 @@ bool Shader::SetupShader(const std::string& path) {
 			case GL_INT_VEC3: typeName = "ivec3"; break;
 			case GL_INT_VEC4: typeName = "ivec4"; break;
 		}
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Attrib[%d]: '%s' location=%d type=%s(0x%x) size=%d",
-			i, name, location, typeName, attribType, attribSize);
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Attrib[%d]: '%s' location=%d type=%s(0x%x) size=%d",
+		//	i, name, location, typeName, attribType, attribSize);
 	}
 #endif
 
@@ -601,18 +601,18 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 	else {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader file not found: ", resourcePath, ", attempting to compile from source", "\n");
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_WARN, "GAM300", "[SHADER]: Shader file not found: %s, attempting to compile from source", resourcePath.c_str());
+		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "[SHADER]: Shader file not found: %s, attempting to compile from source", resourcePath.c_str());
 #endif
 		// Fallback to regular shader compilation if binary file is not found
 		if (!SetupShader(resourcePath)) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation from source failed. Aborting load.", "\n");
 #ifdef ANDROID
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[SHADER]: Shader compilation from source failed. Aborting load.");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[SHADER]: Shader compilation from source failed. Aborting load.");
 #endif
 			return false;
 		}
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER]: Successfully compiled shader from source: %s", assetPath.c_str());
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER]: Successfully compiled shader from source: %s", assetPath.c_str());
 #endif
 		ENGINE_PRINT("[SHADER]: Successfully compiled shader from source: ", resourcePath, "\n");
 		return true;

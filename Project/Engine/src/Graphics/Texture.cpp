@@ -125,19 +125,19 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 
 				if (assetData && assetLength > 0) {
 					bytes = stbi_load_from_memory(assetData, (int)assetLength, &widthImg, &heightImg, &numColCh, 0);
-					__android_log_print(ANDROID_LOG_INFO, "GAM300", "[TEXTURE] Loaded texture from Android assets: %s (%dx%d, %d channels)", assetPath.c_str(), widthImg, heightImg, numColCh);
+					//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[TEXTURE] Loaded texture from Android assets: %s (%dx%d, %d channels)", assetPath.c_str(), widthImg, heightImg, numColCh);
 				} else {
-					__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to get asset data for: %s", assetPath.c_str());
+					//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to get asset data for: %s", assetPath.c_str());
 				}
 				AAsset_close(asset);
 			} else {
-				__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to open asset: %s", assetPath.c_str());
+				//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Failed to open asset: %s", assetPath.c_str());
 			}
 		} else {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] AssetManager not available");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] AssetManager not available");
 		}
 	} else {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Platform not available");
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[TEXTURE] Platform not available");
 	}
 #else
 	// On other platforms, load from filesystem
@@ -325,16 +325,16 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		std::cerr << "[Texture] glGenTextures failed! OpenGL Error: " << error << std::endl;
 
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300",
-			"[Texture] glGenTextures failed! Error: %d, ID: %u", error, ID);
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300",
+		//	"[Texture] glGenTextures failed! Error: %d, ID: %u", error, ID);
 #endif
 
 		// Check if context is current
 #ifdef ANDROID
 		EGLContext ctx = eglGetCurrentContext();
 		if (ctx == EGL_NO_CONTEXT) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300",
-				"[Texture] NO OPENGL CONTEXT CURRENT!");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300",
+			//	"[Texture] NO OPENGL CONTEXT CURRENT!");
 		}
 #endif
 	}

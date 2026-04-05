@@ -340,7 +340,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
     if (doc.HasParseError() || !doc.IsObject()) {
         std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
+    if (doc.MemberCount() == 0) { /*std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n";*/ return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
         return INVALID_ENTITY;
@@ -419,7 +419,7 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     if (doc.HasParseError() || !doc.IsObject()) {
         std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
+    if (doc.MemberCount() == 0) { /*std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n";*/ return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
         return INVALID_ENTITY;

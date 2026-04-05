@@ -303,10 +303,10 @@ private:
 
 	template <typename T>
 	std::shared_ptr<T> LoadResource(const GUID_128& guid, const std::string& resourcePath, const std::string& assetPath, bool reload = false) {
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Target resource path: %s", resourcePath.c_str());
-#endif
+//#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Attempting to load resource: %s", assetPath.c_str());
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Target resource path: %s", resourcePath.c_str());
+//#endif
 		std::shared_ptr<T> resource;
 		if (!reload) {
 			resource = std::make_shared<T>();
@@ -315,9 +315,9 @@ private:
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
 				//ENGINE_LOG_DEBUG("[ResourceManager] Loaded resource for: " + resourcePath);
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
-#endif
+//#ifdef ANDROID
+			//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
+//#endif
 				return resource;
 			}
 		}
@@ -332,9 +332,9 @@ private:
 		}
 
 		//ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
-#ifdef ANDROID
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
-#endif
+//#ifdef ANDROID
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
+//#endif
 		return nullptr;
 	}
 

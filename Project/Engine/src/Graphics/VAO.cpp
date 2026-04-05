@@ -67,7 +67,7 @@ void VAO::Bind()
 			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Trying to generate VAO without active OpenGL context!");
 			return;
 		}
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] OpenGL context valid, calling glGenVertexArrays");
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] OpenGL context valid, calling glGenVertexArrays");
 		EGLContext ctx = eglGetCurrentContext();
 		EGLSurface surf = eglGetCurrentSurface(EGL_DRAW);
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "eglGetCurrentContext=%p, eglGetCurrentSurface=%p", ctx, surf);

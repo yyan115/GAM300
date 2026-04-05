@@ -12,7 +12,7 @@ bool RenderSystem::Initialise(int window_width, int window_height)
 
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, screenWidth, screenHeight);
-    std::cout << "[Renderer] Initialised" << std::endl;
+    //std::cout << "[Renderer] Initialised" << std::endl;
 	return true;
 }
 

@@ -9,12 +9,12 @@
 
 bool LightingSystem::Initialise()
 {
-    std::cout << "[LightingSystem] Initializing..." << std::endl;
+    //std::cout << "[LightingSystem] Initializing..." << std::endl;
 
     // Initialize directional shadow map
     if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
-        std::cout << "[LightingSystem] Warning: Directional shadow map failed" << std::endl;
+        //std::cout << "[LightingSystem] Warning: Directional shadow map failed" << std::endl;
         shadowsEnabled = false;
     }
 
@@ -27,14 +27,14 @@ bool LightingSystem::Initialise()
     {
         if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
         {
-            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
+            //std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
         }
         pointShadowMaps[i].cacheConfig.updateInterval = 0;  // No minimum gap between updates
         pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;  // Force update if 1 frame is stale
         pointShadowMaps[i].SetPhaseOffset(0);               // All lights sync — no alternating flicker
     }
 
-    std::cout << "[LightingSystem] Initialized" << std::endl;
+    //std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
 }
 
@@ -55,7 +55,7 @@ void LightingSystem::Shutdown()
     }
     pointShadowMaps.clear();
 
-    std::cout << "[LightingSystem] Shutdown" << std::endl;
+    //std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
 void LightingSystem::SetPointShadowQuality(int quality)
@@ -73,7 +73,7 @@ void LightingSystem::SetPointShadowQuality(int quality)
     for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
         if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
-            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed at res " << newRes << std::endl;
+            //std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed at res " << newRes << std::endl;
 
         pointShadowMaps[i].cacheConfig.updateInterval = 0;
         pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
@@ -434,8 +434,8 @@ void LightingSystem::CollectLightData()
                 {
                     static bool spotLightWarningShown = false;
                     if (!spotLightWarningShown) {
-                        std::cout << "[LightingSystem] Warning: Maximum spot lights (" << MAX_SPOT_LIGHTS
-                            << ") reached. Additional spot lights will be ignored." << std::endl;
+                        //std::cout << "[LightingSystem] Warning: Maximum spot lights (" << MAX_SPOT_LIGHTS
+                        //    << ") reached. Additional spot lights will be ignored." << std::endl;
                         spotLightWarningShown = true;
                     }
                 }

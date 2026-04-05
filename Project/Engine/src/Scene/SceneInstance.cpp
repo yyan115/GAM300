@@ -158,7 +158,7 @@ void SceneInstance::Initialize()
 
 void SceneInstance::InitializeJoltPhysics()
 {
-	std::cout<<"=== InitializeJoltPhysics START ===";
+	//std::cout<<"=== InitializeJoltPhysics START ===";
 	auto &ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	ecsManager.physicsSystem->InitialiseJolt();
 	ENGINE_LOG_INFO("=== InitializeJoltPhysics END ===");

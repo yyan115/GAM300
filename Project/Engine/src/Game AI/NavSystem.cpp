@@ -20,7 +20,7 @@ void NavSystem::Build(PhysicsSystem& phys, ECSManager& ecsManager)
 std::vector<Vector3D> NavSystem::RequestPathXZ(float sx, float sz, float gx, float gz, Entity entity)
 {
     if (!built) {
-        std::cout << "[NavSystem] ERROR: Grid not built yet!\n";
+        //std::cout << "[NavSystem] ERROR: Grid not built yet!\n";
         return {};
     }
 

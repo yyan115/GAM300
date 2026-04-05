@@ -144,7 +144,7 @@ void DesktopInputManager::Update(float deltaTime) {
 }
 
 bool DesktopInputManager::LoadConfig(const std::string& path) {
-    std::cout << "[DesktopInputManager] Loading config from: " << path << std::endl;
+    //std::cout << "[DesktopInputManager] Loading config from: " << path << std::endl;
 
     if (!m_platform) {
         std::cerr << "[DesktopInputManager] ERROR: Platform is null!" << std::endl;
@@ -186,7 +186,7 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
 
             // Skip if no desktop binding
             if (!actionData.HasMember("desktop") || !actionData["desktop"].IsObject()) {
-                std::cout << "[DesktopInputManager] Skipping action '" << actionName << "' (no desktop binding)" << std::endl;
+                //std::cout << "[DesktopInputManager] Skipping action '" << actionName << "' (no desktop binding)" << std::endl;
                 continue;
             }
 
@@ -226,9 +226,9 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
             }
 
             m_actionBindings[actionName] = binding;
-            std::cout << "[DesktopInputManager] Loaded action: " << actionName
-                      << " (" << binding.keys.size() << " keys, "
-                      << binding.mouseButtons.size() << " buttons)" << std::endl;
+            //std::cout << "[DesktopInputManager] Loaded action: " << actionName
+            //          << " (" << binding.keys.size() << " keys, "
+            //          << binding.mouseButtons.size() << " buttons)" << std::endl;
         }
     }
 
@@ -243,7 +243,7 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
 
             // Skip if no desktop binding
             if (!axisData.HasMember("desktop") || !axisData["desktop"].IsObject()) {
-                std::cout << "[DesktopInputManager] Skipping axis '" << axisName << "' (no desktop binding)" << std::endl;
+                //std::cout << "[DesktopInputManager] Skipping axis '" << axisName << "' (no desktop binding)" << std::endl;
                 continue;
             }
 
@@ -261,8 +261,8 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
                         binding.sensitivity = desktopBinding["sensitivity"].GetFloat();
                     }
 
-                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName
-                              << " (mouse_delta, sensitivity=" << binding.sensitivity << ")" << std::endl;
+                    //std::cout << "[DesktopInputManager] Loaded axis: " << axisName
+                    //          << " (mouse_delta, sensitivity=" << binding.sensitivity << ")" << std::endl;
                 }
                 else if (type == "keyboard") {
                     binding.type = AxisType::KeyboardComposite;
@@ -287,12 +287,12 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
                     if (desktopBinding.HasMember("up")) parseKeyArray(desktopBinding["up"], binding.positiveY);
                     if (desktopBinding.HasMember("down")) parseKeyArray(desktopBinding["down"], binding.negativeY);
 
-                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName << " (keyboard)" << std::endl;
+                    //std::cout << "[DesktopInputManager] Loaded axis: " << axisName << " (keyboard)" << std::endl;
                 }
                 else if (type == "gamepad") {
                     binding.type = AxisType::Gamepad;
-                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName
-                              << " (gamepad - not yet implemented)" << std::endl;
+                    //std::cout << "[DesktopInputManager] Loaded axis: " << axisName
+                    //          << " (gamepad - not yet implemented)" << std::endl;
                 }
             }
 
@@ -300,9 +300,9 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
         }
     }
 
-    std::cout << "[DesktopInputManager] Config loaded successfully. "
-              << m_actionBindings.size() << " actions, "
-              << m_axisBindings.size() << " axes" << std::endl;
+    //std::cout << "[DesktopInputManager] Config loaded successfully. "
+    //          << m_actionBindings.size() << " actions, "
+    //          << m_axisBindings.size() << " axes" << std::endl;
 
     return true;
 }

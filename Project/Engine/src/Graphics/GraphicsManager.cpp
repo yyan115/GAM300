@@ -696,12 +696,12 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 		ecsManager.lightingSystem->ApplyShadows(*item.shader);
 
 		// Temporary debug - remove later
-		static bool once = false;
-		if (!once) 
-		{
-			std::cout << "[Debug] ApplyShadows called" << std::endl;
-			once = true;
-		}
+		//static bool once = false;
+		//if (!once)
+		//{
+		//	std::cout << "[Debug] ApplyShadows called" << std::endl;
+		//	once = true;
+		//}
 	}
 
 
@@ -969,7 +969,7 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 	}
 	// Enable wireframe mode for debug rendering
 #ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
+	//__android_log_print(ANDROID_LOG_INFO, "GraphicsManager", "Debug wireframe rendering not supported on Android");
 #else
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1398,12 +1398,12 @@ void GraphicsManager::InitializeSkybox()
 	std::string skyboxShaderPath = ResourceManager::GetPlatformShaderPath("skybox");
 	skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
 	if (!skyboxShader) {
-		std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
+		//std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
 	} else {
-		std::cout << "[GraphicsManager] Skybox shader loaded successfully - ID: " << skyboxShader->ID << std::endl;
+		//std::cout << "[GraphicsManager] Skybox shader loaded successfully - ID: " << skyboxShader->ID << std::endl;
 	}
 
-	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
+	//std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
 }
 
 void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& projection)
@@ -1540,11 +1540,11 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 	}
 
 	// Debug
-	static bool once = false;
-	if (!once) {
-		std::cout << "[Shadow Pass] Rendered " << count << " objects to shadow map" << std::endl;
-		once = true;
-	}
+	//static bool once = false;
+	//if (!once) {
+	//	std::cout << "[Shadow Pass] Rendered " << count << " objects to shadow map" << std::endl;
+	//	once = true;
+	//}
 }
 
 void GraphicsManager::RenderSkybox()
@@ -1552,47 +1552,47 @@ void GraphicsManager::RenderSkybox()
 	static bool checkedOnce = false;
 
 	if (!currentCamera || !skyboxShader || skyboxVAO == 0) {
-		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - camera: " << (currentCamera != nullptr)
-				<< ", shader: " << (skyboxShader != nullptr) << ", VAO: " << skyboxVAO << std::endl;
-			checkedOnce = true;
-		}
+		//if (!checkedOnce) {
+		//	std::cout << "[GraphicsManager] Skybox render skipped - camera: " << (currentCamera != nullptr)
+		//		<< ", shader: " << (skyboxShader != nullptr) << ", VAO: " << skyboxVAO << std::endl;
+		//	checkedOnce = true;
+		//}
 		return;
 	}
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (!ecsManager.cameraSystem) {
-		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - no camera system" << std::endl;
-			checkedOnce = true;
-		}
+		//if (!checkedOnce) {
+		//	std::cout << "[GraphicsManager] Skybox render skipped - no camera system" << std::endl;
+		//	checkedOnce = true;
+		//}
 		return;
 	}
 
 	Entity activeCameraEntity = ecsManager.cameraSystem->GetActiveCameraEntity();
 	if (activeCameraEntity == UINT32_MAX || !ecsManager.HasComponent<CameraComponent>(activeCameraEntity)) {
-		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - no active camera entity" << std::endl;
-			checkedOnce = true;
-		}
+		//if (!checkedOnce) {
+		//	std::cout << "[GraphicsManager] Skybox render skipped - no active camera entity" << std::endl;
+		//	checkedOnce = true;
+		//}
 		return;
 	}
 
 	auto& cameraComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
 	if (!cameraComp.skyboxTexture) {
-		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - no skybox texture assigned" << std::endl;
-			checkedOnce = true;
-		}
+		//if (!checkedOnce) {
+		//	std::cout << "[GraphicsManager] Skybox render skipped - no skybox texture assigned" << std::endl;
+		//	checkedOnce = true;
+		//}
 		return;
 	}
 
-	static bool logged = false;
-	if (!logged) {
-		std::cout << "[GraphicsManager] Rendering skybox - Texture ID: " << cameraComp.skyboxTexture->ID
-			<< ", Viewport: " << viewportWidth << "x" << viewportHeight << std::endl;
-		logged = true;
-	}
+	//static bool logged = false;
+	//if (!logged) {
+	//	std::cout << "[GraphicsManager] Rendering skybox - Texture ID: " << cameraComp.skyboxTexture->ID
+	//		<< ", Viewport: " << viewportWidth << "x" << viewportHeight << std::endl;
+	//	logged = true;
+	//}
 
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);

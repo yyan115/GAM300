@@ -641,7 +641,7 @@ bool Engine::InitializeGraphicsResources() {
         //                    display, context, surface);
 
         if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
-            __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
+            //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
             return false;
         }
     }
@@ -765,7 +765,7 @@ void Engine::StartDraw() {
     //                    display, context, surface);
 
     if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
         return;
     }
 #endif
@@ -775,7 +775,7 @@ void Engine::StartDraw() {
 #ifdef ANDROID
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClearColor: %d", error);
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClearColor: %d", error);
     }
 #endif
 
@@ -784,7 +784,7 @@ void Engine::StartDraw() {
 #ifdef ANDROID
     error = glGetError();
     if (error != GL_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClear: %d", error);
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClear: %d", error);
     } else {
         // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Engine::StartDraw() - Successfully cleared screen with RED");
     }
@@ -796,7 +796,7 @@ void Engine::Draw() {
 #ifdef ANDROID
     // Ensure the EGL context is current
     if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current in Draw()");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current in Draw()");
         return;
     }
 
@@ -805,7 +805,7 @@ void Engine::Draw() {
     EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
 
     if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT - skipping draw!");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT - skipping draw!");
         return;
     }
 
@@ -813,7 +813,7 @@ void Engine::Draw() {
     EGLint surfaceWidth, surfaceHeight;
     if (!eglQuerySurface(display, surface, EGL_WIDTH, &surfaceWidth) ||
         !eglQuerySurface(display, surface, EGL_HEIGHT, &surfaceHeight)) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL surface is invalid - skipping draw!");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL surface is invalid - skipping draw!");
         return;
     }
 
@@ -826,9 +826,9 @@ void Engine::Draw() {
         }
 
     } catch (const std::exception& e) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw exception: %s", e.what());
     } catch (...) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw unknown exception");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ENGINE] SceneManager::DrawScene() threw unknown exception");
     }
     
 #else

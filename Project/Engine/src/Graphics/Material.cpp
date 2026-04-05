@@ -169,8 +169,8 @@ void Material::BindTextures(Shader& shader) const
 	// Use uniform names WITHOUT "material." prefix for samplers and flags
 	static bool loggedOnce = false;
 	if (!loggedOnce) {
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Setting texture flags: hasDiffuse=%d hasSpecular=%d hasNormal=%d hasEmissive=%d",
-			hasDiffuse, hasSpecular, hasNormal, hasEmissive);
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Setting texture flags: hasDiffuse=%d hasSpecular=%d hasNormal=%d hasEmissive=%d",
+		//	hasDiffuse, hasSpecular, hasNormal, hasEmissive);
 		loggedOnce = true;
 	}
 	shader.setBool("hasDiffuseMap", hasDiffuse);

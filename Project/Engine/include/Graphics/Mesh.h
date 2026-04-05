@@ -75,7 +75,7 @@ public:
 		boundingBox(other.boundingBox) {
 		other.vaoSetup = false;
 #ifdef ANDROID
-		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Move constructor - moved material pointer from %p to %p", other.material.get(), material.get());
+		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Move constructor - moved material pointer from %p to %p", other.material.get(), material.get());
 #endif
 	}
 

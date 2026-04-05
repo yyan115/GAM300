@@ -50,14 +50,14 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;
 
-    std::cout << "[CharacterController] Collider offset Y: " << collider_offsetY << std::endl;
-    std::cout << "[CharacterController] Transform position: ("
-        << transform.localPosition.x << ", "
-        << transform.localPosition.y << ", "
-        << transform.localPosition.z << ")" << std::endl;
+    //std::cout << "[CharacterController] Collider offset Y: " << collider_offsetY << std::endl;
+    //std::cout << "[CharacterController] Transform position: ("
+    //    << transform.localPosition.x << ", "
+    //    << transform.localPosition.y << ", "
+    //    << transform.localPosition.z << ")" << std::endl;
 
-    std::cout << "Capsule radius=" << collider.capsuleRadius
-        << " halfHeight=" << collider.capsuleHalfHeight << std::endl;
+    //std::cout << "Capsule radius=" << collider.capsuleRadius
+    //    << " halfHeight=" << collider.capsuleHalfHeight << std::endl;
 
 
     // Create the capsule shape
@@ -94,10 +94,10 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
         transform.localPosition.z
     );
 
-    std::cout << "[CharacterController] Creating character at physics position: ("
-        << physicsPosition.GetX() << ", "
-        << physicsPosition.GetY() << ", "
-        << physicsPosition.GetZ() << ")" << std::endl;
+    //std::cout << "[CharacterController] Creating character at physics position: ("
+    //    << physicsPosition.GetX() << ", "
+    //    << physicsPosition.GetY() << ", "
+    //    << physicsPosition.GetZ() << ")" << std::endl;
 
     // CREATE VIRTUAL CHARACTER at the correct physics position
     mCharacter = new JPH::CharacterVirtual(
@@ -123,8 +123,8 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
         temp_allocator
     );
 
-    std::cout << "[CharacterController] Initialized with Ground State: "
-        << (int)mCharacter->GetGroundState() << std::endl;
+    //std::cout << "[CharacterController] Initialized with Ground State: "
+    //    << (int)mCharacter->GetGroundState() << std::endl;
 
     return true;
 }

@@ -49,7 +49,7 @@ bool AndroidPlatform::InitializeWindow(int width, int height, const char* title)
     windowWidth = width;
     windowHeight = height;
     // Title is ignored on Android
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "AndroidPlatform::InitializeWindow(%dx%d)", width, height);
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "AndroidPlatform::InitializeWindow(%dx%d)", width, height);
     return true;  // Always succeed - graphics will be initialized later when surface is set
 }
 
@@ -171,26 +171,26 @@ double AndroidPlatform::GetTime() {
 
 bool AndroidPlatform::InitializeGraphics() {
     if (!window) {
-        __android_log_print(ANDROID_LOG_WARN, "GAM300", "AndroidPlatform::InitializeGraphics() - No native window set yet, will initialize later");
+        //__android_log_print(ANDROID_LOG_WARN, "GAM300", "AndroidPlatform::InitializeGraphics() - No native window set yet, will initialize later");
         return true; // Don't fail - just defer initialization
     }
 
     // Check if already initialized
     if (display != EGL_NO_DISPLAY && context != EGL_NO_CONTEXT && surface != EGL_NO_SURFACE) {
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL already initialized");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL already initialized");
         return true;
     }
 
     // Get the default display
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (display == EGL_NO_DISPLAY) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to get EGL display");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to get EGL display");
         return false;
     }
 
     // Initialize EGL
     if (!eglInitialize(display, nullptr, nullptr)) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to initialize EGL");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to initialize EGL");
         return false;
     }
 
@@ -210,7 +210,7 @@ bool AndroidPlatform::InitializeGraphics() {
     EGLConfig config;
     EGLint num_configs;
     if (!eglChooseConfig(display, config_attribs, &config, 1, &num_configs) || num_configs != 1) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to choose EGL config");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to choose EGL config");
         return false;
     }
 
@@ -221,54 +221,54 @@ bool AndroidPlatform::InitializeGraphics() {
     };
     context = eglCreateContext(display, config, EGL_NO_CONTEXT, context_attribs);
     if (context == EGL_NO_CONTEXT) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to create EGL context");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to create EGL context");
         return false;
     }
 
     // Create EGL surface
     surface = eglCreateWindowSurface(display, config, window, nullptr);
     if (surface == EGL_NO_SURFACE) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to create EGL surface");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to create EGL surface");
         return false;
     }
 
     // Make context current
     if (!eglMakeCurrent(display, surface, surface, context)) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current");
         return false;
     }
 
     const char* versionStr = (const char*)glGetString(GL_VERSION);
-#ifdef ANDROID
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "GL_VERSION: %s", versionStr);
-#endif
+//#ifdef ANDROID
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "GL_VERSION: %s", versionStr);
+//#endif
 
     // Get surface dimensions
     eglQuerySurface(display, surface, EGL_WIDTH, &windowWidth);
     eglQuerySurface(display, surface, EGL_HEIGHT, &windowHeight);
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "Updated window dimensions to actual surface size: %dx%d", windowWidth, windowHeight);
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Updated window dimensions to actual surface size: %dx%d", windowWidth, windowHeight);
 
     // Set the OpenGL viewport to match the surface size
     glViewport(0, 0, windowWidth, windowHeight);
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "OpenGL viewport set to: %dx%d", windowWidth, windowHeight);
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "OpenGL viewport set to: %dx%d", windowWidth, windowHeight);
 
     // Update WindowManager with the correct dimensions so projection matrix calculations use real surface size
     WindowManager::fbsize_cb(static_cast<PlatformWindow>(window), windowWidth, windowHeight);
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "Updated WindowManager dimensions to: %dx%d", windowWidth, windowHeight);
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Updated WindowManager dimensions to: %dx%d", windowWidth, windowHeight);
 
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "OpenGL depth testing enabled");
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "OpenGL depth testing enabled");
 
     // Keep the context current for now - it will be released after graphics resources are loaded
-    __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL initialized successfully: %dx%d", windowWidth, windowHeight);
+    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL initialized successfully: %dx%d", windowWidth, windowHeight);
     return true;
 }
 
 void AndroidPlatform::ReleaseContext() {
     if (display != EGL_NO_DISPLAY) {
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context released from main thread");
+        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context released from main thread");
     }
 }
 
@@ -283,11 +283,11 @@ bool AndroidPlatform::MakeContextCurrent() {
             return true;
         } else {
             EGLint error = eglGetError();
-            __android_log_print(ANDROID_LOG_ERROR, "GAM300", "eglMakeCurrent() FAILED - Error: 0x%x", error);
+            //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "eglMakeCurrent() FAILED - Error: 0x%x", error);
             return false;
         }
     } else {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "MakeContextCurrent() - Invalid EGL handles!");
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "MakeContextCurrent() - Invalid EGL handles!");
         return false;
     }
 }
@@ -455,7 +455,7 @@ void AndroidPlatform::HandleKeyEvent(int keyCode, int action) {
             keyStates[keyIndex] = (action == 0);
         }
 
-        __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Key event: keyCode=%d, action=%d, engineKey=%d", keyCode, action, static_cast<int>(engineKey));
+        //__android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Key event: keyCode=%d, action=%d, engineKey=%d", keyCode, action, static_cast<int>(engineKey));
     }
 }
 

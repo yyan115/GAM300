@@ -312,7 +312,7 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 
 	// Fallback if the user accidentally deleted the .meta file.
 	if (!MetaFilesManager::MetaFileExists(assetPath)) {
-		std::cout << "[AssetManager] WARNING: .meta file missing for asset: " << assetPath << ". Resulting to fallback." << std::endl;
+		//std::cout << "[AssetManager] WARNING: .meta file missing for asset: " << assetPath << ". Resulting to fallback." << std::endl;
 		guid = GetGUID128FromAssetMeta(assetPath);
 	}
 	else {

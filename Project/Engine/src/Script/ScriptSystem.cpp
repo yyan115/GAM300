@@ -583,7 +583,7 @@ static size_t Lua_FindCurrentClipByName(const std::string& name)
 void ScriptSystem::Initialise(ECSManager& ecsManager)
 {
     // DEBUG: This MUST print if new code is compiled - v3
-    std::cout << "[ScriptSystem] ===== INITIALISE v3 =====" << std::endl;
+    //std::cout << "[ScriptSystem] ===== INITIALISE v3 =====" << std::endl;
     ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] ===== INITIALISE v3 =====");
 
     m_ecs = &ecsManager;

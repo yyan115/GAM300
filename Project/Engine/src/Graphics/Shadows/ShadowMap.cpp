@@ -48,7 +48,7 @@ bool DirectionalShadowMap::Initialize(int res)
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        std::cout << "[DirectionalShadowMap] Framebuffer not complete!" << std::endl;
+        //std::cout << "[DirectionalShadowMap] Framebuffer not complete!" << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return false;
     }
@@ -61,13 +61,13 @@ bool DirectionalShadowMap::Initialize(int res)
 
     if (!depthShader)
     {
-        std::cout << "[DirectionalShadowMap] Failed to load shader: " << shaderPath << std::endl;
+        //std::cout << "[DirectionalShadowMap] Failed to load shader: " << shaderPath << std::endl;
         return false;
     }
 
     initialized = true;
-    std::cout << "[DirectionalShadowMap] Initialized - Resolution: " << resolution
-        << ", FBO: " << depthMapFBO << ", Texture: " << depthTexture << std::endl;
+    //std::cout << "[DirectionalShadowMap] Initialized - Resolution: " << resolution
+    //    << ", FBO: " << depthMapFBO << ", Texture: " << depthTexture << std::endl;
     return true;
 }
 

@@ -952,7 +952,7 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 	auto platform = WindowManager::GetPlatform();
 	if (platform) {
 		if (!platform->MakeContextCurrent()) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to make OpenGL context current for model drawing");
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to make OpenGL context current for model drawing");
 			return;
 		}
 		/*__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");*/
@@ -960,13 +960,13 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 
 	// Validate shader
 	if (shader.ID == 0 || !glIsProgram(shader.ID)) {
-		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Invalid shader program ID: %u", shader.ID);
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Invalid shader program ID: %u", shader.ID);
 		return;
 	}
 
 	// Check if meshes vector is empty
 	if (meshes.empty()) {
-		__android_log_print(ANDROID_LOG_WARN, "GAM300", "[MODEL] No meshes to draw");
+		//__android_log_print(ANDROID_LOG_WARN, "GAM300", "[MODEL] No meshes to draw");
 		return;
 	}
 #endif
@@ -992,11 +992,11 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 
 		// Validate mesh before drawing
 		if (meshes[i].vertices.empty()) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no vertices, skipping", i+1);
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no vertices, skipping", i+1);
 			continue;
 		}
 		if (meshes[i].indices.empty()) {
-			__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no indices, skipping", i+1);
+			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no indices, skipping", i+1);
 			continue;
 		}
 #endif
@@ -1185,7 +1185,7 @@ Assimp::IOStream* AndroidIOSystem::Open(const char* pFile, const char* pMode) {
 
     std::string content = get_file_contents(fullPath.c_str());
     if (content.empty()) {
-        __android_log_print(ANDROID_LOG_ERROR, "GAM300", "[AndroidIOSystem] Failed to load file: %s", fullPath.c_str());
+        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[AndroidIOSystem] Failed to load file: %s", fullPath.c_str());
         return nullptr;
     }
 
