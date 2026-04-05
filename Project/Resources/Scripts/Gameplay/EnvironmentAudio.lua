@@ -157,9 +157,9 @@ return Component {
                 if bossBGMAudio then bossBGMAudio:Play() end
             end
 
-            -- Fade BGM bus back to full — BossBGM fades in
+            -- Fade BGM bus back to user's configured volume — BossBGM fades in
             self._bgmFadeFrom   = Audio.GetBusVolume("BGM")
-            self._bgmFadeTo     = 1.0
+            self._bgmFadeTo     = GameSettings.GetBGMVolume()
             self._bgmFadeTimer  = 0.0
             self._bgmFadeActive = true
         end)
@@ -178,7 +178,7 @@ return Component {
                 local bossBGMAudio = GetComponent(bossBGMEnt, "AudioComponent")
                 if bossBGMAudio then bossBGMAudio:Stop() end
             end
-            Audio.SetBusVolume("BGM", 1.0)
+            Audio.SetBusVolume("BGM", GameSettings.GetBGMVolume())
         end)
 
         -- Respawn — restore BGM1 fully (mute state persists across respawn)
@@ -206,7 +206,7 @@ return Component {
         end
 
         self._bgmFadeFrom   = Audio.GetBusVolume("BGM")
-        self._bgmFadeTo     = 1.0
+        self._bgmFadeTo     = GameSettings.GetBGMVolume()
         self._bgmFadeTimer  = 0.0
         self._bgmFadeActive = true
     end,
