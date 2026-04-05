@@ -26,11 +26,6 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 1.0
@@ -41,7 +36,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -51,12 +46,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Attack",
-            "type": "Trigger",
+            "name": "IsJumping",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -96,12 +96,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsArmed",
+            "name": "IsLifting",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
-            "name": "IsLifting",
+            "name": "IsArmed",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -133,6 +133,17 @@
     ],
     "states": [
         {
+            "id": "NA1",
+            "clipIndex": 1,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1068.023193359375,
+                "y": -389.7625732421875
+            }
+        },
+        {
             "id": "Idle",
             "clipIndex": 0,
             "loop": true,
@@ -144,14 +155,14 @@
             }
         },
         {
-            "id": "NA1",
-            "clipIndex": 1,
+            "id": "FeatherLaunchEnd",
+            "clipIndex": 10,
             "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": 1052.023193359375,
-                "y": -384.7625427246094
+                "x": 188.404052734375,
+                "y": -623.8199462890625
             }
         },
         {
@@ -163,17 +174,6 @@
             "nodePosition": {
                 "x": 275.0,
                 "y": 147.0
-            }
-        },
-        {
-            "id": "FeatherLaunchEnd",
-            "clipIndex": 10,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.20000000298023224,
-            "nodePosition": {
-                "x": 188.404052734375,
-                "y": -623.8199462890625
             }
         },
         {
@@ -276,17 +276,6 @@
             }
         },
         {
-            "id": "Air Slam",
-            "clipIndex": 19,
-            "loop": false,
-            "speed": 2.9999992847442627,
-            "crossfadeDuration": 0.20000000298023224,
-            "nodePosition": {
-                "x": 1082.1866455078125,
-                "y": 64.58775329589844
-            }
-        },
-        {
             "id": "ThrowChain",
             "clipIndex": 13,
             "loop": false,
@@ -295,6 +284,17 @@
             "nodePosition": {
                 "x": 224.53451538085938,
                 "y": 252.49636840820313
+            }
+        },
+        {
+            "id": "Air Slam",
+            "clipIndex": 19,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1082.1866455078125,
+                "y": 64.58775329589844
             }
         },
         {
@@ -2414,6 +2414,86 @@
                     "paramName": "IsDashing",
                     "mode": "Equals",
                     "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "SlamChain",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Air Slam",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         }
