@@ -1474,31 +1474,33 @@ void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& pr
 
 void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 {
-	// Iterate ECS entities directly instead of renderQueue.
-	// renderQueue only contains camera-frustum-visible objects, so objects just
-	// outside the camera view would be missing from shadow maps, causing shadows
-	// to pop out the moment their caster left the screen edge.
-	// Shadow rendering only needs the light-sphere cull (objects outside the
-	// light's range can't cast visible shadows anyway).
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	if (!ecsManager.modelSystem)
-		return;
-
 	int count = 0;
-	for (const auto& entity : ecsManager.modelSystem->entities)
+
+	if (m_shadowFarPlane > 0.0f)
 	{
-		if (!ecsManager.IsEntityActiveInHierarchy(entity))
-			continue;
+		// ---------------------------------------------------------------
+		// POINT LIGHT SHADOW PASS
+		// PC:      Iterate ECS directly so objects just outside the camera
+		//          frustum still cast shadows on visible geometry.
+		// Android: Use the render queue (camera-frustum-culled) to keep
+		//          fill cost low — pop-in is less noticeable on mobile.
+		// ---------------------------------------------------------------
+#ifndef ANDROID
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+		if (!ecsManager.modelSystem)
+			return;
 
-		auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-		if (!modelComp.isVisible || !modelComp.model)
-			continue;
-
-		glm::mat4 modelMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM();
-
-		// Point light sphere culling: skip objects outside the light's range
-		if (m_shadowFarPlane > 0.0f)
+		for (const auto& entity : ecsManager.modelSystem->entities)
 		{
+			if (!ecsManager.IsEntityActiveInHierarchy(entity))
+				continue;
+
+			auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+			if (!modelComp.isVisible || !modelComp.model)
+				continue;
+
+			glm::mat4 modelMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM();
+
 			AABB worldBBox = modelComp.model->GetBoundingBox().Transform(modelMatrix);
 			float sqDist = 0.0f;
 			for (int i = 0; i < 3; ++i)
@@ -1509,24 +1511,77 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 			}
 			if (sqDist > m_shadowFarPlane * m_shadowFarPlane)
 				continue;
+
+			count++;
+			depthShader.setMat4("model", modelMatrix);
+			depthShader.setBool("isAnimated", modelComp.HasAnimation());
+			if (modelComp.HasAnimation() && modelComp.animator)
+			{
+				const auto& transforms = modelComp.mFinalBoneMatrices;
+				if (!transforms.empty())
+					depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
+			}
+			modelComp.model->DrawDepthOnly();
 		}
-
-		count++;
-
-		// Set model matrix
-		depthShader.setMat4("model", modelMatrix);
-
-		// Handle animation
-		depthShader.setBool("isAnimated", modelComp.HasAnimation());
-		if (modelComp.HasAnimation() && modelComp.animator)
+#else
+		for (const auto& renderItem : renderQueue)
 		{
-			const auto& transforms = modelComp.mFinalBoneMatrices;
-			if (!transforms.empty())
-				depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
-		}
+			const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
+			if (!modelItem || !modelItem->isVisible || !modelItem->model)
+				continue;
 
-		// Draw model geometry only (no materials)
-		modelComp.model->DrawDepthOnly();
+			glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+
+			AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+			float sqDist = 0.0f;
+			for (int i = 0; i < 3; ++i)
+			{
+				float v = m_shadowLightPos[i];
+				if (v < worldBBox.min[i]) sqDist += (worldBBox.min[i] - v) * (worldBBox.min[i] - v);
+				if (v > worldBBox.max[i]) sqDist += (v - worldBBox.max[i]) * (v - worldBBox.max[i]);
+			}
+			if (sqDist > m_shadowFarPlane * m_shadowFarPlane)
+				continue;
+
+			count++;
+			depthShader.setMat4("model", modelMatrix);
+			depthShader.setBool("isAnimated", modelItem->HasAnimation());
+			if (modelItem->HasAnimation() && modelItem->animator)
+			{
+				const auto& transforms = modelItem->mFinalBoneMatrices;
+				if (!transforms.empty())
+					depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
+			}
+			modelItem->model->DrawDepthOnly();
+		}
+#endif
+	}
+	else
+	{
+		// ---------------------------------------------------------------
+		// DIRECTIONAL SHADOW PASS (both platforms)
+		// Use the camera-frustum-culled render queue. The directional shadow
+		// map covers the camera view area, so objects outside the frustum
+		// can't contribute to the visible shadow anyway.
+		// ---------------------------------------------------------------
+		for (const auto& renderItem : renderQueue)
+		{
+			const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
+			if (!modelItem || !modelItem->isVisible || !modelItem->model)
+				continue;
+
+			count++;
+			glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+			depthShader.setMat4("model", modelMatrix);
+			depthShader.setBool("isAnimated", modelItem->HasAnimation());
+			if (modelItem->HasAnimation() && modelItem->animator)
+			{
+				const auto& transforms = modelItem->mFinalBoneMatrices;
+				if (!transforms.empty())
+					depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
+			}
+			modelItem->model->DrawDepthOnly();
+		}
 	}
 
 	// Also render instanced batches — they bypass the renderQueue so they'd otherwise

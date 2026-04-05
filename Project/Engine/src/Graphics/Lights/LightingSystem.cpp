@@ -18,10 +18,6 @@ bool LightingSystem::Initialise()
         shadowsEnabled = false;
     }
 
-    // Initialize point light shadow maps — update every frame for visible lights.
-    // Frustum culling (IsSphereVisible) already skips off-screen lights, so updating
-    // every frame is cheap. Staggered phase offsets caused visible glitter because
-    // half the lights held a stale map each frame, making shadow edges flicker.
     pointShadowMaps.resize(MAX_POINT_LIGHT_SHADOWS);
     for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
@@ -29,9 +25,19 @@ bool LightingSystem::Initialise()
         {
             //std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
         }
-        pointShadowMaps[i].cacheConfig.updateInterval = 0;  // No minimum gap between updates
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;  // Force update if 1 frame is stale
-        pointShadowMaps[i].SetPhaseOffset(0);               // All lights sync — no alternating flicker
+#ifdef ANDROID
+        // On Android, stagger updates so only ~half the shadow maps render per frame.
+        // The PCF minimum disk radius (0.03) blurs enough to hide 1-frame stale maps.
+        pointShadowMaps[i].cacheConfig.updateInterval = 2;  // Check every other frame
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;  // Force update after 4 frames
+        pointShadowMaps[i].SetPhaseOffset(i % 2);           // Stagger: maps 0,2 and 1,3 alternate
+#else
+        // On PC, update every frame — the ECS traversal culls aggressively enough
+        // that the per-frame cost is acceptable.
+        pointShadowMaps[i].cacheConfig.updateInterval = 0;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
+        pointShadowMaps[i].SetPhaseOffset(0);
+#endif
     }
 
     //std::cout << "[LightingSystem] Initialized" << std::endl;
@@ -75,9 +81,16 @@ void LightingSystem::SetPointShadowQuality(int quality)
         if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
             //std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed at res " << newRes << std::endl;
 
+
+#ifdef ANDROID
+        pointShadowMaps[i].cacheConfig.updateInterval = 2;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;
+        pointShadowMaps[i].SetPhaseOffset(i % 2);
+#else
         pointShadowMaps[i].cacheConfig.updateInterval = 0;
         pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
         pointShadowMaps[i].SetPhaseOffset(0);
+#endif
     }
 }
 
