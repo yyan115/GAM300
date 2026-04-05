@@ -16,6 +16,14 @@ function BattlecryState:Enter(ai)
     if _bossAudio then _bossAudio.SpatialBlend = 0 end  -- play as 2D (bypasses distance rolloff)
     ai:_publishSFX("taunt")
 
+    -- Add the same screen shake / FX used by the phase
+    if ai._TriggerBossPhaseShake then
+        ai:_TriggerBossPhaseShake()
+    end
+    if ai._TriggerBossPhaseFx then
+        ai:_TriggerBossPhaseFx()
+    end
+
     --print("[Miniboss] Intro START (battlecry)")
 end
 
