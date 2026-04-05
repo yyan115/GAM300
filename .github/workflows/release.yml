@@ -1,0 +1,168 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: true
+      release_name:
+        description: 'Release name (e.g. Milestone 4 - Final Submission)'
+        required: true
+
+env:
+  VCPKG_COMMIT: 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
+
+jobs:
+  # ── Windows Release Build ──────────────────────────────────────────
+  windows-build:
+    runs-on: windows-2022
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Cache vcpkg
+      id: cache-vcpkg
+      uses: actions/cache@v4
+      with:
+        path: vcpkg
+        key: vcpkg-exe-${{ env.VCPKG_COMMIT }}
+
+    - name: Cache vcpkg packages
+      id: cache-vcpkg-packages
+      uses: actions/cache@v4
+      with:
+        path: Project/Build/vcpkg_installed
+        key: vcpkg-pkgs-${{ env.VCPKG_COMMIT }}-${{ hashFiles('Project/vcpkg.json') }}
+
+    - name: Bootstrap vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        git checkout ${{ env.VCPKG_COMMIT }}
+        .\bootstrap-vcpkg.bat -disableMetrics
+      shell: pwsh
+
+    - name: Install dependencies
+      if: steps.cache-vcpkg-packages.outputs.cache-hit != 'true'
+      run: cmake --preset release
+      working-directory: Project
+
+    - name: Configure CMake
+      run: cmake --preset release
+      working-directory: Project
+
+    - name: Build
+      run: cmake --build --preset release --parallel
+      working-directory: Project
+
+    - name: Package Windows build
+      run: |
+        mkdir -p staging/GAM300-Windows
+        cp Project/Build/Release/*.exe staging/GAM300-Windows/
+        cp Project/Build/Release/*.dll staging/GAM300-Windows/ 2>/dev/null || true
+        cp -r Project/Build/Release/Resources staging/GAM300-Windows/ 2>/dev/null || true
+      shell: bash
+
+    - name: Zip Windows build
+      run: Compress-Archive -Path staging/GAM300-Windows -DestinationPath staging/GAM300-Windows-${{ github.event.inputs.version }}.zip
+      shell: pwsh
+
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-release
+        path: staging/GAM300-Windows-${{ github.event.inputs.version }}.zip
+        retention-days: 1
+
+  # ── Android APK Build ──────────────────────────────────────────────
+  android-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+
+    - name: Cache Jolt Physics (FetchContent)
+      uses: actions/cache@v4
+      with:
+        path: Project/Build/android-release/_deps
+        key: android-deps-Release-${{ hashFiles('Project/ImportDependencies.cmake') }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Install NDK and Ninja
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;29.0.14033849"
+        sudo apt-get update && sudo apt-get install -y ninja-build
+
+    - name: Build APK
+      run: ./gradlew assembleRelease
+      working-directory: AndroidProject
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-release
+        path: AndroidProject/app/build/outputs/apk/release/*.apk
+        retention-days: 1
+
+  # ── Create GitHub Release ──────────────────────────────────────────
+  publish-release:
+    needs: [windows-build, android-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-release
+        path: release-files/
+
+    - name: Download Android artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: android-release
+        path: release-files/
+
+    - name: Rename APK
+      run: |
+        cd release-files
+        for f in *.apk; do
+          mv "$f" "GAM300-Android-${{ github.event.inputs.version }}.apk"
+        done
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: ${{ github.event.inputs.release_name }}
+        body: |
+          ## ${{ github.event.inputs.release_name }}
+
+          **Version:** `${{ github.event.inputs.version }}`
+
+          ### Downloads
+          - **Windows** — `GAM300-Windows-${{ github.event.inputs.version }}.zip`
+          - **Android** — `GAM300-Android-${{ github.event.inputs.version }}.apk`
+
+          ---
+          *Built automatically from `${{ github.sha }}` on `${{ github.ref_name }}`*
+        files: release-files/*
+        draft: false
+        prerelease: false
