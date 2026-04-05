@@ -192,17 +192,20 @@ return Component {
         AirLiftTargetVelY   =  2.0,
         AirLiftCooldown     =  0.35,
         PostLiftAirLock     =  0.30,
-        AirSlamInitialSpeed =  2.0,
-        AirSlamAcceleration = 80.0,
-        AirSlamMaxSpeed     = 50.0,
+        AirSlamInitialSpeed  =  2.0,
+        AirSlamAcceleration  = 80.0,
+        AirSlamMaxSpeed      = 50.0,
         SlamShakeIntensity  =  0.6,
         SlamShakeDuration   =  0.7,
         SlamShakeFrequency  = 25.0,
+        SlamChromaticIntensity = 0.8,   -- Chromatic aberration intensity on slam land.
+        SlamChromaticDuration  = 0.3,   -- Chromatic aberration duration on slam land.
         LandingDuration     = 0.65,   -- Seconds of recovery before movement restores.
         RollHeightThreshold = 2.0,   -- Fall distance (world units) that triggers roll instead of soft land.
-        SlamSlowMoScale     = 0.15,  -- Time scale during slam hit-stop (0=frozen, 1=normal).
-        SlamSlowMoDuration  = 0.18,  -- Seconds the slow-mo lasts before snapping back.
-        SlamHoverDuration   = 0.1,   -- Seconds player freezes in air before slam descent begins.
+        SlamSlowMoScale        = 0.15,  -- Time scale during slam hit-stop (0=frozen, 1=normal).
+        SlamSlowMoDuration     = 0.18,  -- Seconds the slow-mo lasts before snapping back.
+        SlamHoverDuration      = 0.1,   -- Seconds player freezes in air before slam descent begins.
+        SlamLateralMultiplier  = 2.0,   -- Scales horizontal speed during chain-targeted slam.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
         -- === Squash & stretch ===
@@ -259,6 +262,21 @@ return Component {
         self._chainDragTargetX        = 0
         self._chainDragTargetY        = 0
         self._chainDragTargetZ        = 0
+
+        -- ── Chain slam targeting ───────────────────────────────────────────────
+        -- Tracks whether the chain is locked onto something and its world position.
+        -- Read by the air slam block to decide whether to arc towards the endpoint.
+        self._chainAttached     = false
+        self._chainTargetX      = nil
+        self._chainTargetY      = nil
+        self._chainTargetZ      = nil
+
+        -- Slam type flags (mutually exclusive, resolved at hover-end):
+        --   _isTargetedSlam : chain attached → full SlamLateralMultiplier toward chain landing pos
+        --   neither         → half SlamLateralMultiplier toward baked dir (input if held, else facing)
+        self._isDirectionalSlam = false   -- unused, kept for safe nil-guard during transition
+        self._slamDirX          = 0
+        self._slamDirZ          = 0
 
         -- ── Combat lock ───────────────────────────────────────────────────────
         self._playerCanMove = true
@@ -331,6 +349,43 @@ return Component {
         self._chainAimActive = false
         self._chainAimStateSub = event_bus.subscribe("chain.aim_camera", function(payload)
             self._chainAimActive = payload and payload.active or false
+        end)
+
+        -- ── Chain slam targeting ───────────────────────────────────────────────
+        -- _chainAttached is STICKY: only SET when isLocked/isWallSnapped is true,
+        -- only CLEARED by explicit detach events or a new throw starting.
+        -- We never clear it on endpoint_moved with false values because
+        -- StartRetraction() zeroes _raycastSnapped immediately, so the very
+        -- next endpoint_moved would clear the flag before the slam subscriber
+        -- gets to read it — losing the target on the exact frame it matters.
+        sub(self, "_chainEndpointSub", "chain.endpoint_moved", function(data)
+            if not data then return end
+            if data.isLocked or data.isWallSnapped then
+                self._chainAttached = true
+                if data.position then
+                    self._chainTargetX = data.position.x
+                    self._chainTargetY = data.position.y
+                    self._chainTargetZ = data.position.z
+                end
+            end
+            -- Do NOT write false here — cleared by chain.detached /
+            -- chain.endpoint_retracted / chain.throw_chain instead.
+        end)
+
+        -- New throw fired: wipe stale target so arc doesn't aim at last shot's position.
+        sub(self, "_chainThrownSub", "chain.throw_chain", function()
+            self._chainAttached = false
+            self._chainTargetX  = nil
+            self._chainTargetY  = nil
+            self._chainTargetZ  = nil
+        end)
+
+        sub(self, "_chainDetachedSub", "chain.detached", function()
+            self._chainAttached = false
+        end)
+
+        sub(self, "_chainRetractedSub", "chain.endpoint_retracted", function()
+            self._chainAttached = false
         end)
 
         -- ── Rotation overrides ────────────────────────────────────────────────
@@ -416,14 +471,17 @@ return Component {
                 self._lungeDirX = dirX
                 self._lungeDirZ = dirZ
             elseif data and data.isSlam then
-                self._isAirSlam   = true
-                self._isJumping   = true
-                self._slamHover   = true
-                self._slamHoverTimer = self.SlamHoverDuration or 0.1
-                self._slamVelY    = self.AirSlamInitialSpeed or 2.0
-                self._velX        = 0
-                self._velZ        = 0
-                self._lungeTimer  = 0
+                self._isAirSlam         = true
+                self._isJumping         = true
+                self._slamHover         = true
+                self._slamHoverTimer    = self.SlamHoverDuration or 0.1
+                self._velX              = 0
+                self._velZ              = 0
+                -- Slam type (_isTargetedSlam vs lateral baked) resolved at hover-end.
+                self._isTargetedSlam = false
+                self._slamDirX       = 0
+                self._slamDirZ       = 0
+                self._lungeTimer        = 0
                 if self._animator then self._animator:SetBool("IsSlamming", true) end
             elseif data and data.isAerial then
                 -- Air time extension: restore Y velocity to AirLiftTargetVelY only when
@@ -474,8 +532,9 @@ return Component {
                 -- its own termination once IsGrounded fires. Only clear if already
                 -- on the ground (e.g. combo cancelled before leaving the floor).
                 if not self._isAirSlam or CharacterController.IsGrounded(self._controller) then
-                    self._isAirSlam = false
-                    self._slamVelY  = 0
+                    self._isAirSlam      = false
+                    self._isTargetedSlam = false
+                    self._slamVelY       = 0
                     if self._animator then self._animator:SetBool("IsSlamming", false) end
                 end
             end
@@ -589,9 +648,14 @@ return Component {
         -- _slamLanding is a one-frame flag for full-intensity landing squash.
         self._liftAttackJump       = false
         self._isAirSlam            = false
+        self._isTargetedSlam       = false   -- true when chain attached → full lateral mult, dir = pos→chainTarget
+        self._slamDirX             = 0       -- world-space direction baked at hover-end (input or facing)
+        self._slamDirZ             = 0
         self._slamHover            = false
         self._slamHoverTimer       = 0
         self._slamVelY             = 0
+        self._slamVelX             = 0       -- horizontal arc velocity (targeted slam only)
+        self._slamVelZ             = 0
         self._slamLanding          = false
         self._lastGroundedY        = 0
         self._airLiftCooldownTimer = 0
@@ -1374,13 +1438,51 @@ return Component {
         -- SetVelocity writes directly to the physics body, overriding CC gravity
         -- accumulation and giving full manual control of the descent curve.
         if self._isAirSlam then
-            -- Hover: freeze in air briefly before descent begins.
+            -- ── Hover: freeze in air briefly before descent begins ─────────────
             if self._slamHover then
                 self._slamHoverTimer = self._slamHoverTimer - dt
                 CharacterController.SetVelocity(self._controller, 0, 0, 0)
+
                 if self._slamHoverTimer <= 0 then
                     self._slamHover = false
+
+                    -- ── Resolve slam type at hover-end ────────────────────────
+                    -- Chain attached  → TARGET: direction computed pos→chainTarget each frame, full lateral.
+                    -- No chain        → LATERAL: direction baked once here (input if held, else facing), half lateral.
+                    if self._chainAttached and self._chainTargetX then
+                        self._isTargetedSlam = true
+                        self._slamDirX       = 0
+                        self._slamDirZ       = 0
+                    else
+                        self._isTargetedSlam = false
+                        -- Sample input (same conversion as normal movement).
+                        local slamInterp = _G.InputInterpreter
+                        local slamAxis   = slamInterp and slamInterp:GetMovementAxis()
+                        local slamRawX   = slamAxis and -slamAxis.x or 0
+                        local slamRawZ   = slamAxis and  slamAxis.y or 0
+                        if slamRawX ~= 0 or slamRawZ ~= 0 then
+                            -- Input held: bake camera-relative input direction.
+                            local yr2  = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
+                            local sin2 = math.sin(yr2); local cos2 = math.cos(yr2)
+                            local wX   = slamRawZ * (-sin2) - slamRawX * cos2
+                            local wZ   = slamRawZ * (-cos2) + slamRawX * sin2
+                            local wLen = math.sqrt(wX*wX + wZ*wZ)
+                            if wLen > 0.001 then
+                                self._slamDirX = wX / wLen
+                                self._slamDirZ = wZ / wLen
+                            else
+                                self._slamDirX = self._facingX or 0
+                                self._slamDirZ = self._facingZ or 1
+                            end
+                        else
+                            -- No input: bake current facing direction.
+                            self._slamDirX = self._facingX or 0
+                            self._slamDirZ = self._facingZ or 1
+                        end
+                    end
+                    self._slamVelY = self.AirSlamInitialSpeed or 2.0
                 end
+
                 local hoverPos = CharacterController.GetPosition(self._controller)
                 if hoverPos then
                     self:SetPosition(hoverPos.x, hoverPos.y, hoverPos.z)
@@ -1389,21 +1491,25 @@ return Component {
                 return
             end
 
+            -- ── Descent ───────────────────────────────────────────────────────
             local slamPos = CharacterController.GetPosition(self._controller)
-            -- Raycast straight down from feet. Ray length covers max distance
-            -- the player can travel in one frame at full slam speed (~50/60 = 0.84)
-            -- plus a small skin buffer so we never tunnel through thin floors.
-            -- Ray covers exactly one frame of travel plus a small skin buffer.
-            -- No fixed minimum — that was causing early hits while still airborne.
-            local rayLen  = (self._slamVelY * dt) + 0.15
-            local slamHit = false
+
+            -- Raycast straight down for all slam types.
+            -- Horizontal movement is applied via Move() separately, so the floor
+            -- is always directly below regardless of lateral direction.
+            local rayLen = (self._slamVelY * dt) + 0.15
+            local rayDX, rayDY, rayDZ = 0, -1, 0
+
+            local slamHit     = false
             local slamHitDist = 0
-            if slamPos and Physics and Physics.Raycast then
+            if rayLen > 0 and slamPos and Physics and Physics.Raycast then
                 local ok, dist = pcall(function()
-                    return Physics.Raycast(slamPos.x, slamPos.y + 0.05, slamPos.z, 0, -1, 0, rayLen)
+                    return Physics.Raycast(
+                        slamPos.x, slamPos.y + 0.05, slamPos.z,
+                        rayDX, rayDY, rayDZ, rayLen)
                 end)
                 slamHitDist = (ok and dist) or 0
-                slamHit = ok and dist and dist > 0
+                slamHit     = ok and dist and dist > 0
             end
             --print(string.format("[SLAM] pos.y=%.3f | rayLen=%.3f | slamHit=%s | hitDist=%.3f | _slamVelY=%.2f",
             --    slamPos and slamPos.y or -999, rayLen, tostring(slamHit), slamHitDist, self._slamVelY))
@@ -1413,16 +1519,61 @@ return Component {
                     self._slamVelY + (self.AirSlamAcceleration or 80.0) * dt,
                     self.AirSlamMaxSpeed or 50.0
                 )
-                CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
+
+                if self._isTargetedSlam then
+                    -- ── TARGET SLAM: direction recomputed every frame from player pos → chain landing pos ──
+                    -- Full SlamLateralMultiplier.
+                    local dirX, dirZ = 0, 0
+                    if slamPos and self._chainTargetX then
+                        local dx = self._chainTargetX - slamPos.x
+                        local dz = self._chainTargetZ - slamPos.z
+                        local hd = math.sqrt(dx*dx + dz*dz)
+                        if hd > 0.001 then
+                            dirX = dx / hd
+                            dirZ = dz / hd
+                        end
+                    end
+                    local lateralMult = self.SlamLateralMultiplier or 2.0
+                    CharacterController.Move(self._controller,
+                        dirX * self._slamVelY * lateralMult, 0,
+                        dirZ * self._slamVelY * lateralMult)
+                    CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
+                    if dirX ~= 0 or dirZ ~= 0 then
+                        local w, x, y, z = directionToQuaternion(dirX, dirZ)
+                        self._currentRotW, self._currentRotX,
+                        self._currentRotY, self._currentRotZ = w, x, y, z
+                        self._facingX = dirX; self._facingZ = dirZ
+                        pcall(self.SetRotation, self, w, x, y, z)
+                    end
+
+                else
+                    -- ── NORMAL / DIRECTIONAL SLAM: baked direction (facing or input), half lateral ──
+                    local lateralMult = (self.SlamLateralMultiplier or 2.0) * 0.5
+                    CharacterController.Move(self._controller,
+                        self._slamDirX * self._slamVelY * lateralMult, 0,
+                        self._slamDirZ * self._slamVelY * lateralMult)
+                    CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
+                    if self._slamDirX ~= 0 or self._slamDirZ ~= 0 then
+                        local w, x, y, z = directionToQuaternion(self._slamDirX, self._slamDirZ)
+                        self._currentRotW, self._currentRotX,
+                        self._currentRotY, self._currentRotZ = w, x, y, z
+                        self._facingX = self._slamDirX; self._facingZ = self._slamDirZ
+                        pcall(self.SetRotation, self, w, x, y, z)
+                    end
+                end
             else
-                -- Hit floor — fire everything immediately and return clean.
+                -- ── Hit floor — fire all landing effects and return clean ──────
                 --print(string.format("[SLAM] HIT FLOOR at pos.y=%.3f | firing effects", slamPos and slamPos.y or -999))
-                self._isAirSlam  = false
-                self._isJumping  = false
-                self._isLanding  = true
-                self._slamVelY   = 0
-                self._velX       = 0
-                self._velZ       = 0
+                self._isAirSlam      = false
+                local wasTargetedSlam = self._isTargetedSlam
+                self._isTargetedSlam = false
+                self._isJumping      = false
+                self._isLanding      = true
+                self._slamVelY       = 0
+                self._slamVelX       = 0
+                self._slamVelZ       = 0
+                self._velX           = 0
+                self._velZ           = 0
                 CharacterController.SetVelocity(self._controller, 0, 0, 0)
                 if self._animator then
                     self._animator:SetBool("IsJumping",  false)
@@ -1438,13 +1589,16 @@ return Component {
                         frequency = self.SlamShakeFrequency or 18.0,
                     })
                     event_bus.publish("fx_chromatic", {
-                        intensity = 0.8,
-                        duration  = 0.3,
+                        intensity = self.SlamChromaticIntensity or 0.8,
+                        duration  = self.SlamChromaticDuration  or 0.3,
                     })
                     event_bus.publish("fx_time_scale", {
                         scale    = self.SlamSlowMoScale    or 0.15,
                         duration = self.SlamSlowMoDuration or 0.18,
                     })
+                    if wasTargetedSlam then
+                        event_bus.publish("chain.retract", {})
+                    end
                 end
                 local position = CharacterController.GetPosition(self._controller)
                 if position then
@@ -1722,7 +1876,8 @@ return Component {
                 "_freezePlayerSub", "_requestPlayerForwardSub", "_attackLungeSub",
                 "_combatStateSub", "_forceRotSub", "_chainFiredRotSub",
                 "_dashPerformedSub", "_chainConstraintSub", "_enemyPosSub",
-                "_chainAimStateSub",
+                "_chainAimStateSub", "_chainEndpointSub", "_chainThrownSub",
+                "_chainDetachedSub", "_chainRetractedSub",
             }
             for _, key in ipairs(subs) do
                 if self[key] then event_bus.unsubscribe(self[key]); self[key] = nil end
@@ -1742,6 +1897,9 @@ return Component {
         self._chainDrag               = false
         self._squashPhase             = nil
         self._vaultAscentLock         = false
+        self._isTargetedSlam          = false
+        self._slamDirX                = 0
+        self._slamDirZ                = 0
         _G.player_is_dashing          = false
     end,
 }
