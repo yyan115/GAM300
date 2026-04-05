@@ -20,6 +20,12 @@ return Component {
     end,
 
     Start = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("miniboss_sfx", {
+                sfxType = "explosionSkillRelease",
+            })
+        end
+
         self._bloomComp = self:GetComponent("BloomComponent")
         self._pointLightComp = self:GetComponent("PointLightComponent")
         -- Capture the initial bloom to ensure a smooth transition
