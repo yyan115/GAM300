@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e2a9d38ed4b4f-0004a425ec000019",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyHurt/EnemyHurt8.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyHurt/EnemyHurt8.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Enemy/EnemyHurt/EnemyHurt8.wav"
+    }
+}

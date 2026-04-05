@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c76f2b7cca-0004b907dc000015",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/ChainPull/ChainPull2.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/ChainPull/ChainPull2.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Android/ChainPull/ChainPull2_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

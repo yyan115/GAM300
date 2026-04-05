@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb3bc4a999-00046ac43400405f",
+        "source": "../../Resources/Materials/Stairsup_Stairs_low_stairs.mat",
+        "compiled": "../../Resources/Materials/Stairsup_Stairs_low_stairs.mat",
+        "android_compiled": "Resources/Materials/Stairsup_Stairs_low_stairs_android.mat"
+    }
+}

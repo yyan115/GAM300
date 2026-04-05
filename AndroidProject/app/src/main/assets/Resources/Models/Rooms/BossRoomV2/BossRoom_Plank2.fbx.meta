@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00272e015b4fdbe8-0004b31f880001b5",
+        "source": "../../Resources/Models/Rooms/BossRoomV2/BossRoom_Plank2.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoomV2/BossRoom_Plank2.mesh",
+        "android_compiled": "Resources/Models/Rooms/BossRoomV2/BossRoom_Plank2_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

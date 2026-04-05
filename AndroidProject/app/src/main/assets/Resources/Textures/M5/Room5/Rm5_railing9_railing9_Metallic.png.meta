@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea0ba3e2fa-00047c48dc00e8d7",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing9_railing9_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing9_railing9_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_railing9_railing9_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00724abaf4102ecf-0004b980ea014e79",
+        "source": "../../Resources/Models/Environment/updated_shrine.fbx",
+        "compiled": "../../Resources/Models/Environment/updated_shrine.mesh",
+        "android_compiled": "Resources/Models/Environment/updated_shrine_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

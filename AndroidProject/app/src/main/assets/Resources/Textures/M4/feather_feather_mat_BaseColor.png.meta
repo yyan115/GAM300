@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0052ce580b4b0c03-00044ab272000001",
+        "source": "../../Resources/Textures/M4/feather_feather_mat_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/feather_feather_mat_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/feather_feather_mat_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

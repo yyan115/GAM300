@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007f410d96804e75-00046a4fe200562b",
+        "source": "../../Resources/Scripts/UI/DashCooldownUI.lua",
+        "compiled": "../../Resources/Scripts/UI/DashCooldownUI.lua",
+        "android_compiled": "Resources/Scripts/UI/DashCooldownUI.lua"
+    }
+}

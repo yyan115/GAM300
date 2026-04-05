@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00724abacef21b62-0004b980ea014e7b",
+        "source": "../../Resources/Materials/updated_shrine_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/updated_shrine_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/updated_shrine_standardSurface1_android.mat"
+    }
+}

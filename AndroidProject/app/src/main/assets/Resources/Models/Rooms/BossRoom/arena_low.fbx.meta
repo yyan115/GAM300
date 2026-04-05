@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3ed6ec0d5-000481354a023261",
+        "source": "../../Resources/Models/Rooms/BossRoom/arena_low.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/arena_low.mesh",
+        "android_compiled": "Resources/Models/Rooms/BossRoom/arena_low_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

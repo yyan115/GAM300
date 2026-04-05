@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3b1dc163b-000480ffa8000f2b",
+        "source": "../../Resources/Materials/Cushion_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/Cushion_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/Cushion_standardSurface1_android.mat"
+    }
+}

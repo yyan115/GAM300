@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c4d471681-000418b82001f66b",
+        "source": "../../Resources/Textures/M4/enemy_Roughness.png",
+        "compiled": "../../Resources/Textures/M4/enemy_Roughness.dds",
+        "android_compiled": "Resources/Textures/M4/enemy_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

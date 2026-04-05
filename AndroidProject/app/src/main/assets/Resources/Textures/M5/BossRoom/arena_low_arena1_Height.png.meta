@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed2a6ca201-00047a6ba0014687",
+        "source": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_Height.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_Height.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/arena_low_arena1_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

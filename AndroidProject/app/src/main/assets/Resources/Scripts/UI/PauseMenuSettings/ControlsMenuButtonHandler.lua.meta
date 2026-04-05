@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00446a1749752774-000484123202d6e9",
+        "source": "../../Resources/Scripts/UI/PauseMenuSettings/ControlsMenuButtonHandler.lua",
+        "compiled": "../../Resources/Scripts/UI/PauseMenuSettings/ControlsMenuButtonHandler.lua",
+        "android_compiled": "Resources/Scripts/UI/PauseMenuSettings/ControlsMenuButtonHandler.lua"
+    }
+}

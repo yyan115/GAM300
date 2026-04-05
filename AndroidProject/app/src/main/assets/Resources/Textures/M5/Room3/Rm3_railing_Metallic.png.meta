@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b571f113c54-000479919a1876e5",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_railing_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_railing_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room3/Rm3_railing_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

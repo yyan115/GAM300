@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006cbc50f794cf81-0004778c7c001c3f",
+        "source": "../../Resources/Animations/Player/KusaneV6@AimChain.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@AimChain.mesh",
+        "android_compiled": "Resources/Animations/Player/KusaneV6@AimChain_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0004cc46fbce54cb-0004b0e5d40040f9",
+        "source": "../../Resources/Materials/BossRoom_Plank1_lambert1.mat",
+        "compiled": "../../Resources/Materials/BossRoom_Plank1_lambert1.mat",
+        "android_compiled": "Resources/Materials/BossRoom_Plank1_lambert1_android.mat"
+    }
+}

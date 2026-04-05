@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0044ae9962e047ad-0004b8645c001137",
+        "source": "../../Resources/Sprites/ParticleSprites/OrangeGlow.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/OrangeGlow.dds",
+        "android_compiled": "Resources/Sprites/ParticleSprites/OrangeGlow_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

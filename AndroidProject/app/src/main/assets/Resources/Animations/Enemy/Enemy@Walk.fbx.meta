@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001b9f140591dd23-00041a417e003e8d",
+        "source": "../../Resources/Animations/Enemy/Enemy@Walk.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Enemy@Walk.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Enemy@Walk_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

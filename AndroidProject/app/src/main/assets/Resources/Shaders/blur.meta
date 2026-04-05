@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002eab37875bd34d-00045d2b7c000001",
+        "source": "../../Resources/Shaders/blur",
+        "compiled": "../../Resources/Shaders/blur.shader",
+        "android_compiled": "Resources/Shaders/blur.shader"
+    }
+}

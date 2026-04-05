@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4a8d230ca-00046ac6d0000011",
+        "source": "../../Resources/Materials/KarasuGroundVar_Hurt3_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_Hurt3_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_Hurt3_enemy_android.mat"
+    }
+}

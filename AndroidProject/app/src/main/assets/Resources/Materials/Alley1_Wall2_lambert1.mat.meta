@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb5e7e9e74-00046ac662004079",
+        "source": "../../Resources/Materials/Alley1_Wall2_lambert1.mat",
+        "compiled": "../../Resources/Materials/Alley1_Wall2_lambert1.mat",
+        "android_compiled": "Resources/Materials/Alley1_Wall2_lambert1_android.mat"
+    }
+}

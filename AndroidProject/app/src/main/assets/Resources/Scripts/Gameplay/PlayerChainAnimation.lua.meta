@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1660dddcc11-0004b8330c00005b",
+        "source": "../../Resources/Scripts/Gameplay/PlayerChainAnimation.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PlayerChainAnimation.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/PlayerChainAnimation.lua"
+    }
+}

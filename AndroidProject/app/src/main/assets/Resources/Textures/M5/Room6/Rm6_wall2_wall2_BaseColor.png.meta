@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffe61728b6-00047c977e02f2af",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_wall2_wall2_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_wall2_wall2_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room6/Rm6_wall2_wall2_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

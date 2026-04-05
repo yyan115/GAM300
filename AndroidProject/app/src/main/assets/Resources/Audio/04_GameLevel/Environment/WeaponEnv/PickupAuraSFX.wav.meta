@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00272304a13d268d-0004a4106a00002d",
+        "source": "../../Resources/Audio/04_GameLevel/Environment/WeaponEnv/PickupAuraSFX.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Environment/WeaponEnv/PickupAuraSFX.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Environment/WeaponEnv/PickupAuraSFX.wav"
+    }
+}

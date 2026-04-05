@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e489f1ef3c-00046ac6d0000009",
+        "source": "../../Resources/Materials/KarasuGroundVar_Death_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_Death_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_Death_enemy_android.mat"
+    }
+}

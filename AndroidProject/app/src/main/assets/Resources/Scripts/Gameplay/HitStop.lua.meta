@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b166584e5842-0004b8330c000041",
+        "source": "../../Resources/Scripts/Gameplay/HitStop.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/HitStop.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/HitStop.lua"
+    }
+}

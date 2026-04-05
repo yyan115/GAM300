@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb69f77e3d-00046ab568000005",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb25bc8d00-00046ab570000035",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@WalkPatrol.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@WalkPatrol.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Ground/KarasuGroundVar@WalkPatrol_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

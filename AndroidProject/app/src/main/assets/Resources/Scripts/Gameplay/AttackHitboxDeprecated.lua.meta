@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b166241740ef-0004b8330c000003",
+        "source": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua"
+    }
+}

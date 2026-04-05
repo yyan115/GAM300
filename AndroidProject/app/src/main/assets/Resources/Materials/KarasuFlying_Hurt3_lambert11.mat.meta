@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005a6237bc5ba0f1-00046c8c5c00000f",
+        "source": "../../Resources/Materials/KarasuFlying_Hurt3_lambert11.mat",
+        "compiled": "../../Resources/Materials/KarasuFlying_Hurt3_lambert11.mat",
+        "android_compiled": "Resources/Materials/KarasuFlying_Hurt3_lambert11_android.mat"
+    }
+}

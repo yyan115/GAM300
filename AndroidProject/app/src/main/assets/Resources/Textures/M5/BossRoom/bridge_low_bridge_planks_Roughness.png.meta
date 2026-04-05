@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed78d6d664-00047a6bae014693",
+        "source": "../../Resources/Textures/M5/BossRoom/bridge_low_bridge_planks_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/bridge_low_bridge_planks_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/bridge_low_bridge_planks_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

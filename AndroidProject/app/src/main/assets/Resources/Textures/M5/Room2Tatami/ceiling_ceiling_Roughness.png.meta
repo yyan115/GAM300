@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df44a87a39-000477ba0400e56f",
+        "source": "../../Resources/Textures/M5/Room2Tatami/ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/ceiling_ceiling_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room2Tatami/ceiling_ceiling_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

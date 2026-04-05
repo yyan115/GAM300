@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00335c3399b16d19-0004840fca000003",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/BossGrowl/MiniBossGrowl2.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/BossGrowl/MiniBossGrowl2.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Enemy/BossGrowl/MiniBossGrowl2.wav"
+    }
+}

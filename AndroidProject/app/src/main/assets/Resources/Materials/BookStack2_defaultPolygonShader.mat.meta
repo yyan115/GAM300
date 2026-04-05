@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57161eb714-000479915c1876cb",
+        "source": "../../Resources/Materials/BookStack2_defaultPolygonShader.mat",
+        "compiled": "../../Resources/Materials/BookStack2_defaultPolygonShader.mat",
+        "android_compiled": "Resources/Materials/BookStack2_defaultPolygonShader_android.mat"
+    }
+}

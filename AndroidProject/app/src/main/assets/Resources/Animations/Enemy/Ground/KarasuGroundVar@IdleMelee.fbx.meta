@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb3d6bbc02-00046ab56e000025",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@IdleMelee.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@IdleMelee.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Ground/KarasuGroundVar@IdleMelee_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0058e312a9dbb7f4-0004721e64001bf9",
+        "source": "../../Resources/Sprites/PlayerHUD/FeatherCountSS.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/FeatherCountSS.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/FeatherCountSS_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

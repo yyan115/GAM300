@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3ab3c58a5-00048141b0024235",
+        "source": "../../Resources/Models/Environment/Cloth1.fbx",
+        "compiled": "../../Resources/Models/Environment/Cloth1.mesh",
+        "android_compiled": "Resources/Models/Environment/Cloth1_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

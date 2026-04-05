@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed6ca33f8e-00047a9cb603c7b1",
+        "source": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

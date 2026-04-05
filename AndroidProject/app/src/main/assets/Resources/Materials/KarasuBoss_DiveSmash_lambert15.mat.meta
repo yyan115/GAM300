@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bcd783274a11b-00047118e2000013",
+        "source": "../../Resources/Materials/KarasuBoss_DiveSmash_lambert15.mat",
+        "compiled": "../../Resources/Materials/KarasuBoss_DiveSmash_lambert15.mat",
+        "android_compiled": "Resources/Materials/KarasuBoss_DiveSmash_lambert15_android.mat"
+    }
+}

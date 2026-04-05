@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e2fe03af04364-00047165ae0037fb",
+        "source": "../../Resources/Sprites/DialogueUI/MonologueSoundWavesSS.png",
+        "compiled": "../../Resources/Sprites/DialogueUI/MonologueSoundWavesSS.dds",
+        "android_compiled": "Resources/Sprites/DialogueUI/MonologueSoundWavesSS_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

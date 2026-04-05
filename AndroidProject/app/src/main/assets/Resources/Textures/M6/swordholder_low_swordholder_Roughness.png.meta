@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00112163eae6a06f-0004b999f202142f",
+        "source": "../../Resources/Textures/M6/swordholder_low_swordholder_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/swordholder_low_swordholder_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/swordholder_low_swordholder_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

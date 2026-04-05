@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00229a45dd3f3818-0004a62152000001",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/SettingsToggle.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/SettingsToggle.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/SettingsToggle.lua"
+    }
+}

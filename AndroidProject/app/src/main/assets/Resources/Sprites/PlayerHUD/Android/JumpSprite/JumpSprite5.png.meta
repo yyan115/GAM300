@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c76d7beb9e-0004b907de000071",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/JumpSprite/JumpSprite5.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/JumpSprite/JumpSprite5.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Android/JumpSprite/JumpSprite5_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

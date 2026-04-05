@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe937dee85e-0004711e600005cf",
+        "source": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/room1_ceiling_ceiling_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

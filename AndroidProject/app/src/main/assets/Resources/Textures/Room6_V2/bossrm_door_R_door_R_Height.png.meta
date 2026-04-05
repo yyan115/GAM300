@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c1dc3ddd1-0004b687e20048cf",
+        "source": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Height.png",
+        "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Height.dds",
+        "android_compiled": "Resources/Textures/Room6_V2/bossrm_door_R_door_R_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

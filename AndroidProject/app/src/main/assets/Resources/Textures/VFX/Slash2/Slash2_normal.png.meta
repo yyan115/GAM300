@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006230628f912670-00046c7ce800000d",
+        "source": "../../Resources/Textures/VFX/Slash2/Slash2_normal.png",
+        "compiled": "../../Resources/Textures/VFX/Slash2/Slash2_normal.dds",
+        "android_compiled": "Resources/Textures/VFX/Slash2/Slash2_normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

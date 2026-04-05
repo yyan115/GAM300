@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0028781253e3c728-00043eefda000001",
+        "source": "../../Resources/Scripts/camera_follow.lua",
+        "compiled": "../../Resources/Scripts/camera_follow.lua",
+        "android_compiled": "Resources/Scripts/camera_follow.lua"
+    }
+}

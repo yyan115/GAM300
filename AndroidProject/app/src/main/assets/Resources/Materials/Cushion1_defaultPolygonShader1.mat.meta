@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327e2727e6a-0004b3b59e027c29",
+        "source": "../../Resources/Materials/Cushion1_defaultPolygonShader1.mat",
+        "compiled": "../../Resources/Materials/Cushion1_defaultPolygonShader1.mat",
+        "android_compiled": "Resources/Materials/Cushion1_defaultPolygonShader1_android.mat"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1662878259c-0004b8330c00000f",
+        "source": "../../Resources/Scripts/Gameplay/CharacterControllerDriver.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/CharacterControllerDriver.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/CharacterControllerDriver.lua"
+    }
+}

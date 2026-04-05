@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0007b7a63eb4e783-000462b83a000045",
+        "source": "../../Resources/Materials/GongDrum_defaultPolygonShader.mat",
+        "compiled": "../../Resources/Materials/GongDrum_defaultPolygonShader.mat",
+        "android_compiled": "Resources/Materials/GongDrum_defaultPolygonShader_android.mat"
+    }
+}

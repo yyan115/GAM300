@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327f57d7a57-0004b3c28802fc95",
+        "source": "../../Resources/Textures/M6/VaseStand_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/VaseStand_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/VaseStand_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

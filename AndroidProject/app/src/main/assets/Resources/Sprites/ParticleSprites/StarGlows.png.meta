@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0044ae99062cd3c9-0004b85df8001127",
+        "source": "../../Resources/Sprites/ParticleSprites/StarGlows.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/StarGlows.dds",
+        "android_compiled": "Resources/Sprites/ParticleSprites/StarGlows_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

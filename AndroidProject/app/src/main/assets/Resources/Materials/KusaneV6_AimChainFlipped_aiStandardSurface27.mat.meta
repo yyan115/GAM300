@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00376a43e92288c0-000477927600000d",
+        "source": "../../Resources/Materials/KusaneV6_AimChainFlipped_aiStandardSurface27.mat",
+        "compiled": "../../Resources/Materials/KusaneV6_AimChainFlipped_aiStandardSurface27.mat",
+        "android_compiled": "Resources/Materials/KusaneV6_AimChainFlipped_aiStandardSurface27_android.mat"
+    }
+}

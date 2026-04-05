@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0002ceba2d78733e-0004a7da68001005",
+        "source": "../../Resources/Sprites/PlayerHUD/SlashControlAndroid.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/SlashControlAndroid.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/SlashControlAndroid_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

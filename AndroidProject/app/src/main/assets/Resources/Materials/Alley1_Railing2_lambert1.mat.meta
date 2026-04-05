@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df3cdb76a8-000477c5840ab769",
+        "source": "../../Resources/Materials/Alley1_Railing2_lambert1.mat",
+        "compiled": "../../Resources/Materials/Alley1_Railing2_lambert1.mat",
+        "android_compiled": "Resources/Materials/Alley1_Railing2_lambert1_android.mat"
+    }
+}

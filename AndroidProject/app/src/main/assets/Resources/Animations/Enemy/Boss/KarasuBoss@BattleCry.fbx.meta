@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000f98f71eaae2d7-00046f5cb2000001",
+        "source": "../../Resources/Animations/Enemy/Boss/KarasuBoss@BattleCry.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Boss/KarasuBoss@BattleCry.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Boss/KarasuBoss@BattleCry_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

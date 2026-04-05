@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f1496fe763c-00047d3e4e01842f",
+        "source": "../../Resources/Textures/M5/ShojiScreen_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/ShojiScreen_Base_color.dds",
+        "android_compiled": "Resources/Textures/M5/ShojiScreen_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

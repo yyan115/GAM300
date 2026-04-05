@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0071586674ffedfa-0004b1b5d2001013",
+        "source": "../../Resources/Textures/VFX/IncenseSmoke/SmokeIncenseV2_normal.png",
+        "compiled": "../../Resources/Textures/VFX/IncenseSmoke/SmokeIncenseV2_normal.dds",
+        "android_compiled": "Resources/Textures/VFX/IncenseSmoke/SmokeIncenseV2_normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

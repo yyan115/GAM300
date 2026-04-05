@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004d680d4bb1517e-000499e150026007",
+        "source": "../../Resources/Scripts/VFX/GroundSlamDustVFX.lua",
+        "compiled": "../../Resources/Scripts/VFX/GroundSlamDustVFX.lua",
+        "android_compiled": "Resources/Scripts/VFX/GroundSlamDustVFX.lua"
+    }
+}

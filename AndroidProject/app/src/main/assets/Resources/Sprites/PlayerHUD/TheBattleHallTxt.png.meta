@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022c894982dcdb1-0004761b8a00e561",
+        "source": "../../Resources/Sprites/PlayerHUD/TheBattleHallTxt.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/TheBattleHallTxt.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/TheBattleHallTxt_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

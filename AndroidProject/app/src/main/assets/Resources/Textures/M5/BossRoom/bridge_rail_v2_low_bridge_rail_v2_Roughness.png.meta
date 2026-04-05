@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed24e2e43a-00047a6bb601469b",
+        "source": "../../Resources/Textures/M5/BossRoom/bridge_rail_v2_low_bridge_rail_v2_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/bridge_rail_v2_low_bridge_rail_v2_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/bridge_rail_v2_low_bridge_rail_v2_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

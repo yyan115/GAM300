@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a382112bceb8-00047ce338001c47",
+        "source": "../../Resources/Sprites/SplashScreenUI/Team Logo.PNG",
+        "compiled": "../../Resources/Sprites/SplashScreenUI/Team Logo.dds",
+        "android_compiled": "Resources/Sprites/SplashScreenUI/Team Logo_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

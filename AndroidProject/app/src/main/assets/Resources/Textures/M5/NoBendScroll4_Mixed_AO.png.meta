@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef4478b747e77-000481eeca010175",
+        "source": "../../Resources/Textures/M5/NoBendScroll4_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll4_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M5/NoBendScroll4_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

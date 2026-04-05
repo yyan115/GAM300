@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb396ad48c-00046ab8de00402b",
+        "source": "../../Resources/Materials/Room1_Sliding_door3_lambert2.mat",
+        "compiled": "../../Resources/Materials/Room1_Sliding_door3_lambert2.mat",
+        "android_compiled": "Resources/Materials/Room1_Sliding_door3_lambert2_android.mat"
+    }
+}

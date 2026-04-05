@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c89d9d97cb3da-000476bc620023b5",
+        "source": "../../Resources/Sprites/Tutorial/SaveProgressTooltip.png",
+        "compiled": "../../Resources/Sprites/Tutorial/SaveProgressTooltip.dds",
+        "android_compiled": "Resources/Sprites/Tutorial/SaveProgressTooltip_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

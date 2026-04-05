@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1661577d562-0004b8330c000007",
+        "source": "../../Resources/Scripts/Gameplay/ChainBootstrap.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/ChainBootstrap.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/ChainBootstrap.lua"
+    }
+}

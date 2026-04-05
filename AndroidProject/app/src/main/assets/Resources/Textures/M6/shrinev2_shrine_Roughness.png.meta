@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00724abac5ebf532-0004b980d8014e6f",
+        "source": "../../Resources/Textures/M6/shrinev2_shrine_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/shrinev2_shrine_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/shrinev2_shrine_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

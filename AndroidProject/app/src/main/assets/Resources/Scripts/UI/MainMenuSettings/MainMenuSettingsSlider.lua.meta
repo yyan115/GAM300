@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002eb5f42da392f7-0004b6a0d6000003",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua"
+    }
+}

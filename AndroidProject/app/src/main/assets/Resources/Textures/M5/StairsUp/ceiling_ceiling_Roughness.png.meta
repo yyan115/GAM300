@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e5c2f2baf1014-00047468c6000003",
+        "source": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/ceiling_ceiling_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

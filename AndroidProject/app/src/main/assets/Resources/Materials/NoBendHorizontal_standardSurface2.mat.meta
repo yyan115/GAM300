@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447988a8274-000481eedc01019f",
+        "source": "../../Resources/Materials/NoBendHorizontal_standardSurface2.mat",
+        "compiled": "../../Resources/Materials/NoBendHorizontal_standardSurface2.mat",
+        "android_compiled": "Resources/Materials/NoBendHorizontal_standardSurface2_android.mat"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c38462f2caa5-00046bf33e000be3",
+        "source": "../../Resources/Materials/Idle_lambert5.mat",
+        "compiled": "../../Resources/Materials/Idle_lambert5.mat",
+        "android_compiled": "Resources/Materials/Idle_lambert5_android.mat"
+    }
+}

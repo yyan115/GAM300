@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3fb4a62bd-000480ffa8000f29",
+        "source": "../../Resources/Models/Environment/Cushion.fbx",
+        "compiled": "../../Resources/Models/Environment/Cushion.mesh",
+        "android_compiled": "Resources/Models/Environment/Cushion_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

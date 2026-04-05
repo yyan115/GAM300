@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0004f9baadbf5942-00046b9bac000001",
+        "source": "../../Resources/Shaders/ssao",
+        "compiled": "../../Resources/Shaders/ssao.shader",
+        "android_compiled": "Resources/Shaders/ssao.shader"
+    }
+}

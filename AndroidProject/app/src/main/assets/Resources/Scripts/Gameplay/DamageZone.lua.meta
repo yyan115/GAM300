@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1661c20f1e0-0004b8330c000015",
+        "source": "../../Resources/Scripts/Gameplay/DamageZone.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/DamageZone.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/DamageZone.lua"
+    }
+}

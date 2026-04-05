@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00751739d78c1a37-0004a76d3a000007",
+        "source": "../../Resources/Sprites/CommonUI/SliderNotch.png",
+        "compiled": "../../Resources/Sprites/CommonUI/SliderNotch.dds",
+        "android_compiled": "Resources/Sprites/CommonUI/SliderNotch_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

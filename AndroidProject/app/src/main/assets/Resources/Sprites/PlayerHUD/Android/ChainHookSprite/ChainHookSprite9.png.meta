@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c74bfc1279-0004b907dc000011",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/ChainHookSprite/ChainHookSprite9.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/ChainHookSprite/ChainHookSprite9.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Android/ChainHookSprite/ChainHookSprite9_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

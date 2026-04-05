@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680770c271e0a-0004b0b7ba001011",
+        "source": "../../Resources/Textures/BossRoom/Arena/bossrm_arena_arena_Roughness.png",
+        "compiled": "../../Resources/Textures/BossRoom/Arena/bossrm_arena_arena_Roughness.dds",
+        "android_compiled": "Resources/Textures/BossRoom/Arena/bossrm_arena_arena_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

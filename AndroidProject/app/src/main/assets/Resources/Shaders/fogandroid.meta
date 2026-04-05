@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007cb0ed9f245d19-000463f316000001",
+        "source": "../../Resources/Shaders/fogandroid",
+        "compiled": "../../Resources/Shaders/fogandroid.shader",
+        "android_compiled": "Resources/Shaders/fogandroid.shader"
+    }
+}

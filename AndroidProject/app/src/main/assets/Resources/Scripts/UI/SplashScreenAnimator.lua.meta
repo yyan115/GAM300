@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ef78ffd39d4b3-0004714b82000001",
+        "source": "../../Resources/Scripts/UI/SplashScreenAnimator.lua",
+        "compiled": "../../Resources/Scripts/UI/SplashScreenAnimator.lua",
+        "android_compiled": "Resources/Scripts/UI/SplashScreenAnimator.lua"
+    }
+}

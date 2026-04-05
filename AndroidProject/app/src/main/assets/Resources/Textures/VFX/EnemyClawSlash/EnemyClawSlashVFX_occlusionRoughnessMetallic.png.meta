@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002e160d748ef541-000479cf6e000009",
+        "source": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_occlusionRoughnessMetallic.dds",
+        "android_compiled": "Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_occlusionRoughnessMetallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

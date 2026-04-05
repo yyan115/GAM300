@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea71f3c671-00047c48c600e883",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing4_railing4_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing4_railing4_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_railing4_railing4_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acd4e13b3a-00041b444c001e89",
+        "source": "../../Resources/Models/Environment/BendScroll.fbx",
+        "compiled": "../../Resources/Models/Environment/BendScroll.mesh",
+        "android_compiled": "Resources/Models/Environment/BendScroll_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c58f283d8-0004b680d6003369",
+        "source": "../../Resources/Materials/bossrm_door_L_lambert1.mat",
+        "compiled": "../../Resources/Materials/bossrm_door_L_lambert1.mat",
+        "android_compiled": "Resources/Materials/bossrm_door_L_lambert1_android.mat"
+    }
+}

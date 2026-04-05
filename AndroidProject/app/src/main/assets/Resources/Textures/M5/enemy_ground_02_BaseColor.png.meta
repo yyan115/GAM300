@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10665afa2a0-000467b8f233621d",
+        "source": "../../Resources/Textures/M5/enemy_ground_02_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/enemy_ground_02_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/enemy_ground_02_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

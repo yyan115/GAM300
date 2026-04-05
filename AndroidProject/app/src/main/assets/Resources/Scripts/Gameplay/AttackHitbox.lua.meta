@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b16623115bc4-0004b8330c000001",
+        "source": "../../Resources/Scripts/Gameplay/AttackHitbox.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/AttackHitbox.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/AttackHitbox.lua"
+    }
+}

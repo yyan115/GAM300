@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df6551f50c-000477c6900e7579",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_railing3_railing3_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing3_railing3_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_railing3_railing3_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

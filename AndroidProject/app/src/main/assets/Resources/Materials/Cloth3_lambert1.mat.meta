@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c04e7651b-0004b6a22a007c7f",
+        "source": "../../Resources/Materials/Cloth3_lambert1.mat",
+        "compiled": "../../Resources/Materials/Cloth3_lambert1.mat",
+        "android_compiled": "Resources/Materials/Cloth3_lambert1_android.mat"
+    }
+}

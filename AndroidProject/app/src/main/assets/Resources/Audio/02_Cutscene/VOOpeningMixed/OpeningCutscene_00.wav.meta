@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051a6cbb4dd86a6-0004bb5a6a000001",
+        "source": "../../Resources/Audio/02_Cutscene/VOOpeningMixed/OpeningCutscene_00.wav",
+        "compiled": "../../Resources/Audio/02_Cutscene/VOOpeningMixed/OpeningCutscene_00.wav",
+        "android_compiled": "Resources/Audio/02_Cutscene/VOOpeningMixed/OpeningCutscene_00.wav"
+    }
+}

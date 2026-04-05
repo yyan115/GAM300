@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4e944d185-00046ac6d0000015",
+        "source": "../../Resources/Materials/KarasuGroundVar_IdleRanged_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_IdleRanged_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_IdleRanged_enemy_android.mat"
+    }
+}

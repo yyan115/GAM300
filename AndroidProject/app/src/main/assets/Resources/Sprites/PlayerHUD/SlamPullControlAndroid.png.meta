@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0002ceba6063406a-0004a7da68001003",
+        "source": "../../Resources/Sprites/PlayerHUD/SlamPullControlAndroid.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/SlamPullControlAndroid.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/SlamPullControlAndroid_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

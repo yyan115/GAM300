@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0002ceba1c10e270-0004a7da6a001007",
+        "source": "../../Resources/Sprites/PlayerHUD/ChainTutorialAndroid.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/ChainTutorialAndroid.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/ChainTutorialAndroid_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

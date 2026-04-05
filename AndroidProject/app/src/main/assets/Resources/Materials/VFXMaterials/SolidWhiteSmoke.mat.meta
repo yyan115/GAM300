@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000cdf9a54c3f8bf-00047c59ba000069",
+        "source": "../../Resources/Materials/VFXMaterials/SolidWhiteSmoke.mat",
+        "compiled": "../../Resources/Materials/VFXMaterials/SolidWhiteSmoke.mat",
+        "android_compiled": "Resources/Materials/VFXMaterials/SolidWhiteSmoke_android.mat"
+    }
+}

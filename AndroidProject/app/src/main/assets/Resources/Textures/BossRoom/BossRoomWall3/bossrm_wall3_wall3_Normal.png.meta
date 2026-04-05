@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680771c569570-0004b0b7c6001023",
+        "source": "../../Resources/Textures/BossRoom/BossRoomWall3/bossrm_wall3_wall3_Normal.png",
+        "compiled": "../../Resources/Textures/BossRoom/BossRoomWall3/bossrm_wall3_wall3_Normal.dds",
+        "android_compiled": "Resources/Textures/BossRoom/BossRoomWall3/bossrm_wall3_wall3_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c38434a32115-00046c0bb2001b31",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@FeatherAttack.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@FeatherAttack.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Flying/KarasuFlying@FeatherAttack_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

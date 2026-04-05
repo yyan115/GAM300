@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000f98f730179987-00046f5cb8000019",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@GroundScratch.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@GroundScratch.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Flying/KarasuFlying@GroundScratch_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

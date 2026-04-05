@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffb3ae52b4-00047c976402f289",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_floor1_floor1_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_floor1_floor1_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Room6/Rm6_floor1_floor1_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

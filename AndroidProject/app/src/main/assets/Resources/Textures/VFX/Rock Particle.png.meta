@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00245f72edddd2b7-000466b12600003b",
+        "source": "../../Resources/Textures/VFX/Rock Particle.png",
+        "compiled": "../../Resources/Textures/VFX/Rock Particle.dds",
+        "android_compiled": "Resources/Textures/VFX/Rock Particle_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

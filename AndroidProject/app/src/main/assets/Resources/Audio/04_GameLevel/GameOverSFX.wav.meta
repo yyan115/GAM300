@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002e4c7c0069bfdd-0004675b5e1d6b63",
+        "source": "../../Resources/Audio/04_GameLevel/GameOverSFX.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/GameOverSFX.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/GameOverSFX.wav"
+    }
+}

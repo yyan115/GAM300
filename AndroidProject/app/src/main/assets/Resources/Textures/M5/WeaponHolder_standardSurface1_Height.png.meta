@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3b1ee6e3d-000480ffd2000f33",
+        "source": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_Height.png",
+        "compiled": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_Height.dds",
+        "android_compiled": "Resources/Textures/M5/WeaponHolder_standardSurface1_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b2ca397f4-000462073a000001",
+        "source": "../../Resources/Models/Environment/kusaneDoor.fbx",
+        "compiled": "../../Resources/Models/Environment/kusaneDoor.mesh",
+        "android_compiled": "Resources/Models/Environment/kusaneDoor_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

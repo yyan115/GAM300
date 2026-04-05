@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e49cbee87b-00046ac6d0000013",
+        "source": "../../Resources/Materials/KarasuGroundVar_IdleMelee_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_IdleMelee_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_IdleMelee_enemy_android.mat"
+    }
+}

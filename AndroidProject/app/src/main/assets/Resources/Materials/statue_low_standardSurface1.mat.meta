@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d932795f9a924-0004b3a89c0075f7",
+        "source": "../../Resources/Materials/statue_low_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/statue_low_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/statue_low_standardSurface1_android.mat"
+    }
+}

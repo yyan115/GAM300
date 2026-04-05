@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447f4e42296-000481eedc01019d",
+        "source": "../../Resources/Models/Environment/NoBendHorizontal.fbx",
+        "compiled": "../../Resources/Models/Environment/NoBendHorizontal.mesh",
+        "android_compiled": "Resources/Models/Environment/NoBendHorizontal_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

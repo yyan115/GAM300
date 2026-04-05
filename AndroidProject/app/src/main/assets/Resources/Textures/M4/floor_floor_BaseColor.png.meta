@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84ada5b58cc-00040d06ae00cedf",
+        "source": "../../Resources/Textures/M4/floor_floor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/floor_floor_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/floor_floor_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

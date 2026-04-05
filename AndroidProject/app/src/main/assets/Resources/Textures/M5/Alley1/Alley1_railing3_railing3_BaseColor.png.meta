@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df2d3d790a-000477c68a0e71b1",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_railing3_railing3_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing3_railing3_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_railing3_railing3_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

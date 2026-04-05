@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a33076e7db-0004b623740023ef",
+        "source": "../../Resources/Textures/M6/Lantern_LanternRect_Metallic.png",
+        "compiled": "../../Resources/Textures/M6/Lantern_LanternRect_Metallic.dds",
+        "android_compiled": "Resources/Textures/M6/Lantern_LanternRect_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

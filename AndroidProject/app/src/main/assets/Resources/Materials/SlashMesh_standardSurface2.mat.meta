@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0031bc29acbcfdf7-00047792e60003d3",
+        "source": "../../Resources/Materials/SlashMesh_standardSurface2.mat",
+        "compiled": "../../Resources/Materials/SlashMesh_standardSurface2.mat",
+        "android_compiled": "Resources/Materials/SlashMesh_standardSurface2_android.mat"
+    }
+}

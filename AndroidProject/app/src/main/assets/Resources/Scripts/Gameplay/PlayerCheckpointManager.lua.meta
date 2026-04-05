@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0000de557486ff2c-00047c8f8e000001",
+        "source": "../../Resources/Scripts/Gameplay/PlayerCheckpointManager.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PlayerCheckpointManager.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/PlayerCheckpointManager.lua"
+    }
+}

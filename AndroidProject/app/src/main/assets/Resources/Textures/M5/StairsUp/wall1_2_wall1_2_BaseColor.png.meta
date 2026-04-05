@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1b52650e0-000473d77a028263",
+        "source": "../../Resources/Textures/M5/StairsUp/wall1_2_wall1_2_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/wall1_2_wall1_2_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/wall1_2_wall1_2_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

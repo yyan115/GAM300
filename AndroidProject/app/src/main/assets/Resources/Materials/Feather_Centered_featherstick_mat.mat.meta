@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004d3b4c58586901-0004481c80000005",
+        "source": "../../Resources/Materials/Feather_Centered_featherstick_mat.mat",
+        "compiled": "../../Resources/Materials/Feather_Centered_featherstick_mat.mat",
+        "android_compiled": "Resources/Materials/Feather_Centered_featherstick_mat_android.mat"
+    }
+}

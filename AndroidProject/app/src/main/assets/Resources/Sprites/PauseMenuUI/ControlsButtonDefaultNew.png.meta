@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d940146ad3e3f-000477758600ad67",
+        "source": "../../Resources/Sprites/PauseMenuUI/ControlsButtonDefaultNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/ControlsButtonDefaultNew.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/ControlsButtonDefaultNew_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b16628711be6-0004b8330c000055",
+        "source": "../../Resources/Scripts/Gameplay/MinibossRecoverState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/MinibossRecoverState.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/MinibossRecoverState.lua"
+    }
+}

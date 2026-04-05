@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8accd984640-00041b443e001e87",
+        "source": "../../Resources/Textures/M4/BendScroll_Normal.png",
+        "compiled": "../../Resources/Textures/M4/BendScroll_Normal.dds",
+        "android_compiled": "Resources/Textures/M4/BendScroll_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

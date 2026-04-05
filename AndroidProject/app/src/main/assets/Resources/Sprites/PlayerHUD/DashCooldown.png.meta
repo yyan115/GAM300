@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d940112a44102-0004776dc8000001",
+        "source": "../../Resources/Sprites/PlayerHUD/DashCooldown.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/DashCooldown.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/DashCooldown_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

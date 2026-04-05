@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10660d7b46c-000467760e00000d",
+        "source": "../../Resources/Materials/KarasuFlyingModel_lambert5.mat",
+        "compiled": "../../Resources/Materials/KarasuFlyingModel_lambert5.mat",
+        "android_compiled": "Resources/Materials/KarasuFlyingModel_lambert5_android.mat"
+    }
+}

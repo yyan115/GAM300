@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b577643e2d8-000479977618a679",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_wall2_wall2_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_wall2_wall2_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_wall2_wall2_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

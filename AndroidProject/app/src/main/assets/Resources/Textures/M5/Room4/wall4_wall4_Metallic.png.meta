@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed3dc7e856-00047a9cb203c7ab",
+        "source": "../../Resources/Textures/M5/Room4/wall4_wall4_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wall4_wall4_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room4/wall4_wall4_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

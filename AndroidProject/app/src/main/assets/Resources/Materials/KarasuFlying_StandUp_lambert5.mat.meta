@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4f12fc61b-00046ac6d0000005",
+        "source": "../../Resources/Materials/KarasuFlying_StandUp_lambert5.mat",
+        "compiled": "../../Resources/Materials/KarasuFlying_StandUp_lambert5.mat",
+        "android_compiled": "Resources/Materials/KarasuFlying_StandUp_lambert5_android.mat"
+    }
+}

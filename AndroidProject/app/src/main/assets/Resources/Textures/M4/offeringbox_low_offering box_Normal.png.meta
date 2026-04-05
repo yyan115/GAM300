@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0048e304d2103669-00041ca8d4001fff",
+        "source": "../../Resources/Textures/M4/offeringbox_low_offering box_Normal.png",
+        "compiled": "../../Resources/Textures/M4/offeringbox_low_offering box_Normal.dds",
+        "android_compiled": "Resources/Textures/M4/offeringbox_low_offering box_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

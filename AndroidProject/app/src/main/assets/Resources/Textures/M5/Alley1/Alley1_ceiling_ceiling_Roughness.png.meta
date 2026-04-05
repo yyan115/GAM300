@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5717bc2eb2-000479976818a663",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

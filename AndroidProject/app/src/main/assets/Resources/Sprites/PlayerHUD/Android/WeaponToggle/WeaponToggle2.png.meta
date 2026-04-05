@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c77dde70cc-0004b907de00008b",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/WeaponToggle/WeaponToggle2.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/WeaponToggle/WeaponToggle2.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Android/WeaponToggle/WeaponToggle2_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

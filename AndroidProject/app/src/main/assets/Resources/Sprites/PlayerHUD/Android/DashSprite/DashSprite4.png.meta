@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c76d73b874-0004b907de00004f",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/DashSprite/DashSprite4.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/DashSprite/DashSprite4.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Android/DashSprite/DashSprite4_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

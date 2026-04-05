@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00083a6467f9551d-00047cb30c000001",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua"
+    }
+}

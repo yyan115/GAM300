@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe9420c23c9-0004713e46000f2f",
+        "source": "../../Resources/Textures/M5/sword_holder_sword_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/sword_holder_sword_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/sword_holder_sword_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

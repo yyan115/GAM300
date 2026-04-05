@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006ef17300cd805-00047d2af0003b8b",
+        "source": "../../Resources/Audio/05_EndCutscene/EndCutsceneBGM.wav",
+        "compiled": "../../Resources/Audio/05_EndCutscene/EndCutsceneBGM.wav",
+        "android_compiled": "Resources/Audio/05_EndCutscene/EndCutsceneBGM.wav"
+    }
+}

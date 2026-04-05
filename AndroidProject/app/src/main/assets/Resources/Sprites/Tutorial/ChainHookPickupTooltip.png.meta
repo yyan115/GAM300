@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c89d9ac9aad56-000476bc5c001d9f",
+        "source": "../../Resources/Sprites/Tutorial/ChainHookPickupTooltip.png",
+        "compiled": "../../Resources/Sprites/Tutorial/ChainHookPickupTooltip.dds",
+        "android_compiled": "Resources/Sprites/Tutorial/ChainHookPickupTooltip_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

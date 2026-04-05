@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b572459e7c9-000479977418a675",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_wall1_wall1_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_wall1_wall1_Normal.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_wall1_wall1_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

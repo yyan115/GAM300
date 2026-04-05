@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0025280366202022-00047680a8000009",
+        "source": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_occlusionRoughnessMetallic.dds",
+        "android_compiled": "Resources/Textures/VFX/GroundSlam/GroundCrack_occlusionRoughnessMetallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

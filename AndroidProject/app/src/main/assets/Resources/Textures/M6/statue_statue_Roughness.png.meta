@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d93279ceddb3a-0004b3a8a00075f9",
+        "source": "../../Resources/Textures/M6/statue_statue_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/statue_statue_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/statue_statue_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

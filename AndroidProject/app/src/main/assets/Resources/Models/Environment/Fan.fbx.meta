@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dcfea765d7-0004b3c99c000001",
+        "source": "../../Resources/Models/Environment/Fan.fbx",
+        "compiled": "../../Resources/Models/Environment/Fan.mesh",
+        "android_compiled": "Resources/Models/Environment/Fan_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

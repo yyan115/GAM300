@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000fa97dfa2cc26f-00047d423e00627f",
+        "source": "../../Resources/Animations/Player/KusaneV6@AirLift.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@AirLift.mesh",
+        "android_compiled": "Resources/Animations/Player/KusaneV6@AirLift_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

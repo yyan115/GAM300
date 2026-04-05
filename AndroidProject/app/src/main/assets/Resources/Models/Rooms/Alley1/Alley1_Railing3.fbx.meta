@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df76478b6e-000477c58c0ad38b",
+        "source": "../../Resources/Models/Rooms/Alley1/Alley1_Railing3.fbx",
+        "compiled": "../../Resources/Models/Rooms/Alley1/Alley1_Railing3.mesh",
+        "android_compiled": "Resources/Models/Rooms/Alley1/Alley1_Railing3_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

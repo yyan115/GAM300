@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97cd756926-000483deb4021c85",
+        "source": "../../Resources/Materials/WoodenBarrier_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/WoodenBarrier_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/WoodenBarrier_standardSurface1_android.mat"
+    }
+}

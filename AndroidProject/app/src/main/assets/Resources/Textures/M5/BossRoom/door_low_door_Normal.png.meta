@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3bb9ecbab-0004813ca60232df",
+        "source": "../../Resources/Textures/M5/BossRoom/door_low_door_Normal.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/door_low_door_Normal.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/door_low_door_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

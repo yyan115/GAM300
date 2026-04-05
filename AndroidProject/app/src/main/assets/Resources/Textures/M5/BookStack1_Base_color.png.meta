@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5757c8d4ac-0004799252187773",
+        "source": "../../Resources/Textures/M5/BookStack1_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/BookStack1_Base_color.dds",
+        "android_compiled": "Resources/Textures/M5/BookStack1_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

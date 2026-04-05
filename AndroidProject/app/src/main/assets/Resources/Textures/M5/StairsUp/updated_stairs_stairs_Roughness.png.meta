@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e5c2f269727ab-00047468c6000007",
+        "source": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/updated_stairs_stairs_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

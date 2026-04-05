@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dce67dc811-0004b3c99e00000b",
+        "source": "../../Resources/Textures/M6/Fan_Metallic.png",
+        "compiled": "../../Resources/Textures/M6/Fan_Metallic.dds",
+        "android_compiled": "Resources/Textures/M6/Fan_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

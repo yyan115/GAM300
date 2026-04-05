@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1663ff88c15-0004b8330c000045",
+        "source": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/InputInterpreter.lua"
+    }
+}

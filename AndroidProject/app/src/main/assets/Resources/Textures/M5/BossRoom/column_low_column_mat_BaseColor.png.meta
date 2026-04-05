@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed3af0ca96-00047a6bb801469d",
+        "source": "../../Resources/Textures/M5/BossRoom/column_low_column_mat_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/column_low_column_mat_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/column_low_column_mat_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

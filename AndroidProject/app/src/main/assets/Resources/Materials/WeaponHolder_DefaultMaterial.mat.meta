@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3f9442dc3-000480ffa6000f27",
+        "source": "../../Resources/Materials/WeaponHolder_DefaultMaterial.mat",
+        "compiled": "../../Resources/Materials/WeaponHolder_DefaultMaterial.mat",
+        "android_compiled": "Resources/Materials/WeaponHolder_DefaultMaterial_android.mat"
+    }
+}

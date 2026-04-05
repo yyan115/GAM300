@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b16639abf0b8-0004b8330c000021",
+        "source": "../../Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua"
+    }
+}

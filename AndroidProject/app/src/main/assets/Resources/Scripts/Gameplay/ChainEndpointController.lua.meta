@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1665a930005-0004b8330c00000b",
+        "source": "../../Resources/Scripts/Gameplay/ChainEndpointController.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/ChainEndpointController.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/ChainEndpointController.lua"
+    }
+}

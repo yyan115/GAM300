@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f393b5098c8aa-0004b6ec5a005c47",
+        "source": "../../Resources/Models/Rooms/BossRoomV2/Cloth2.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoomV2/Cloth2.mesh",
+        "android_compiled": "Resources/Models/Rooms/BossRoomV2/Cloth2_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

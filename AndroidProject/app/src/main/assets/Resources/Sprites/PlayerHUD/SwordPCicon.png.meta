@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c648978c5fa-00036d0e0e00008d",
+        "source": "../../Resources/Sprites/PlayerHUD/SwordPCicon.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/SwordPCicon.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/SwordPCicon_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

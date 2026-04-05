@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1064ae6eddb-000467b0463361ed",
+        "source": "../../Resources/Materials/AltarTable_defaultPolygonShader.mat",
+        "compiled": "../../Resources/Materials/AltarTable_defaultPolygonShader.mat",
+        "android_compiled": "Resources/Materials/AltarTable_defaultPolygonShader_android.mat"
+    }
+}

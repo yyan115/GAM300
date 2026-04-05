@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c384625cd070-00046c18a4001b3d",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Hurt3.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Hurt3.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt3_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

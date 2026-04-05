@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e23307060a8-0004b3e1fc01d75f",
+        "source": "../../Resources/Models/Environment/Bookshelf3.fbx",
+        "compiled": "../../Resources/Models/Environment/Bookshelf3.mesh",
+        "android_compiled": "Resources/Models/Environment/Bookshelf3_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

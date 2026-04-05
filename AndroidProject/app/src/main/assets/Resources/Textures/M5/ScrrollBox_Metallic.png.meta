@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b4614d88d-0004620740000023",
+        "source": "../../Resources/Textures/M5/ScrrollBox_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/ScrrollBox_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/ScrrollBox_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

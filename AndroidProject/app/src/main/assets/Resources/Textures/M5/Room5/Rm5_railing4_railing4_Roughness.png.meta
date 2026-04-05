@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea1cce3c5e-00047c48ca00e88f",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing4_railing4_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing4_railing4_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_railing4_railing4_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

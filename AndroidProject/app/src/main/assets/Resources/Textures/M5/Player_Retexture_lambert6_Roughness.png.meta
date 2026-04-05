@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe965152b69-00047152d2003a6f",
+        "source": "../../Resources/Textures/M5/Player_Retexture_lambert6_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Player_Retexture_lambert6_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Player_Retexture_lambert6_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

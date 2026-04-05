@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef44781bc6f55-000481eec8010171",
+        "source": "../../Resources/Textures/M5/NoBendScroll4_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll4_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/NoBendScroll4_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

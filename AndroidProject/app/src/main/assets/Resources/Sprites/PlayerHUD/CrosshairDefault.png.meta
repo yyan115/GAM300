@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96b345cd00-000474f3c0007229",
+        "source": "../../Resources/Sprites/PlayerHUD/CrosshairDefault.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/CrosshairDefault.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/CrosshairDefault_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

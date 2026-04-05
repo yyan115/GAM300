@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c394ee9863-000480ffd4000f3b",
+        "source": "../../Resources/Textures/M5/Cushion_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/Cushion_Base_color.dds",
+        "android_compiled": "Resources/Textures/M5/Cushion_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

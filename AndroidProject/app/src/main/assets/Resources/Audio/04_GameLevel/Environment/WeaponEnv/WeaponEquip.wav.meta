@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002723049e223752-0004a4106a00002f",
+        "source": "../../Resources/Audio/04_GameLevel/Environment/WeaponEnv/WeaponEquip.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Environment/WeaponEnv/WeaponEquip.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Environment/WeaponEnv/WeaponEquip.wav"
+    }
+}

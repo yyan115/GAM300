@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c3844f99461a-00046bff52001389",
+        "source": "../../Resources/Materials/FinalEnemyFlyingModel_lambert5.mat",
+        "compiled": "../../Resources/Materials/FinalEnemyFlyingModel_lambert5.mat",
+        "android_compiled": "Resources/Materials/FinalEnemyFlyingModel_lambert5_android.mat"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954d3dc24da-00041e971c00032b",
+        "source": "../../Resources/Materials/LowPolyFeatherChain_lambert1.mat",
+        "compiled": "../../Resources/Materials/LowPolyFeatherChain_lambert1.mat",
+        "android_compiled": "Resources/Materials/LowPolyFeatherChain_lambert1_android.mat"
+    }
+}

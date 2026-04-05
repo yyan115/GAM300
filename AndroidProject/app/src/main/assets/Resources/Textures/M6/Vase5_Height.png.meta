@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e233f92fb52-0004b3ce520010d3",
+        "source": "../../Resources/Textures/M6/Vase5_Height.png",
+        "compiled": "../../Resources/Textures/M6/Vase5_Height.dds",
+        "android_compiled": "Resources/Textures/M6/Vase5_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

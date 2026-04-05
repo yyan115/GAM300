@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96a3fb0f5f-000474f55400c7a3",
+        "source": "../../Resources/Sprites/GameOverUI/DeathScreenNew.png",
+        "compiled": "../../Resources/Sprites/GameOverUI/DeathScreenNew.dds",
+        "android_compiled": "Resources/Sprites/GameOverUI/DeathScreenNew_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

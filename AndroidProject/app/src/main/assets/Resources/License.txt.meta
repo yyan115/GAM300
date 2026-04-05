@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006c4c54b123bf7c-0003f63fa6000003",
+        "source": "../../Resources/License.txt",
+        "compiled": "../../Resources/License.txt",
+        "android_compiled": "Resources/License.txt"
+    }
+}

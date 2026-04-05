@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96f87b9ff3-000474f2ae005605",
+        "source": "../../Resources/Sprites/PlayerHUD/CrosshairAim.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/CrosshairAim.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/CrosshairAim_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

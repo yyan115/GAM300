@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001283f170b5c79f-00045c31fe000003",
+        "source": "../../Resources/Scripts/Camera/camera_cinematic_mode.lua",
+        "compiled": "../../Resources/Scripts/Camera/camera_cinematic_mode.lua",
+        "android_compiled": "Resources/Scripts/Camera/camera_cinematic_mode.lua"
+    }
+}

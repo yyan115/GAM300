@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d94012a3072cf-00047773fe00ad5f",
+        "source": "../../Resources/Sprites/PauseMenuUI/BackToMainButtonHighlightedNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/BackToMainButtonHighlightedNew.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/BackToMainButtonHighlightedNew_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

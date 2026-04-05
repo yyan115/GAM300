@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0040af80bf875d6b-0004696a1c001b23",
+        "source": "../../Resources/Sprites/LoadingUI/LoadingBG.png",
+        "compiled": "../../Resources/Sprites/LoadingUI/LoadingBG.dds",
+        "android_compiled": "Resources/Sprites/LoadingUI/LoadingBG_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

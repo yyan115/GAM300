@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00735157179494ad-0004b9a18e000003",
+        "source": "../../Resources/Scripts/UI/AndroidChainButtonAnim.lua",
+        "compiled": "../../Resources/Scripts/UI/AndroidChainButtonAnim.lua",
+        "android_compiled": "Resources/Scripts/UI/AndroidChainButtonAnim.lua"
+    }
+}

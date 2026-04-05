@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003fd08e62b3cdfe-0004b74b04001185",
+        "source": "../../Resources/Sprites/Tutorial/HookPrompt.png",
+        "compiled": "../../Resources/Sprites/Tutorial/HookPrompt.dds",
+        "android_compiled": "Resources/Sprites/Tutorial/HookPrompt_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

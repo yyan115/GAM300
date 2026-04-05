@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97f663cae9-000483deb6021c89",
+        "source": "../../Resources/Materials/sword_low_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/sword_low_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/sword_low_standardSurface1_android.mat"
+    }
+}

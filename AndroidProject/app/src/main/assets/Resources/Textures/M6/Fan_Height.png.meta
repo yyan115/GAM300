@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dcc2cbd0fc-0004b3c99e000009",
+        "source": "../../Resources/Textures/M6/Fan_Height.png",
+        "compiled": "../../Resources/Textures/M6/Fan_Height.dds",
+        "android_compiled": "Resources/Textures/M6/Fan_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c38444377bf9-00046c18b8001b55",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@FlyPatrol.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@FlyPatrol.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Flying/KarasuFlying@FlyPatrol_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

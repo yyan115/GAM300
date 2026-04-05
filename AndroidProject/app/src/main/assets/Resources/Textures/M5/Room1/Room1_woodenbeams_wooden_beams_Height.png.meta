@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe92f9629f0-0004711e6e0005e5",
+        "source": "../../Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

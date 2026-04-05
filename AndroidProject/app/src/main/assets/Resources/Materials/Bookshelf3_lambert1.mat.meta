@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e23117c6c42-0004b3e1fc01d761",
+        "source": "../../Resources/Materials/Bookshelf3_lambert1.mat",
+        "compiled": "../../Resources/Materials/Bookshelf3_lambert1.mat",
+        "android_compiled": "Resources/Materials/Bookshelf3_lambert1_android.mat"
+    }
+}

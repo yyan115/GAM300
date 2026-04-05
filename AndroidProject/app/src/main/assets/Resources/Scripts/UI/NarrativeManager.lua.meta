@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00c4d1a1e9f6b1e5-0004d37200d10005",
+        "source": "../../Resources/Scripts/UI/NarrativeManager.lua",
+        "compiled": "../../Resources/Scripts/UI/NarrativeManager.lua",
+        "android_compiled": "Resources/Scripts/UI/NarrativeManager.lua"
+    }
+}

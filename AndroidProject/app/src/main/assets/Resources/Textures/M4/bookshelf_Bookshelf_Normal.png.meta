@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84aed19bc38-00040d06b000cee1",
+        "source": "../../Resources/Textures/M4/bookshelf_Bookshelf_Normal.png",
+        "compiled": "../../Resources/Textures/M4/bookshelf_Bookshelf_Normal.dds",
+        "android_compiled": "Resources/Textures/M4/bookshelf_Bookshelf_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

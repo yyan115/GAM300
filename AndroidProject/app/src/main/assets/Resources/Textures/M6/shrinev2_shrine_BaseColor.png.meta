@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00724abae73a2552-0004b980da014e71",
+        "source": "../../Resources/Textures/M6/shrinev2_shrine_BaseColor.png",
+        "compiled": "../../Resources/Textures/M6/shrinev2_shrine_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M6/shrinev2_shrine_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

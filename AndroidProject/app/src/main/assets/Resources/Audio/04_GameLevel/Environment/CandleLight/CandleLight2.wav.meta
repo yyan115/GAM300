@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0038b943ad30315c-0004bad5cc000003",
+        "source": "../../Resources/Audio/04_GameLevel/Environment/CandleLight/CandleLight2.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Environment/CandleLight/CandleLight2.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Environment/CandleLight/CandleLight2.wav"
+    }
+}

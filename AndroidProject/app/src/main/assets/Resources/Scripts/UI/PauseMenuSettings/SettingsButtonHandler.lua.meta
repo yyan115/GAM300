@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0053e771ab2d4cef-00040e2100000001",
+        "source": "../../Resources/Scripts/UI/PauseMenuSettings/SettingsButtonHandler.lua",
+        "compiled": "../../Resources/Scripts/UI/PauseMenuSettings/SettingsButtonHandler.lua",
+        "android_compiled": "Resources/Scripts/UI/PauseMenuSettings/SettingsButtonHandler.lua"
+    }
+}

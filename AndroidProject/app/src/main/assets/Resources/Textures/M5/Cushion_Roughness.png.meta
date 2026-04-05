@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3bdc68256-000480ffd0000f31",
+        "source": "../../Resources/Textures/M5/Cushion_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Cushion_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Cushion_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

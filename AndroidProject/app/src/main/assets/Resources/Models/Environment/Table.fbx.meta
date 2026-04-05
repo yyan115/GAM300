@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003f14f4579e59f1-00040d4b1c00bf7f",
+        "source": "../../Resources/Models/Environment/Table.fbx",
+        "compiled": "../../Resources/Models/Environment/Table.mesh",
+        "android_compiled": "Resources/Models/Environment/Table_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

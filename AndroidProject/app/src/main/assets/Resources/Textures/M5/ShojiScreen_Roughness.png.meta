@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14ee013f67-00047d3e46018423",
+        "source": "../../Resources/Textures/M5/ShojiScreen_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/ShojiScreen_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/ShojiScreen_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

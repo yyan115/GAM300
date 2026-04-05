@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10640f63784-000467b03a3361df",
+        "source": "../../Resources/Textures/M5/AltarTable_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/AltarTable_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M5/AltarTable_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

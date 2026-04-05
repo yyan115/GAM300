@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f45d42fab-000421171800627d",
+        "source": "../../Resources/Models/Environment/Incense_LowPoly.fbx",
+        "compiled": "../../Resources/Models/Environment/Incense_LowPoly.mesh",
+        "android_compiled": "Resources/Models/Environment/Incense_LowPoly_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

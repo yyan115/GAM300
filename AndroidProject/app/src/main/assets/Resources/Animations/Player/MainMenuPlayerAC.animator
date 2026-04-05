@@ -1,0 +1,116 @@
+{
+    "name": "New Animator",
+    "entryState": "IdleUnarmed",
+    "entryNodePosition": {
+        "x": -200.0,
+        "y": -100.0
+    },
+    "anyStatePosition": {
+        "x": -200.0,
+        "y": 0.0
+    },
+    "parameters": [
+        {
+            "name": "Hurt",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsRunning",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDead",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsGrounded",
+            "type": "Bool",
+            "defaultValue": 1.0
+        },
+        {
+            "name": "IsHeavyCharging",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsJumping",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAttacking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "ComboStep",
+            "type": "Int",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDashing",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "FeatherSkill",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAimingChain",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "ThrowChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "PullChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "RetractChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsArmed",
+            "type": "Bool",
+            "defaultValue": 0.0
+        }
+    ],
+    "states": [
+        {
+            "id": "IdleUnarmed",
+            "clipIndex": 0,
+            "loop": true,
+            "speed": 0.75,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -22.03935432434082,
+                "y": -134.7531280517578
+            }
+        }
+    ],
+    "transitions": [],
+    "clipPaths": [
+        "Resources/Animations/Player/KusaneV6@Idle.fbx"
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1067d991abe-000467b8f0336219",
+        "source": "../../Resources/Textures/M5/enemy_ground_02_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/enemy_ground_02_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/enemy_ground_02_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

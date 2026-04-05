@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00717c6496cce6ff-00036d1a9a000139",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthNotch.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthNotch.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/HealthNotch_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1063728b473-000467b03c3361e3",
+        "source": "../../Resources/Textures/M5/AltarTable_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/AltarTable_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/AltarTable_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

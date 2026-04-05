@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0015275d220314cb-0004720eae000a19",
+        "source": "../../Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall3.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall3.mesh",
+        "android_compiled": "Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall3_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

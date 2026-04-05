@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c3847f3d339f-00046c04ae001b2b",
+        "source": "../../Resources/Materials/STAND_lambert6.mat",
+        "compiled": "../../Resources/Materials/STAND_lambert6.mat",
+        "android_compiled": "Resources/Materials/STAND_lambert6_android.mat"
+    }
+}

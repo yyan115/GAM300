@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d94012290c462-0004777c2a00ade9",
+        "source": "../../Resources/Fonts/InknutAntiqua-Light.ttf",
+        "compiled": "../../Resources/Fonts/InknutAntiqua-Light.font",
+        "android_compiled": "Resources/Fonts/InknutAntiqua-Light_android.font"
+    }
+}

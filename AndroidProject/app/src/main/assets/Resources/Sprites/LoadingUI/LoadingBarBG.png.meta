@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0003e8c6859b7152-000405cd46000071",
+        "source": "../../Resources/Sprites/LoadingUI/LoadingBarBG.png",
+        "compiled": "../../Resources/Sprites/LoadingUI/LoadingBarBG.dds",
+        "android_compiled": "Resources/Sprites/LoadingUI/LoadingBarBG_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

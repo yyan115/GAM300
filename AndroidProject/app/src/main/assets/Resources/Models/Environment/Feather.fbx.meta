@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0003e8c693657e67-000405cd1a000069",
+        "source": "../../Resources/Models/Environment/Feather.fbx",
+        "compiled": "../../Resources/Models/Environment/Feather.mesh",
+        "android_compiled": "Resources/Models/Environment/Feather_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

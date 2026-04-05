@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea056b032c-00047c478e00e7bf",
+        "source": "../../Resources/Models/Rooms/Room5/Room5_Railing1.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room5/Room5_Railing1.mesh",
+        "android_compiled": "Resources/Models/Rooms/Room5/Room5_Railing1_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

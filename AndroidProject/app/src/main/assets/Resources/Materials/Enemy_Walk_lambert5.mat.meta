@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004ca986576b36d4-0004597110000011",
+        "source": "../../Resources/Materials/Enemy_Walk_lambert5.mat",
+        "compiled": "../../Resources/Materials/Enemy_Walk_lambert5.mat",
+        "android_compiled": "Resources/Materials/Enemy_Walk_lambert5_android.mat"
+    }
+}

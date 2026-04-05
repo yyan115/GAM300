@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00307f8f9e54a2a8-000476beb2000005",
+        "source": "../../Resources/Materials/KusaneV6_SlamChainV2_aiStandardSurface27.mat",
+        "compiled": "../../Resources/Materials/KusaneV6_SlamChainV2_aiStandardSurface27.mat",
+        "android_compiled": "Resources/Materials/KusaneV6_SlamChainV2_aiStandardSurface27_android.mat"
+    }
+}

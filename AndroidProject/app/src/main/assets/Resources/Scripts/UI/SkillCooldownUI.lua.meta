@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003d4b899147d947-000468d492001b0f",
+        "source": "../../Resources/Scripts/UI/SkillCooldownUI.lua",
+        "compiled": "../../Resources/Scripts/UI/SkillCooldownUI.lua",
+        "android_compiled": "Resources/Scripts/UI/SkillCooldownUI.lua"
+    }
+}

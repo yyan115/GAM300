@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0017e11c96724398-000479d672000001",
+        "source": "../../Resources/Scripts/VFX/EnemyClawSlashVFX.lua",
+        "compiled": "../../Resources/Scripts/VFX/EnemyClawSlashVFX.lua",
+        "android_compiled": "Resources/Scripts/VFX/EnemyClawSlashVFX.lua"
+    }
+}

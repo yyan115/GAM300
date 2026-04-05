@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004ca9867e80b1c4-0004597114000013",
+        "source": "../../Resources/Materials/Miniboss_Taunt_lambert5.mat",
+        "compiled": "../../Resources/Materials/Miniboss_Taunt_lambert5.mat",
+        "android_compiled": "Resources/Materials/Miniboss_Taunt_lambert5_android.mat"
+    }
+}

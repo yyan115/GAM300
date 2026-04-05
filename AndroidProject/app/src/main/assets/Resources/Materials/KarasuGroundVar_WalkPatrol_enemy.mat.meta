@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4b4657d44-00046ac6d000001b",
+        "source": "../../Resources/Materials/KarasuGroundVar_WalkPatrol_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_WalkPatrol_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_WalkPatrol_enemy_android.mat"
+    }
+}

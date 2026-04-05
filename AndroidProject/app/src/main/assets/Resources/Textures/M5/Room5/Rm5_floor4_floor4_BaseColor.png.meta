@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff8fbc6bb2-00047c899002cd09",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_floor4_floor4_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_floor4_floor4_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_floor4_floor4_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

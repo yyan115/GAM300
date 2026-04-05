@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b16610141b80-0004b8330c00002b",
+        "source": "../../Resources/Scripts/Gameplay/FlyingHookedState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/FlyingHookedState.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/FlyingHookedState.lua"
+    }
+}

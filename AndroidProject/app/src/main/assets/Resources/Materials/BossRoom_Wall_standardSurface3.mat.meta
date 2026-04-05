@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff9e33d4da-00047caa5e03e0cf",
+        "source": "../../Resources/Materials/BossRoom_Wall_standardSurface3.mat",
+        "compiled": "../../Resources/Materials/BossRoom_Wall_standardSurface3.mat",
+        "android_compiled": "Resources/Materials/BossRoom_Wall_standardSurface3_android.mat"
+    }
+}

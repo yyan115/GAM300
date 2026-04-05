@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bba213c6a8eaf-0004670808072eb5",
+        "source": "../../Resources/Models/Environment/ArrayOfScrolls.fbx",
+        "compiled": "../../Resources/Models/Environment/ArrayOfScrolls.mesh",
+        "android_compiled": "Resources/Models/Environment/ArrayOfScrolls_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

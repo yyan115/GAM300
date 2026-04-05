@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bcd7872b76722-00047118de000001",
+        "source": "../../Resources/Animations/Player/KusaneV6@PullChain.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@PullChain.mesh",
+        "android_compiled": "Resources/Animations/Player/KusaneV6@PullChain_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

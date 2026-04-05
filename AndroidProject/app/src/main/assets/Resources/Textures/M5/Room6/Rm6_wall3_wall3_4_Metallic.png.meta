@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598fff0cda2a6-00047c978802f2bd",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_wall3_wall3_4_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_wall3_wall3_4_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room6/Rm6_wall3_wall3_4_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

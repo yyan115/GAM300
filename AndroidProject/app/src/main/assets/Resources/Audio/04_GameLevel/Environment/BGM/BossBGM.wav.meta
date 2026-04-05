@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00272304a38e0572-0004a4106a000021",
+        "source": "../../Resources/Audio/04_GameLevel/Environment/BGM/BossBGM.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Environment/BGM/BossBGM.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Environment/BGM/BossBGM.wav"
+    }
+}

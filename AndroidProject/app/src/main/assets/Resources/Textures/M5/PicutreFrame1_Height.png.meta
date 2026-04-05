@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447db78501f-00048202d201a821",
+        "source": "../../Resources/Textures/M5/PicutreFrame1_Height.png",
+        "compiled": "../../Resources/Textures/M5/PicutreFrame1_Height.dds",
+        "android_compiled": "Resources/Textures/M5/PicutreFrame1_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

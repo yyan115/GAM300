@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb5b13ecc3-00046ac432004057",
+        "source": "../../Resources/Materials/Stairsup_Wall2_lambert1.mat",
+        "compiled": "../../Resources/Materials/Stairsup_Wall2_lambert1.mat",
+        "android_compiled": "Resources/Materials/Stairsup_Wall2_lambert1_android.mat"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003138d811a84819-000424b980033fb7",
+        "source": "../../Resources/Animations/Enemy/Enemy@Hurt2.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Enemy@Hurt2.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Enemy@Hurt2_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

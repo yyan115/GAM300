@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff91630daf-00047c868802c7d7",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

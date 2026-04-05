@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001283f134363b04-00045c31fe000001",
+        "source": "../../Resources/Scripts/Camera/camera_chain_aim.lua",
+        "compiled": "../../Resources/Scripts/Camera/camera_chain_aim.lua",
+        "android_compiled": "Resources/Scripts/Camera/camera_chain_aim.lua"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a31277e4f7-0004b623720023ed",
+        "source": "../../Resources/Textures/M6/Lantern_LanternRect_Height.png",
+        "compiled": "../../Resources/Textures/M6/Lantern_LanternRect_Height.dds",
+        "android_compiled": "Resources/Textures/M6/Lantern_LanternRect_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

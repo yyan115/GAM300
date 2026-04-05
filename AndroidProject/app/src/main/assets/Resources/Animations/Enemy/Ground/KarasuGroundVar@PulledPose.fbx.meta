@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb010cdab2-00046ab56e00002d",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@PulledPose.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@PulledPose.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Ground/KarasuGroundVar@PulledPose_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

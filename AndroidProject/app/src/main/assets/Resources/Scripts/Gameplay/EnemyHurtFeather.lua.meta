@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1660899fd62-0004b8330c00001d",
+        "source": "../../Resources/Scripts/Gameplay/EnemyHurtFeather.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/EnemyHurtFeather.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/EnemyHurtFeather.lua"
+    }
+}

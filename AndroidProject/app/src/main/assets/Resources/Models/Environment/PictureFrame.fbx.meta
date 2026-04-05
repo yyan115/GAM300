@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447f5780bf4-000482029c01a819",
+        "source": "../../Resources/Models/Environment/PictureFrame.fbx",
+        "compiled": "../../Resources/Models/Environment/PictureFrame.mesh",
+        "android_compiled": "Resources/Models/Environment/PictureFrame_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

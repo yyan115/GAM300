@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00718a0eea4297fe-00047c492200b933",
+        "source": "../../Resources/Materials/VFXMaterials/IncenseSmokeMaterial.mat",
+        "compiled": "../../Resources/Materials/VFXMaterials/IncenseSmokeMaterial.mat",
+        "android_compiled": "Resources/Materials/VFXMaterials/IncenseSmokeMaterial_android.mat"
+    }
+}

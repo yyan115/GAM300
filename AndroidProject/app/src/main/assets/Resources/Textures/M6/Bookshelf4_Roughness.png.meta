@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e2374b0473b-0004b3e21801d763",
+        "source": "../../Resources/Textures/M6/Bookshelf4_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Bookshelf4_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/Bookshelf4_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb1659b4d2-00046ab57200003b",
+        "source": "../../Resources/Materials/KarasuGroundModelV2_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundModelV2_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundModelV2_enemy_android.mat"
+    }
+}

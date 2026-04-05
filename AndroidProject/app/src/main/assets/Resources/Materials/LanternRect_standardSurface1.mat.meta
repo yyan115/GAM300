@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a313863b9f-0004b6238a0023f7",
+        "source": "../../Resources/Materials/LanternRect_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/LanternRect_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/LanternRect_standardSurface1_android.mat"
+    }
+}

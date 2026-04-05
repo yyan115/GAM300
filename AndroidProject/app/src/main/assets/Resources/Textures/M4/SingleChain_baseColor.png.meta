@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954ffc53974-00041e9700000321",
+        "source": "../../Resources/Textures/M4/SingleChain_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/SingleChain_baseColor.dds",
+        "android_compiled": "Resources/Textures/M4/SingleChain_baseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed488ba370-00047a9cb803c7b5",
+        "source": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

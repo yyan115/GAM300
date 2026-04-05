@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00726b5e6d3693f7-0004b80a2200000d",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/BossClaw/MiniBossClawHitHit1.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/BossClaw/MiniBossClawHitHit1.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Enemy/BossClaw/MiniBossClawHitHit1.wav"
+    }
+}

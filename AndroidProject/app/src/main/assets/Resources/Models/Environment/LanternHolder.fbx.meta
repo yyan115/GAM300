@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acccd293c9-00041b444c001e8d",
+        "source": "../../Resources/Models/Environment/LanternHolder.fbx",
+        "compiled": "../../Resources/Models/Environment/LanternHolder.mesh",
+        "android_compiled": "Resources/Models/Environment/LanternHolder_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

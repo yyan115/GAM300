@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005a62379b6ecd54-00046c8c5c000007",
+        "source": "../../Resources/Materials/KarasuFlying_FeatherAttack_lambert7.mat",
+        "compiled": "../../Resources/Materials/KarasuFlying_FeatherAttack_lambert7.mat",
+        "android_compiled": "Resources/Materials/KarasuFlying_FeatherAttack_lambert7_android.mat"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003298025a8b9275-00047a69b4000001",
+        "source": "../../Resources/Scripts/extension/audio_helper.lua",
+        "compiled": "../../Resources/Scripts/extension/audio_helper.lua",
+        "android_compiled": "Resources/Scripts/extension/audio_helper.lua"
+    }
+}

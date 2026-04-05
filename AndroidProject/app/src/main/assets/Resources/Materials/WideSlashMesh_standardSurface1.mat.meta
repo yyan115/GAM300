@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006230629a1adda6-00046c7ce6000003",
+        "source": "../../Resources/Materials/WideSlashMesh_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/WideSlashMesh_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/WideSlashMesh_standardSurface1_android.mat"
+    }
+}

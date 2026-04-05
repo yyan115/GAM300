@@ -1,0 +1,421 @@
+-- Resources/Scripts/GamePlay/KnifeLogic.lua
+require("extension.engine_bootstrap")
+local Component      = require("extension.mono_helper")
+local TransformMixin = require("extension.transform_mixin")
+
+local KnifePool = require("Gameplay.KnifePool")
+local event_bus = _G.event_bus
+
+local function atan2(y, x)
+    local ok, v = pcall(math.atan, y, x) -- 2-arg if supported
+    if ok and type(v) == "number" then return v end
+    if x > 0 then return math.atan(y / x) end
+    if x < 0 and y >= 0 then return math.atan(y / x) + math.pi end
+    if x < 0 and y < 0 then return math.atan(y / x) - math.pi end
+    if x == 0 and y > 0 then return math.pi / 2 end
+    if x == 0 and y < 0 then return -math.pi / 2 end
+    return 0
+end
+
+local function eulerToQuat(pitch, yaw, roll)
+    local p = math.rad(pitch or 0) * 0.5
+    local y = math.rad(yaw or 0)   * 0.5
+    local r = math.rad(roll or 0)  * 0.5
+
+    local sinP, cosP = math.sin(p), math.cos(p)
+    local sinY, cosY = math.sin(y), math.cos(y)
+    local sinR, cosR = math.sin(r), math.cos(r)
+
+    return {
+        w = cosP * cosY * cosR + sinP * sinY * sinR,
+        x = sinP * cosY * cosR - cosP * sinY * sinR,
+        y = cosP * sinY * cosR + sinP * cosY * sinR,
+        z = cosP * cosY * sinR - sinP * sinY * cosR
+    }
+end
+
+local function quatAxisAngle(ax, ay, az, deg)
+    local rad = math.rad(deg) * 0.5
+    local s = math.sin(rad)
+    return {
+        w = math.cos(rad),
+        x = ax * s,
+        y = ay * s,
+        z = az * s
+    }
+end
+
+local function quatMul(a, b)
+    return {
+        w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
+        x = a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y,
+        y = a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x,
+        z = a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w
+    }
+end
+
+-- Convert dt to seconds (handles engines that pass ms), clamp to avoid huge leaps
+local function toDtSec(dt)
+    local dtSec = dt or 0
+    if dtSec > 1.0 then dtSec = dtSec * 0.001 end -- likely ms
+    if dtSec <= 0 then return 0 end
+    if dtSec > 0.05 then dtSec = 0.05 end -- clamp for stability
+    return dtSec
+end
+
+local function randRange(minv, maxv)
+    return minv + (maxv - minv) * math.random()
+end
+
+return Component {
+    mixins = { TransformMixin },
+
+    fields = {
+        Speed    = 8.0,
+        Lifetime = 3.0,
+        Damage   = 1,
+
+        -- ===== HIT DETECTION TUNING =====
+        HitRadius     = 0.50,
+        WarningRadius = 1.20,  -- Outer radius that fires knife_incoming before actual contact. Must be > HitRadius.
+        ArmDelay      = 0.05,
+
+        -- ===== DESYNC / POOL BEHAVIOR =====
+        -- Makes knives expire at slightly different times so they don't all reset together.
+        LifeJitter = 0.25, -- +/- seconds (0 disables)
+
+        -- Resets knife after travelling this distance (0 disables). Helps "individual" recycle.
+        MaxRange   = 10.0,
+
+        -- Variant tuning
+        BossScale       = 2.0,
+        BossDamageMult  = 2.0,
+        BossHitRadiusMult = 1.25,
+    },
+
+    Start = function(self)
+        self.model    = self:GetComponent("ModelRenderComponent")
+        self.collider = self:GetComponent("ColliderComponent")
+        self.rb       = self:GetComponent("RigidBodyComponent")
+        self.light    = self:GetComponent("PointLightComponent")
+        self._audio   = self:GetComponent("AudioComponent")
+
+        self.active = false
+        self.reserved = false
+        self.age = 0
+        self.dirX, self.dirY, self.dirZ = 0,0,0
+
+        self._baseDamage = self.Damage
+        self._baseHitRadius = self.HitRadius
+
+        -- per-launch lifetime + travel tracking
+        self._life = self.Lifetime
+        self._sx, self._sy, self._sz = 0,0,0
+
+        self._baseScaleX, self._baseScaleY, self._baseScaleZ = 4, 4, 4
+
+        self._playerPos = nil
+        self._playerPosSub = nil
+
+        if event_bus and event_bus.subscribe then
+            self._playerPosSub = event_bus.subscribe("player_position", function(pos)
+                if pos then
+                    self._playerPos = pos
+                end
+            end)
+        end
+
+        if self.model then
+            ModelRenderComponent.SetVisible(self.model, false)
+        end
+
+        if self.light then
+            self.light.enabled = false
+        end
+
+        if self.collider then
+            self.collider.enabled = false
+        end
+        if self.rb then
+            self.rb.enabled = false
+        end
+
+        KnifePool.Register(self)
+    end,
+
+    _GetPlayerPos = function(self)
+        local p = self._playerPos
+        if not p then return nil end
+
+        if (type(p) == "userdata" or type(p) == "table") and p.x ~= nil then
+            return { x = p.x, y = p.y, z = p.z }
+        end
+
+        return nil
+    end,
+
+    _CheckHitPlayer = function(self)
+        if not self.active then return false end
+        local p = self:_GetPlayerPos()
+        if not p then return false end
+
+        local kx, ky, kz = self:GetPosition()
+        local dx, dy, dz = p.x - kx, p.y - ky, p.z - kz
+
+        local r = self.HitRadius
+        if (dx*dx + dy*dy + dz*dz) <= (r*r) then
+            return true
+        end
+        return false
+    end,
+
+    Update = function(self, dt)
+        if not self.active then return end
+
+        dt = toDtSec(dt)
+        if dt == 0 then return end
+
+        self.age = self.age + dt
+        if self.age >= (self._life or self.Lifetime) then
+            self:Reset("LIFETIME")
+            return
+        end
+
+        -- Move knife
+        self:Move(self.dirX * self.Speed * dt,
+                  self.dirY * self.Speed * dt,
+                  self.dirZ * self.Speed * dt)
+
+        -- Range-based recycle (prevents synchronized "batch" resets)
+        local r = self.MaxRange or 0
+        if r > 0 then
+            local x,y,z = self:GetPosition()
+            local dx = x - (self._sx or x)
+            local dy = y - (self._sy or y)
+            local dz = z - (self._sz or z)
+            if (dx*dx + dy*dy + dz*dz) >= (r*r) then
+                self:Reset("RANGE")
+                return
+            end
+        end
+
+        -- Arm + hit check
+        self._armedTimer = (self._armedTimer or 0) + dt
+        if self._armedTimer >= self.ArmDelay then
+            local p = self:_GetPlayerPos()
+            if p then
+                local kx, ky, kz = self:GetPosition()
+                local dx = p.x - kx
+                local dy = p.y - ky
+                local dz = p.z - kz
+                local distSq = dx*dx + dy*dy + dz*dz
+
+                -- Predictive: notify before contact so PlayerHealth can check dodge early
+                local wr = self.WarningRadius or 1.2
+                if distSq <= (wr * wr) and not self._warningSent then
+                    self._warningSent = true
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("knife_incoming", { dmg = self.Damage })
+                    end
+                end
+
+                -- Actual hit
+                local hr = self.HitRadius or 0.5
+                if distSq <= (hr * hr) then
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("isKnifeHitPlayer", true)
+                        event_bus.publish("knifeHitPlayerDmg", self.Damage)
+                    end
+                    self:Reset("HIT")
+                    return
+                end
+            end
+        end
+
+        -- optional debug pacing (kept but still off)
+        -- if self.active then
+        --     self._dbg = (self._dbg or 0) + dt
+        --     if self._dbg > 0.5 then
+        --         self._dbg = 0
+        --         local x,y,z = self:GetPosition()
+        --         --print(string.format("[Knife] active at (%.2f, %.2f, %.2f)", x,y,z))
+        --     end
+        -- end
+    end,
+
+    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, variant)
+        -- already flying -> can't relaunch
+        if self.active then
+            -- debug
+            -- print(string.format("[Knife] Launch FAIL (already active) slot=%s", tostring(slot)))
+            return false
+        end
+
+        -- If we're reserved, we must match the token that reserved us.
+        if self.reserved then
+            if token == nil or self._reservedToken ~= token then
+                -- debug
+                -- print(string.format("[Knife] Launch FAIL (token mismatch) slot=%s selfTok=%s tok=%s",
+                --     tostring(slot), tostring(self._reservedToken), tostring(token)))
+                return false
+            end
+        end
+
+        -- consume reservation
+        self.reserved = false
+        self._reservedToken = nil
+
+        -- per-launch lifetime jitter (prevents batch resets)
+        local life = self.Lifetime or 1.2
+        local jitter = self.LifeJitter or 0
+        if jitter > 0 then
+            life = life + randRange(-jitter, jitter)
+            if life < 0.05 then life = 0.05 end
+        end
+        self._life = life
+
+        -- store spawn for range recycling
+        self._sx, self._sy, self._sz = spawnX, spawnY, spawnZ
+
+        self:SetPosition(spawnX, spawnY, spawnZ)
+
+        -- print(string.format("[Knife] LAUNCH slot=%s tok=%s spawn=(%.2f, %.2f, %.2f) target=(%.2f, %.2f, %.2f)",
+        --     tostring(slot), tostring(token),
+        --     spawnX, spawnY, spawnZ, targetX, targetY, targetZ))
+
+        local dx = targetX - spawnX
+        local dy = targetY - spawnY
+        local dz = targetZ - spawnZ
+
+        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if dist < 0.001 then dist = 1 end
+
+        self.dirX = dx / dist
+        self.dirY = dy / dist
+        self.dirZ = dz / dist
+
+        local yaw = math.deg(atan2(self.dirX, self.dirZ))
+
+        if slot and tostring(slot):sub(1, 3) == "P3F" then
+            -- Feather Bomb only:
+            -- 1) face outward toward destination
+            -- 2) tilt 45 degrees downward
+            -- 3) apply model flip needed for this knife mesh
+            local qYaw  = quatAxisAngle(0, 1, 0, yaw)
+            local qTilt = quatAxisAngle(1, 0, 0, -45)
+            local qFlip = quatAxisAngle(0, 0, 1, 180)
+
+            local q = quatMul(qYaw, quatMul(qTilt, qFlip))
+            self:SetRotation(q.w, q.x, q.y, q.z)
+        else
+            -- original behavior for all other knives
+            local flatLen = math.sqrt(self.dirX * self.dirX + self.dirZ * self.dirZ)
+            local aimPitch = -math.deg(atan2(self.dirY, flatLen))
+            local q = eulerToQuat(90 + aimPitch, yaw, 0)
+            self:SetRotation(q.w, q.x, q.y, q.z)
+        end
+
+        self.active = true
+        self.age = 0
+        self._armedTimer = 0
+
+        -- Default (normal knives)
+        self.Damage = self.Damage or 1
+        self.HitRadius = self.HitRadius or 0.5
+
+        -- Restore base scale first so pooled knives don't keep boss scaling
+        if self.SetScale then
+            self:SetScale(self._baseScaleX or 2, self._baseScaleY or 2, self._baseScaleZ or 2)
+        end
+
+        -- Apply variant overrides
+        if variant == "BOSS" then
+            -- Scale
+            if self.SetScale then
+                local mul = self.BossScale or 2
+                self:SetScale((self._baseScaleX or 2) * mul,
+                            (self._baseScaleY or 2) * mul,
+                            (self._baseScaleZ or 2) * mul)
+            end
+
+            -- Damage
+            local baseDmg = self.Damage or 1
+            local mult = self.BossDamageMult or 2.0
+            self.Damage = math.floor(baseDmg * mult + 0.5)
+
+            -- Increase hit radius too
+            local r = self.HitRadius or 0.5
+            local rm = self.BossHitRadiusMult or 1.25
+            self.HitRadius = r * rm
+        end
+
+        if self.model then
+            ModelRenderComponent.SetVisible(self.model, true)
+            local v = self.model.isVisible
+            --print(string.format("[Knife] VIS slot=%s tok=%s isVisible=%s", tostring(slot), tostring(token), tostring(v)))
+        end
+        
+        if self.light then
+            self.light.enabled = true
+        end
+
+        if self.collider then self.collider.enabled = false end
+
+        -- Play ranged attack SFX from knife position (3D audio).
+        -- AudioSystem updates audioComp.Position from worldPosition each frame, but
+        -- TransformSystem hasn't propagated our new localPosition to worldPosition yet.
+        -- Fix: manually set Position to the spawn coords before the event fires.
+        if self._audio then
+            local pos = self._audio.Position
+            pos.x = spawnX
+            pos.y = spawnY
+            pos.z = spawnZ
+            self._audio.Position = pos
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_sfx", { entityId = self.entityId, sfxType = "rangedAttack" })
+            end
+        end
+
+        return true
+    end,
+
+    Reset = function(self, reason)
+        if self.active then
+            --print(string.format("[Knife] RESET reason=%s", tostring(reason)))
+        end
+        self.active = false
+        self.reserved = false
+        self._reservedToken = nil
+
+        -- restore base scale
+        if self.SetScale then
+            self:SetScale(self._baseScaleX or 2, self._baseScaleY or 2, self._baseScaleZ or 2)
+        end
+
+        -- restore baseline tuning
+        self.Damage = self._baseDamage or self.Damage or 1
+        self.HitRadius = self._baseHitRadius or self.HitRadius or 0.5
+
+        self.age = 0
+        self.dirX, self.dirY, self.dirZ = 0,0,0
+        self._armedTimer = 0
+        self._warningSent = false
+
+        if self.model then
+            ModelRenderComponent.SetVisible(self.model, false)
+        end
+
+        if self.light then
+            self.light.enabled = false
+        end
+
+        if self.collider then self.collider.enabled = false end
+    end,
+
+    OnDisable = function(self)
+        if event_bus and event_bus.unsubscribe and self._playerPosSub then
+            event_bus.unsubscribe(self._playerPosSub)
+            self._playerPosSub = nil
+        end
+    end,
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe90ec449e8-00047152d0003a6b",
+        "source": "../../Resources/Textures/M5/Player_Retexture_lambert6_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Player_Retexture_lambert6_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Player_Retexture_lambert6_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

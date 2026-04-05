@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007351572acaf5cf-0004b9a18e000001",
+        "source": "../../Resources/Scripts/UI/AndroidButtonAnim.lua",
+        "compiled": "../../Resources/Scripts/UI/AndroidButtonAnim.lua",
+        "android_compiled": "Resources/Scripts/UI/AndroidButtonAnim.lua"
+    }
+}

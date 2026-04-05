@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005a623791675331-00046c8c5c000009",
+        "source": "../../Resources/Materials/KarasuFlying_FlyPatrol_lambert14.mat",
+        "compiled": "../../Resources/Materials/KarasuFlying_FlyPatrol_lambert14.mat",
+        "android_compiled": "Resources/Materials/KarasuFlying_FlyPatrol_lambert14_android.mat"
+    }
+}

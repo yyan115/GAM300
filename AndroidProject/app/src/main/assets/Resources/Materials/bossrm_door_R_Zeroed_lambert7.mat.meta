@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00344b3655ad78ab-0004b8829604c20d",
+        "source": "../../Resources/Materials/bossrm_door_R_Zeroed_lambert7.mat",
+        "compiled": "../../Resources/Materials/bossrm_door_R_Zeroed_lambert7.mat",
+        "android_compiled": "Resources/Materials/bossrm_door_R_Zeroed_lambert7_android.mat"
+    }
+}

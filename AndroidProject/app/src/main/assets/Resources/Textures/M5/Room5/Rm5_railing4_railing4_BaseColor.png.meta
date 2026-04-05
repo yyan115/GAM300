@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea0fab0ceb-00047c48c600e87f",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing4_railing4_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing4_railing4_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_railing4_railing4_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

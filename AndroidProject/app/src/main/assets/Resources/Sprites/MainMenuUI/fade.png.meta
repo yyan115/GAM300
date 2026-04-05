@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003514c13e543018-00040b1292000001",
+        "source": "../../Resources/Sprites/MainMenuUI/fade.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/fade.dds",
+        "android_compiled": "Resources/Sprites/MainMenuUI/fade_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

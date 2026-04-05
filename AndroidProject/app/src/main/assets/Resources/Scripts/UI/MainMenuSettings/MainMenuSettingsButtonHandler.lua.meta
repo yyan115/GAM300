@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002eb5f443884bb5-0004b6a0d6000001",
+        "source": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsButtonHandler.lua",
+        "compiled": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsButtonHandler.lua",
+        "android_compiled": "Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsButtonHandler.lua"
+    }
+}

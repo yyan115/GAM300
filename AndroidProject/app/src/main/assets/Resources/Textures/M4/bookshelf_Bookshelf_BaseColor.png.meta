@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006e84a82a32215-00040d06b000cee3",
+        "source": "../../Resources/Textures/M4/bookshelf_Bookshelf_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/bookshelf_Bookshelf_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/bookshelf_Bookshelf_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

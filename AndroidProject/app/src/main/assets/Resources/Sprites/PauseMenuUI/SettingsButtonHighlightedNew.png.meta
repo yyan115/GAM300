@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d94011d6d6277-00047773ec00ad5d",
+        "source": "../../Resources/Sprites/PauseMenuUI/SettingsButtonHighlightedNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsButtonHighlightedNew.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/SettingsButtonHighlightedNew_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

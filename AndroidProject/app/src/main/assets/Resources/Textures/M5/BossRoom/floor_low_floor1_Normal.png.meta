@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a3820820557f-00047cf23200785d",
+        "source": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_Normal.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_Normal.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/floor_low_floor1_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

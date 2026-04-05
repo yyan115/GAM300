@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005834d792dcbe1a-0004a0b488008c0f",
+        "source": "../../Resources/Materials/Sphere_DefaultMaterial.mat",
+        "compiled": "../../Resources/Materials/Sphere_DefaultMaterial.mat",
+        "android_compiled": "Resources/Materials/Sphere_DefaultMaterial_android.mat"
+    }
+}

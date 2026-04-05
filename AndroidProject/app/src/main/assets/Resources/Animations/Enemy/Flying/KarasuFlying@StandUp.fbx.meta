@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c3844c50e2ce-00046c05ee001b2d",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Flying/KarasuFlying@StandUp_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

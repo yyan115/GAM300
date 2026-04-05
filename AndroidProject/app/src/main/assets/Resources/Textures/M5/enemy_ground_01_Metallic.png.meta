@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10657967aa5-000467b8f6336223",
+        "source": "../../Resources/Textures/M5/enemy_ground_01_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/enemy_ground_01_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/enemy_ground_01_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

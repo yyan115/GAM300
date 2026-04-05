@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3c6282f20-0004813ca60232f9",
+        "source": "../../Resources/Textures/M5/BossRoom/door_low_door_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/door_low_door_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/door_low_door_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

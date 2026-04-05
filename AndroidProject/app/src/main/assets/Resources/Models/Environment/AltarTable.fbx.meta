@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10628793a11-000467b0463361eb",
+        "source": "../../Resources/Models/Environment/AltarTable.fbx",
+        "compiled": "../../Resources/Models/Environment/AltarTable.mesh",
+        "android_compiled": "Resources/Models/Environment/AltarTable_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

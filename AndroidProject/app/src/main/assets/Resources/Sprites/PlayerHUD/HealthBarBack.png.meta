@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0034de1adc7c7a03-0004b6c88e000001",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthBarBack.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthBarBack.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/HealthBarBack_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

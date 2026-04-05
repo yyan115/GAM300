@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002de18713f47cf3-0004728324009049",
+        "source": "../../Resources/Materials/Room2Library_Wall3_lambert1.mat",
+        "compiled": "../../Resources/Materials/Room2Library_Wall3_lambert1.mat",
+        "android_compiled": "Resources/Materials/Room2Library_Wall3_lambert1_android.mat"
+    }
+}

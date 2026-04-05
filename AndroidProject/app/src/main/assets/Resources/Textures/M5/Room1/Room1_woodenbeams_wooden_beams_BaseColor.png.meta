@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe94456a779-0004711e6c0005e3",
+        "source": "../../Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

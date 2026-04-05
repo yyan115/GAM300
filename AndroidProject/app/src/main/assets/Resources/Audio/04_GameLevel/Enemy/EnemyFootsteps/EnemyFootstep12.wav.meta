@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b7b9f9f11c842-0004823dd0000007",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyFootsteps/EnemyFootstep12.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyFootsteps/EnemyFootstep12.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Enemy/EnemyFootsteps/EnemyFootstep12.wav"
+    }
+}

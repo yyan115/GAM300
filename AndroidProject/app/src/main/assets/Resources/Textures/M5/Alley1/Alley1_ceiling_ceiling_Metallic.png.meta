@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b571f95cdeb-000479976618a65f",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

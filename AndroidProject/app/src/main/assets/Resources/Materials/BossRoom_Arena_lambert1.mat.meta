@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680775795cdc5-0004b0bb1c001047",
+        "source": "../../Resources/Materials/BossRoom_Arena_lambert1.mat",
+        "compiled": "../../Resources/Materials/BossRoom_Arena_lambert1.mat",
+        "android_compiled": "Resources/Materials/BossRoom_Arena_lambert1_android.mat"
+    }
+}

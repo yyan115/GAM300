@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10671f319fa-000467b8e633620b",
+        "source": "../../Resources/Textures/M5/enemy_flying_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/enemy_flying_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/enemy_flying_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

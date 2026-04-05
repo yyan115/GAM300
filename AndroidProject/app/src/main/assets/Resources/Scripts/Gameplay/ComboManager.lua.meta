@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b16656e1c5f0-0004b8330c000013",
+        "source": "../../Resources/Scripts/Gameplay/ComboManager.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/ComboManager.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/ComboManager.lua"
+    }
+}

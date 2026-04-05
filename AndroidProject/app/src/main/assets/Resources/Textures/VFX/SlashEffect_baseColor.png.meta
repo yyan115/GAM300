@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006c64660aa82474-000466f4d4000061",
+        "source": "../../Resources/Textures/VFX/SlashEffect_baseColor.png",
+        "compiled": "../../Resources/Textures/VFX/SlashEffect_baseColor.dds",
+        "android_compiled": "Resources/Textures/VFX/SlashEffect_baseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

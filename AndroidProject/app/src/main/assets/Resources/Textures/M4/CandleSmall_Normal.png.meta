@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acc6238066-00041b443c001e85",
+        "source": "../../Resources/Textures/M4/CandleSmall_Normal.png",
+        "compiled": "../../Resources/Textures/M4/CandleSmall_Normal.dds",
+        "android_compiled": "Resources/Textures/M4/CandleSmall_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680776e8e201c-0004b0b7ce00102f",
+        "source": "../../Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Roughness.dds",
+        "android_compiled": "Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

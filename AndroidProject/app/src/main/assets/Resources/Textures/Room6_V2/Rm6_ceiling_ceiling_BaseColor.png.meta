@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00518207168883a5-0004b63e88002253",
+        "source": "../../Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_BaseColor.png",
+        "compiled": "../../Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_BaseColor.dds",
+        "android_compiled": "Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

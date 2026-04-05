@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007c7b810cab88f7-00047d15de00b1fb",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonHighlighted.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonHighlighted.dds",
+        "android_compiled": "Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonHighlighted_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002e160d2e80abe4-000479cf6e000005",
+        "source": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_baseColor.png",
+        "compiled": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_baseColor.dds",
+        "android_compiled": "Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_baseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

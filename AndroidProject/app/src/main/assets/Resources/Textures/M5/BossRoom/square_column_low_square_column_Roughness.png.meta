@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c39a80fe45-0004813c2c0232dd",
+        "source": "../../Resources/Textures/M5/BossRoom/square_column_low_square_column_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/square_column_low_square_column_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/square_column_low_square_column_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

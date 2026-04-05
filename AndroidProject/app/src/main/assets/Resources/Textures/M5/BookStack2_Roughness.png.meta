@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b576c9c2a86-000479914c1876c7",
+        "source": "../../Resources/Textures/M5/BookStack2_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BookStack2_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BookStack2_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

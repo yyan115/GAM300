@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b572a337f8d-00047991981876e3",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_railing_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_railing_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Room3/Rm3_railing_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

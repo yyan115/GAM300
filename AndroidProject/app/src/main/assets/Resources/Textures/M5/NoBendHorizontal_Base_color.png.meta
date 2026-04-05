@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447cc7dc958-000481eec601016f",
+        "source": "../../Resources/Textures/M5/NoBendHorizontal_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/NoBendHorizontal_Base_color.dds",
+        "android_compiled": "Resources/Textures/M5/NoBendHorizontal_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

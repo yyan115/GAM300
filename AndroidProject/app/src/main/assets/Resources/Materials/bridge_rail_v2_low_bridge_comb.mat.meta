@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed7330b757-00047a6bc20146ad",
+        "source": "../../Resources/Materials/bridge_rail_v2_low_bridge_comb.mat",
+        "compiled": "../../Resources/Materials/bridge_rail_v2_low_bridge_comb.mat",
+        "android_compiled": "Resources/Materials/bridge_rail_v2_low_bridge_comb_android.mat"
+    }
+}

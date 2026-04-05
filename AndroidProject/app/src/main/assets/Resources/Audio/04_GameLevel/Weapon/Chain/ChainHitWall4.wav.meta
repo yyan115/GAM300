@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007e827319f5c500-0004a4247e000011",
+        "source": "../../Resources/Audio/04_GameLevel/Weapon/Chain/ChainHitWall4.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Weapon/Chain/ChainHitWall4.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Weapon/Chain/ChainHitWall4.wav"
+    }
+}

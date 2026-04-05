@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c0f38521d-0004b6a28a007c8d",
+        "source": "../../Resources/Textures/BossRoom/Cloth2/Cloth2_Height.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth2/Cloth2_Height.dds",
+        "android_compiled": "Resources/Textures/BossRoom/Cloth2/Cloth2_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

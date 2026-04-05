@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14a76f055f-00047d3e4e018431",
+        "source": "../../Resources/Textures/M5/ShojiScreen_Height.png",
+        "compiled": "../../Resources/Textures/M5/ShojiScreen_Height.dds",
+        "android_compiled": "Resources/Textures/M5/ShojiScreen_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

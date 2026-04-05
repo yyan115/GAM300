@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1663b432511-0004b8330c000063",
+        "source": "../../Resources/Scripts/Gameplay/PlayerHealthBar.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PlayerHealthBar.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/PlayerHealthBar.lua"
+    }
+}

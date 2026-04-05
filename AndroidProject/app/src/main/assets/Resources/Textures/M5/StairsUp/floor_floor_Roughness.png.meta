@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1d5dfb5c5-000473d78a02916f",
+        "source": "../../Resources/Textures/M5/StairsUp/floor_floor_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/floor_floor_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/floor_floor_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

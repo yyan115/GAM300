@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff9485a0e7-00047c869c02ccdf",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_wall3_wall3_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_wall3_wall3_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_wall3_wall3_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f1486748ebf-00047d3e50018433",
+        "source": "../../Resources/Textures/M5/ShojiScreen_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/ShojiScreen_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M5/ShojiScreen_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

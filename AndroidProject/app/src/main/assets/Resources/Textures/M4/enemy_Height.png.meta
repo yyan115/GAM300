@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c1337e068-000418b82201f66d",
+        "source": "../../Resources/Textures/M4/enemy_Height.png",
+        "compiled": "../../Resources/Textures/M4/enemy_Height.dds",
+        "android_compiled": "Resources/Textures/M4/enemy_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e23655f379f-0004b3d51800f6cf",
+        "source": "../../Resources/Models/Environment/ScrollVase3.fbx",
+        "compiled": "../../Resources/Models/Environment/ScrollVase3.mesh",
+        "android_compiled": "Resources/Models/Environment/ScrollVase3_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

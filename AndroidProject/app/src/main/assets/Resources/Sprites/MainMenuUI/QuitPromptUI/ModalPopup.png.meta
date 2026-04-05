@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006a1317a172f785-00047ca88e000001",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/ModalPopup.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/ModalPopup.dds",
+        "android_compiled": "Resources/Sprites/MainMenuUI/QuitPromptUI/ModalPopup_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

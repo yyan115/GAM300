@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d6efbf8b5-0004a3b1f0046ac3",
+        "source": "../../Resources/Textures/M6/WallTop_standardSurface1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M6/WallTop_standardSurface1_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M6/WallTop_standardSurface1_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

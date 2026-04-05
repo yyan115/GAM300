@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001684cd82a43362-0004bb1b9000002f",
+        "source": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Opening_Final_15.PNG",
+        "compiled": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Opening_Final_15.dds",
+        "android_compiled": "Resources/Cutscenes/Kusane_OpeningCutscene/Opening_Final_15_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3841f999c-000481419c02422d",
+        "source": "../../Resources/Textures/M5/BossRoom/BossCloth1_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/BossCloth1_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/BossCloth1_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

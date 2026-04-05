@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1db3da631-000473d786028f13",
+        "source": "../../Resources/Textures/M5/StairsUp/floor_floor_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/floor_floor_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/floor_floor_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

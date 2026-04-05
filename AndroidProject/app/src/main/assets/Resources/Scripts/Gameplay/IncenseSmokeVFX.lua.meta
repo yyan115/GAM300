@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b1666f00ce9d-0004b8330c000043",
+        "source": "../../Resources/Scripts/Gameplay/IncenseSmokeVFX.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/IncenseSmokeVFX.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/IncenseSmokeVFX.lua"
+    }
+}

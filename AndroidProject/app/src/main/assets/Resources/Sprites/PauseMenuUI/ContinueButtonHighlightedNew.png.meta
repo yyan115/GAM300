@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d940146094bbd-00047773ce00ad59",
+        "source": "../../Resources/Sprites/PauseMenuUI/ContinueButtonHighlightedNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/ContinueButtonHighlightedNew.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/ContinueButtonHighlightedNew_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

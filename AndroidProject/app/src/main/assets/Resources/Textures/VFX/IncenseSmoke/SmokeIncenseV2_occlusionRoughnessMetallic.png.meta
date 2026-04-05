@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007158666b7a815d-0004b1b5e0001015",
+        "source": "../../Resources/Textures/VFX/IncenseSmoke/SmokeIncenseV2_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/IncenseSmoke/SmokeIncenseV2_occlusionRoughnessMetallic.dds",
+        "android_compiled": "Resources/Textures/VFX/IncenseSmoke/SmokeIncenseV2_occlusionRoughnessMetallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

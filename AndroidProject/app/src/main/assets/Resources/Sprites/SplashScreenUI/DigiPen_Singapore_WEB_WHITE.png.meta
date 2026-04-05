@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0038c4c3fbfcb30d-0004713c9e000001",
+        "source": "../../Resources/Sprites/SplashScreenUI/DigiPen_Singapore_WEB_WHITE.png",
+        "compiled": "../../Resources/Sprites/SplashScreenUI/DigiPen_Singapore_WEB_WHITE.dds",
+        "android_compiled": "Resources/Sprites/SplashScreenUI/DigiPen_Singapore_WEB_WHITE_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

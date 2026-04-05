@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c4eefc93a-0004b6a282007c81",
+        "source": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Base_color.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Base_color.dds",
+        "android_compiled": "Resources/Textures/BossRoom/Cloth3/Cloth3_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

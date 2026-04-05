@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003481cbb1bd8fa1-000499697601be09",
+        "source": "../../Resources/Animations/Player/KusaneV6@NewDashRoll.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@NewDashRoll.mesh",
+        "android_compiled": "Resources/Animations/Player/KusaneV6@NewDashRoll_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

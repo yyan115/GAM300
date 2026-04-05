@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00155f4ea6576437-00047d6006013861",
+        "source": "../../Resources/Materials/BossRoom_CeilingBtm_standardSurface3.mat",
+        "compiled": "../../Resources/Materials/BossRoom_CeilingBtm_standardSurface3.mat",
+        "android_compiled": "Resources/Materials/BossRoom_CeilingBtm_standardSurface3_android.mat"
+    }
+}

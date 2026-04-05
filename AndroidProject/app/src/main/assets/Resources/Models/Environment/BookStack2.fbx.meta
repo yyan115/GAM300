@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b577ab514e8-000479915c1876c9",
+        "source": "../../Resources/Models/Environment/BookStack2.fbx",
+        "compiled": "../../Resources/Models/Environment/BookStack2.mesh",
+        "android_compiled": "Resources/Models/Environment/BookStack2_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1991cf591-000473d786028dc1",
+        "source": "../../Resources/Textures/M5/StairsUp/floor_floor_Height.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/floor_floor_Height.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/floor_floor_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

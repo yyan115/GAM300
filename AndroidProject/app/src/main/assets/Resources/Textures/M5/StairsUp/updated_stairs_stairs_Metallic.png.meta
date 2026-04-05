@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f18069044f-000473d78c029317",
+        "source": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/updated_stairs_stairs_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

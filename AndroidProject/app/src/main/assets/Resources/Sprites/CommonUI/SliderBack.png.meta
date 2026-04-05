@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b8ee8e0bb49aa-0004a764f6006001",
+        "source": "../../Resources/Sprites/CommonUI/SliderBack.png",
+        "compiled": "../../Resources/Sprites/CommonUI/SliderBack.dds",
+        "android_compiled": "Resources/Sprites/CommonUI/SliderBack_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

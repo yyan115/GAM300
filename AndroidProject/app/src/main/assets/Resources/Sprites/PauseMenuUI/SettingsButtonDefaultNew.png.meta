@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d9401444074ff-000477754000ad63",
+        "source": "../../Resources/Sprites/PauseMenuUI/SettingsButtonDefaultNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsButtonDefaultNew.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/SettingsButtonDefaultNew_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

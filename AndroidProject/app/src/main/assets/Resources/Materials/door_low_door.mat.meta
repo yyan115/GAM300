@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0046ce7325fbc377-0004a8e5ea0001d9",
+        "source": "../../Resources/Materials/door_low_door.mat",
+        "compiled": "../../Resources/Materials/door_low_door.mat",
+        "android_compiled": "Resources/Materials/door_low_door_android.mat"
+    }
+}

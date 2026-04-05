@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680772c53a251-0004b0b7cc00102b",
+        "source": "../../Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Metallic.png",
+        "compiled": "../../Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Metallic.dds",
+        "android_compiled": "Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

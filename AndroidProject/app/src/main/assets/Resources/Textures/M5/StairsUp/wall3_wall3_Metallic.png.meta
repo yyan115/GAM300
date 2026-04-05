@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1fe01c08f-000473d7980296ed",
+        "source": "../../Resources/Textures/M5/StairsUp/wall3_wall3_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/wall3_wall3_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/wall3_wall3_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

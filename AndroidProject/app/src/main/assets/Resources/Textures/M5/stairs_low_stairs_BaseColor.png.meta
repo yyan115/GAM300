@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00503acaa21a2335-0004629c08000007",
+        "source": "../../Resources/Textures/M5/stairs_low_stairs_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/stairs_low_stairs_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/stairs_low_stairs_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

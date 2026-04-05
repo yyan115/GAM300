@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10665361eb5-000467b8ea336211",
+        "source": "../../Resources/Textures/M5/enemy_flying_Height.png",
+        "compiled": "../../Resources/Textures/M5/enemy_flying_Height.dds",
+        "android_compiled": "Resources/Textures/M5/enemy_flying_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

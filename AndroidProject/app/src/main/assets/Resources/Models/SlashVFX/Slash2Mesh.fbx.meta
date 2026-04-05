@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d8655c31104be-00046c7fae001cbd",
+        "source": "../../Resources/Models/SlashVFX/Slash2Mesh.fbx",
+        "compiled": "../../Resources/Models/SlashVFX/Slash2Mesh.mesh",
+        "android_compiled": "Resources/Models/SlashVFX/Slash2Mesh_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

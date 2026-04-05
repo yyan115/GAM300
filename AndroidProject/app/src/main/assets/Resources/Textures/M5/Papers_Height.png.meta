@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee345a6e4d-0004628d06000007",
+        "source": "../../Resources/Textures/M5/Papers_Height.png",
+        "compiled": "../../Resources/Textures/M5/Papers_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Papers_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

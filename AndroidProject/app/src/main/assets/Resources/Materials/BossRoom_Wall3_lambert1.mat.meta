@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00768077111361c1-0004b0bb2000105b",
+        "source": "../../Resources/Materials/BossRoom_Wall3_lambert1.mat",
+        "compiled": "../../Resources/Materials/BossRoom_Wall3_lambert1.mat",
+        "android_compiled": "Resources/Materials/BossRoom_Wall3_lambert1_android.mat"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3dd868a11-000481354c023263",
+        "source": "../../Resources/Models/Rooms/BossRoom/bridge_planks.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/bridge_planks.mesh",
+        "android_compiled": "Resources/Models/Rooms/BossRoom/bridge_planks_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

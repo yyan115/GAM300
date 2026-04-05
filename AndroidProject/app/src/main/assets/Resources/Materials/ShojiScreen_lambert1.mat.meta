@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14992e17bb-00047d3e2e01841d",
+        "source": "../../Resources/Materials/ShojiScreen_lambert1.mat",
+        "compiled": "../../Resources/Materials/ShojiScreen_lambert1.mat",
+        "android_compiled": "Resources/Materials/ShojiScreen_lambert1_android.mat"
+    }
+}

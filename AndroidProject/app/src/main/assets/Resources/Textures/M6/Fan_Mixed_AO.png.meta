@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dc807fdc98-0004b3c99e00000d",
+        "source": "../../Resources/Textures/M6/Fan_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/Fan_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M6/Fan_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

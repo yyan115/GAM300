@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000db95d1ce1e2ff-0004b8ddc0002413",
+        "source": "../../Resources/Sprites/CutSceneUI/CutsceneNoHoverButton.png",
+        "compiled": "../../Resources/Sprites/CutSceneUI/CutsceneNoHoverButton.dds",
+        "android_compiled": "Resources/Sprites/CutSceneUI/CutsceneNoHoverButton_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

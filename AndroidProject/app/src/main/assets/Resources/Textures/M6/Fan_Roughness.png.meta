@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dcf3f10d1a-0004b3c99e000011",
+        "source": "../../Resources/Textures/M6/Fan_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Fan_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/Fan_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

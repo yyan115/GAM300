@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed394bd453-00047a9ca203c791",
+        "source": "../../Resources/Textures/M5/Room4/floor_floor_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room4/floor_floor_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room4/floor_floor_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3b5360832-000480ffa6000f25",
+        "source": "../../Resources/Models/Environment/WeaponHolder.fbx",
+        "compiled": "../../Resources/Models/Environment/WeaponHolder.mesh",
+        "android_compiled": "Resources/Models/Environment/WeaponHolder_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

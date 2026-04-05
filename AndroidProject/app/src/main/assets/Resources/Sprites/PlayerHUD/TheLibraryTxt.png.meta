@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022c89488452de5-0004761b7000e555",
+        "source": "../../Resources/Sprites/PlayerHUD/TheLibraryTxt.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/TheLibraryTxt.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/TheLibraryTxt_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb61bd7630-00046ab56a000015",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@FeatherAttack.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@FeatherAttack.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Ground/KarasuGroundVar@FeatherAttack_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

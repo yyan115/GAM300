@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007e6a31bbd1ce38-0004b9af2a00a843",
+        "source": "../../Resources/Scripts/Gameplay/PhysicsHitReact.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PhysicsHitReact.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/PhysicsHitReact.lua"
+    }
+}

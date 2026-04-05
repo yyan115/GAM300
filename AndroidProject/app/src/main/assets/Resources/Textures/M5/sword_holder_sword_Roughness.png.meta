@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe960014ae0-0004713e42000f29",
+        "source": "../../Resources/Textures/M5/sword_holder_sword_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/sword_holder_sword_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/sword_holder_sword_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

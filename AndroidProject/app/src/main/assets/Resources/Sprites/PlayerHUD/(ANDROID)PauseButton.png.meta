@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0002ceba78bf66bc-0004a7da1c000fff",
+        "source": "../../Resources/Sprites/PlayerHUD/(ANDROID)PauseButton.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/(ANDROID)PauseButton.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/(ANDROID)PauseButton_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

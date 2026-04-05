@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe94db31092-0004711e740005ed",
+        "source": "../../Resources/Textures/M5/Room1/tatami_floor_tatami_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room1/tatami_floor_tatami_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/tatami_floor_tatami_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

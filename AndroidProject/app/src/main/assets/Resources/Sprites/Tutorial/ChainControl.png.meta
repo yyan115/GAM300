@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c89d985ac9f26-000476bc5e001f31",
+        "source": "../../Resources/Sprites/Tutorial/ChainControl.png",
+        "compiled": "../../Resources/Sprites/Tutorial/ChainControl.dds",
+        "android_compiled": "Resources/Sprites/Tutorial/ChainControl_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

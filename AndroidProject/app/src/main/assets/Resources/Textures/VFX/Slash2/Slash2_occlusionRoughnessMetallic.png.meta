@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0062306297676463-00046c7ce800000f",
+        "source": "../../Resources/Textures/VFX/Slash2/Slash2_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/Slash2/Slash2_occlusionRoughnessMetallic.dds",
+        "android_compiled": "Resources/Textures/VFX/Slash2/Slash2_occlusionRoughnessMetallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

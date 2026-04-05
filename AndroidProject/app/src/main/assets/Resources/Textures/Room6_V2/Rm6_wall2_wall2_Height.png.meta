@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051820705a5ccba-0004b63ea0002271",
+        "source": "../../Resources/Textures/Room6_V2/Rm6_wall2_wall2_Height.png",
+        "compiled": "../../Resources/Textures/Room6_V2/Rm6_wall2_wall2_Height.dds",
+        "android_compiled": "Resources/Textures/Room6_V2/Rm6_wall2_wall2_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

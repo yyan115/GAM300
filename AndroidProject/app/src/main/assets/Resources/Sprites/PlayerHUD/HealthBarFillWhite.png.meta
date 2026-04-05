@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96eb08da8c-000474fd42028c89",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthBarFillWhite.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthBarFillWhite.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/HealthBarFillWhite_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

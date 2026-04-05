@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b8ee88987b3b7-0004a764f4005ffb",
+        "source": "../../Resources/Sprites/CommonUI/ResetBtnHighlighted.png",
+        "compiled": "../../Resources/Sprites/CommonUI/ResetBtnHighlighted.dds",
+        "android_compiled": "Resources/Sprites/CommonUI/ResetBtnHighlighted_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

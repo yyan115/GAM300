@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed41f16742-00047a6ba2014689",
+        "source": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/arena_low_arena1_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

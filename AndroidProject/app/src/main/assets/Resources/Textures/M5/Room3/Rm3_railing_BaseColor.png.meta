@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57798bd4cd-00047991981876e1",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_railing_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_railing_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room3/Rm3_railing_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

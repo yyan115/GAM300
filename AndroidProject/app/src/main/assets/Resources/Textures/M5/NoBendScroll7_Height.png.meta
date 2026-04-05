@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006f5c81f9a307b-000482611a001e5f",
+        "source": "../../Resources/Textures/M5/NoBendScroll7_Height.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll7_Height.dds",
+        "android_compiled": "Resources/Textures/M5/NoBendScroll7_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

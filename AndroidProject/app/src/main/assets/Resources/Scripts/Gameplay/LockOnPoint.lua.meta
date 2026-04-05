@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b166325683ca-0004b8330c00004d",
+        "source": "../../Resources/Scripts/Gameplay/LockOnPoint.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/LockOnPoint.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/LockOnPoint.lua"
+    }
+}

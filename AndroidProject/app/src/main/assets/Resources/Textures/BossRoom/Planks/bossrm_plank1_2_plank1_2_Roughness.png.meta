@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680774ebce9e3-0004b0b7da001043",
+        "source": "../../Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Roughness.png",
+        "compiled": "../../Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Roughness.dds",
+        "android_compiled": "Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

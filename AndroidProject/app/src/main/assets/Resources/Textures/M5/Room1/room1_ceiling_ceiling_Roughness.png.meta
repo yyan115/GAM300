@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe96f104bed-0004711e640005d7",
+        "source": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/room1_ceiling_ceiling_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006ef172f81acd2-00047d1b28000001",
+        "source": "../../Resources/Materials/Enemy_Idle2_lambert5.mat",
+        "compiled": "../../Resources/Materials/Enemy_Idle2_lambert5.mat",
+        "android_compiled": "Resources/Materials/Enemy_Idle2_lambert5_android.mat"
+    }
+}

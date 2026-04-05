@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bcd78774c7172-00047118e0000009",
+        "source": "../../Resources/Animations/Player/KusaneV6@SlamChain.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@SlamChain.mesh",
+        "android_compiled": "Resources/Animations/Player/KusaneV6@SlamChain_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

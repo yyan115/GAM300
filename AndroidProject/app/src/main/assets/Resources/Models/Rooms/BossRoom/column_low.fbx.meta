@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c39f71664e-000481354e02326f",
+        "source": "../../Resources/Models/Rooms/BossRoom/column_low.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/column_low.mesh",
+        "android_compiled": "Resources/Models/Rooms/BossRoom/column_low_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

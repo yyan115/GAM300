@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d53c105da-0004a36eee00b27b",
+        "source": "../../Resources/Textures/M6/Incense_LowPoly_standardSurface1_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Incense_LowPoly_standardSurface1_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/Incense_LowPoly_standardSurface1_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

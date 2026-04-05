@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001283f14a321f84-00045c31fe000007",
+        "source": "../../Resources/Scripts/Camera/camera_enemy_detection.lua",
+        "compiled": "../../Resources/Scripts/Camera/camera_enemy_detection.lua",
+        "android_compiled": "Resources/Scripts/Camera/camera_enemy_detection.lua"
+    }
+}

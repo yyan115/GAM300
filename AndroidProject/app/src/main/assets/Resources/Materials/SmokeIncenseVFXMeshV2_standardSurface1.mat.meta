@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0039e61c901e32cc-0004b82cd6000001",
+        "source": "../../Resources/Materials/SmokeIncenseVFXMeshV2_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/SmokeIncenseVFXMeshV2_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/SmokeIncenseVFXMeshV2_standardSurface1_android.mat"
+    }
+}

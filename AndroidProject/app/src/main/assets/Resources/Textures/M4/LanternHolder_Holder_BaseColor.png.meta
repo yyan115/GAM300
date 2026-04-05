@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acda96d54e-00041b443a001e7f",
+        "source": "../../Resources/Textures/M4/LanternHolder_Holder_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/LanternHolder_Holder_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/LanternHolder_Holder_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

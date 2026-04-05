@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00623062b409cdea-00046c7ce8000005",
+        "source": "../../Resources/Textures/VFX/Slash1/Slash1_baseColor.png",
+        "compiled": "../../Resources/Textures/VFX/Slash1/Slash1_baseColor.dds",
+        "android_compiled": "Resources/Textures/VFX/Slash1/Slash1_baseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

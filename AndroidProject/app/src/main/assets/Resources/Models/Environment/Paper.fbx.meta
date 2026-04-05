@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee50a0d615-0004628cfe000001",
+        "source": "../../Resources/Models/Environment/Paper.fbx",
+        "compiled": "../../Resources/Models/Environment/Paper.mesh",
+        "android_compiled": "Resources/Models/Environment/Paper_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

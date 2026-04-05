@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00307f8fda607b86-000476cc8a03bc6f",
+        "source": "../../Resources/Animations/Player/KusaneV6@Standing.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@Standing.mesh",
+        "android_compiled": "Resources/Animations/Player/KusaneV6@Standing_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

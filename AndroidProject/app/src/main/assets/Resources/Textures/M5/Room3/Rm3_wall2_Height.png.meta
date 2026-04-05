@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b571ee4d54f-00047991a6187709",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_wall2_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_wall2_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Room3/Rm3_wall2_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

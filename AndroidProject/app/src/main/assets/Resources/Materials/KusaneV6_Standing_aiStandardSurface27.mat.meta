@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0004770125769fca-000476d46a000003",
+        "source": "../../Resources/Materials/KusaneV6_Standing_aiStandardSurface27.mat",
+        "compiled": "../../Resources/Materials/KusaneV6_Standing_aiStandardSurface27.mat",
+        "android_compiled": "Resources/Materials/KusaneV6_Standing_aiStandardSurface27_android.mat"
+    }
+}

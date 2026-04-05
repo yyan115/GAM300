@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000042387e9e2c8c-00049bfe26000007",
+        "source": "../../Resources/Sprites/SplashScreenUI/FMOD Logo White - Transparent Background.png",
+        "compiled": "../../Resources/Sprites/SplashScreenUI/FMOD Logo White - Transparent Background.dds",
+        "android_compiled": "Resources/Sprites/SplashScreenUI/FMOD Logo White - Transparent Background_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

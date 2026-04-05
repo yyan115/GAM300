@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0040f181b4e8e100-0004b9ebc4000001",
+        "source": "../../Resources/Scripts/Gameplay/BossHealthBar.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/BossHealthBar.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/BossHealthBar.lua"
+    }
+}

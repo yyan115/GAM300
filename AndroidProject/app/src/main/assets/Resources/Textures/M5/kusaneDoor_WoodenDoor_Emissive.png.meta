@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b284b1317-000462073e000015",
+        "source": "../../Resources/Textures/M5/kusaneDoor_WoodenDoor_Emissive.png",
+        "compiled": "../../Resources/Textures/M5/kusaneDoor_WoodenDoor_Emissive.dds",
+        "android_compiled": "Resources/Textures/M5/kusaneDoor_WoodenDoor_Emissive_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

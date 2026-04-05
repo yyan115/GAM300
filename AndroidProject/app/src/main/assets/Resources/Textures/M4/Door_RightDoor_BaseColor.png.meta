@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006ce0e65008256b-00040a629e0000b5",
+        "source": "../../Resources/Textures/M4/Door_RightDoor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Door_RightDoor_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/Door_RightDoor_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

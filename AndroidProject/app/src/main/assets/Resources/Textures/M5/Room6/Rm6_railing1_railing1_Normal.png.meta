@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffe7ecdf0c-00047c984802f2c9",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_railing1_railing1_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_railing1_railing1_Normal.dds",
+        "android_compiled": "Resources/Textures/M5/Room6/Rm6_railing1_railing1_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

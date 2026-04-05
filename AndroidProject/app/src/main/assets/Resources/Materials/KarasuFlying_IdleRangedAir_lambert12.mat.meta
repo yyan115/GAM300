@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005a62378649fbe6-00046c8c5c000011",
+        "source": "../../Resources/Materials/KarasuFlying_IdleRangedAir_lambert12.mat",
+        "compiled": "../../Resources/Materials/KarasuFlying_IdleRangedAir_lambert12.mat",
+        "android_compiled": "Resources/Materials/KarasuFlying_IdleRangedAir_lambert12_android.mat"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb6a40743a-00046ab56800000d",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Chase.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Chase.mesh",
+        "android_compiled": "Resources/Animations/Enemy/Ground/KarasuGroundVar@Chase_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

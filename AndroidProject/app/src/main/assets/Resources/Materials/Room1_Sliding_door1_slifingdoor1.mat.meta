@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb47a5a19d-00046ab8e0004033",
+        "source": "../../Resources/Materials/Room1_Sliding_door1_slifingdoor1.mat",
+        "compiled": "../../Resources/Materials/Room1_Sliding_door1_slifingdoor1.mat",
+        "android_compiled": "Resources/Materials/Room1_Sliding_door1_slifingdoor1_android.mat"
+    }
+}

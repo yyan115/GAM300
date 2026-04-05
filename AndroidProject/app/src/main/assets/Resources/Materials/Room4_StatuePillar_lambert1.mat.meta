@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0029af3f6d1cb070-000479cb0600358d",
+        "source": "../../Resources/Materials/Room4_StatuePillar_lambert1.mat",
+        "compiled": "../../Resources/Materials/Room4_StatuePillar_lambert1.mat",
+        "android_compiled": "Resources/Materials/Room4_StatuePillar_lambert1_android.mat"
+    }
+}

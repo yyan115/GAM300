@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df0df8960f-000477b9f600e55f",
+        "source": "../../Resources/Textures/M5/Room2Tatami/ceiling_ceiling_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/ceiling_ceiling_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room2Tatami/ceiling_ceiling_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

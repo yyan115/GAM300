@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4f3d153a3-00046ac6d0000017",
+        "source": "../../Resources/Materials/KarasuGroundVar_PulledPose_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_PulledPose_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_PulledPose_enemy_android.mat"
+    }
+}

@@ -1,0 +1,219 @@
+{
+    "prefab_entities": [
+        {
+            "id": 2406,
+            "guid": "005c4355a046c96b-0004a6e6b6000fa5",
+            "components": {
+                "NameComponent": {
+                    "name": "EnemyAudioManager"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 50001
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "00ea1a11def45678-0004e00000000001",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAIAudio.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "Unsubscribe": null,
+                                "_private": {},
+                                "SerializeFields": null,
+                                "UpdateSafe": null,
+                                "DisableSafe": null,
+                                "_call_lifecycle": null,
+                                "enemyMeleeHitSFX": [
+                                    "00612e33dde16695-0004202e3600001f",
+                                    "00612e33ee760ffa-0004202e36000021",
+                                    "00612e33c9ed7ce7-0004202e36000023",
+                                    "00612e3385b42307-0004202e36000025",
+                                    "00612e33bcf9fc04-0004202e36000027",
+                                    "00612e33fb3b1ead-0004202e36000029"
+                                ],
+                                "DeserializeFields": null,
+                                "_alertCooldowns": {},
+                                "enemyRangedHitSFX": [
+                                    "00612e33d64a7674-0004202e36000037",
+                                    "00612e33e920449b-0004202e36000039",
+                                    "00612e33abb711cc-0004202e3600003b",
+                                    "00612e33d85fb277-0004202e3600003d",
+                                    "00612e33cc4cc694-0004202e3600003f",
+                                    "00612e3385d4f0f5-0004202e36000041"
+                                ],
+                                "enemyMeleeAttackSFX": [
+                                    "00612e33c32385f0-0004202e3600002b",
+                                    "00612e33d68a0cf6-0004202e3600002d",
+                                    "00612e33f65abcca-0004202e3600002f",
+                                    "00612e33e7cab0dd-0004202e36000031",
+                                    "00612e33bc834dd4-0004202e36000033",
+                                    "00612e33d3f6a4c0-0004202e36000035"
+                                ],
+                                "enemyFootstepSFX": [
+                                    "006b7b9f8f4ab766-0004823dd0000001",
+                                    "006b7b9f8e31545f-0004823dd0000009",
+                                    "006b7b9ff3c5628d-0004823dd000000b",
+                                    "006b7b9fbf5abdd2-0004823dd000000d",
+                                    "006b7b9ffb2973ff-0004823dd000000f",
+                                    "006b7b9feea24867-0004823dd0000011",
+                                    "006b7b9fb79fdd92-0004823dd0000013",
+                                    "006b7b9fb67c0274-0004823dd0000015",
+                                    "006b7b9ff625aae5-0004823dd0000003",
+                                    "006b7b9fb2d1b030-0004823dd0000005",
+                                    "006b7b9f9f11c842-0004823dd0000007"
+                                ],
+                                "_sfxSub": {
+                                    "id": 1.0,
+                                    "event": "enemy_sfx"
+                                },
+                                "__created_at": 1774714217.0,
+                                "StartSafe": null,
+                                "AwakeSafe": null,
+                                "enemyHurtSFX": [
+                                    "00612e33851589d7-0004202e36000017",
+                                    "00612e33a555d31d-0004202e36000019",
+                                    "00612e33f05f8906-0004202e3600001b",
+                                    "00612e33840b6f61-0004202e3600001d",
+                                    "000e2a9d2786fa9e-0004a425ec000013",
+                                    "000e2a9d3073143d-0004a425ec000015",
+                                    "000e2a9d2bca520a-0004a425ec000017",
+                                    "000e2a9d38ed4b4f-0004a425ec000019",
+                                    "000e2a9d61218351-0004a425ec00001b",
+                                    "000e2a9d13fa600d-0004a425ec000001",
+                                    "000e2a9d0e60eb35-0004a425ec000003",
+                                    "000e2a9d5901755b-0004a425ec000005",
+                                    "000e2a9d24d2d8fb-0004a425ec000007",
+                                    "000e2a9d50d8e61c-0004a425ec000009",
+                                    "000e2a9d36aac415-0004a425ec00000b"
+                                ],
+                                "Destroy": null,
+                                "Every": null,
+                                "Awake": null,
+                                "OnDisable": null,
+                                "_subscriptions": {},
+                                "__meta": {},
+                                "After": null,
+                                "enemyAlertSFX": [
+                                    "00612e33f0f92281-0004202e36000011",
+                                    "00612e33f6947b1d-0004202e36000013",
+                                    "00612e33ba1f7817-0004202e36000015"
+                                ],
+                                "Subscribe": null,
+                                "__field_list": {
+                                    "enemyHurtSFX": {},
+                                    "enemyMeleeHitSFX": {},
+                                    "enemyAlertSFX": {},
+                                    "enemyRangedHitSFX": {},
+                                    "enemyMeleeAttackSFX": {},
+                                    "enemyFootstepSFX": {},
+                                    "enemyGroundSlamSFX": {},
+                                    "enemyDeathSFX": {},
+                                    "enemyRangedAttackSFX": {}
+                                },
+                                "enemyGroundSlamSFX": [
+                                    "0017237d57a08b0a-0004822e8600001d",
+                                    "0017237d79490a5c-0004822e8600001f",
+                                    "0017237d5101cb60-0004822e86000021",
+                                    "0017237d0bea1336-0004822e86000023"
+                                ],
+                                "Update": null,
+                                "enemyDeathSFX": [
+                                    "0078994fecd9fbf6-00047bfe4c000001",
+                                    "0078994fb11b9c0e-00047bfe4c000003",
+                                    "0078994f9a21411d-00047bfe4c000005",
+                                    "0078994ffb52bcfd-00047bfe4c000007",
+                                    "0078994fecfd6d67-00047bfe4c000009"
+                                ],
+                                "enemyRangedAttackSFX": [
+                                    "00612e33ad54fbe1-0004202e36000043",
+                                    "00612e33c540ad27-0004202e36000045",
+                                    "00612e33d861849f-0004202e36000047",
+                                    "00612e339fed7d3e-0004202e36000049",
+                                    "00612e33c92234c1-0004202e3600004b"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

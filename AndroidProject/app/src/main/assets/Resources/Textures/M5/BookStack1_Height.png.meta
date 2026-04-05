@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5750d07d46-0004799252187799",
+        "source": "../../Resources/Textures/M5/BookStack1_Height.png",
+        "compiled": "../../Resources/Textures/M5/BookStack1_Height.dds",
+        "android_compiled": "Resources/Textures/M5/BookStack1_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

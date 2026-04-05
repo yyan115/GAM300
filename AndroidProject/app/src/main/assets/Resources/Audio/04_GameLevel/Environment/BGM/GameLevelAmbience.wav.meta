@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00272304ccea1384-0004a4106a000023",
+        "source": "../../Resources/Audio/04_GameLevel/Environment/BGM/GameLevelAmbience.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Environment/BGM/GameLevelAmbience.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Environment/BGM/GameLevelAmbience.wav"
+    }
+}

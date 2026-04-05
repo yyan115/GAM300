@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0059b8a5bf843eef-00049ee15a017e33",
+        "source": "../../Resources/Sprites/CommonUI/BackToGameButtonNotHighlighted.png",
+        "compiled": "../../Resources/Sprites/CommonUI/BackToGameButtonNotHighlighted.dds",
+        "android_compiled": "Resources/Sprites/CommonUI/BackToGameButtonNotHighlighted_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

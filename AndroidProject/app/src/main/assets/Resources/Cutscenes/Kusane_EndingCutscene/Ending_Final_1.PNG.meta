@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022d8ddfb6aa8c5-0004b9019200120b",
+        "source": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_1.PNG",
+        "compiled": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_1.dds",
+        "android_compiled": "Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_1_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

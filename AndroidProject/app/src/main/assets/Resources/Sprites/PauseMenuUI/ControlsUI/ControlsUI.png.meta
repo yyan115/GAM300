@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00446a1721d83c43-0004840e0002a983",
+        "source": "../../Resources/Sprites/PauseMenuUI/ControlsUI/ControlsUI.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/ControlsUI/ControlsUI.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/ControlsUI/ControlsUI_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d55070733-0004a364840081ed",
+        "source": "../../Resources/Textures/M6/ScrollVase2_Metallic.png",
+        "compiled": "../../Resources/Textures/M6/ScrollVase2_Metallic.dds",
+        "android_compiled": "Resources/Textures/M6/ScrollVase2_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

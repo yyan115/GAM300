@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1a3218c65-000473d7820289bb",
+        "source": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/ceiling_ceiling_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

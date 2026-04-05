@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011216399cfd237-0004b99a00021439",
+        "source": "../../Resources/Materials/swordholder_low_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/swordholder_low_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/swordholder_low_standardSurface1_android.mat"
+    }
+}

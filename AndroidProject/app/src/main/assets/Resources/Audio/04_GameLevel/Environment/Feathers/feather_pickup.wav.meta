@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00272304dbc641df-0004a4106a000029",
+        "source": "../../Resources/Audio/04_GameLevel/Environment/Feathers/feather_pickup.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Environment/Feathers/feather_pickup.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Environment/Feathers/feather_pickup.wav"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00518207129cf348-0004b63e8c002259",
+        "source": "../../Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_Roughness.dds",
+        "android_compiled": "Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

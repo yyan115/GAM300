@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dcdb6d3c15-0004b3c99c000003",
+        "source": "../../Resources/Materials/Fan_lambert1.mat",
+        "compiled": "../../Resources/Materials/Fan_lambert1.mat",
+        "android_compiled": "Resources/Materials/Fan_lambert1_android.mat"
+    }
+}

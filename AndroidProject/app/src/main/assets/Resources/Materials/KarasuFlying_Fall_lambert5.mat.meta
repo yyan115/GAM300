@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4fa485bf9-00046ac6d0000003",
+        "source": "../../Resources/Materials/KarasuFlying_Fall_lambert5.mat",
+        "compiled": "../../Resources/Materials/KarasuFlying_Fall_lambert5.mat",
+        "android_compiled": "Resources/Materials/KarasuFlying_Fall_lambert5_android.mat"
+    }
+}

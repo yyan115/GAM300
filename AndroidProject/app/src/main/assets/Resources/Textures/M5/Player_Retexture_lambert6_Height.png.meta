@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe917ab6116-00047152d0003a6d",
+        "source": "../../Resources/Textures/M5/Player_Retexture_lambert6_Height.png",
+        "compiled": "../../Resources/Textures/M5/Player_Retexture_lambert6_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Player_Retexture_lambert6_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

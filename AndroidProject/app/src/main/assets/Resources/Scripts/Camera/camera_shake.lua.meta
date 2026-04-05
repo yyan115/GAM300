@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00542696cccddba4-00046bda50000001",
+        "source": "../../Resources/Scripts/Camera/camera_shake.lua",
+        "compiled": "../../Resources/Scripts/Camera/camera_shake.lua",
+        "android_compiled": "Resources/Scripts/Camera/camera_shake.lua"
+    }
+}

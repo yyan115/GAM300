@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004752178545e260-000460448a001b0d",
+        "source": "../../Resources/Sprites/PlayerHUD/Jump.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Jump.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/Jump_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

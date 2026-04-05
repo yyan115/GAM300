@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002d02e4975ca42c-00046ac6d0000007",
+        "source": "../../Resources/Materials/KarasuGroundVar_Chase_enemy.mat",
+        "compiled": "../../Resources/Materials/KarasuGroundVar_Chase_enemy.mat",
+        "android_compiled": "Resources/Materials/KarasuGroundVar_Chase_enemy_android.mat"
+    }
+}

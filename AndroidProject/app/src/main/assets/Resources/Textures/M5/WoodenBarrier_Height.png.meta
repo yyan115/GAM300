@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a9799fc8a8d-000483de96021c71",
+        "source": "../../Resources/Textures/M5/WoodenBarrier_Height.png",
+        "compiled": "../../Resources/Textures/M5/WoodenBarrier_Height.dds",
+        "android_compiled": "Resources/Textures/M5/WoodenBarrier_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

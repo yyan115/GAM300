@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a3824fca8f8c-00047cf2280077ad",
+        "source": "../../Resources/Textures/M5/BossRoom/wall_wall_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/wall_wall_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/wall_wall_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

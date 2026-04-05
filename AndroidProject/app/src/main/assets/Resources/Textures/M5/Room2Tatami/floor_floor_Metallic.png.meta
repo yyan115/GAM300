@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df2999a2f1-000477ba0800e575",
+        "source": "../../Resources/Textures/M5/Room2Tatami/floor_floor_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/floor_floor_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room2Tatami/floor_floor_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

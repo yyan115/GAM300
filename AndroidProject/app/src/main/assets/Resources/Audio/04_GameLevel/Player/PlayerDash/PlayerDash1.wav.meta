@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00374c4a00c8cb79-000469aa2e000001",
+        "source": "../../Resources/Audio/04_GameLevel/Player/PlayerDash/PlayerDash1.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Player/PlayerDash/PlayerDash1.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Player/PlayerDash/PlayerDash1.wav"
+    }
+}

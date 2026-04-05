@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b16620b7885c-0004b8330c000067",
+        "source": "../../Resources/Scripts/Gameplay/SchedulerTicker.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/SchedulerTicker.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/SchedulerTicker.lua"
+    }
+}

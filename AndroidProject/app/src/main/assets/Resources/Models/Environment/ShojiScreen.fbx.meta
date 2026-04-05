@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14c88c9622-00047d3e2e01841b",
+        "source": "../../Resources/Models/Environment/ShojiScreen.fbx",
+        "compiled": "../../Resources/Models/Environment/ShojiScreen.mesh",
+        "android_compiled": "Resources/Models/Environment/ShojiScreen_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

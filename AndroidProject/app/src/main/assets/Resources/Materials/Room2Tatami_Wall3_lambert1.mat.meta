@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0015275d2c84633e-0004720eae000a1b",
+        "source": "../../Resources/Materials/Room2Tatami_Wall3_lambert1.mat",
+        "compiled": "../../Resources/Materials/Room2Tatami_Wall3_lambert1.mat",
+        "android_compiled": "Resources/Materials/Room2Tatami_Wall3_lambert1_android.mat"
+    }
+}

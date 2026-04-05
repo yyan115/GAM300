@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef44782acb538-000481eed401018d",
+        "source": "../../Resources/Textures/M5/NoBendScroll2_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll2_Base_color.dds",
+        "android_compiled": "Resources/Textures/M5/NoBendScroll2_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

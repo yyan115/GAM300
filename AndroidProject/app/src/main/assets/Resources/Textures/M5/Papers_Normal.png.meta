@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee412cc208-0004628d0600000b",
+        "source": "../../Resources/Textures/M5/Papers_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Papers_Normal.dds",
+        "android_compiled": "Resources/Textures/M5/Papers_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

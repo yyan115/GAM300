@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d3067fe7f-0004a3648a0081f7",
+        "source": "../../Resources/Textures/M6/Flowervase_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/Flowervase_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M6/Flowervase_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

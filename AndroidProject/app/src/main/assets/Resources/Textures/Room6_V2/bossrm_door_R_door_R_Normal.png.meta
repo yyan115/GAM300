@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c1eccf249-0004b687e4004917",
+        "source": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Normal.png",
+        "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Normal.dds",
+        "android_compiled": "Resources/Textures/Room6_V2/bossrm_door_R_door_R_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

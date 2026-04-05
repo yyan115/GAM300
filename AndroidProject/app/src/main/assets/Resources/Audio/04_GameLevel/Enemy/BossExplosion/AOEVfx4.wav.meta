@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022ec94735c0e2b-0004bb54e0000007",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/BossExplosion/AOEVfx4.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/BossExplosion/AOEVfx4.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Enemy/BossExplosion/AOEVfx4.wav"
+    }
+}

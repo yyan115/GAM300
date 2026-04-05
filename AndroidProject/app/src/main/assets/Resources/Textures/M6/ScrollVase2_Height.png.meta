@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d4397bb36-0004a364820081eb",
+        "source": "../../Resources/Textures/M6/ScrollVase2_Height.png",
+        "compiled": "../../Resources/Textures/M6/ScrollVase2_Height.dds",
+        "android_compiled": "Resources/Textures/M6/ScrollVase2_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

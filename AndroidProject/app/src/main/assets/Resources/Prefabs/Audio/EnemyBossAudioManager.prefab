@@ -1,0 +1,158 @@
+{
+    "prefab_entities": [
+        {
+            "id": 2408,
+            "guid": "00053165e940b75d-0004a6f4e6000fa7",
+            "components": {
+                "NameComponent": {
+                    "name": "EnemyBossAudioManager"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 50003
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0005ce3183d375c0-0004a6f3cc00a763"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "00ea1a22def45679-0004e00000000002",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/MinibossAIAudio.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "enemyHurtSFX": [
+                                    "00612e33851589d7-0004202e36000017",
+                                    "00612e33a555d31d-0004202e36000019",
+                                    "00612e33f05f8906-0004202e3600001b",
+                                    "00612e33840b6f61-0004202e3600001d"
+                                ],
+                                "enemyDeathSFX": [
+                                    "0078994fecd9fbf6-00047bfe4c000001",
+                                    "0078994fb11b9c0e-00047bfe4c000003",
+                                    "0078994f9a21411d-00047bfe4c000005",
+                                    "0078994ffb52bcfd-00047bfe4c000007",
+                                    "0078994fecfd6d67-00047bfe4c000009"
+                                ],
+                                "enemyTauntSFX": [
+                                    "00335c33bcc0ee35-0004840fca000001",
+                                    "00335c3399b16d19-0004840fca000003",
+                                    "00335c33c7cfcba9-0004840fca000005"
+                                ],
+                                "enemyMeleeAttackSFX": [
+                                    "0017237d78a740c5-0004822e86000001",
+                                    "0017237d06fc68b2-0004822e86000003",
+                                    "0017237d0bcc422a-0004822e86000005",
+                                    "0017237d21567382-0004822e86000007",
+                                    "0017237d3e2b43c4-0004822e86000009"
+                                ],
+                                "enemyMeleeHitSFX": [
+                                    "00612e33dde16695-0004202e3600001f",
+                                    "00612e33ee760ffa-0004202e36000021",
+                                    "00612e33c9ed7ce7-0004202e36000023",
+                                    "00612e3385b42307-0004202e36000025",
+                                    "00612e33bcf9fc04-0004202e36000027",
+                                    "00612e33fb3b1ead-0004202e36000029"
+                                ],
+                                "enemyRangedAttackSFX": [
+                                    "00612e33ad54fbe1-0004202e36000043",
+                                    "00612e33c540ad27-0004202e36000045",
+                                    "00612e33d861849f-0004202e36000047",
+                                    "00612e339fed7d3e-0004202e36000049",
+                                    "00612e33c92234c1-0004202e3600004b"
+                                ],
+                                "enemyRangedHitSFX": [
+                                    "00612e33d64a7674-0004202e36000037",
+                                    "00612e33e920449b-0004202e36000039",
+                                    "00612e33abb711cc-0004202e3600003b",
+                                    "00612e33d85fb277-0004202e3600003d",
+                                    "00612e33cc4cc694-0004202e3600003f"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

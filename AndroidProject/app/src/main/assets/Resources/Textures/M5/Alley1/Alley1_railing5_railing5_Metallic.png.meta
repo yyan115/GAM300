@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df5d2a8704-000477c69a0e7e71",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_railing5_railing5_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing5_railing5_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Alley1/Alley1_railing5_railing5_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

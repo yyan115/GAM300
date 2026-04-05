@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00344b36236312c6-0004b8b132093bd7",
+        "source": "../../Resources/Sprites/BossUI/BossEnemyHealthBarContainer.png",
+        "compiled": "../../Resources/Sprites/BossUI/BossEnemyHealthBarContainer.dds",
+        "android_compiled": "Resources/Sprites/BossUI/BossEnemyHealthBarContainer_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

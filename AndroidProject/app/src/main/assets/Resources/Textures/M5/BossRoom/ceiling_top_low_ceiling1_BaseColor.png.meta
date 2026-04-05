@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00155f4ec948a47c-00047d604a01386b",
+        "source": "../../Resources/Textures/M5/BossRoom/ceiling_top_low_ceiling1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/ceiling_top_low_ceiling1_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/ceiling_top_low_ceiling1_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

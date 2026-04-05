@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022c894f4814435-0004761b6400e54f",
+        "source": "../../Resources/Sprites/PlayerHUD/TheTempleHallTxt.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/TheTempleHallTxt.dds",
+        "android_compiled": "Resources/Sprites/PlayerHUD/TheTempleHallTxt_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

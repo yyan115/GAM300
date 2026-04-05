@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00066903d7db8aba-00040b20a6000001",
+        "source": "../../Resources/Sprites/MainMenuUI/CreditsUI/CreditsScroll.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/CreditsUI/CreditsScroll.dds",
+        "android_compiled": "Resources/Sprites/MainMenuUI/CreditsUI/CreditsScroll_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

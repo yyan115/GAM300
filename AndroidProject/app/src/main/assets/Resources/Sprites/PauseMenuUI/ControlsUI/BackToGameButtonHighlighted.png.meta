@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00446a1720cc9845-0004840ea002a98f",
+        "source": "../../Resources/Sprites/PauseMenuUI/ControlsUI/BackToGameButtonHighlighted.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/ControlsUI/BackToGameButtonHighlighted.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/ControlsUI/BackToGameButtonHighlighted_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

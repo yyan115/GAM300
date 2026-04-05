@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447d9dcc208-00048204ac01a839",
+        "source": "../../Resources/Materials/PictureFrame2_pasted__pasted__defaultPolygonShader.mat",
+        "compiled": "../../Resources/Materials/PictureFrame2_pasted__pasted__defaultPolygonShader.mat",
+        "android_compiled": "Resources/Materials/PictureFrame2_pasted__pasted__defaultPolygonShader_android.mat"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df1fa1b2e4-000477ba0a00e577",
+        "source": "../../Resources/Textures/M5/Room2Tatami/wall1_wall1_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/wall1_wall1_Height.dds",
+        "android_compiled": "Resources/Textures/M5/Room2Tatami/wall1_wall1_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5701251061-0004799b6c18a69f",
+        "source": "../../Resources/Materials/Room3_Ceiling_lambert1.mat",
+        "compiled": "../../Resources/Materials/Room3_Ceiling_lambert1.mat",
+        "android_compiled": "Resources/Materials/Room3_Ceiling_lambert1_android.mat"
+    }
+}

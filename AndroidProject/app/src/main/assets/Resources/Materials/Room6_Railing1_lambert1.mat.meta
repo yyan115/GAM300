@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea60c1270d-00047c476000e767",
+        "source": "../../Resources/Materials/Room6_Railing1_lambert1.mat",
+        "compiled": "../../Resources/Materials/Room6_Railing1_lambert1.mat",
+        "android_compiled": "Resources/Materials/Room6_Railing1_lambert1_android.mat"
+    }
+}

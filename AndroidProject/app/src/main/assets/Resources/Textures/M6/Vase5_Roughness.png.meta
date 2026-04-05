@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e234e0e7704-0004b3ce4e0010bd",
+        "source": "../../Resources/Textures/M6/Vase5_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Vase5_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/Vase5_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

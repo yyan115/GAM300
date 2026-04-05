@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe95389af8d-000471481a002279",
+        "source": "../../Resources/Textures/M5/Drum_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/Drum_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M5/Drum_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

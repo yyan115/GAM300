@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a3826ca741da-00047cf22c00781d",
+        "source": "../../Resources/Textures/M5/BossRoom/wall_wall_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/wall_wall_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/wall_wall_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

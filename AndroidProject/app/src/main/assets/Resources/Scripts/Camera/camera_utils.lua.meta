@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001283f16479df47-00045c31fe00000b",
+        "source": "../../Resources/Scripts/Camera/camera_utils.lua",
+        "compiled": "../../Resources/Scripts/Camera/camera_utils.lua",
+        "android_compiled": "Resources/Scripts/Camera/camera_utils.lua"
+    }
+}

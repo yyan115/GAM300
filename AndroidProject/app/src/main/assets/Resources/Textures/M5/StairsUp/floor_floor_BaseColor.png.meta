@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e5c2f348107e7-00047468c6000005",
+        "source": "../../Resources/Textures/M5/StairsUp/floor_floor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/floor_floor_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/floor_floor_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

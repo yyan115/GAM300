@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acfbf003c9-00041b443a001e7d",
+        "source": "../../Resources/Textures/M4/BendScroll_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/BendScroll_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/BendScroll_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

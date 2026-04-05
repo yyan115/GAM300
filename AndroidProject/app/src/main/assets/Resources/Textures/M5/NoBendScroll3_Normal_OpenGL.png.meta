@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447df597505-000481eecc01017b",
+        "source": "../../Resources/Textures/M5/NoBendScroll3_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll3_Normal_OpenGL.dds",
+        "android_compiled": "Resources/Textures/M5/NoBendScroll3_Normal_OpenGL_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

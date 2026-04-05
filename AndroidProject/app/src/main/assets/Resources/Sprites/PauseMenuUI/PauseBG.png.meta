@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ba6c30289cb24-000405322a000001",
+        "source": "../../Resources/Sprites/PauseMenuUI/PauseBG.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/PauseBG.dds",
+        "android_compiled": "Resources/Sprites/PauseMenuUI/PauseBG_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

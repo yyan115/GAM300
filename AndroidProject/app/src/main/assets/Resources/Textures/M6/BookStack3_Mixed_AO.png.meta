@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003f1e49660554c7-00049ee9dc000081",
+        "source": "../../Resources/Textures/M6/BookStack3_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/BookStack3_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M6/BookStack3_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

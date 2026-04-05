@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffe906b639-00047c897a02cce7",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_Normal.dds",
+        "android_compiled": "Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_Normal_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001646bfdb92a01c-00046551d0000001",
+        "source": "../../Resources/Models/KusaneV6.fbx",
+        "compiled": "../../Resources/Models/KusaneV6.mesh",
+        "android_compiled": "Resources/Models/KusaneV6_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

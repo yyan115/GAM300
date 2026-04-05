@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002528030672635d-00047680a8000005",
+        "source": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_baseColor.png",
+        "compiled": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_baseColor.dds",
+        "android_compiled": "Resources/Textures/VFX/GroundSlam/GroundCrack_baseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

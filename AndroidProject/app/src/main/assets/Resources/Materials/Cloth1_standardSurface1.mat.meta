@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3d01a0f61-00048141b0024237",
+        "source": "../../Resources/Materials/Cloth1_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/Cloth1_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/Cloth1_standardSurface1_android.mat"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e236cd508dd-0004b3d51400f6c9",
+        "source": "../../Resources/Textures/M6/Vase3Texture2_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/Vase3Texture2_Base_color.dds",
+        "android_compiled": "Resources/Textures/M6/Vase3Texture2_Base_color_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

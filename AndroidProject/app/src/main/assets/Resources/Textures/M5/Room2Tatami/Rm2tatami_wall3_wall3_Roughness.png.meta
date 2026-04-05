@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed09310e42-00047a6a18013e93",
+        "source": "../../Resources/Textures/M5/Room2Tatami/Rm2tatami_wall3_wall3_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/Rm2tatami_wall3_wall3_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room2Tatami/Rm2tatami_wall3_wall3_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

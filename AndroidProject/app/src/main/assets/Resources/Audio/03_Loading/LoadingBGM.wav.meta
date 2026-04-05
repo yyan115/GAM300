@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0040f8ef42f40ccc-00047d2d4e000001",
+        "source": "../../Resources/Audio/03_Loading/LoadingBGM.wav",
+        "compiled": "../../Resources/Audio/03_Loading/LoadingBGM.wav",
+        "android_compiled": "Resources/Audio/03_Loading/LoadingBGM.wav"
+    }
+}

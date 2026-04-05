@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffc79a08ff-00047cacb403ed4d",
+        "source": "../../Resources/Materials/BossRoom_Shrine_standardSurface3.mat",
+        "compiled": "../../Resources/Materials/BossRoom_Shrine_standardSurface3.mat",
+        "android_compiled": "Resources/Materials/BossRoom_Shrine_standardSurface3_android.mat"
+    }
+}

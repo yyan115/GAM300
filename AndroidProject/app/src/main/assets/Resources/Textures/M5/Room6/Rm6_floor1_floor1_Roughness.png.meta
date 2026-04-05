@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffadbb9ada-00047c976a02f28f",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_floor1_floor1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_floor1_floor1_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/Room6/Rm6_floor1_floor1_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

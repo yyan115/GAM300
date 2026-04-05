@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1064d56e765-000467b03e3361e7",
+        "source": "../../Resources/Textures/M5/AltarTable_Height.png",
+        "compiled": "../../Resources/Textures/M5/AltarTable_Height.dds",
+        "android_compiled": "Resources/Textures/M5/AltarTable_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0048e3048539a17a-00041ca8d6002001",
+        "source": "../../Resources/Textures/M4/shrine_updated_low_shrine_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/shrine_updated_low_shrine_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M4/shrine_updated_low_shrine_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

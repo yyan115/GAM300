@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1f9fbca57-000473d780028809",
+        "source": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Height.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Height.dds",
+        "android_compiled": "Resources/Textures/M5/StairsUp/ceiling_ceiling_Height_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

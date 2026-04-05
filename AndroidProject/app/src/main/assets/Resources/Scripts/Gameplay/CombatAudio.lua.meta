@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0030b166194c485c-0004b8330c000011",
+        "source": "../../Resources/Scripts/Gameplay/CombatAudio.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/CombatAudio.lua",
+        "android_compiled": "Resources/Scripts/Gameplay/CombatAudio.lua"
+    }
+}

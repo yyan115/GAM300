@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447b83bbd1d-000481eedc01019b",
+        "source": "../../Resources/Materials/NoBendScroll2_standardSurface1.mat",
+        "compiled": "../../Resources/Materials/NoBendScroll2_standardSurface1.mat",
+        "android_compiled": "Resources/Materials/NoBendScroll2_standardSurface1_android.mat"
+    }
+}

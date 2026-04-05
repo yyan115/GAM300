@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee1dd83d68-0004628d06000009",
+        "source": "../../Resources/Textures/M5/Papers_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/Papers_Mixed_AO.dds",
+        "android_compiled": "Resources/Textures/M5/Papers_Mixed_AO_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

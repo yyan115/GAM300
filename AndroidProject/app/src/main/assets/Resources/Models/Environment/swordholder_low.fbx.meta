@@ -1,0 +1,12 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00112163f37a04da-0004b99a00021437",
+        "source": "../../Resources/Models/Environment/swordholder_low.fbx",
+        "compiled": "../../Resources/Models/Environment/swordholder_low.mesh",
+        "android_compiled": "Resources/Models/Environment/swordholder_low_android.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007c7b817820b87f-00047d16ec00b1fd",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/NoButtonHighlighted.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/NoButtonHighlighted.dds",
+        "android_compiled": "Resources/Sprites/MainMenuUI/QuitPromptUI/NoButtonHighlighted_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe93e44ca44-0004711e620005d3",
+        "source": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_Metallic.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/room1_ceiling_ceiling_Metallic_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0028f193702394f8-00047bfdba00001f",
+        "source": "../../Resources/Sprites/ParticleSprites/Rock Particle.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/Rock Particle.dds",
+        "android_compiled": "Resources/Sprites/ParticleSprites/Rock Particle_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

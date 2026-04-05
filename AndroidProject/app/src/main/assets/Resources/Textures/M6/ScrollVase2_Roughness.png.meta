@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d3751e575-0004a364880081f3",
+        "source": "../../Resources/Textures/M6/ScrollVase2_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/ScrollVase2_Roughness.dds",
+        "android_compiled": "Resources/Textures/M6/ScrollVase2_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

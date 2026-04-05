@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004cbd56b5d217e0-0003fba388000001",
+        "source": "../../Resources/Sprites/CutSceneUI/BlackScreen.jpg",
+        "compiled": "../../Resources/Sprites/CutSceneUI/BlackScreen.dds",
+        "android_compiled": "Resources/Sprites/CutSceneUI/BlackScreen_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

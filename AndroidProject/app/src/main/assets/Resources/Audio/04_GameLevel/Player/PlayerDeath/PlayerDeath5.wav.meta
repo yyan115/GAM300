@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c86e8a108236-00048236ba000005",
+        "source": "../../Resources/Audio/04_GameLevel/Player/PlayerDeath/PlayerDeath5.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Player/PlayerDeath/PlayerDeath5.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Player/PlayerDeath/PlayerDeath5.wav"
+    }
+}

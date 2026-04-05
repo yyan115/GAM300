@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe934d72842-0004711e660005d9",
+        "source": "../../Resources/Textures/M5/Room1/room1_wall_wall_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room1/room1_wall_wall_BaseColor.dds",
+        "android_compiled": "Resources/Textures/M5/Room1/room1_wall_wall_BaseColor_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

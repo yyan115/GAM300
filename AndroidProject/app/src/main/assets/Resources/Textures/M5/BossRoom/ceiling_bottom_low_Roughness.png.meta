@@ -1,0 +1,16 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00155f4eb84f05e6-00047d6048013869",
+        "source": "../../Resources/Textures/M5/BossRoom/ceiling_bottom_low_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/ceiling_bottom_low_Roughness.dds",
+        "android_compiled": "Resources/Textures/M5/BossRoom/ceiling_bottom_low_Roughness_android.ktx"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
