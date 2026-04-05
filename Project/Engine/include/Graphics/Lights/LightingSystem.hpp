@@ -120,6 +120,28 @@ private:
 
     void CollectLightData();
 
+    // Reusable temp vectors for CollectLightData (avoids per-frame heap allocation)
+    struct PointLightCandidate {
+        glm::vec3 position;
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
+        float constant;
+        float linear;
+        float quadratic;
+        float intensity;
+        float range;
+        bool castShadows;
+        float distanceToCamera;
+    };
+    std::vector<PointLightCandidate> m_allPointLights;
+
+    struct ShadowCandidate {
+        size_t lightIndex;
+        float distanceToCamera;
+    };
+    std::vector<ShadowCandidate> m_shadowCandidates;
+
     // ========================================================================
     // SHADOW MAPPING RESOURCES - NEW
     // ========================================================================

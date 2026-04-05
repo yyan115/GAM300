@@ -154,6 +154,8 @@ void AnimationSystem::Update()
 	//		animComp.Update(dt, entity);
 	//	});
 
+	auto camera = ecsManager.cameraSystem->GetActiveCamera();
+
 	for (const auto& entity : entities)
 	{
 		// Skip entities that are inactive in hierarchy (checks parents too)
@@ -168,13 +170,13 @@ void AnimationSystem::Update()
 		}
 
 		auto& transform = ecsManager.GetComponent<Transform>(entity);
-		auto camera = ecsManager.cameraSystem->GetActiveCamera(); // Assuming you can get the camera pos
 
-		// Simple distance-based frustum check
-		float distSq = glm::length(transform.worldPosition.ConvertToGLM() - camera->Position);
+		// Distance-based culling (squared to avoid sqrt)
+		glm::vec3 diff = transform.worldPosition.ConvertToGLM() - camera->Position;
+		float distSq = glm::dot(diff, diff);
 
 		// If the entity is more than 30 units away, don't update its animation this frame!
-		if (distSq > 30.0f) {
+		if (distSq > 900.0f) {
 			//std::cout << "[AnimationSystem] Entity > 100 units away, skipping animation update." << std::endl;
 			continue;
 		}

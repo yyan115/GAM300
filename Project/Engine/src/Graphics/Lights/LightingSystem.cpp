@@ -305,22 +305,9 @@ void LightingSystem::CollectLightData()
     glm::vec3 camPos = camera ? camera->Position : glm::vec3(0.0f);
 
     // =========================================================================
-    // TEMPORARY STORAGE FOR ALL POINT LIGHTS (before culling)
+    // REUSE CLASS-LEVEL VECTORS (avoids per-frame heap allocation)
     // =========================================================================
-    struct PointLightCandidate {
-        glm::vec3 position;
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
-        glm::vec3 specular;
-        float constant;
-        float linear;
-        float quadratic;
-        float intensity;
-        float range;
-        bool castShadows;
-        float distanceToCamera;
-    };
-    std::vector<PointLightCandidate> allPointLights;
+    m_allPointLights.clear();
 
     for (const auto& entity : entities)
     {
@@ -381,7 +368,7 @@ void LightingSystem::CollectLightData()
 
                 float dist = glm::distance(position, camPos);
 
-                allPointLights.push_back({
+                m_allPointLights.push_back({
                     position,
                     light.ambient.ConvertToGLM(),
                     light.diffuse.ConvertToGLM(),
@@ -449,13 +436,13 @@ void LightingSystem::CollectLightData()
     // =========================================================================
 
     // Sort by distance (closest first)
-    std::sort(allPointLights.begin(), allPointLights.end(),
+    std::sort(m_allPointLights.begin(), m_allPointLights.end(),
         [](const PointLightCandidate& a, const PointLightCandidate& b) {
             return a.distanceToCamera < b.distanceToCamera;
         });
 
     // Determine how many lights to keep
-    size_t numLightsToKeep = std::min(allPointLights.size(), static_cast<size_t>(MAX_VISIBLE_POINT_LIGHTS));
+    size_t numLightsToKeep = std::min(m_allPointLights.size(), static_cast<size_t>(MAX_VISIBLE_POINT_LIGHTS));
 
     // Also respect the shader's maximum
     numLightsToKeep = std::min(numLightsToKeep, static_cast<size_t>(MAX_POINT_LIGHTS));
@@ -464,15 +451,11 @@ void LightingSystem::CollectLightData()
     // BUILD FINAL POINT LIGHT ARRAYS (only closest N lights)
     // =========================================================================
 
-    struct ShadowCandidate {
-        size_t lightIndex;
-        float distanceToCamera;
-    };
-    std::vector<ShadowCandidate> shadowCandidates;
+    m_shadowCandidates.clear();
 
     for (size_t i = 0; i < numLightsToKeep; ++i)
     {
-        const auto& light = allPointLights[i];
+        const auto& light = m_allPointLights[i];
 
         pointLightData.positions.push_back(light.position);
         pointLightData.ambient.push_back(light.ambient);
@@ -488,7 +471,7 @@ void LightingSystem::CollectLightData()
         // Track shadow candidates
         if (light.castShadows)
         {
-            shadowCandidates.push_back({
+            m_shadowCandidates.push_back({
                 pointLightData.positions.size() - 1,
                 light.distanceToCamera
                 });
@@ -501,15 +484,15 @@ void LightingSystem::CollectLightData()
     // =========================================================================
 
     // Already sorted by distance (inherited from point light sort)
-    std::sort(shadowCandidates.begin(), shadowCandidates.end(),
+    std::sort(m_shadowCandidates.begin(), m_shadowCandidates.end(),
         [](const ShadowCandidate& a, const ShadowCandidate& b) {
             return a.distanceToCamera < b.distanceToCamera;
         });
 
     int pointShadowCount = 0;
-    for (size_t i = 0; i < shadowCandidates.size() && pointShadowCount < MAX_POINT_LIGHT_SHADOWS; ++i)
+    for (size_t i = 0; i < m_shadowCandidates.size() && pointShadowCount < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
-        size_t lightIndex = shadowCandidates[i].lightIndex;
+        size_t lightIndex = m_shadowCandidates[i].lightIndex;
         pointLightData.shadowIndex[lightIndex] = pointShadowCount;
         pointShadowCount++;
     }
@@ -524,16 +507,16 @@ void LightingSystem::CollectLightData()
     debugFrameCounter++;
     if (debugFrameCounter % 60 == 0)
     {
-        if (allPointLights.size() > numLightsToKeep)
+        if (m_allPointLights.size() > numLightsToKeep)
         {
-            std::cout << "[Light Culling] " << allPointLights.size() << " point lights in scene, "
+            std::cout << "[Light Culling] " << m_allPointLights.size() << " point lights in scene, "
                       << numLightsToKeep << " visible (culled "
-                      << (allPointLights.size() - numLightsToKeep) << ")" << std::endl;
+                      << (m_allPointLights.size() - numLightsToKeep) << ")" << std::endl;
         }
     
-        if (!shadowCandidates.empty())
+        if (!m_shadowCandidates.empty())
         {
-            std::cout << "[Shadow Culling] " << shadowCandidates.size() << " lights want shadows, "
+            std::cout << "[Shadow Culling] " << m_shadowCandidates.size() << " lights want shadows, "
                       << pointShadowCount << " assigned" << std::endl;
         }
     }*/
