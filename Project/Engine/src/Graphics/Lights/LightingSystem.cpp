@@ -11,6 +11,11 @@ bool LightingSystem::Initialise()
 {
     //std::cout << "[LightingSystem] Initializing..." << std::endl;
 
+#ifdef ANDROID
+    shadowsEnabled = false;
+    return true;
+#endif
+
     // Initialize directional shadow map
     if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
