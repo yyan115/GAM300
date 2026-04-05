@@ -172,19 +172,19 @@ return Component {
         -- ══════════════════════════════════════════════════════════════════
         -- POLL RAW ENGINE INPUT
         -- ══════════════════════════════════════════════════════════════════
-        local attackPressed       = Input.IsActionPressed("Attack")
-        local attackJustPressed   = Input.IsActionJustPressed("Attack")
+        local attackPressed       = Input.IsActionHeld("Attack")
+        local attackJustPressed   = Input.IsActionPressed("Attack")
         local attackJustReleased  = Input.IsActionJustReleased("Attack")
 
-        local chainPressed        = Input.IsActionPressed("ChainAttack")
-        local chainJustPressed    = Input.IsActionJustPressed("ChainAttack")
+        local chainPressed        = Input.IsActionHeld("ChainAttack")
+        local chainJustPressed    = Input.IsActionPressed("ChainAttack")
         local chainJustReleased   = Input.IsActionJustReleased("ChainAttack")
 
-        local dashPressed         = Input.IsActionPressed("Dash")
-        local dashJustPressed     = Input.IsActionJustPressed("Dash")
+        local dashPressed         = Input.IsActionHeld("Dash")
+        local dashJustPressed     = Input.IsActionPressed("Dash")
         local dashJustReleased    = Input.IsActionJustReleased("Dash")
 
-        local jumpJustPressed     = Input.IsActionJustPressed("Jump")
+        local jumpJustPressed     = Input.IsActionPressed("Jump")
 
         local movementAxis        = Input.GetAxis("Movement") or { x = 0, y = 0 }
 

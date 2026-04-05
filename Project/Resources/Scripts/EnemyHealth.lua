@@ -25,7 +25,7 @@ return Component {
                 self:_onDamage(payload)
             end)
         else
-            print("[LUA][EnemyHealth] WARNING: event_bus not available; will never get damage events")
+            --print("[LUA][EnemyHealth] WARNING: event_bus not available; will never get damage events")
         end
     end,
 
@@ -48,10 +48,10 @@ return Component {
         self.health = self.health - dmg
 
         if self.debugPrintHits then
-            print(string.format(
-                "[LUA][EnemyHealth] Took %d damage from trigger. HP = %d",
-                dmg, self.health
-            ))
+            --print(string.format(
+            --    "[LUA][EnemyHealth] Took %d damage from trigger. HP = %d",
+            --    dmg, self.health
+            --))
         end
 
         if self.health <= 0 then
@@ -62,7 +62,7 @@ return Component {
             end
 
             if self.debugPrintHits then
-                print("[LUA][EnemyHealth] Died - destroying entity")
+                --print("[LUA][EnemyHealth] Died - destroying entity")
             end
 
             -- Disable model visibility

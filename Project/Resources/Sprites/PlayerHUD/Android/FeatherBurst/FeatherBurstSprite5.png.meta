@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c73bc7bc6c-0004b907de00005f",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/FeatherBurst/FeatherBurstSprite5.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/FeatherBurst/FeatherBurstSprite5.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

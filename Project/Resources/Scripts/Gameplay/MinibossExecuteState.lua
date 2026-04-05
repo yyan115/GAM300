@@ -15,14 +15,14 @@ function ExecuteState:Enter(ai)
 
     -- Debug print using the stored pick info
     local d = ai._dbgPick or {}
-    print(string.format(
-        "[Miniboss][Pick] phase=%d move=%s weight=%d total=%d roll=%.2f",
-        d.phase or ai:GetPhase(),
-        tostring(name),
-        d.weight or -1,
-        d.total or -1,
-        d.roll or -1
-    ))
+    --print(string.format(
+    --    "[Miniboss][Pick] phase=%d move=%s weight=%d total=%d roll=%.2f",
+    --    d.phase or ai:GetPhase(),
+    --    tostring(name),
+    --    d.weight or -1,
+    --    d.total or -1,
+    --    d.roll or -1
+    --))
 
     -- Face player before executing (if you want)
     if ai.FacePlayer then ai:FacePlayer() end

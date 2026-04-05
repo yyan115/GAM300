@@ -294,6 +294,7 @@ BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
     PROPERTY("hasMigratedToTransform", &SpriteRenderComponent::hasMigratedToTransform)
     // Methods
     METHOD("SetTextureFromGUID", &SpriteRenderComponent::SetTextureFromGUID)
+    METHOD("SetTextureFromPath", &SpriteRenderComponent::SetTextureFromPath)
 END_COMPONENT()
 
 BEGIN_COMPONENT(TextRenderComponent, "TextRenderComponent")

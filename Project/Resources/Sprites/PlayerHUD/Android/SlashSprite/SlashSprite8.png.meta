@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c73f03b640-0004b907de000085",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/SlashSprite/SlashSprite8.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/SlashSprite/SlashSprite8.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -6,6 +6,6 @@ return Component {
     },
 
     OnClick = function(self)
-        print("Button is now at least forced to call")
+        --print("Button is now at least forced to call")
     end,
 }

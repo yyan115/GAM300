@@ -92,7 +92,7 @@ return Component {
             end
         end
         if not self._audio then
-            print("[CombatAudio] WARNING: no AudioComponent found — add one to this entity or the Player entity")
+            --print("[CombatAudio] WARNING: no AudioComponent found — add one to this entity or the Player entity")
         end
 
         -- Build the state → clip array map from inspector fields.

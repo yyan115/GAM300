@@ -49,7 +49,7 @@ return Component {
         end
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[MainMenuAudio] WARNING: event_bus not available in Awake")
+            --print("[MainMenuAudio] WARNING: event_bus not available in Awake")
             return
         end
 
@@ -93,7 +93,7 @@ return Component {
         end
         
         if not self._audio then
-            print("[MainMenuAudio] WARNING: no AudioComponent found — add one to this entity, MainMenuUI, or BGM")
+            --print("[MainMenuAudio] WARNING: no AudioComponent found — add one to this entity, MainMenuUI, or BGM")
         end
     end,
 

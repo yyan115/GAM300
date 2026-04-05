@@ -102,8 +102,8 @@ return Component {
                     self._isExpanded  = true
                 end
 
-                print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d knockback=%.1f",
-                    self._currentHitType, self._currentDamage, self._currentKnockback))
+                --print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d knockback=%.1f",
+                --    self._currentHitType, self._currentDamage, self._currentKnockback))
 
                 -- LIFT: the weapon sweeps upward so OnTriggerEnter may never fire
                 -- against a grounded enemy. Broadcast a proximity event instead —
@@ -222,8 +222,8 @@ return Component {
 
         local targetId = self:_toRoot(otherEntityId)
 
-        print(string.format("[AttackHitbox] OnTriggerEnter: targetId=%s hitType=%s active=%s",
-            tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
+        --print(string.format("[AttackHitbox] OnTriggerEnter: targetId=%s hitType=%s active=%s",
+        --    tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
 
         if self._playerEntityId and targetId == self._playerEntityId then return end
         local targetTagComp = GetComponent(targetId, "TagComponent")
@@ -238,8 +238,8 @@ return Component {
                 hitType   = self._currentHitType or "COMBO",
                 knockback = self._currentKnockback or 0,
             })
-            print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f",
-                tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))
+            --print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f",
+            --    tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))
         end
     end,
 }

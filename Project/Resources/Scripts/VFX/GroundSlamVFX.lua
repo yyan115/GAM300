@@ -15,7 +15,7 @@ return Component {
 
 
     SpawnGroundSlamVFX = function(self, x,y,z)
-        print("Spawning Ground Slam VFX at: ", x,y,z)
+        --print("Spawning Ground Slam VFX at: ", x,y,z)
         --Set VFX AT Slammed location
         self._transform.localPosition.x = x
         self._transform.localPosition.y = y

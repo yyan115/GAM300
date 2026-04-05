@@ -25,16 +25,16 @@ return Component {
         self._active = false
         self._subDmg = nil
 
-        print("[HitStop] Started, listening for deal_damage_to_entity")
+        --print("[HitStop] Started, listening for deal_damage_to_entity")
 
         if event_bus and event_bus.subscribe then
             self._subDmg = event_bus.subscribe("deal_damage_to_entity", function(payload)
-                print("[HitStop] deal_damage_to_entity received, damage=" .. tostring(payload and payload.damage))
+                --print("[HitStop] deal_damage_to_entity received, damage=" .. tostring(payload and payload.damage))
                 if not payload or not payload.damage or payload.damage <= 0 then return end
                 self:_trigger(payload.damage)
             end)
         else
-            print("[HitStop] ERROR: event_bus not available!")
+            --print("[HitStop] ERROR: event_bus not available!")
         end
     end,
 
@@ -59,7 +59,7 @@ return Component {
         if self._timer <= 0 then
             Time.SetTimeScale(1.0)
             self._active = false
-            print("[HitStop] Freeze ended, time restored")
+            --print("[HitStop] Freeze ended, time restored")
         end
     end,
 
@@ -76,6 +76,6 @@ return Component {
         self._active = true
         Time.SetTimeScale(self.timeScale or 0.0)
 
-        print(string.format("[HitStop] FREEZE START — %.0f dmg → %.3fs, timeScale=%.2f", damage, dur, self.timeScale or 0.0))
+        --print(string.format("[HitStop] FREEZE START — %.0f dmg → %.3fs, timeScale=%.2f", damage, dur, self.timeScale or 0.0))
     end,
 }

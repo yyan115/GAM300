@@ -93,21 +93,21 @@ return Component {
         if event_bus and event_bus.subscribe then
             self._cinematicTriggerSub = event_bus.subscribe("cinematic.trigger", function(active)
                 self.cinematicActive = active
-                print("[CinematicCamera] cinematicActive set to " .. tostring(active) .. " via event")
+                --print("[CinematicCamera] cinematicActive set to " .. tostring(active) .. " via event")
             end)
 
             self._cinematicStayTimerSub = event_bus.subscribe("cinematic.stayDuration", function(stayDuration)
                 self.stayDuration = stayDuration
-                print("[CinematicCamera] stayDuration set to " .. tostring(stayDuration) .. " via event")
+                --print("[CinematicCamera] stayDuration set to " .. tostring(stayDuration) .. " via event")
             end)
 
             self._cinematicTransitionTimerSub = event_bus.subscribe("cinematic.transitionDuration", function(transitionDuration)
                 self.transitionDuration = transitionDuration
-                print("[CinematicCamera] transitionDuration set to " .. tostring(transitionDuration) .. " via event")
+                --print("[CinematicCamera] transitionDuration set to " .. tostring(transitionDuration) .. " via event")
             end)
         end
 
-        print("[CinematicCamera] Initialized")
+        --print("[CinematicCamera] Initialized")
     end,
 
     Update = function(self, dt)
@@ -116,7 +116,7 @@ return Component {
             self._wasCinematicActive = self.cinematicActive
 
             if self.cinematicActive then
-                print("[CinematicCamera] Cinematic mode ENABLED")
+                --print("[CinematicCamera] Cinematic mode ENABLED")
                 self._transitionTimer = 0.0
                 self._stayTimer = 0.0
                 self._phase = "transition"
@@ -127,7 +127,7 @@ return Component {
                 local name  = names and names[idx]
                 if name and name ~= "" then
                     self.targetTransformName = name
-                    print("[CinematicCamera] Camera target set to: " .. name)
+                    --print("[CinematicCamera] Camera target set to: " .. name)
                 end
                 if names then
                     local nextIdx = idx + 1
@@ -140,24 +140,24 @@ return Component {
                     event_bus.publish("cinematic.active", true)
                     if self.freezePlayer then
                         event_bus.publish("freeze_player", true)
-                        print("[CinematicCamera] Player movement FROZEN")
+                        --print("[CinematicCamera] Player movement FROZEN")
                     end
                     if self.freezeEnemy then
                         event_bus.publish("freeze_enemy", true)
-                        print("[CinematicCamera] Enemy movement FROZEN")
+                        --print("[CinematicCamera] Enemy movement FROZEN")
                     end
                 end
             else
-                print("[CinematicCamera] Cinematic mode DISABLED")
+                --print("[CinematicCamera] Cinematic mode DISABLED")
                 if event_bus and event_bus.publish then
                     event_bus.publish("cinematic.active", false)
                     if self.freezePlayer then
                         event_bus.publish("freeze_player", false)
-                        print("[CinematicCamera] Player movement UNFROZEN")
+                        --print("[CinematicCamera] Player movement UNFROZEN")
                     end
                     if self.freezeEnemy then
                         event_bus.publish("freeze_enemy", false)
-                        print("[CinematicCamera] Enemy movement UNFROZEN")
+                        --print("[CinematicCamera] Enemy movement UNFROZEN")
                     end
                 end
             end
@@ -174,13 +174,13 @@ return Component {
                 self._phase = "staying"
                 self._stayTimer = 0.0
                 if self.debugMode then
-                    print(string.format("[CinematicCamera] Transition complete (%.2fs), now staying", self._transitionTimer))
+                    --print(string.format("[CinematicCamera] Transition complete (%.2fs), now staying", self._transitionTimer))
                 end
             end
         elseif self._phase == "staying" then
             self._stayTimer = self._stayTimer + dt
             if self._stayTimer >= self.stayDuration then
-                print(string.format("[CinematicCamera] Stay complete (%.2fs) - disabling", self._stayTimer))
+                --print(string.format("[CinematicCamera] Stay complete (%.2fs) - disabling", self._stayTimer))
                 -- Advance dialogue after cinematic pan completes
                 DialogueManager.ScrollNext("Intro")
                 self.cinematicActive = false
@@ -198,7 +198,7 @@ return Component {
             cleanName = cleanName:gsub('"', ''):gsub("'", ''):gsub("^%s*(.-)%s*$", "%1")
 
             if self.debugMode then
-                print(string.format("[CinematicCamera] Searching for: '%s'", cleanName))
+                --print(string.format("[CinematicCamera] Searching for: '%s'", cleanName))
             end
 
             if Engine and Engine.FindTransformByName then
@@ -206,7 +206,7 @@ return Component {
 
                 if targetTransform then
                     if self.debugMode then
-                        print("[CinematicCamera] Transform FOUND!")
+                        --print("[CinematicCamera] Transform FOUND!")
                     end
 
                     -- Get Position
@@ -221,7 +221,7 @@ return Component {
                             if x and y and z then
                                 targetPos = {x = x, y = y, z = z}
                                 if self.debugMode then
-                                    print(string.format("[CinematicCamera] Position: (%.2f, %.2f, %.2f)", x, y, z))
+                                    --print(string.format("[CinematicCamera] Position: (%.2f, %.2f, %.2f)", x, y, z))
                                 end
                             end
                         end
@@ -229,17 +229,17 @@ return Component {
 
                     -- Get Rotation - TRY MULTIPLE METHODS
                     if self.debugMode then
-                        print("[CinematicCamera] Attempting to get rotation...")
+                        --print("[CinematicCamera] Attempting to get rotation...")
                     end
 
                     -- METHOD 1: Try accessing localRotation property from Transform
                     if targetTransform.localRotation then
                         local rot = targetTransform.localRotation
                         if self.debugMode then
-                            print(string.format("[CinematicCamera] localRotation type: %s", type(rot)))
+                            --print(string.format("[CinematicCamera] localRotation type: %s", type(rot)))
                             if type(rot) == "userdata" or type(rot) == "table" then
-                                print(string.format("[CinematicCamera] localRotation.w=%s, .x=%s, .y=%s, .z=%s",
-                                    tostring(rot.w), tostring(rot.x), tostring(rot.y), tostring(rot.z)))
+                                --print(string.format("[CinematicCamera] localRotation.w=%s, .x=%s, .y=%s, .z=%s",
+                                --    tostring(rot.w), tostring(rot.x), tostring(rot.y), tostring(rot.z)))
                             end
                         end
 
@@ -253,20 +253,20 @@ return Component {
 
                             if self.debugMode then
                                 local pitch, yaw, roll = quatToEuler(targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz)
-                                print(string.format("[CinematicCamera] Rotation (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
-                                    targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
-                                print(string.format("[CinematicCamera] Rotation (euler): y=%.1f, x=%.1f, z=%.1f",
-                                    pitch, yaw, roll))
+                                --print(string.format("[CinematicCamera] Rotation (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
+                                --    targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
+                                --print(string.format("[CinematicCamera] Rotation (euler): y=%.1f, x=%.1f, z=%.1f",
+                                --    pitch, yaw, roll))
                             end
                         end
                     end
 
 
                     if not targetRot and self.debugMode then
-                        print("[CinematicCamera] WARNING: Could not extract rotation from transform!")
+                        --print("[CinematicCamera] WARNING: Could not extract rotation from transform!")
                     end
                 else
-                    print(string.format("[CinematicCamera] Transform '%s' NOT FOUND!", cleanName))
+                    --print(string.format("[CinematicCamera] Transform '%s' NOT FOUND!", cleanName))
                 end
             end
         end
@@ -283,8 +283,8 @@ return Component {
         -- Fallback to manual rotation
         if not targetRot then
             if self.debugMode then
-                print(string.format("[CinematicCamera] Using manual rotation: x=%.1f, y=%.1f, z=%.1f",
-                    self.targetRotation.x, self.targetRotation.y, self.targetRotation.z))
+                --print(string.format("[CinematicCamera] Using manual rotation: x=%.1f, y=%.1f, z=%.1f",
+                --    self.targetRotation.x, self.targetRotation.y, self.targetRotation.z))
             end
             local quat = eulerToQuat(
                 self.targetRotation.x or 0,
@@ -296,10 +296,10 @@ return Component {
 
         -- Debug print position and Rotation
         if self.debugMode then
-           print(string.format("[CinematicCamera] Target Pos: (%.2f, %.2f, %.2f)",
-                targetPos.x, targetPos.y, targetPos.z))
-           print(string.format("[CinematicCamera] Target Rot (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
-                targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
+           --print(string.format("[CinematicCamera] Target Pos: (%.2f, %.2f, %.2f)",
+           --     targetPos.x, targetPos.y, targetPos.z))
+           --print(string.format("[CinematicCamera] Target Rot (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
+           --     targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
         end
 
         -- Publish to camera
@@ -320,8 +320,8 @@ return Component {
 
             if self.debugMode and targetRot then
                 local pitch, yaw, roll = quatToEuler(targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz)
-                print(string.format("[CinematicCamera] Publishing - Pos: (%.2f, %.2f, %.2f), Euler: (%.1f, %.1f, %.1f)",
-                    targetPos.x, targetPos.y, targetPos.z, pitch, yaw, roll))
+                --print(string.format("[CinematicCamera] Publishing - Pos: (%.2f, %.2f, %.2f), Euler: (%.1f, %.1f, %.1f)",
+                --    targetPos.x, targetPos.y, targetPos.z, pitch, yaw, roll))
             end
         end
     end,

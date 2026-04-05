@@ -51,7 +51,7 @@ return Component {
                     wasHovered = false
                 }
             else
-                print("[ConfirmationMenuHandler] Warning: Missing entity " .. config.base)
+                --print("[ConfirmationMenuHandler] Warning: Missing entity " .. config.base)
             end
         end
     end,
@@ -97,7 +97,7 @@ return Component {
             event_bus.publish("pause_menu.click", {})
         end
 
-        print("[ConfirmationMenuHandler] Returning to main menu")
+        --print("[ConfirmationMenuHandler] Returning to main menu")
         Time.SetPaused(false)  -- Reset pause state before loading scene
         Time.SetTimeScale(1.0)  -- Reset time scale to normal
         Audio.SetBusPaused("BGM", false)  -- Unpause game buses before scene load

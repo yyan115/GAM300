@@ -50,7 +50,7 @@ return Component {
                 -- Resolve display duration from dialogue entry (Time mode) or fallback
                 local autoTime = DialogueManager.GetCurrentEntryAutoTime(self.dialogueName)  
                 self._currentDisplayTime = (autoTime > 0) and autoTime or self.entryDisplayTime
-                print("Current Dialogue Index:", currentIndex, "AutoTime:", autoTime, "Set display time to:", self._currentDisplayTime)
+                --print("Current Dialogue Index:", currentIndex, "AutoTime:", autoTime, "Set display time to:", self._currentDisplayTime)
 
                 -- Play VO for this entry
                 local guidIndex = currentIndex + 1  -- Lua is 1-indexed

@@ -134,7 +134,11 @@ return Component {
                 local secondPointLightActive = GetComponent(secondPointLightId, "ActiveComponent")
                 firstPointLightActive.isActive = true
                 secondPointLightActive.isActive = true
-                
+
+                if event_bus and event_bus.publish then
+                    event_bus.publish("candle_lit", {})
+                end
+
                 self._currentInterval = 0.0
                 self._currentPairIndex = self._currentPairIndex + 2
 
