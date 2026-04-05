@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00718a0edb613680-00047c465600b925",
+        "source": "../../Resources/Models/VFXs/SmokeIncenseVFXMeshV2.fbx",
+        "compiled": "../../Resources/Models/VFXs/SmokeIncenseVFXMeshV2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

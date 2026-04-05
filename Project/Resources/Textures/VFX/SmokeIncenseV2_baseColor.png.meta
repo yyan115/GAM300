@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00718a0eca18e5a7-00047c462200b923",
+        "source": "../../Resources/Textures/VFX/SmokeIncenseV2_baseColor.png",
+        "compiled": "../../Resources/Textures/VFX/SmokeIncenseV2_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
