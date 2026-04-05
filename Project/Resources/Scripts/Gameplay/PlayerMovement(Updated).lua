@@ -1479,6 +1479,10 @@ return Component {
                             self._slamDirX = self._facingX or 0
                             self._slamDirZ = self._facingZ or 1
                         end
+                        -- Expose baked slam direction globally so EnemyAI can apply
+                        -- matching lateral knockback when SLAM hits an airborne enemy.
+                        _G.player_slam_dirX = self._slamDirX
+                        _G.player_slam_dirZ = self._slamDirZ
                     end
                     self._slamVelY = self.AirSlamInitialSpeed or 2.0
                 end
@@ -1543,6 +1547,9 @@ return Component {
                         self._currentRotW, self._currentRotX,
                         self._currentRotY, self._currentRotZ = w, x, y, z
                         self._facingX = dirX; self._facingZ = dirZ
+                        -- Keep global in sync so EnemyAI slam knockback tracks the target.
+                        _G.player_slam_dirX = dirX
+                        _G.player_slam_dirZ = dirZ
                         pcall(self.SetRotation, self, w, x, y, z)
                     end
 

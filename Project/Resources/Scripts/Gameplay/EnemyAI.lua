@@ -127,6 +127,13 @@ return Component {
         LiftRange           = 2.5,   -- Max distance from player at which a lift attack connects.
                                      -- Slightly wider than MeleeRange to compensate for the
                                      -- upward-sweep animation that bypasses trigger overlap.
+        SlamRange           = 3.5,   -- Max distance at which a slam_attack_active broadcast connects.
+                                     -- Should match or slightly exceed SlamProximityRange in AttackHitbox.
+
+        -- Shockwave applied to grounded enemies when the player lands a slam.
+        SlamLandingRadius      = 4.5,   -- World-unit radius of the shockwave.
+        SlamLandingKBStrength  = 10.0,  -- Knockback impulse magnitude for shockwave victims.
+        SlamLandingKBDuration  = 0.35,  -- Seconds the shockwave KB velocity is integrated.
 
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
@@ -190,6 +197,8 @@ return Component {
         JuggleLiftVelY   = 2.0,   -- Upward velocity applied on lift_attack hit.
         JuggleAirBoost   = 4.0,   -- Upward velocity boost per air-combo hit to maintain juggle height.
         JuggleSlamVelY   = 20.0,  -- Downward velocity applied on air_slam hit.
+        JuggleSlamKBStrength = 12.0,  -- Lateral knockback speed applied on SLAM (world units/sec).
+        JuggleSlamKBDuration = 0.25,  -- Seconds the lateral KB velocity is integrated.
         JuggleGravity    = -18.0, -- Gravity while juggled (separate from world gravity).
         JuggleGroundEps  = 0.05,  -- Distance to ground considered "landed".
 
@@ -431,6 +440,61 @@ return Component {
                     local kb  = (payload and payload.knockback) or 0
                     --print(string.format("[EnemyAI] lift_attack_active proximity HIT: entity=%s distSq=%.2f", tostring(self.entityId), distSq))
                     self:ApplyHit(dmg, "LIFT", kb)
+                end
+            end)
+
+            -- SLAM proximity detection:
+            -- AttackHitbox publishes this when a slam window opens. Player dives
+            -- through enemies so OnTriggerEnter is unreliable — same fix as LIFT.
+            -- Only airborne enemies (_isJuggled or _isKnockedUp) are eligible;
+            -- grounded enemies are handled by the slam_landed shockwave below.
+            self._slamAttackSub = _G.event_bus.subscribe("slam_attack_active", function(payload)
+                if self.dead then return end
+                if self:IsFlying() then return end
+                if not self._isJuggled and not self._isKnockedUp then return end
+
+                local range = tonumber(payload and payload.range or self.SlamRange) or 3.5
+                local distSq = self:GetPlayerDistanceSq()
+                if distSq <= range * range then
+                    local dmg = (payload and payload.damage)    or 15
+                    local kb  = (payload and payload.knockback) or 0
+                    self:ApplyHit(dmg, "SLAM", kb)
+                end
+            end)
+
+            -- Slam landing shockwave:
+            -- When the player hits the ground after a slam, knock back all nearby
+            -- grounded enemies. Airborne enemies are unaffected (already being juggled).
+            self._slamLandedSub = _G.event_bus.subscribe("slam_landed", function()
+                if self.dead then return end
+                if self:IsFlying() then return end
+                if self._isJuggled or self._isKnockedUp then return end
+
+                local radius = tonumber(self.SlamLandingRadius) or 4.5
+                local distSq = self:GetPlayerDistanceSq()
+                if distSq > radius * radius then return end
+
+                -- Direction: push enemy away from the player's landing position.
+                local kbStr = tonumber(self.SlamLandingKBStrength) or 10.0
+                local kbDur = tonumber(self.SlamLandingKBDuration) or 0.35
+                local tr = self._playerTr
+                if not tr then tr = Engine.FindTransformByName(self.PlayerName) end
+                if tr then
+                    local pp = Engine.GetTransformPosition(tr)
+                    if pp then
+                        local ex, ez = self:GetEnemyPosXZ()
+                        if ex and ez then
+                            local dx = ex - pp[1]
+                            local dz = ez - pp[3]
+                            local len = math.sqrt(dx * dx + dz * dz)
+                            if len >= 0.001 then
+                                self._kbVX = (dx / len) * kbStr
+                                self._kbVZ = (dz / len) * kbStr
+                                self._kbT  = kbDur
+                                self.fsm:ForceChange("Hurt", self.states.Hurt)
+                            end
+                        end
+                    end
                 end
             end)
 
@@ -1868,7 +1932,7 @@ return Component {
     ApplyJuggleSlam = function(self)
         -- SLAM on a non-juggled (grounded) enemy: don't activate the juggle system.
         -- Driving a grounded enemy underground then snapping back looked like a lift.
-        -- Just apply strong downward knockback visually — no arc needed.
+        -- Just apply strong knockback visually — no arc needed.
         if not self._isJuggled then
             --print(string.format("[EnemyAI] SLAM BLOCKED: enemy is not airborne — applying ground knockback instead"))
             self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
@@ -1876,9 +1940,42 @@ return Component {
         end
 
         -- Enemy is airborne: drive them down fast.
-        self._juggleVY      = -(tonumber(self.JuggleSlamVelY) or 20.0)
-        self._kbT           = 0
-        self._kbVX, self._kbVZ = 0, 0
+        self._juggleVY = -(tonumber(self.JuggleSlamVelY) or 20.0)
+
+        -- Apply lateral knockback in the player's slam direction.
+        -- _G.player_slam_dirX/Z is written by PlayerMovement at hover-end for normal
+        -- slams and updated per-frame for targeted (chain) slams, so it always
+        -- reflects the actual dive direction at the moment of impact.
+        local kbStr = tonumber(self.JuggleSlamKBStrength) or 12.0
+        local kbDur = tonumber(self.JuggleSlamKBDuration) or 0.25
+        local sdx = _G.player_slam_dirX or 0
+        local sdz = _G.player_slam_dirZ or 0
+        local sLen = math.sqrt(sdx * sdx + sdz * sdz)
+        if sLen > 0.001 then
+            self._kbVX = (sdx / sLen) * kbStr
+            self._kbVZ = (sdz / sLen) * kbStr
+            self._kbT  = kbDur
+        else
+            -- Fallback: push enemy away from player if no slam direction is set.
+            local tr = self._playerTr
+            if not tr then tr = Engine.FindTransformByName(self.PlayerName) end
+            if tr then
+                local pp = Engine.GetTransformPosition(tr)
+                if pp then
+                    local ex, ez = self:GetEnemyPosXZ()
+                    if ex and ez then
+                        local dx = ex - pp[1]
+                        local dz = ez - pp[3]
+                        local len = math.sqrt(dx * dx + dz * dz)
+                        if len >= 0.001 then
+                            self._kbVX = (dx / len) * kbStr
+                            self._kbVZ = (dz / len) * kbStr
+                            self._kbT  = kbDur
+                        end
+                    end
+                end
+            end
+        end
         -- Keep _juggleGroundY from the original lift — don't touch it.
         -- Keep _juggleAirTime running — don't reset it.
     end,
@@ -2352,6 +2449,16 @@ return Component {
                 self._liftAttackSub = nil
             end
 
+            if self._slamAttackSub then
+                pcall(function() _G.event_bus.unsubscribe(self._slamAttackSub) end)
+                self._slamAttackSub = nil
+            end
+
+            if self._slamLandedSub then
+                pcall(function() _G.event_bus.unsubscribe(self._slamLandedSub) end)
+                self._slamLandedSub = nil
+            end
+
             if self._freezeEnemySub then
                 pcall(function()
                     _G.event_bus.unsubscribe(self._freezeEnemySub)
@@ -2391,6 +2498,8 @@ return Component {
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) self._damageSub = nil end
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) self._comboDamageSub = nil end
             if self._liftAttackSub then pcall(function() _G.event_bus.unsubscribe(self._liftAttackSub) end) self._liftAttackSub = nil end
+            if self._slamAttackSub then pcall(function() _G.event_bus.unsubscribe(self._slamAttackSub) end) self._slamAttackSub = nil end
+            if self._slamLandedSub then pcall(function() _G.event_bus.unsubscribe(self._slamLandedSub) end) self._slamLandedSub = nil end
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) self._freezeEnemySub = nil end
             if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
             if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
@@ -2486,6 +2595,16 @@ return Component {
             if self._liftAttackSub then
                 pcall(function() _G.event_bus.unsubscribe(self._liftAttackSub) end)
                 self._liftAttackSub = nil
+            end
+
+            if self._slamAttackSub then
+                pcall(function() _G.event_bus.unsubscribe(self._slamAttackSub) end)
+                self._slamAttackSub = nil
+            end
+
+            if self._slamLandedSub then
+                pcall(function() _G.event_bus.unsubscribe(self._slamLandedSub) end)
+                self._slamLandedSub = nil
             end
 
             if self._freezeEnemySub then

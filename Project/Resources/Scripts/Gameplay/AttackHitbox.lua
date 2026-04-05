@@ -32,6 +32,16 @@ return Component {
         -- airborne and offset vertically from the enemy. Bigger reach = easier hits.
         AirActiveRadiusBonus     = 3.200,
         AirActiveHalfHeightBonus = 2.800,
+
+        -- SLAM hits use their own expansion values. The player is diving downward
+        -- so the collider needs extra reach in both radius and height to catch
+        -- enemies the player passes through or is already overlapping.
+        SlamActiveRadiusBonus     = 3.500,
+        SlamActiveHalfHeightBonus = 3.000,
+
+        -- Proximity range for the slam_attack_active broadcast (world units).
+        -- Matches the same fallback logic LIFT uses when OnTriggerEnter is unreliable.
+        SlamProximityRange = 3.5,
     },
 
     Awake = function(self)
@@ -124,6 +134,20 @@ return Component {
                     end
                 end
 
+                -- SLAM: player is diving downward through the enemy so OnTriggerEnter
+                -- is unreliable (enemy may already be inside the collider when the RB
+                -- is enabled). Broadcast a proximity event so each airborne EnemyAI
+                -- can self-check and apply the SLAM hit if in range.
+                if self._currentHitType == "SLAM" then
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("slam_attack_active", {
+                            damage    = self._currentDamage,
+                            knockback = self._currentKnockback,
+                            range     = tonumber(self.SlamProximityRange) or 3.5,
+                        })
+                    end
+                end
+
                 if self._rb then self._rb:SetEnabled(true) end
             end)
 
@@ -192,6 +216,9 @@ return Component {
         if self._currentHitType == "AIR" then
             rBonus  = tonumber(self.AirActiveRadiusBonus)     or 0
             hhBonus = tonumber(self.AirActiveHalfHeightBonus) or 0
+        elseif self._currentHitType == "SLAM" then
+            rBonus  = tonumber(self.SlamActiveRadiusBonus)     or 0
+            hhBonus = tonumber(self.SlamActiveHalfHeightBonus) or 0
         else
             rBonus  = tonumber(self.ActiveRadiusBonus)     or 0
             hhBonus = tonumber(self.ActiveHalfHeightBonus) or 0
