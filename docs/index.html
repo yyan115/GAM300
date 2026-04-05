@@ -357,7 +357,7 @@
                 const release = await res.json();
                 versionEl.textContent = `Latest: ${release.tag_name} — ${release.name}`;
 
-                const winAsset = release.assets.find(a => a.name.includes('Windows') && a.name.endsWith('.zip'));
+                const winAsset = release.assets.find(a => a.name.includes('Setup') && a.name.endsWith('.exe'));
                 const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
 
                 let html = '';
@@ -368,7 +368,7 @@
                         <div class="download-card">
                             <div class="platform windows">Windows</div>
                             <div class="file-info">${winAsset.name} (${sizeMB} MB)</div>
-                            <a href="${winAsset.browser_download_url}" class="btn btn-windows">Download .zip</a>
+                            <a href="${winAsset.browser_download_url}" class="btn btn-windows">Download Installer</a>
                         </div>`;
                 }
 
