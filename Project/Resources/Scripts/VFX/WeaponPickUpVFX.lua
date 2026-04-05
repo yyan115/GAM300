@@ -13,7 +13,7 @@ return Component {
                 end
             end)
         else
-            print("event_bus NOT FOUND")
+            --print("event_bus NOT FOUND")
         end
     end,
 

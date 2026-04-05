@@ -77,7 +77,7 @@ return Component {
             if self._triggerDuration <= 0.0 then
                 self._rb.isTrigger = false
                 self._isTriggerDisabled = true
-                print(string.format("[EnemyHurtFeather] Rb isTrigger set to false - Entity %d", self.entityId))
+                --print(string.format("[EnemyHurtFeather] Rb isTrigger set to false - Entity %d", self.entityId))
             end
         end
 

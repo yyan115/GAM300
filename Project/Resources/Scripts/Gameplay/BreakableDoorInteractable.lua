@@ -134,7 +134,7 @@ return Component {
         end
         if not self._doorName or self._doorName == "" then
             self._doorName = tostring(self._entityId or "unknown_door")
-            print("[BreakableDoor] WARNING: DoorName not set — set it in the inspector or registry lookups will fail!")
+            --print("[BreakableDoor] WARNING: DoorName not set — set it in the inspector or registry lookups will fail!")
         end
         -- Expose cleanName for use below
         self._cleanName = cleanName
@@ -183,11 +183,11 @@ return Component {
                 end
             end)
         end
-        print(string.format(
-            "[BreakableDoor] '%s' base: pos=(%.3f,%.3f,%.3f) quat=(w=%.4f x=%.4f y=%.4f z=%.4f)",
-            self._doorName,
-            self._basePos.x,  self._basePos.y,  self._basePos.z,
-            self._baseQuat.w, self._baseQuat.x, self._baseQuat.y, self._baseQuat.z))
+        --print(string.format(
+        --    "[BreakableDoor] '%s' base: pos=(%.3f,%.3f,%.3f) quat=(w=%.4f x=%.4f y=%.4f z=%.4f)",
+        --    self._doorName,
+        --    self._basePos.x,  self._basePos.y,  self._basePos.z,
+        --    self._baseQuat.w, self._baseQuat.x, self._baseQuat.y, self._baseQuat.z))
 
         -- ── Global registry + per-group broken flag ───────────────────────
         -- Each door (or linked pair) gets its own broken state so that unrelated
@@ -225,10 +225,10 @@ return Component {
                     local ac = GetComponent(dynEnt, "ActiveComponent")
                     if ac then
                         ac.isActive = false
-                        print(string.format("[BreakableDoor] Dynamic door '%s' → set inactive at start", dynName))
+                        --print(string.format("[BreakableDoor] Dynamic door '%s' → set inactive at start", dynName))
                     end
                 else
-                    print(string.format("[BreakableDoor] WARNING: dynamic door '%s' not found at start", dynName))
+                    --print(string.format("[BreakableDoor] WARNING: dynamic door '%s' not found at start", dynName))
                 end
             end)
         end
@@ -245,7 +245,7 @@ return Component {
 
         -- ── Subscribe to chain events ─────────────────────────────────────
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[BreakableDoor] WARNING: event_bus not available — interactions will not fire")
+            --print("[BreakableDoor] WARNING: event_bus not available — interactions will not fire")
             return
         end
 
@@ -262,14 +262,14 @@ return Component {
             pcall(function() self:_onDetach() end)
         end)
 
-        print(string.format(
-            "[BreakableDoor] Ready — '%s' | mashes=%d | rotY=%.1f°/step | tz=%.3f/step | dynamic='%s' | linked='%s'",
-            self._doorName,
-            tonumber(self.MashCount)       or 1,
-            tonumber(self.MashRotateYDeg)  or 0,
-            tonumber(self.MashTranslateZ)  or 0,
-            tostring(self.DynamicDoorName or ""),
-            tostring(self.LinkedDoorName  or "")))
+        --print(string.format(
+        --    "[BreakableDoor] Ready — '%s' | mashes=%d | rotY=%.1f°/step | tz=%.3f/step | dynamic='%s' | linked='%s'",
+        --    self._doorName,
+        --    tonumber(self.MashCount)       or 1,
+        --    tonumber(self.MashRotateYDeg)  or 0,
+        --    tonumber(self.MashTranslateZ)  or 0,
+        --    tostring(self.DynamicDoorName or ""),
+        --    tostring(self.LinkedDoorName  or "")))
     end,
 
     -- =========================================================================
@@ -284,33 +284,33 @@ return Component {
         if self._pendingImpulse then
             local p = self._pendingImpulse
             self._pendingImpulse = nil
-            print(string.format("[BreakableDoor] '%s': _pendingImpulse firing for dynName='%s'", self._doorName, tostring(p.dynName)))
+            --print(string.format("[BreakableDoor] '%s': _pendingImpulse firing for dynName='%s'", self._doorName, tostring(p.dynName)))
             pcall(function()
                 local dynEnt = Engine.GetEntityByName(p.dynName)
-                print(string.format("[BreakableDoor] '%s': pendingImpulse GetEntityByName('%s') = %s", self._doorName, p.dynName, tostring(dynEnt)))
+                --print(string.format("[BreakableDoor] '%s': pendingImpulse GetEntityByName('%s') = %s", self._doorName, p.dynName, tostring(dynEnt)))
                 if not dynEnt then return end
 
                 local rb = GetComponent(dynEnt, "RigidBodyComponent")
-                print(string.format("[BreakableDoor] '%s': RigidBodyComponent = %s", self._doorName, tostring(rb)))
+                --print(string.format("[BreakableDoor] '%s': RigidBodyComponent = %s", self._doorName, tostring(rb)))
                 if not rb then return end
 
-                print(string.format("[BreakableDoor] '%s': calling AddImpulse(%.1f, %.1f, %.1f)", self._doorName, p.ix, p.iy, p.iz))
+                --print(string.format("[BreakableDoor] '%s': calling AddImpulse(%.1f, %.1f, %.1f)", self._doorName, p.ix, p.iy, p.iz))
                 rb:AddImpulse(p.ix, p.iy, p.iz)
-                print(string.format("[BreakableDoor] '%s': AddImpulse done", self._doorName))
+                --print(string.format("[BreakableDoor] '%s': AddImpulse done", self._doorName))
 
                 if p.torx ~= 0 or p.tory ~= 0 or p.torz ~= 0 then
-                    print(string.format("[BreakableDoor] '%s': calling AddTorque(%.1f, %.1f, %.1f)", self._doorName, p.torx, p.tory, p.torz))
+                    --print(string.format("[BreakableDoor] '%s': calling AddTorque(%.1f, %.1f, %.1f)", self._doorName, p.torx, p.tory, p.torz))
                     rb:AddTorque(p.torx, p.tory, p.torz)
-                    print(string.format("[BreakableDoor] '%s': AddTorque done", self._doorName))
+                    --print(string.format("[BreakableDoor] '%s': AddTorque done", self._doorName))
                 end
             end)
             pcall(function()
                 if self._entityId then
                     local ac = GetComponent(self._entityId, "ActiveComponent")
-                    print(string.format("[BreakableDoor] '%s': deactivating static, ActiveComponent = %s", self._doorName, tostring(ac)))
+                    --print(string.format("[BreakableDoor] '%s': deactivating static, ActiveComponent = %s", self._doorName, tostring(ac)))
                     if ac then
                         ac.isActive = false
-                        print(string.format("[BreakableDoor] '%s': static door deactivated", self._doorName))
+                        --print(string.format("[BreakableDoor] '%s': static door deactivated", self._doorName))
                     end
                 end
             end)
@@ -408,7 +408,7 @@ return Component {
                     linked:_applyStepTransform(step)
                 end)
             else
-                print(string.format("[BreakableDoor] WARNING: linked door '%s' not in registry yet", linkedName))
+                --print(string.format("[BreakableDoor] WARNING: linked door '%s' not in registry yet", linkedName))
             end
         end
     end,
@@ -423,10 +423,10 @@ return Component {
         self._currentStep = 0
 
         local dynName = self._cleanName(self.DynamicDoorName)
-        print(string.format("[BreakableDoor] _breakDoor called on '%s', dynName='%s'", self._doorName, dynName))
+        --print(string.format("[BreakableDoor] _breakDoor called on '%s', dynName='%s'", self._doorName, dynName))
 
         if dynName == "" then
-            print(string.format("[BreakableDoor] '%s': DynamicDoorName not set -- skipping", self._doorName))
+            --print(string.format("[BreakableDoor] '%s': DynamicDoorName not set -- skipping", self._doorName))
             pcall(function()
                 if self._entityId then
                     local ac = GetComponent(self._entityId, "ActiveComponent")
@@ -438,7 +438,7 @@ return Component {
 
         pcall(function()
             local dynEnt = Engine.GetEntityByName(dynName)
-            print(string.format("[BreakableDoor] '%s': GetEntityByName('%s') = %s", self._doorName, dynName, tostring(dynEnt)))
+            --print(string.format("[BreakableDoor] '%s': GetEntityByName('%s') = %s", self._doorName, dynName, tostring(dynEnt)))
             if not dynEnt then return end
 
             local dynTr = nil
@@ -448,24 +448,24 @@ return Component {
                 elseif  Engine.GetTransformForEntity then dynTr = Engine.GetTransformForEntity(dynEnt)
                 end
             end
-            print(string.format("[BreakableDoor] '%s': dynTr = %s", self._doorName, tostring(dynTr)))
+            --print(string.format("[BreakableDoor] '%s': dynTr = %s", self._doorName, tostring(dynTr)))
 
             if dynTr and self._transform then
                 local px, py, pz = self:_getWorldPos()
-                print(string.format("[BreakableDoor] '%s': static world pos = (%s, %s, %s)", self._doorName, tostring(px), tostring(py), tostring(pz)))
+                --print(string.format("[BreakableDoor] '%s': static world pos = (%s, %s, %s)", self._doorName, tostring(px), tostring(py), tostring(pz)))
                 if px then self:_writePos(dynTr, px, py, pz) end
                 local rot = self._transform.localRotation
-                print(string.format("[BreakableDoor] '%s': static localRotation = %s", self._doorName, tostring(rot)))
+                --print(string.format("[BreakableDoor] '%s': static localRotation = %s", self._doorName, tostring(rot)))
                 if rot and (type(rot) == "table" or type(rot) == "userdata") then
                     self:_writeRot(dynTr, rot.w or 1, rot.x or 0, rot.y or 0, rot.z or 0)
                 end
             end
 
             local ac = GetComponent(dynEnt, "ActiveComponent")
-            print(string.format("[BreakableDoor] '%s': ActiveComponent = %s", self._doorName, tostring(ac)))
+            --print(string.format("[BreakableDoor] '%s': ActiveComponent = %s", self._doorName, tostring(ac)))
             if ac then
                 ac.isActive = true
-                print(string.format("[BreakableDoor] '%s': dynamic door activated", self._doorName))
+                --print(string.format("[BreakableDoor] '%s': dynamic door activated", self._doorName))
             end
         end)
 
@@ -478,9 +478,9 @@ return Component {
             tory = tonumber(self.TorqueY)  or 0,
             torz = tonumber(self.TorqueZ)  or 0,
         }
-        print(string.format("[BreakableDoor] '%s': _pendingImpulse queued: ix=%.1f iy=%.1f iz=%.1f torx=%.1f tory=%.1f torz=%.1f",
-            self._doorName, self._pendingImpulse.ix, self._pendingImpulse.iy, self._pendingImpulse.iz,
-            self._pendingImpulse.torx, self._pendingImpulse.tory, self._pendingImpulse.torz))
+        --print(string.format("[BreakableDoor] '%s': _pendingImpulse queued: ix=%.1f iy=%.1f iz=%.1f torx=%.1f tory=%.1f torz=%.1f",
+        --    self._doorName, self._pendingImpulse.ix, self._pendingImpulse.iy, self._pendingImpulse.iz,
+        --    self._pendingImpulse.torx, self._pendingImpulse.tory, self._pendingImpulse.torz))
     end,
 
     -- =========================================================================
@@ -490,12 +490,12 @@ return Component {
 
     _doFinalMash = function(self)
         if _G.BreakableDoorGroupBroken[self._groupKey] then
-            print("[BreakableDoor] Already broken — skipping duplicate final mash")
+            --print("[BreakableDoor] Already broken — skipping duplicate final mash")
             return
         end
         _G.BreakableDoorGroupBroken[self._groupKey] = true
         _G.chain_retract_veto   = nil
-        print("[BreakableDoor] FINAL MASH — breaking doors!")
+        --print("[BreakableDoor] FINAL MASH — breaking doors!")
 
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("door_final_mash_sound", { doorName = self._doorName })
@@ -522,7 +522,7 @@ return Component {
             if linked then
                 pcall(function() linked:_breakDoor() end)
             else
-                print(string.format("[BreakableDoor] WARNING: linked door '%s' not in registry", linkedName))
+                --print(string.format("[BreakableDoor] WARNING: linked door '%s' not in registry", linkedName))
             end
         end
 
@@ -589,7 +589,7 @@ return Component {
         _G.chain_retract_veto = function()
             return self._isHooked and not self._mashDone
         end
-        print(string.format("[BreakableDoor] HIT on '%s' — waiting for mash", self._doorName))
+        --print(string.format("[BreakableDoor] HIT on '%s' — waiting for mash", self._doorName))
     end,
 
     -- =========================================================================
@@ -604,7 +604,7 @@ return Component {
         -- Persist progress globally so a detach + reattach doesn't reset the count.
         _G.BreakableDoorMashProgress[self._groupKey] = self._mashProgress
         local max = math.max(1, tonumber(self.MashCount) or 1)
-        print(string.format("[BreakableDoor] Mash %d/%d on '%s'", self._mashProgress, max, self._doorName))
+        --print(string.format("[BreakableDoor] Mash %d/%d on '%s'", self._mashProgress, max, self._doorName))
 
         if self._mashProgress >= max then
             self:_doFinalMash()
@@ -620,8 +620,8 @@ return Component {
     _onChainRetracted = function(self, payload)
         if self._isHooked and not self._mashDone then
             -- Re-arm: player retracted before finishing the mash
-            print(string.format("[BreakableDoor] '%s' retracted at %d/%d — re-arming",
-                self._doorName, self._mashProgress, math.max(1, tonumber(self.MashCount) or 1)))
+            --print(string.format("[BreakableDoor] '%s' retracted at %d/%d — re-arming",
+            --    self._doorName, self._mashProgress, math.max(1, tonumber(self.MashCount) or 1)))
             self._hitFired       = false
             self._detachDisarmed = false
             -- NOTE: _currentStep is intentionally NOT reset here.
@@ -643,7 +643,7 @@ return Component {
     -- =========================================================================
 
     _onDetach = function(self)
-        print(string.format("[BreakableDoor] '%s' detached — disarming until retract", self._doorName))
+        --print(string.format("[BreakableDoor] '%s' detached — disarming until retract", self._doorName))
         self._isHooked       = false
         self._detachDisarmed = true
         self._endpointPos    = nil

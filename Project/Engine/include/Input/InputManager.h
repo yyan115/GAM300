@@ -18,7 +18,7 @@
  *
  * @example
  * // Game code (platform-agnostic)
- * if (g_inputManager->IsActionPressed("Jump")) {
+ * if (g_inputManager->IsActionHeld("Jump")) {
  *     player.Jump();
  * }
  *
@@ -36,14 +36,14 @@ public:
      * @param action Action name from config (e.g., "Jump", "Attack")
      * @return true if action is pressed/active this frame
      */
-    virtual bool IsActionPressed(const std::string& action) = 0;
+    virtual bool IsActionHeld(const std::string& action) = 0;
 
     /**
      * @brief Check if an action was just activated this frame (rising edge)
      * @param action Action name from config
      * @return true if action transitioned from inactive to active
      */
-    virtual bool IsActionJustPressed(const std::string& action) = 0;
+    virtual bool IsActionPressed(const std::string& action) = 0;
 
     /**
      * @brief Check if an action was just released this frame (falling edge)
@@ -61,7 +61,7 @@ public:
      *
      * @example
      * // In Lua game code:
-     * if Input.IsActionPressed("Movement") then
+     * if Input.IsActionHeld("Movement") then
      *     local pos = Input.GetActionTouchPosition("Movement")
      *     -- pos.x and pos.y are relative to joystick center
      *     local axisX = pos.x / joystickRadius
@@ -209,7 +209,7 @@ public:
      * @return Map of action names to pressed state
      *
      * Lua scripts can cache this table for the frame instead of calling
-     * IsActionPressed multiple times
+     * IsActionHeld multiple times
      */
     virtual std::unordered_map<std::string, bool> GetAllActionStates() = 0;
 

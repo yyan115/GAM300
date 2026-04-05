@@ -155,7 +155,7 @@ return Component {
     -- ==========================================================================
     Awake = function(self)
         if not (event_bus and event_bus.subscribe) then
-            print("[CameraEffects] ERROR: event_bus not available")
+            --print("[CameraEffects] ERROR: event_bus not available")
             return
         end
 
@@ -311,7 +311,7 @@ return Component {
             if not p or not p.name then return end
             local seq = SEQUENCES[p.name]
             if not seq then
-                print("[CameraEffects] fx_sequence: unknown sequence '" .. tostring(p.name) .. "'")
+                --print("[CameraEffects] fx_sequence: unknown sequence '" .. tostring(p.name) .. "'")
                 return
             end
             self._seqSteps       = seq
@@ -334,7 +334,7 @@ return Component {
     Start = function(self)
         self._camera = self:GetComponent("CameraComponent")
         if not self._camera then
-            print("[CameraEffects] ERROR: CameraComponent not found on this entity")
+            --print("[CameraEffects] ERROR: CameraComponent not found on this entity")
             return
         end
 

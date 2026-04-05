@@ -40,6 +40,7 @@ private:
     double mouseX, mouseY;
 
     std::vector<std::string> assetPaths;
+    std::string writablePath;
     
 public:
     AndroidPlatform();
@@ -88,6 +89,8 @@ public:
     ENGINE_API void SetNativeWindow(ANativeWindow* nativeWindow);
     ENGINE_API void SetAssetManager(AAssetManager* manager);
     ENGINE_API AAssetManager* GetAssetManager() const { return assetManager; }
+    ENGINE_API void SetWritablePath(const std::string& path) { writablePath = path; }
+    std::string GetWritablePath() override { return writablePath; }
     
     // Input handling methods
     ENGINE_API void HandleTouchEvent(int action, int pointerId, float x, float y);

@@ -1155,7 +1155,7 @@ return Component {
             if self._isBackDash then
                 -- TO DO: assign the back dash animation clip in the Animator.
                 -- IsBackDashing is set but no clip exists yet — back dash plays no animation.
-                print("[PlayerMovement] WARN: IsBackDashing=true — back dash animation clip not yet assigned in Animator")
+                --print("[PlayerMovement] WARN: IsBackDashing=true — back dash animation clip not yet assigned in Animator")
             end
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
@@ -1166,8 +1166,8 @@ return Component {
 
         elseif self._dashRequested then
             -- Blocked (stun / landing / no uses). Discard.
-            print(string.format("[PlayerMovement] Dash discarded (uses=%d stun=%s landing=%s)",
-                self._dashUses, tostring(self._isDamageStun), tostring(self._isLanding)))
+            --print(string.format("[PlayerMovement] Dash discarded (uses=%d stun=%s landing=%s)",
+            --    self._dashUses, tostring(self._isDamageStun), tostring(self._isLanding)))
             self._dashRequested = false
         end
 
@@ -1405,8 +1405,8 @@ return Component {
                 slamHitDist = (ok and dist) or 0
                 slamHit = ok and dist and dist > 0
             end
-            print(string.format("[SLAM] pos.y=%.3f | rayLen=%.3f | slamHit=%s | hitDist=%.3f | _slamVelY=%.2f",
-                slamPos and slamPos.y or -999, rayLen, tostring(slamHit), slamHitDist, self._slamVelY))
+            --print(string.format("[SLAM] pos.y=%.3f | rayLen=%.3f | slamHit=%s | hitDist=%.3f | _slamVelY=%.2f",
+            --    slamPos and slamPos.y or -999, rayLen, tostring(slamHit), slamHitDist, self._slamVelY))
 
             if not slamHit then
                 self._slamVelY = math.min(
@@ -1416,7 +1416,7 @@ return Component {
                 CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
             else
                 -- Hit floor — fire everything immediately and return clean.
-                print(string.format("[SLAM] HIT FLOOR at pos.y=%.3f | firing effects", slamPos and slamPos.y or -999))
+                --print(string.format("[SLAM] HIT FLOOR at pos.y=%.3f | firing effects", slamPos and slamPos.y or -999))
                 self._isAirSlam  = false
                 self._isJumping  = false
                 self._isLanding  = true

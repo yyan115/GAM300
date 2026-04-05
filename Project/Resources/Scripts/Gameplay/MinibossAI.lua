@@ -355,7 +355,7 @@ return Component {
                 self._controller = ctrl
                 pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
             else
-                print("[MinibossAI] CharacterController.Create failed")
+                --print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
             end
         end
@@ -447,14 +447,14 @@ return Component {
         self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
             if not payload then return end
             if payload.rootName ~= self._entityName then return end
-            print("[MinibossAI] chain.endpoint_hit_entity received")
+            --print("[MinibossAI] chain.endpoint_hit_entity received")
             self._animator:SetTrigger("Hooked")
         end)
 
         self._chainEnemyHookedSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
             if not payload then return end
             if payload.entityId ~= self.entityId then return end
-            print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
+            --print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
             pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
         end)
 
@@ -708,7 +708,7 @@ return Component {
                 if (dx*dx + dz*dz) <= (r*r) then
                     self._introDone = true
                     self._inIntro = true
-                    print(string.format("[Miniboss][Aggro] Player in range. Starting Battlecry."))
+                    --print(string.format("[Miniboss][Aggro] Player in range. Starting Battlecry."))
                     self.fsm:Change("Battlecry", self.states.Battlecry)
                     return
                 end
@@ -797,7 +797,7 @@ return Component {
         self._collider  = self._collider  or self:GetComponent("ColliderComponent")
         self._transform = self._transform or self:GetComponent("Transform")
         if not (self._collider and self._transform) then
-            print("[Miniboss] CreateCC failed: missing collider/transform")
+            --print("[Miniboss] CreateCC failed: missing collider/transform")
             return false
         end
 
@@ -818,7 +818,7 @@ return Component {
         end
 
         self._controller = nil
-        print("[Miniboss] CreateCC failed: CharacterController.Create error")
+        --print("[Miniboss] CreateCC failed: CharacterController.Create error")
         return false
     end,
 
@@ -987,7 +987,7 @@ return Component {
         
         -- If we can't find the player, don't try to rotate
         if not px or not pz then 
-            print("[Miniboss] Can't find player")
+            --print("[Miniboss] Can't find player")
             return 
         end
 
@@ -1104,12 +1104,12 @@ return Component {
     _SetInAir = function(self, inAir)
         if inAir then
             if not self._inAir then
-                print("[Miniboss] -> AIR MODE (destroy CC)")
+                --print("[Miniboss] -> AIR MODE (destroy CC)")
                 self:_EnterAirMode()
             end
         else
             if self._inAir then
-                print("[Miniboss] -> GROUND MODE (create CC)")
+                --print("[Miniboss] -> GROUND MODE (create CC)")
                 self:_EnterGroundMode()
             end
         end
@@ -1291,7 +1291,7 @@ return Component {
         self:LockActions("PHASE_TRANSFORM", self.PhaseTransformDuration or 2.2)
 
         if self._animator then self._animator:SetTrigger("Taunt") end
-        print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
+        --print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
         self:_publishSFX("taunt")
 
         self:_TriggerBossPhaseShake()
@@ -1305,7 +1305,7 @@ return Component {
         self._transforming = false
         self._immuneDamage = false
 
-        print("[Miniboss] FinishBossPhaseTransition -> phase=", tostring(newPhase))
+        --print("[Miniboss] FinishBossPhaseTransition -> phase=", tostring(newPhase))
 
         if newPhase == 2 then
             self:EnterPhase2_Air()
@@ -1324,7 +1324,7 @@ return Component {
         local nextPhase = curPhase + 1
 
         if nextPhase > 3 then
-            print("[Miniboss][Cheat] Already at final phase.")
+            --print("[Miniboss][Cheat] Already at final phase.")
             return
         end
 
@@ -1343,10 +1343,10 @@ return Component {
         self._moveQueue = {}
         self:_EndMove()
 
-        print(string.format(
-            "[Miniboss][Cheat] Forcing phase %d at hp=%.2f/%.2f",
-            nextPhase, self.health, maxHp
-        ))
+        --print(string.format(
+        --    "[Miniboss][Cheat] Forcing phase %d at hp=%.2f/%.2f",
+        --    nextPhase, self.health, maxHp
+        --))
 
         self:StartBossPhaseTransition(nextPhase)
     end,
@@ -1461,23 +1461,23 @@ return Component {
         if self.dead then return end
         
         if self._inIntro then
-            print("[MinibossAI] ApplyHit blocked: _inIntro")
+            --print("[MinibossAI] ApplyHit blocked: _inIntro")
             return
         end
         if self._transforming then
-            print("[MinibossAI] ApplyHit blocked: _transforming")
+            --print("[MinibossAI] ApplyHit blocked: _transforming")
             return
         end
         if self._immuneDamage then
-            print("[MinibossAI] ApplyHit blocked: _immuneDamage")
+            --print("[MinibossAI] ApplyHit blocked: _immuneDamage")
             return
         end
         if (self._hitLockTimer or 0) > 0 then
-            print("[MinibossAI] ApplyHit blocked: iFrame", self._hitLockTimer)
+            --print("[MinibossAI] ApplyHit blocked: iFrame", self._hitLockTimer)
             return
         end
 
-        print("[MinibossAI] ApplyHit called", dmg, hitType)
+        --print("[MinibossAI] ApplyHit called", dmg, hitType)
 
         self._hitLockTimer = self.HitIFrame or 0.2
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
@@ -1493,7 +1493,7 @@ return Component {
             self._animator:SetTrigger("Hurt3")
         end
 
-        print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
+        --print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
 
         if self.health <= 0 then
             self:Die()
@@ -1533,7 +1533,7 @@ return Component {
                     dmg       = self.ShoutDamage or 2,
                     kb        = self.ShoutKnockback or 240.0,
                 })
-                print("[MinibossAI] Queued ShoutAOE")
+                --print("[MinibossAI] Queued ShoutAOE")
             end
 
             if (not self._p1DidShout90) and hpPct <= (self.P1_Shout1Pct or 0.90) then
@@ -1583,14 +1583,14 @@ return Component {
             -- Start falling RIGHT NOW
             self:BeginSlamDown("Pulldown")
 
-            print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            --print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
             return
         end
 
         if self._phase == 3 and not self._inAir then
             -- If hooked during Death Lotus, interrupt it immediately and schedule Fate Sealed
             if self:IsInMove("DeathLotus") then
-                print("[Miniboss][P3] Hooked DURING DeathLotus -> INTERRUPT")
+                --print("[Miniboss][P3] Hooked DURING DeathLotus -> INTERRUPT")
                 self._p3LotusInterrupted = true
                 self._p3PendingFate = true
                 self._p3FateDelayT = self.P3_FateAfterHookDelay or 2.0
@@ -1609,7 +1609,7 @@ return Component {
             self:PlayClip(self.ClipHooked, true)
         end
 
-        print(string.format("[Miniboss][Hooked] START %.2fs", dur))
+        --print(string.format("[Miniboss][Hooked] START %.2fs", dur))
     end,
 
     Die = function(self)
@@ -1643,7 +1643,7 @@ return Component {
             _G.event_bus.publish("boss_killed")
         end
 
-        print("[Miniboss][Death] DEAD")
+        --print("[Miniboss][Death] DEAD")
     end,
 
     -------------------------------------------------
@@ -1786,7 +1786,7 @@ return Component {
 
     _LaunchKnife = function(self, knife, sx, sy, sz, tx, ty, tz, token, tag)
         if not knife then
-            print("[Miniboss][Knife] Launch FAILED: knife=nil")
+            --print("[Miniboss][Knife] Launch FAILED: knife=nil")
             return false
         end
 
@@ -1817,7 +1817,7 @@ return Component {
 
         local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, "BOSS")
         if not ok then
-            print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
+            --print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
         return ok
     end,
@@ -1828,7 +1828,7 @@ return Component {
 
         local knives = requestUpTo(3)
         if not knives then
-            print("[Miniboss][Knife] No knives available in pool")
+            --print("[Miniboss][Knife] No knives available in pool")
             return false
         end
 
@@ -1889,7 +1889,7 @@ return Component {
     SpawnKnifeSingleAtPlayer = function(self)
         local knives = KnifePool.RequestMany(1)
         if not knives or not knives[1] then 
-            print("[Miniboss][Knife] RequestMany(1) FAILED")
+            --print("[Miniboss][Knife] RequestMany(1) FAILED")
             return false
         end
         local k = knives[1]
@@ -1925,7 +1925,7 @@ return Component {
     SpawnKnifeSingleAtWorld = function(self, tx, ty, tz, tag)
         local knives = KnifePool.RequestMany(1)
         if not knives or not knives[1] then
-            print("[Miniboss][Knife] RequestMany(1) FAILED (world)")
+            --print("[Miniboss][Knife] RequestMany(1) FAILED (world)")
             return false
         end
         local k = knives[1]
@@ -1959,7 +1959,7 @@ return Component {
 
         local knives = KnifePool.RequestMany(8)
         if not knives then
-            print("[Miniboss][Knife] RequestMany(8) FAILED")
+            --print("[Miniboss][Knife] RequestMany(8) FAILED")
             return false
         end
 
@@ -2019,7 +2019,7 @@ return Component {
 
         local knives = KnifePool.RequestMany(1)
         if not knives or not knives[1] then
-            print("[Miniboss][Knife] RequestMany(1) FAILED")
+            --print("[Miniboss][Knife] RequestMany(1) FAILED")
             return false
         end
 
@@ -2070,7 +2070,7 @@ return Component {
 
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
-            print("[MinibossAI] Casting boss_shout_aoe")
+            --print("[MinibossAI] Casting boss_shout_aoe")
             _G.event_bus.publish("boss_shout_aoe", {
                 entityId = self.entityId,
                 x=x,y=y,z=z,
@@ -2134,7 +2134,7 @@ return Component {
     _DoMeleeAttack = function(self)
 
         -- longer windup + further range
-        print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
+        --print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
         if self._animator then self._animator:SetTrigger("Melee") end
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
@@ -2227,7 +2227,7 @@ return Component {
 
                 if _G.event_bus and _G.event_bus.publish then
                     local x,y,z = self:GetPosition()
-                    print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
+                    --print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
                     _G.event_bus.publish("boss_shout_aoe", {
                         entityId = self.entityId,
                         x=x,y=y,z=z,
@@ -2254,7 +2254,7 @@ return Component {
             if not m.didHit and m.t >= (m.hitAt or 0) then
                 m.didHit = true
 
-                print("Do u see this?")
+                --print("Do u see this?")
                 -- CLAW VFX HERE
                 if _G.event_bus then
                     local x, y, z = self:GetPosition()
@@ -2372,7 +2372,7 @@ return Component {
             -- fire once at start
             if m.step == 0 then
                 self:FacePlayer()
-                print("[MinibossAI] SPAWNING BASIC")
+                --print("[MinibossAI] SPAWNING BASIC")
                 self:SpawnKnifeVolley3(m.spread or 1.0)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.35)
@@ -2398,7 +2398,7 @@ return Component {
 
             if m.t >= (m.nextShotT or 0) and (m.shotsDone or 0) < bursts then
                 self:FacePlayer()
-                print("[MinibossAI] SPAWNING BURSTFIRE")
+                --print("[MinibossAI] SPAWNING BURSTFIRE")
                 self:SpawnKnifeSingleAtPlayer()
                 m.shotsDone = m.shotsDone + 1
                 m.nextShotT = m.t + burstInterval
@@ -2420,7 +2420,7 @@ return Component {
         if m.kind == "AntiDodge" then
             if m.step == 0 then
                 self:FacePlayer()
-                print("[MinibossAI] SPAWNING AntiDodge")
+                --print("[MinibossAI] SPAWNING AntiDodge")
                 self:SpawnKnifeFan8_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8, m.spread3 or 2.7, m.spread4 or 3.6)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.45)
@@ -2447,7 +2447,7 @@ return Component {
                 -- OPTIONAL: play charge animation / VFX / SFX once
                 if not m.chargeStarted then
                     m.chargeStarted = true
-                    print("[Miniboss] FateSealed: SetTrigger(Melee)")
+                    --print("[Miniboss] FateSealed: SetTrigger(Melee)")
                     self._animator:SetTrigger("Melee")
                 end
 
@@ -2581,7 +2581,7 @@ return Component {
             m.fireAcc = (m.fireAcc or 0) + dtSec
             while m.fireAcc >= fireInterval do
                 m.fireAcc = m.fireAcc - fireInterval
-                print("[MinibossAI] SPAWNING DEATHLOTUS")
+                --print("[MinibossAI] SPAWNING DEATHLOTUS")
                 self:SpawnForwardSingle(fx, fz, m.range or 12.0, m.lotusYOffset or 0.0)
             end
             
@@ -2688,7 +2688,7 @@ return Component {
     end,
 
     EnterPhase2_Air = function(self)
-        print("[Miniboss] EnterPhase2_Air")
+        --print("[Miniboss] EnterPhase2_Air")
         self:_SetInAir(true)
 
         local x,y,z = self:GetPosition()
@@ -3068,7 +3068,7 @@ return Component {
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
 
-                print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
+                --print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
                 self:_publishSFX("rangedAttack")
 
@@ -3157,7 +3157,7 @@ return Component {
     end,
 
     ResetBossToIdle = function(self)
-        print("[MinibossAI] ResetBossToIdle")
+        --print("[MinibossAI] ResetBossToIdle")
 
         self._move = nil
         self._moveFinished = true

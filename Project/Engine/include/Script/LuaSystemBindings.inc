@@ -14,7 +14,7 @@
 // ============================================================================
 // KEYBOARD INPUT (RAW - PC/DESKTOP ONLY)
 // ============================================================================
-// WARNING: Prefer Input.IsActionPressed() / Input.GetAxis() from the unified
+// WARNING: Prefer Input.IsActionHeld() / Input.GetAxis() from the unified
 // input system (see below). These raw keyboard functions:
 //   - Are PC/desktop only — always return false on Android
 //   - Bypass input config (keys are hardcoded, not remappable)
@@ -136,7 +136,7 @@ END_SYSTEM()
 //
 // Usage examples:
 // -- Check action (works on both desktop and Android)
-// if Input.IsActionPressed("Jump") then
+// if Input.IsActionHeld("Jump") then
 //     player:Jump()
 // end
 //
@@ -166,8 +166,8 @@ luabridge::getGlobalNamespace(L)
 
 BEGIN_SYSTEM("Input")
     // Actions
+    FUNCTION("IsActionHeld", InputWrappers::IsActionHeld)
     FUNCTION("IsActionPressed", InputWrappers::IsActionPressed)
-    FUNCTION("IsActionJustPressed", InputWrappers::IsActionJustPressed)
     FUNCTION("IsActionJustReleased", InputWrappers::IsActionJustReleased)
 
     // Axes (returns Vector2D object with .x and .y properties)

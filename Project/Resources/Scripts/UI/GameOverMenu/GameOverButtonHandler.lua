@@ -74,7 +74,7 @@ return Component {
                     hoverSprite.isVisible = false
                 end
             else
-                print("Warning: Missing entities for " .. names.base)
+                --print("Warning: Missing entities for " .. names.base)
             end
         end
         self._DeathBGActive = GetComponent(Engine.GetEntityByName("DeathScreenBG"), "ActiveComponent")

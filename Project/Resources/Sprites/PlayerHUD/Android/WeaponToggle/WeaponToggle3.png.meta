@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c7490aac00-0004b907de00008d",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/WeaponToggle/WeaponToggle3.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/WeaponToggle/WeaponToggle3.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

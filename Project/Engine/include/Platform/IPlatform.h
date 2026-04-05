@@ -54,6 +54,10 @@ public:
 
     // Platform-specific getters (if needed by other systems)
     virtual void* GetNativeWindow() = 0;
+
+    // Returns a writable directory for saving persistent data (e.g. settings).
+    // On Android this is the app's internal files dir; on desktop it returns "".
+    virtual std::string GetWritablePath() { return ""; }
 };
 
 // Factory function to create platform instance

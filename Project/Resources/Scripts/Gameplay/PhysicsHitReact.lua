@@ -49,7 +49,7 @@ return Component {
     Start = function(self)
         self._rb = self:GetComponent("RigidBodyComponent")
         if not self._rb then
-            print("[PhysicsHitReact] WARNING: No RigidBodyComponent found on entity " .. tostring(self.entityId))
+            --print("[PhysicsHitReact] WARNING: No RigidBodyComponent found on entity " .. tostring(self.entityId))
         end
 
         self._playerTr = Engine.FindTransformByName(self.PlayerName)
@@ -102,8 +102,8 @@ return Component {
 
         local ix, iy, iz = self:_buildImpulse(hitType, outX, outZ, magnitude)
 
-        print(string.format("[PhysicsHitReact] entity=%s hitType=%s impulse=(%.2f, %.2f, %.2f)",
-            tostring(self.entityId), hitType, ix, iy, iz))
+        --print(string.format("[PhysicsHitReact] entity=%s hitType=%s impulse=(%.2f, %.2f, %.2f)",
+        --    tostring(self.entityId), hitType, ix, iy, iz))
 
         pcall(function()
             self._rb.impulseApplied = { x = ix, y = iy, z = iz }

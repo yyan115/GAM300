@@ -35,7 +35,7 @@ return Component {
     end,
 
     OnTriggerEnter = function(self, otherEntityId)
-        print("[DeathFloor] OnTriggerEnter")
+        --print("[DeathFloor] OnTriggerEnter")
         
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")

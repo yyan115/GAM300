@@ -17,12 +17,12 @@ return Component {
         -- Duplicate template into Knife1..KnifeN (engine semantics assumed same as ChainBootstrap)
         Engine.CreateEntityDup(self.TemplateName, self.InstancePrefix, n)
 
-        print("[KnifeBootstrap] dup done, checking Knife1 script…")
+        --print("[KnifeBootstrap] dup done, checking Knife1 script…")
         local tr = Engine.FindTransformByName("Knife1")
-        print("[KnifeBootstrap] Knife1 transform:", tostring(tr))
+        --print("[KnifeBootstrap] Knife1 transform:", tostring(tr))
 
         if self.EnableLogs then
-            print(string.format("[KnifeBootstrap] Spawned pool: %s x%d", self.TemplateName, n))
+            --print(string.format("[KnifeBootstrap] Spawned pool: %s x%d", self.TemplateName, n))
         end
 
         -- Optional: verify transforms exist (purely for debugging)
@@ -32,7 +32,7 @@ return Component {
                 local tr = Engine.FindTransformByName(self.InstancePrefix .. tostring(i))
                 if tr then found = found + 1 end
             end
-            print(string.format("[KnifeBootstrap] Found transforms: %d/%d", found, n))
+            --print(string.format("[KnifeBootstrap] Found transforms: %d/%d", found, n))
         end
     end,
 }

@@ -18,17 +18,17 @@ return Component {
         end
 
         if self._rb then
-            print("[rigidbody_test] RigidBodyComponent component obtained successfully")
+            --print("[rigidbody_test] RigidBodyComponent component obtained successfully")
         else
-            print("[rigidbody_test] RigidBodyComponent component not found!")
+            --print("[rigidbody_test] RigidBodyComponent component not found!")
         end
         self._rb.isTrigger = true
     end,
 
     Update = function(self, dt)
         if not self._rb then
-            print("[rigidbody_test] cannot get component")
+            --print("[rigidbody_test] cannot get component")
         end
-        print("rb.istrigger is " .. tostring(self._rb.isTrigger))
+        --print("rb.istrigger is " .. tostring(self._rb.isTrigger))
     end,
 }

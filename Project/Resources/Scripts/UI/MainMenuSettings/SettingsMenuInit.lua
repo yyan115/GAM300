@@ -8,6 +8,6 @@ return Component {
     Start = function(self)
         -- Initialize GameSettings (safe to call multiple times)
         GameSettings.Init()
-        print("[SettingsMenuInit] GameSettings initialized")
+        --print("[SettingsMenuInit] GameSettings initialized")
     end,
 }

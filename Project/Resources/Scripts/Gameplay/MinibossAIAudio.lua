@@ -62,7 +62,7 @@ return Component {
         end
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
-            print("[MinibossAIAudio] WARNING: event_bus not available in Awake")
+            --print("[MinibossAIAudio] WARNING: event_bus not available in Awake")
             return
         end
 

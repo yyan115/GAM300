@@ -194,7 +194,7 @@ return Component {
                 if not registered[n] then registered[n] = true; allNames[#allNames+1] = n end
             end
             for _, scriptName in ipairs(allNames) do
-                print("[CameraFollow] Setting cache interval for: " .. tostring(scriptName))
+                --print("[CameraFollow] Setting cache interval for: " .. tostring(scriptName))
                 Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
             end
         end
@@ -251,9 +251,9 @@ return Component {
             self._cinematicActiveSub = event_bus.subscribe("cinematic.active", function(active)
                 self._cinematicActive = active
                 if active then
-                    print("[CameraFollow] Cinematic mode ACTIVE")
+                    --print("[CameraFollow] Cinematic mode ACTIVE")
                 else
-                    print("[CameraFollow] Cinematic mode INACTIVE")
+                    --print("[CameraFollow] Cinematic mode INACTIVE")
                     self._cinematicTarget    = nil
                     self._cinematicStartPosX = nil
                     self._cinematicStartRotW = nil
@@ -320,8 +320,8 @@ return Component {
 
         -- Teleport to respawn point without lerp
         if self._teleportToPlayer then
-            print(string.format("[CameraFollow] Teleporting to %.2f %.2f %.2f",
-                self._targetPos.x, self._targetPos.y, self._targetPos.z))
+            --print(string.format("[CameraFollow] Teleporting to %.2f %.2f %.2f",
+            --    self._targetPos.x, self._targetPos.y, self._targetPos.z))
             self:SetPosition(self._targetPos.x, self._targetPos.y, self._targetPos.z)
             self._teleportToPlayer = false
             -- FIX: clear last-position so the next frame doesn't measure an
@@ -346,8 +346,8 @@ return Component {
 
         -- Re-lock cursor when attacking (keeps it locked if the player clicks out)
         if Input then
-            if (Input.IsActionJustPressed and Input.IsActionJustPressed("Attack"))
-            or (Input.IsActionPressed    and Input.IsActionPressed("Attack")) then
+            if (Input.IsActionPressed and Input.IsActionPressed("Attack"))
+            or (Input.IsActionHeld    and Input.IsActionHeld("Attack")) then
                 local isPaused = Time and Time.IsPaused and Time.IsPaused()
                 if not isPaused
                 and Screen and Screen.SetCursorLocked and Screen.IsCursorLocked
@@ -370,7 +370,7 @@ return Component {
         -- ── Input (mouse look + scroll zoom) ────────────────────────────────
         if not self._cinematicActive then
             if not self._loggedPlatform then
-                print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
+                --print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
                 self._loggedPlatform = true
             end
 

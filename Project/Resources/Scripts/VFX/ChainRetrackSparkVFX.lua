@@ -29,7 +29,7 @@ return Component {
 
         self._inputInterpreter = _G.InputInterpreter
         if not self._inputInterpreter then
-            print("ERROR: InputInterpreter not found!")
+            --print("ERROR: InputInterpreter not found!")
             return
         end
 
