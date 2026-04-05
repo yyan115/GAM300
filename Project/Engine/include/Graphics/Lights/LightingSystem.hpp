@@ -45,7 +45,11 @@ public:
     bool shadowsEnabled = true;
     int shadowMapResolution = 256;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
+#ifdef ANDROID
+    int pointShadowMapResolution = 128;
+#else
     int pointShadowMapResolution = 256;
+#endif
     float pointLightShadowFarPlane = 25.0f;
 
     void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
