@@ -23,7 +23,7 @@ return Component {
     fields = {
         -- Base impulse magnitude. Scaled by the hit's knockback value if non-zero.
         -- Set to 0 to rely purely on per-attack knockback from ComboManager.
-        BaseImpulse       = 6.0,
+        BaseImpulse       = 1500.0,
 
         -- Extra upward component added for LIFT hits (0–1 blended with outward dir).
         LiftUpwardBias    = 0.8,
@@ -49,10 +49,11 @@ return Component {
     Start = function(self)
         self._rb = self:GetComponent("RigidBodyComponent")
         if not self._rb then
-            --print("[PhysicsHitReact] WARNING: No RigidBodyComponent found on entity " .. tostring(self.entityId))
+            print("[PhysicsHitReact] WARNING: No RigidBodyComponent found on entity " .. tostring(self.entityId))
         end
 
-        self._playerTr = Engine.FindTransformByName(self.PlayerName)
+        self._transform = self:GetComponent("Transform")
+        self._playerTr  = Engine.FindTransformByName(self.PlayerName)
 
         if event_bus and event_bus.subscribe then
             self._sub = event_bus.subscribe("deal_damage_to_entity", function(payload)
@@ -95,18 +96,18 @@ return Component {
         local knockback = tonumber(payload.knockback) or 0
 
         -- Resolve push magnitude: prefer per-attack knockback, fall back to BaseImpulse.
-        local magnitude = (knockback > 0) and knockback or (tonumber(self.BaseImpulse) or 6.0)
+        local magnitude = (tonumber(self.BaseImpulse) or 6.0) * knockback
 
         -- Direction away from the player in XZ.
         local outX, outZ = self:_getOutwardDir()
 
         local ix, iy, iz = self:_buildImpulse(hitType, outX, outZ, magnitude)
 
-        --print(string.format("[PhysicsHitReact] entity=%s hitType=%s impulse=(%.2f, %.2f, %.2f)",
-        --    tostring(self.entityId), hitType, ix, iy, iz))
+        print(string.format("[PhysicsHitReact] entity=%s hitType=%s impulse=(%.2f, %.2f, %.2f)",
+            tostring(self.entityId), hitType, ix, iy, iz))
 
         pcall(function()
-            self._rb.impulseApplied = { x = ix, y = iy, z = iz }
+            self._rb:AddImpulse(ix, iy, iz)
         end)
 
         self._hitLockTimer = tonumber(self.ImpulseIFrame) or 0.15
@@ -119,8 +120,9 @@ return Component {
             self._playerTr = Engine.FindTransformByName(self.PlayerName)
         end
 
-        local ex, _, ez = self:GetPosition()
-        if ex == nil then return 1, 0 end
+        local ep = self._transform and Engine.GetTransformPosition(self._transform)
+        if not ep then return 1, 0 end
+        local ex, ez = ep[1], ep[3]
 
         if self._playerTr then
             local pp = Engine.GetTransformPosition(self._playerTr)
