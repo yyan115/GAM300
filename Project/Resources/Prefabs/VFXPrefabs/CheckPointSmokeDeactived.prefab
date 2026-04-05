@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 332,
+            "id": 0,
             "guid": "0000e17495e4770c-000479d9cc000129",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/VFXPrefabs/CheckPointSmokeDeactived.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "CheckPointSmokeDeactived"
                 },

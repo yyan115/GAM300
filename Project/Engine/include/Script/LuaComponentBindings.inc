@@ -266,7 +266,8 @@ BEGIN_COMPONENT(ParticleComponent, "ParticleComponent")
     PROPERTY("gravity", &ParticleComponent::gravity)
     PROPERTY("velocityRandomness", &ParticleComponent::velocityRandomness)
     PROPERTY("initialVelocity", &ParticleComponent::initialVelocity)
-    PROPERTY("timeSinceEmission", &ParticleComponent::timeSinceEmission)
+    PROPERTY("timeSinceEmission", &ParticleComponent::timeSinceEmission)\
+    PROPERTY("isVisible", &ParticleComponent::isVisible)
     // Runtime control
     PROPERTY("isEmitting", &ParticleComponent::isEmitting)
     PROPERTY("texturePath", &ParticleComponent::texturePath)

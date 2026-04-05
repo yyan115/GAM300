@@ -41,18 +41,13 @@ return Component {
             return
         end
 
-        _G.event_bus.subscribe("activatedCheckpoint", function(data)
-            --print("PARENT ENTITY IS: " .. tostring(data.parent))
-            self._cpEnt = data.parent
-
-            self._cpParticle = GetComponent(self._cpEnt, "ParticleComponent")
-            if self._cpParticle then
-                self:ActivateCheckPointVFX()
-            end
-
-            self:ActivateHealingVFX()
-        end)
-    end,
+    _G.event_bus.subscribe("activatedCheckpoint", function(data)
+        -- 1. Store the parent entity reference
+        self._cpEnt = data.parent
+        self:ActivateCheckPointVFX()
+        self:ActivateHealingVFX()
+    end)    
+end,
 
     Update = function(self, dt)
         -- Continuously snap healing VFX to player every frame
@@ -74,18 +69,32 @@ return Component {
     end,
 
     ActivateCheckPointVFX = function(self)
-        local startColor = self._cpParticle.startColor
-        startColor.y = self.startColorY
-        startColor.z = self.startColorZ
-        self._cpParticle.startColor = startColor
+        if not self._cpEnt then return end
+            
+            local children = Engine.GetChildrenEntities(self._cpEnt)
+            local deactivatedVFXEnt = children[7]
+            local activatedVFXEnt = children[11]
+            -- --- 1. STOP DEACTIVATED VFX (Index 7) ---
+            if deactivatedVFXEnt then
+                local subChildren = Engine.GetChildrenEntities(deactivatedVFXEnt)
+                for i = 1, #subChildren do
+                    local particleComp = GetComponent(subChildren[i], "ParticleComponent")
+                    if particleComp then
+                        particleComp.isVisible = false
+                    end
+                end
+            end
 
-        local endColor = self._cpParticle.endColor
-        endColor.y = self.endColorY
-        endColor.z = self.endColorZ
-        self._cpParticle.endColor = endColor
-
-        self._cpParticle.startColorAlpha = self.startAlpha
-        self._cpParticle.endColorAlpha   = self.endAlpha
+            -- --- 2. START ACTIVATED VFX
+            if activatedVFXEnt then
+                local subChildren = Engine.GetChildrenEntities(activatedVFXEnt)
+                for i = 1, #subChildren do
+                    local particleComp = GetComponent(subChildren[i], "ParticleComponent")
+                    if particleComp then
+                        particleComp.isVisible = true
+                    end
+                end
+            end
     end,
 
     ActivateHealingVFX = function(self)

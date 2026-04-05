@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 2848,
+            "id": 0,
             "guid": "0073f29a2d86f172-0004b91cce001123",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/VFXPrefabs/CheckPointVFXActivatedV2.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "CheckPointVFXActivatedV2"
                 },
@@ -101,7 +110,7 @@
             }
         },
         {
-            "id": 236,
+            "id": 1,
             "guid": "002c7e20b46d2bb7-0004b9044c00dec3",
             "components": {
                 "NameComponent": {
@@ -325,7 +334,7 @@
             }
         },
         {
-            "id": 2849,
+            "id": 2,
             "guid": "0073f29a59d91750-0004b91d48001125",
             "components": {
                 "NameComponent": {
@@ -549,7 +558,7 @@
             }
         },
         {
-            "id": 2850,
+            "id": 3,
             "guid": "0073f29a27750d16-0004b91d5a001127",
             "components": {
                 "NameComponent": {
