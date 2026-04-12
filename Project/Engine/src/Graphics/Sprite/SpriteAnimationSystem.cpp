@@ -102,12 +102,26 @@ void SpriteAnimationSystem::Update()
     for (const auto& entity : entities)
     {
         // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+        bool isActive = ecsManager.IsEntityActiveInHierarchy(entity);
+
+        auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(entity);
+
+        if (!isActive) {
+            anim.wasActiveInHierarchy = false;
             continue;
         }
 
-        auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(entity);
 		auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
+
+        // Detect inactive→active transition: kill any in-progress animation so
+        // the Lua hover scripts control the sprite texture from a clean slate.
+        // Without this, a stale animation frame overwrites whatever Lua sets.
+        if (!anim.wasActiveInHierarchy) {
+            anim.playing = false;
+            anim.currentFrameIndex = 0;
+            anim.timeInCurrentFrame = 0.0f;
+        }
+        anim.wasActiveInHierarchy = true;
 
         // Skip if component is disabled or not playing
         if (!anim.enabled || !anim.playing || anim.currentClipIndex < 0)

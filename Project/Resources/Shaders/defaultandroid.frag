@@ -483,6 +483,9 @@ void main()
         result += material.emissive;
     }
 
+    // Minimum lighting floor — no surface should ever be completely black.
+    result = max(result, albedo * 0.04);
+
     float finalAlpha = material.opacity * u_distanceFadeOpacity;
     if (hasOpacityMap) {
         finalAlpha *= texture(opacityMap, tiledUV).r;

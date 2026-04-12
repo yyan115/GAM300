@@ -39,14 +39,23 @@ return Component {
     end,
 
     Update = function(self, dt)
+            -- Reset hover state on reactivation (script was dormant while popup hidden)
+            local myAC = self:GetComponent("ActiveComponent")
+            if myAC and myAC.justActivated then
+                self._isHovered = false
+                if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                    self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+                end
+            end
+
             local isPromptActive = self._promptActive and self._promptActive.isActive
 
             if isPromptActive then
                 -- 1. Run the hover logic for the Yes/No buttons
-                --Disable Interactable Button 
+                --Disable Interactable Button
                 local YesEntity = Engine.GetEntityByName("YesButton")
                 local YesButton = GetComponent(YesEntity, "ButtonComponent")
-                YesButton.interactable = true   
+                YesButton.interactable = true
                 local NoEntity = Engine.GetEntityByName("NoButton")
                 local NoButton = GetComponent(NoEntity, "ButtonComponent")
                 NoButton.interactable = true

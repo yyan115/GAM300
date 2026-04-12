@@ -919,9 +919,21 @@ void ScriptSystem::Update()
     float dt = static_cast<float>(TimeManager::GetDeltaTime());
     for (Entity e : entities)
     {
-        // Skip entities that are inactive in hierarchy (centralized cache in ECSManager)
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+        bool isActive = m_ecs->IsEntityActiveInHierarchy(e);
+
+        if (!isActive) {
+            m_prevActiveEntities.erase(e);
             continue;
+        }
+
+        // Detect inactive→active transition and flag the ActiveComponent so
+        // Lua scripts can detect reactivation (e.g. popup button sprite reset).
+        bool wasActive = m_prevActiveEntities.count(e) > 0;
+        if (!wasActive) {
+            m_prevActiveEntities.insert(e);
+            if (m_ecs->HasComponent<ActiveComponent>(e)) {
+                m_ecs->GetComponent<ActiveComponent>(e).justActivated = true;
+            }
         }
 
         ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
@@ -949,6 +961,11 @@ void ScriptSystem::Update()
 #endif
                 }
             }
+        }
+
+        // Clear the flag after Lua had a chance to read it this frame
+        if (!wasActive && m_ecs->HasComponent<ActiveComponent>(e)) {
+            m_ecs->GetComponent<ActiveComponent>(e).justActivated = false;
         }
     }
 
@@ -983,6 +1000,7 @@ void ScriptSystem::Shutdown()
         }
     }
     m_runtimeMap.clear();
+    m_prevActiveEntities.clear();
 
     g_ecsManager = nullptr;
     // Clean up standalone instances (used by ButtonComponent)

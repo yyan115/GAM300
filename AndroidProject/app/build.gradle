@@ -62,6 +62,33 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    // Disable dex layout optimization that causes INSTALL_BASELINE_PROFILE_FAILED
+    experimentalProperties["android.experimental.art-profile-r8-rewriting"] = false
+    experimentalProperties["android.experimental.r8.dex-startup-optimization"] = false
+}
+
+// Nuke all baseline profile / dex metadata artifacts after every build so
+// Android Studio cannot send them to the device during deploy.
+tasks.configureEach { task ->
+    if (task.name.startsWith('assemble') || task.name.startsWith('install')) {
+        task.doLast {
+            def dirs = [
+                file("${buildDir}/intermediates/apk/release/baselineProfiles"),
+                file("${buildDir}/intermediates/binary_art_profile"),
+                file("${buildDir}/intermediates/binary_art_profile_metadata"),
+                file("${buildDir}/intermediates/dex_metadata_directory"),
+                file("${buildDir}/intermediates/merged_art_profile"),
+                file("${buildDir}/intermediates/combined_art_profile"),
+            ]
+            dirs.each { d ->
+                if (d.exists()) {
+                    d.deleteDir()
+                    println "Deleted: ${d.name}"
+                }
+            }
+        }
+    }
 }
 
 // Task to copy resources directly via Gradle (more reliable than CMake)

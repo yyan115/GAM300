@@ -7,6 +7,7 @@
 
 #include "Script/ComponentProxy.h" // Exposing c++ functions to lua
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <mutex>
 
@@ -83,4 +84,8 @@ private:
     std::recursive_mutex m_mutex;
 
     bool m_needsReconcile = true;
+
+    // Track which script entities were active-in-hierarchy last frame so we can
+    // set ActiveComponent::justActivated on inactive→active transitions.
+    std::unordered_set<Entity> m_prevActiveEntities;
 };

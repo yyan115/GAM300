@@ -479,6 +479,11 @@ void main()
         result += material.emissive;
     }
 
+    // Minimum lighting floor — no surface should ever be completely black.
+    // Preserves surface colour but guarantees a small amount of visibility
+    // even in areas with zero direct/indirect light.
+    result = max(result, albedo * 0.04);
+
     // Environment reflections (skybox equirectangular map)
     if (hasEnvMap) {
         vec3 reflectDir = reflect(-viewDir, norm);

@@ -47,6 +47,29 @@ namespace TEMP {
 	std::string windowTitle = "Kusane";
 }
 
+#if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
+namespace {
+    void UpdateStandaloneWindowTitleWithFps() {
+        static double titleUpdateTimer = 0.0;
+        static int lastDisplayedFps = -1;
+
+        titleUpdateTimer += TimeManager::GetUnscaledDeltaTime();
+        if (titleUpdateTimer < 1.0) {
+            return;
+        }
+        titleUpdateTimer = 0.0;
+
+        const int fps = static_cast<int>(std::lround(TimeManager::GetFps()));
+        if (fps == lastDisplayedFps) {
+            return;
+        }
+        lastDisplayedFps = fps;
+
+        const std::string title = TEMP::windowTitle + " - " + std::to_string(fps) + " FPS";
+        WindowManager::SetWindowTitle(title.c_str());
+    }
+}
+#endif
 
 // Static member definition
 GameState Engine::currentGameState = GameState::EDIT_MODE;
@@ -691,6 +714,9 @@ void Engine::Update() {
         TimeManager::UpdateDeltaTime();
     }
 
+#if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
+    UpdateStandaloneWindowTitleWithFps();
+#endif
 
     // Update input FIRST so systems have fresh input state this frame
     // This fixes the 1-frame input delay that caused buttons to require double-clicks

@@ -464,6 +464,7 @@ END_COMPONENT()
 
 BEGIN_COMPONENT(ActiveComponent, "ActiveComponent")
     PROPERTY("isActive", &ActiveComponent::isActive)
+    PROPERTY("justActivated", &ActiveComponent::justActivated)
 END_COMPONENT()
 
 BEGIN_COMPONENT(VideoComponent, "VideoComponent")

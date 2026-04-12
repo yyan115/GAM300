@@ -69,7 +69,11 @@ return Component {
             self._pageWasActive = false
             return
         end
-        local justBecameActive = not self._pageWasActive
+        -- Detect first frame after reactivation (see PauseMenuButtonHandler
+        -- for detailed explanation of why justActivated is needed).
+        local ac = Engine.GetEntityByName("ConfirmationPromptUI")
+        local acComp = ac and GetComponent(ac, "ActiveComponent")
+        local justBecameActive = not self._pageWasActive or (acComp and acComp.justActivated)
         self._pageWasActive = true
 
         local pointerPos = Input.GetPointerPosition()

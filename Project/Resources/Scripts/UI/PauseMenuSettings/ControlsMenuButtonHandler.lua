@@ -80,7 +80,9 @@ return Component {
             return
         end
 
-        local justBecameActive = not self._pageWasActive
+        local ac = Engine.GetEntityByName("ControlsUI")
+        local acComp = ac and GetComponent(ac, "ActiveComponent")
+        local justBecameActive = not self._pageWasActive or (acComp and acComp.justActivated)
         self._pageWasActive = true
 
         local pointerPos = Input.GetPointerPosition()

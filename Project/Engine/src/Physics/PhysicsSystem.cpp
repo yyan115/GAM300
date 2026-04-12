@@ -1055,6 +1055,46 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
     return result;
 }
 
+// Line-of-sight raycast: only hits solid static world geometry (NON_MOVING).
+// Ignores nav mesh layers, debris, chain hitboxes — things that shouldn't block sight.
+class LOSObjectFilter : public JPH::ObjectLayerFilter {
+public:
+    bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
+        return inLayer == Layers::NON_MOVING;
+    }
+};
+
+PhysicsSystem::RaycastResult PhysicsSystem::RaycastLOS(const Vector3D& origin, const Vector3D& direction, float maxDistance) {
+    RaycastResult result;
+
+    float dirLen = std::sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
+    if (dirLen < 0.0001f) return result;
+
+    JPH::Vec3 dir(direction.x / dirLen, direction.y / dirLen, direction.z / dirLen);
+    JPH::RVec3 start(origin.x, origin.y, origin.z);
+    JPH::RRayCast ray(start, dir * maxDistance);
+
+    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+
+    CameraRaycastBroadPhaseFilter bpFilter;
+    LOSObjectFilter objFilter;
+    JPH::RayCastResult hit;
+    if (query.CastRay(ray, hit, bpFilter, objFilter)) {
+        result.hit = true;
+        result.distance = hit.mFraction * maxDistance;
+
+        JPH::RVec3 hitPos = start + dir * result.distance;
+        result.hitPoint = Vector3D(static_cast<float>(hitPos.GetX()),
+                                   static_cast<float>(hitPos.GetY()),
+                                   static_cast<float>(hitPos.GetZ()));
+
+        result.bodyId = hit.mBodyID;
+        result.entityId = GetEntityFromBody(hit.mBodyID);
+    }
+
+    return result;
+}
+
 //PhysicsSystem::RaycastResult PhysicsSystem::RaycastGroundOnly(
 //    const Vector3D& origin,
 //    float maxDistance

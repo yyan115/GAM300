@@ -320,6 +320,25 @@ namespace PhysicsSystemWrappers {
         return result.hit ? result.distance : -1.0f;
     }
 
+    // Line-of-sight raycast — only hits solid static world geometry (walls, floors).
+    // Ignores nav mesh layers, debris, chain hitboxes — things that shouldn't block sight.
+    // Usage: local distance = Physics.RaycastLOS(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
+    inline float RaycastLOS(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return -1.0f;
+        }
+
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+
+        auto result = g_PhysicsSystem->RaycastLOS(origin, direction, maxDistance);
+        return result.hit ? result.distance : -1.0f;
+    }
+
     inline std::tuple<bool, float, float, float, float, float, float, float, uint32_t> RaycastFull(
         float originX, float originY, float originZ,
         float dirX, float dirY, float dirZ,

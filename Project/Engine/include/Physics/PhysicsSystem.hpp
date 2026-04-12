@@ -67,6 +67,7 @@ public:
 		Entity entityId{};
 	};
 	RaycastResult Raycast(const Vector3D& origin, const Vector3D& direction, float maxDistance);
+	RaycastResult RaycastLOS(const Vector3D& origin, const Vector3D& direction, float maxDistance);
 	/*RaycastResult RaycastGroundOnly(const Vector3D& origin, float maxDistance);
 	RaycastResult RaycastGroundIgnoreObstacles(const Vector3D& origin,
 		const Vector3D& direction,

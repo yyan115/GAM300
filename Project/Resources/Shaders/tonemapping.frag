@@ -82,7 +82,12 @@ void main()
     // Apply exposure adjustment
     vec3 mapped = hdrColor * exposure;
 
-    if (enableTonemapping)
+    // Only apply tone mapping if enabled AND we have HDR content (values > 1.0).
+    // LDR content (<=1.0) passes through unchanged so pure white stays white
+    // (e.g. splash screen logos). Matches the Android shader behaviour.
+    float maxComponent = max(max(mapped.r, mapped.g), mapped.b);
+
+    if (enableTonemapping && maxComponent > 1.0)
     {
         if (toneMappingMode == 0)
         {

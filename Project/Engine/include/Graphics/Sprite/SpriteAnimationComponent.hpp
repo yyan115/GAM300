@@ -44,6 +44,11 @@ public:
     float editorPreviewTime = 0.0f;  // Separate time for inspector preview
     int editorPreviewFrameIndex = 0;  // Current frame in editor preview
 
+    // Runtime flag — NOT serialized. Tracks whether this entity was active in
+    // hierarchy last frame so SpriteAnimationSystem can restart autoPlay
+    // animations on inactive→active transitions (e.g. popup buttons).
+    bool wasActiveInHierarchy = false;
+
     void Play(const std::string& clipName, bool restartIfSame = false);
     void Stop() { playing = false; }
     void Resume() { playing = true; }

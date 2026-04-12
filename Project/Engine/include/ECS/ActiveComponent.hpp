@@ -18,6 +18,12 @@ struct ActiveComponent
 	REFL_SERIALIZABLE
 	bool isActive = true;  // Entity active state
 
+	// Runtime flag — NOT serialized. Set by ScriptSystem when this entity
+	// transitions from inactive-in-hierarchy to active-in-hierarchy. Cleared
+	// after the same frame's script Update runs. Lets Lua detect reactivation
+	// (e.g. popup buttons that need to reset stale hover sprites).
+	bool justActivated = false;
+
 	ActiveComponent() = default;
 	ActiveComponent(bool active) : isActive(active) {}
 };

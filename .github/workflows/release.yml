@@ -9,6 +9,10 @@ on:
       release_name:
         description: 'Release name (e.g. Milestone 4 - Final Submission)'
         required: true
+      changelog:
+        description: 'Changelog / release notes (supports markdown)'
+        required: false
+        type: string
 
 env:
   VCPKG_COMMIT: 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
@@ -205,6 +209,8 @@ jobs:
           ## ${{ github.event.inputs.release_name }}
 
           **Version:** `${{ github.event.inputs.version }}`
+
+          ${{ github.event.inputs.changelog }}
 
           ### Downloads
           - **Windows** — `Kusane_Setup.exe` (installer)

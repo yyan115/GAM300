@@ -104,23 +104,14 @@ return Component {
             end
 
             -- Follow player movement during the sweep (lunge, jump, stairs, knockback).
-            -- worldPosition is 1-frame stale (TransformSystem runs after scripts).
-            -- Linear extrapolation from the last two reads predicts the current
-            -- position, eliminating the visible lag when jumping or taking stairs.
-            if self._spawnPlayerPos then
+            -- Recompute position from scratch each frame using the world-space offset
+            -- captured at spawn time. This avoids accumulated drift from delta tracking.
+            if self._offsetFromPlayer then
                 local pPos = self._playerTransform.worldPosition
                 local pScale = self._playerTransform.localScale
-                local prev = self._prevPlayerPos or self._spawnPlayerPos
-                local estX = 2 * pPos.x - prev.x
-                local estY = 2 * pPos.y - prev.y
-                local estZ = 2 * pPos.z - prev.z
-                local dx = estX - self._spawnPlayerPos.x
-                local dy = estY - self._spawnPlayerPos.y
-                local dz = estZ - self._spawnPlayerPos.z
-                self._transform.localPosition.x = self._spawnLocalPos.x + dx / pScale.x
-                self._transform.localPosition.y = self._spawnLocalPos.y + dy / pScale.y
-                self._transform.localPosition.z = self._spawnLocalPos.z + dz / pScale.z
-                self._prevPlayerPos = { x = pPos.x, y = pPos.y, z = pPos.z }
+                self._transform.localPosition.x = (pPos.x + self._offsetFromPlayer.x) / pScale.x
+                self._transform.localPosition.y = (pPos.y + self._offsetFromPlayer.y) / pScale.y
+                self._transform.localPosition.z = (pPos.z + self._offsetFromPlayer.z) / pScale.z
             end
 
             local localYaw = self._currentStartRot + sweptAngle
@@ -174,15 +165,13 @@ return Component {
         self._transform.localPosition.y = (daggerPos.y + self.OffsetHeight) / playerScale.y
         self._transform.localPosition.z = (daggerPos.z + combinedOffsetZ) / playerScale.z
 
-        -- Snapshot player position + VFX local position at spawn time so the
-        -- Update loop can keep the VFX glued to the player during the sweep.
+        -- Store world-space offset from player to VFX so Update can recompute
+        -- position from scratch each frame (no accumulated drift).
         local pPos = self._playerTransform.worldPosition
-        self._spawnPlayerPos = { x = pPos.x, y = pPos.y, z = pPos.z }
-        self._prevPlayerPos  = { x = pPos.x, y = pPos.y, z = pPos.z }
-        self._spawnLocalPos  = {
-            x = self._transform.localPosition.x,
-            y = self._transform.localPosition.y,
-            z = self._transform.localPosition.z
+        self._offsetFromPlayer = {
+            x = (daggerPos.x + combinedOffsetX) - pPos.x,
+            y = (daggerPos.y + self.OffsetHeight) - pPos.y,
+            z = (daggerPos.z + combinedOffsetZ) - pPos.z
         }
 
         self.active = true
