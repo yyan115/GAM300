@@ -110,6 +110,7 @@ return Component {
         -- First entry: play narrative
         if event_bus and event_bus.publish then
             event_bus.publish("set_attacks_enabled", false)
+            event_bus.publish("cinematic.targetName", "BossCinematicCamPos")
             event_bus.publish("cinematic.trigger", true)
             event_bus.publish("cinematic.stayDuration", self.NarrativeDuration - self.PanDuration + 1.0)
             event_bus.publish("cinematic.transitionDuration", self.PanDuration)

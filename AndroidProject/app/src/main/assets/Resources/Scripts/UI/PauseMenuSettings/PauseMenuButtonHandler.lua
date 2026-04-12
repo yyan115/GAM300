@@ -134,7 +134,12 @@ return Component {
             return
         end
 
-        local justBecameActive = not self._pageWasActive
+        -- Detect first frame after reactivation. _pageWasActive can't be
+        -- cleared during dormancy (Update stops while entity is inactive),
+        -- so also check the C++ justActivated flag set by ScriptSystem.
+        local ac = Engine.GetEntityByName("PauseMenuUI")
+        local acComp = ac and GetComponent(ac, "ActiveComponent")
+        local justBecameActive = not self._pageWasActive or (acComp and acComp.justActivated)
         self._pageWasActive = true
 
         local pointerPos = Input.GetPointerPosition()

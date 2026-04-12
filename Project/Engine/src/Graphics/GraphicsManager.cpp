@@ -694,9 +694,12 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 		item.shader->setVec3("bloomColor", item.bloomColor);
 	}
 
+	// Per-entity brightness boost
+	item.shader->setFloat("brightnessBoost", item.brightnessBoost);
+
 	// Apply lighting
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
-	if (ecsManager.lightingSystem) 
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (ecsManager.lightingSystem)
 	{
 		ecsManager.lightingSystem->ApplyLighting(*item.shader);
 		ecsManager.lightingSystem->ApplyShadows(*item.shader);
@@ -1793,6 +1796,9 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 
 	// Pass fade opacity to shader — multiplied into final alpha for smooth blending
 	shader->setFloat("u_distanceFadeOpacity", item.distanceFadeOpacity);
+
+	// Per-entity brightness boost (e.g. player stands out against environment)
+	shader->setFloat("brightnessBoost", item.brightnessBoost);
 
 	// Draw the model
 	{

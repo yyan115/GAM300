@@ -27,16 +27,17 @@
 
 // Global state
 static bool engineInitialized = false;
+static bool graphicsResourcesLoaded = false;
 static ANativeWindow* nativeWindow = nullptr;
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_gam300_game_MainActivity_stringFromJNI(JNIEnv* env, jobject /* this */) {
-    std::string hello = "GAM300 Engine Running!";
-    return env->NewStringUTF(hello.c_str());
+Java_com_teammarbles_kusane_MainActivity_stringFromJNI(JNIEnv* env, jobject /* this */) {
+    // std::string hello = "GAM300 Engine Running!";
+    return env->NewStringUTF("Kusane");
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject assetManager, jstring filesDir, jint width, jint height) {
+Java_com_teammarbles_kusane_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject assetManager, jstring filesDir, jint width, jint height) {
     LOGI("Initializing GAM300 Engine: %dx%d", width, height);
 
     if (!engineInitialized) {
@@ -87,44 +88,58 @@ Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject 
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_setSurface(JNIEnv* env, jobject /* this */, jobject surface) {
+Java_com_teammarbles_kusane_MainActivity_setSurface(JNIEnv* env, jobject /* this */, jobject surface) {
     if (surface) {
         nativeWindow = ANativeWindow_fromSurface(env, surface);
         LOGI("Surface set: %p", nativeWindow);
 
-        // Set native window in AndroidPlatform
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform && engineInitialized) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
             androidPlatform->SetNativeWindow(nativeWindow);
 
-            // Initialize graphics context now that we have a surface
+            // Clear any previous quit request so the game loop doesn't
+            // immediately exit on relaunch after Screen.RequestClose().
+            androidPlatform->SetShouldClose(false);
+
             if (androidPlatform->InitializeGraphics()) {
                 LOGI("Graphics initialized successfully");
-                // Now initialize graphics resources (scenes, lighting, etc.)
-                if (Engine::InitializeGraphicsResources()) {
-                    LOGI("Graphics resources initialized successfully");
-                    // Release the OpenGL context now that graphics resources are loaded
-                    androidPlatform->ReleaseContext();
-                    LOGI("OpenGL context released after graphics resource initialization");
+
+                // Only load graphics resources on first launch, not on resume
+                if (!graphicsResourcesLoaded) {
+                    if (Engine::InitializeGraphicsResources()) {
+                        LOGI("Graphics resources initialized successfully");
+                        graphicsResourcesLoaded = true;
+                    } else {
+                        LOGE("Failed to initialize graphics resources");
+                    }
                 } else {
-                    LOGE("Failed to initialize graphics resources");
+                    LOGI("Resuming — graphics resources already loaded");
                 }
+
+                androidPlatform->ReleaseContext();
             } else {
                 LOGE("Failed to initialize graphics");
             }
         }
     } else {
+        // Surface destroyed (app backgrounded). Tear down EGL surface so
+        // InitializeGraphics recreates it with the new window on resume.
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (platform && engineInitialized) {
+            AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+            androidPlatform->DestroySurface();
+        }
         if (nativeWindow) {
             ANativeWindow_release(nativeWindow);
             nativeWindow = nullptr;
         }
-        LOGI("Surface cleared");
+        LOGI("Surface cleared, EGL surface destroyed");
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_renderFrame(JNIEnv* env, jobject /* this */) {
+Java_com_teammarbles_kusane_MainActivity_renderFrame(JNIEnv* env, jobject /* this */) {
     if (engineInitialized) {
         //LOGI("Starting render frame");
 
@@ -150,7 +165,7 @@ Java_com_gam300_game_MainActivity_renderFrame(JNIEnv* env, jobject /* this */) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */) {
+Java_com_teammarbles_kusane_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */) {
     LOGI("Destroying GAM300 Engine");
     
     if (nativeWindow) {
@@ -163,12 +178,13 @@ Java_com_gam300_game_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */)
         GameManager::Shutdown();
         Engine::Shutdown();
         engineInitialized = false;
+        graphicsResourcesLoaded = false;
         LOGI("Engine and GameManager destroyed");
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_onTouchEventWithId(JNIEnv* env, jobject /* this */, jint action, jint pointerId, jfloat x, jfloat y) {
+Java_com_teammarbles_kusane_MainActivity_onTouchEventWithId(JNIEnv* env, jobject /* this */, jint action, jint pointerId, jfloat x, jfloat y) {
     if (engineInitialized) {
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform) {
@@ -179,28 +195,30 @@ Java_com_gam300_game_MainActivity_onTouchEventWithId(JNIEnv* env, jobject /* thi
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_gam300_game_MainActivity_shouldQuit(JNIEnv* env, jobject /* this */) {
+Java_com_teammarbles_kusane_MainActivity_shouldQuit(JNIEnv* env, jobject /* this */) {
     return static_cast<jboolean>(WindowManager::ShouldClose());
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_pauseAudio(JNIEnv* env, jobject /* this */) {
+Java_com_teammarbles_kusane_MainActivity_pauseAudio(JNIEnv* env, jobject /* this */) {
     if (engineInitialized) {
-        AudioManager::GetInstance().SetGlobalPaused(true);
-        LOGI("Audio paused (app backgrounded)");
+        FMOD_SYSTEM* sys = AudioManager::GetInstance().GetFMODSystem();
+        if (sys) FMOD_System_MixerSuspend(sys);
+        LOGI("Audio mixer suspended (app backgrounded)");
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_resumeAudio(JNIEnv* env, jobject /* this */) {
+Java_com_teammarbles_kusane_MainActivity_resumeAudio(JNIEnv* env, jobject /* this */) {
     if (engineInitialized) {
-        AudioManager::GetInstance().SetGlobalPaused(false);
-        LOGI("Audio resumed (app foregrounded)");
+        FMOD_SYSTEM* sys = AudioManager::GetInstance().GetFMODSystem();
+        if (sys) FMOD_System_MixerResume(sys);
+        LOGI("Audio mixer resumed (app foregrounded)");
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_onKeyEvent(JNIEnv* env, jobject /* this */, jint keyCode, jint action) {
+Java_com_teammarbles_kusane_MainActivity_onKeyEvent(JNIEnv* env, jobject /* this */, jint keyCode, jint action) {
     if (engineInitialized) {
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform) {

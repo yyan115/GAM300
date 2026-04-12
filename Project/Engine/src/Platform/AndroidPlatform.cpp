@@ -24,11 +24,12 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Input/AndroidInputManager.h"
 #include "Settings/GameSettings.hpp"
 
-AndroidPlatform::AndroidPlatform() 
+AndroidPlatform::AndroidPlatform()
     : window(nullptr)
     , display(EGL_NO_DISPLAY)
     , context(EGL_NO_CONTEXT)
     , surface(EGL_NO_SURFACE)
+    , savedConfig(nullptr)
     , windowWidth(0)
     , windowHeight(0)
     , shouldClose(false)
@@ -74,6 +75,16 @@ bool AndroidPlatform::ShouldClose() {
 
 void AndroidPlatform::SetShouldClose(bool close) {
     shouldClose = close;
+}
+
+void AndroidPlatform::DestroySurface() {
+    if (display != EGL_NO_DISPLAY) {
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    }
+    if (surface != EGL_NO_SURFACE) {
+        eglDestroySurface(display, surface);
+        surface = EGL_NO_SURFACE;
+    }
 }
 
 void AndroidPlatform::SwapBuffers() {
@@ -175,9 +186,20 @@ bool AndroidPlatform::InitializeGraphics() {
         return true; // Don't fail - just defer initialization
     }
 
-    // Check if already initialized
+    // Fully initialized — nothing to do
     if (display != EGL_NO_DISPLAY && context != EGL_NO_CONTEXT && surface != EGL_NO_SURFACE) {
-        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL already initialized");
+        return true;
+    }
+
+    // Resume case: display + context still alive but surface was destroyed.
+    // Recreate the EGL surface with the new native window.
+    if (display != EGL_NO_DISPLAY && context != EGL_NO_CONTEXT && surface == EGL_NO_SURFACE && savedConfig) {
+        surface = eglCreateWindowSurface(display, savedConfig, window, nullptr);
+        if (surface == EGL_NO_SURFACE) return false;
+        eglMakeCurrent(display, surface, surface, context);
+        eglQuerySurface(display, surface, EGL_WIDTH, &windowWidth);
+        eglQuerySurface(display, surface, EGL_HEIGHT, &windowHeight);
+        glViewport(0, 0, windowWidth, windowHeight);
         return true;
     }
 
@@ -213,6 +235,7 @@ bool AndroidPlatform::InitializeGraphics() {
         //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to choose EGL config");
         return false;
     }
+    savedConfig = config;
 
     // Create EGL context
     const EGLint context_attribs[] = {

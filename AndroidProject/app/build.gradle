@@ -3,12 +3,12 @@ plugins {
 }
 
 android {
-    namespace 'com.gam300.game'
+    namespace 'com.teammarbles.kusane'
     compileSdk 36
     ndkVersion "29.0.14033849"
 
     defaultConfig {
-        applicationId "com.gam300.game"
+        applicationId "com.teammarbles.kusane"
         minSdk 33
         targetSdk 36
         versionCode 1
@@ -63,32 +63,6 @@ android {
         viewBinding true
     }
 
-    // Disable dex layout optimization that causes INSTALL_BASELINE_PROFILE_FAILED
-    experimentalProperties["android.experimental.art-profile-r8-rewriting"] = false
-    experimentalProperties["android.experimental.r8.dex-startup-optimization"] = false
-}
-
-// Nuke all baseline profile / dex metadata artifacts after every build so
-// Android Studio cannot send them to the device during deploy.
-tasks.configureEach { task ->
-    if (task.name.startsWith('assemble') || task.name.startsWith('install')) {
-        task.doLast {
-            def dirs = [
-                file("${buildDir}/intermediates/apk/release/baselineProfiles"),
-                file("${buildDir}/intermediates/binary_art_profile"),
-                file("${buildDir}/intermediates/binary_art_profile_metadata"),
-                file("${buildDir}/intermediates/dex_metadata_directory"),
-                file("${buildDir}/intermediates/merged_art_profile"),
-                file("${buildDir}/intermediates/combined_art_profile"),
-            ]
-            dirs.each { d ->
-                if (d.exists()) {
-                    d.deleteDir()
-                    println "Deleted: ${d.name}"
-                }
-            }
-        }
-    }
 }
 
 // Task to copy resources directly via Gradle (more reliable than CMake)
@@ -125,6 +99,18 @@ tasks.configureEach { task ->
         //task.dependsOn copyResources
     //}
 //}
+
+// Disable all baseline profile / art profile compilation tasks.
+// AGP extracts profiles from AAR dependencies (appcompat, material) and compiles
+// them into .dm files that Android Studio pushes to the device on deploy.
+// The device rejects them (INSTALL_BASELINE_PROFILE_FAILED). A C++ game engine
+// gets zero benefit from Java baseline profiles, so disable them entirely.
+tasks.configureEach { task ->
+    if (task.name.contains('ArtProfile') || task.name.contains('artProfile') ||
+        task.name.contains('BaselineProfile') || task.name.contains('baselineProfile')) {
+        task.enabled = false
+    }
+}
 
 dependencies {
 

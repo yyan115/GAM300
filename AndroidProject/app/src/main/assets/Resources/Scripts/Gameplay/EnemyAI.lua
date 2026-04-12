@@ -501,11 +501,8 @@ return Component {
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if not payload then return end
                 if payload.rootName ~= self._entityName then return end
-                --print("[EnemyAI] chain.endpoint_hit_entity received")
                 self._animator:SetTrigger("Hooked")
-                -- Tell the chain UI which kind of target was just hooked so the
-                -- chain icon can switch to Pull (grounded) or Slam (flying)
-                -- immediately, not only after the player presses again.
+                -- Immediately tell chain button icon to show Pull (grounded) or Slam (flying)
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.hooked_target_type", {
                         entityId = self.entityId,
@@ -577,28 +574,6 @@ return Component {
 
         -- Freeze movement during cinematic
         if self._frozenBycinematic then return end
-
-        -- Dead flying enemies: fall to the ground during death animation.
-        if self.dead and self:IsFlying() and not self._deathLanded then
-            local dtF = dt or 0
-            if dtF > 1.0 then dtF = dtF * 0.001 end
-            if dtF > 0.05 then dtF = 0.05 end
-            if dtF > 0 then
-                self._deathFallVel = (self._deathFallVel or 0) + 12.0 * dtF
-                local x, y, z = self:GetPosition()
-                local groundY = self._spawnY or 0
-                if Nav and Nav.GetGroundY then
-                    local gy = Nav.GetGroundY(self.entityId)
-                    if gy then groundY = gy end
-                end
-                local newY = y - self._deathFallVel * dtF
-                if newY <= groundY then
-                    newY = groundY
-                    self._deathLanded = true
-                end
-                self:SetPosition(x, newY, z)
-            end
-        end
 
         -- When player respawns, teleport the enemy back to its initial position.
         if self._playerRespawned and self._initialPos then
@@ -1491,15 +1466,6 @@ return Component {
             if g ~= nil then gy = g end
         end
 
-        -- Smooth ground Y to prevent jitter at nav-cell boundaries
-        if self._smoothGroundY == nil then
-            self._smoothGroundY = gy
-        else
-            local alpha = math.min(1.0, 4.0 * dtSec)  -- ~4 Hz smoothing
-            self._smoothGroundY = self._smoothGroundY + (gy - self._smoothGroundY) * alpha
-        end
-        gy = self._smoothGroundY
-
         -- bobbing target
         self._hoverT = (self._hoverT or 0) + dtSec
         local amp  = tonumber(self.HoverBobAmp)  or 0
@@ -1552,25 +1518,6 @@ return Component {
         -- clamp to avoid teleporting
         local maxStep = 0.25
         if step > maxStep then step = maxStep end
-
-        -- Wall collision: raycast in movement direction before moving
-        if Physics and Physics.Raycast then
-            local _, ey, _ = self:GetPosition()
-            local castY = ey  -- cast at hover height
-            local wallMargin = 0.4
-            local hitDist = Physics.Raycast(
-                ex, castY, ez,
-                dirX, 0, dirZ,
-                step + wallMargin)
-            if hitDist >= 0 and hitDist < (step + wallMargin) then
-                step = math.max(0, hitDist - wallMargin)
-            end
-        end
-
-        if step < 1e-4 then
-            self:FaceDirection(dirX, dirZ)
-            return
-        end
 
         -- Keep current Y (hover handled separately)
         local _, y, _ = self:GetPosition()
@@ -1782,47 +1729,6 @@ return Component {
 
         local dx, dz = (px - ex), (pz - ez)
         return (dx*dx + dz*dz) <= (range * range)
-    end,
-
-    -- Raycast-based line-of-sight check. Returns false if a wall/obstacle
-    -- blocks the straight line between this enemy and the player.
-    HasLineOfSight = function(self)
-        if not (Physics and Physics.Raycast) then return true end
-
-        local ex, ey, ez = self:GetPosition()
-        if ex == nil then return false end
-
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
-        end
-        if not tr then return false end
-
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return false end
-        local px, py, pz = pp[1], pp[2], pp[3]
-
-        -- Cast from enemy chest height toward player chest height
-        local srcY = ey + 1.0
-        local tgtY = py + 0.8
-        local dx = px - ex
-        local dy = tgtY - srcY
-        local dz = pz - ez
-        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-        if dist < 0.8 then return true end
-
-        local dirX, dirY, dirZ = dx / dist, dy / dist, dz / dist
-
-        -- Offset origin forward to avoid hitting own collider
-        local off = 0.5
-        local hitDist = Physics.Raycast(
-            ex + dirX * off, srcY + dirY * off, ez + dirZ * off,
-            dirX, dirY, dirZ, dist - off)
-
-        if hitDist < 0 then return true end                    -- nothing hit = clear
-        if hitDist >= (dist - off - 1.0) then return true end  -- hit near player = clear
-        return false                                            -- wall before player
     end,
 
     GetEnemyPosXZ = function(self)

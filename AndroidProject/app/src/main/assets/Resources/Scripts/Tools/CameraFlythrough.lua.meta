@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00424072204fe763-0004ce84de000001",
+        "source": "../../Resources/Scripts/Tools/CameraFlythrough.lua",
+        "compiled": "../../Resources/Scripts/Tools/CameraFlythrough.lua",
+        "android_compiled": "Resources/Scripts/Tools/CameraFlythrough.lua"
+    }
+}

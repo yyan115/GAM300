@@ -2633,6 +2633,8 @@ Resources/Scripts/template/ui_healthbar.lua
 Resources/Scripts/template/ui_healthbar.lua.meta
 Resources/Scripts/test_audio.lua
 Resources/Scripts/test_audio.lua.meta
+Resources/Scripts/Tools/CameraFlythrough.lua
+Resources/Scripts/Tools/CameraFlythrough.lua.meta
 Resources/Scripts/UI/AndroidButtonAnim.lua
 Resources/Scripts/UI/AndroidButtonAnim.lua.meta
 Resources/Scripts/UI/AndroidChainButtonAnim.lua
@@ -2731,6 +2733,10 @@ Resources/Shaders/bloom.frag
 Resources/Shaders/bloom.meta
 Resources/Shaders/bloom.shader
 Resources/Shaders/bloom.vert
+Resources/Shaders/bloomandroid.frag
+Resources/Shaders/bloomandroid.meta
+Resources/Shaders/bloomandroid.shader
+Resources/Shaders/bloomandroid.vert
 Resources/Shaders/blur.frag
 Resources/Shaders/blur.meta
 Resources/Shaders/blur.shader

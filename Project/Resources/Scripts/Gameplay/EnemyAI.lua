@@ -501,8 +501,14 @@ return Component {
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if not payload then return end
                 if payload.rootName ~= self._entityName then return end
-                --print("[EnemyAI] chain.endpoint_hit_entity received")
                 self._animator:SetTrigger("Hooked")
+                -- Immediately tell chain button icon to show Pull (grounded) or Slam (flying)
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.hooked_target_type", {
+                        entityId = self.entityId,
+                        isFlying = self:IsFlying(),
+                    })
+                end
             end)
 
             self._chainHookSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)

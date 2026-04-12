@@ -105,6 +105,11 @@ return Component {
                 self.transitionDuration = transitionDuration
                 --print("[CinematicCamera] transitionDuration set to " .. tostring(transitionDuration) .. " via event")
             end)
+
+            -- Allow external scripts to override the camera target for the next trigger
+            self._cinematicTargetNameSub = event_bus.subscribe("cinematic.targetName", function(name)
+                self._overrideTargetName = name
+            end)
         end
 
         --print("[CinematicCamera] Initialized")
@@ -121,19 +126,25 @@ return Component {
                 self._stayTimer = 0.0
                 self._phase = "transition"
 
-                -- Cycle to the next position name (1-based array)
-                local names = self.cinematicPositionNames
-                local idx   = self._cinematicPositionIndex
-                local name  = names and names[idx]
-                if name and name ~= "" then
-                    self.targetTransformName = name
-                    --print("[CinematicCamera] Camera target set to: " .. name)
-                end
-                if names then
-                    local nextIdx = idx + 1
-                    if names[nextIdx] == nil then nextIdx = 1 end
-                    self._cinematicPositionIndex = nextIdx
-                    self.cinematicPositionIndex  = nextIdx  -- keep editor field in sync
+                -- Use override target name if provided, otherwise cycle
+                if self._overrideTargetName and self._overrideTargetName ~= "" then
+                    self.targetTransformName = self._overrideTargetName
+                    self._overrideTargetName = nil  -- consume it
+                else
+                    -- Cycle to the next position name (1-based array)
+                    local names = self.cinematicPositionNames
+                    local idx   = self._cinematicPositionIndex
+                    local name  = names and names[idx]
+                    if name and name ~= "" then
+                        self.targetTransformName = name
+                        --print("[CinematicCamera] Camera target set to: " .. name)
+                    end
+                    if names then
+                        local nextIdx = idx + 1
+                        if names[nextIdx] == nil then nextIdx = 1 end
+                        self._cinematicPositionIndex = nextIdx
+                        self.cinematicPositionIndex  = nextIdx  -- keep editor field in sync
+                    end
                 end
 
                 if event_bus and event_bus.publish then

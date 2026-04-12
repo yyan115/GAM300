@@ -132,6 +132,9 @@ uniform bool useInstancing;
 uniform float bloomIntensity;
 uniform vec3 bloomColor;
 
+// Per-entity brightness multiplier (e.g. player = 1.35)
+uniform float brightnessBoost;
+
 // ============================================================================
 // Helper functions for materials
 // ============================================================================
@@ -482,6 +485,12 @@ void main()
     } else {
         result += material.emissive;
     }
+
+    // Minimum lighting floor — no surface should ever be completely black.
+    result = max(result, albedo * 0.05);
+
+    // Per-entity brightness boost (e.g. player character)
+    result *= brightnessBoost;
 
     float finalAlpha = material.opacity * u_distanceFadeOpacity;
     if (hasOpacityMap) {

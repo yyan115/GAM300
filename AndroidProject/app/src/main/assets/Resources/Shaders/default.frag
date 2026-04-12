@@ -130,6 +130,9 @@ uniform float u_distanceFadeOpacity;
 uniform float bloomIntensity;
 uniform vec3 bloomColor;
 
+// Per-entity brightness multiplier (e.g. player = 1.35)
+uniform float brightnessBoost;
+
 // Environment reflections
 uniform sampler2D envMap;
 uniform bool hasEnvMap;
@@ -479,6 +482,11 @@ void main()
         result += material.emissive;
     }
 
+    // Minimum lighting floor — no surface should ever be completely black.
+    // Preserves surface colour but guarantees a small amount of visibility
+    // even in areas with zero direct/indirect light.
+    result = max(result, albedo * 0.05);
+
     // Environment reflections (skybox equirectangular map)
     if (hasEnvMap) {
         vec3 reflectDir = reflect(-viewDir, norm);
@@ -494,6 +502,9 @@ void main()
         float reflectStrength = mix(fresnel * 0.3, fresnel, metallic) * (1.0 - roughness * 0.9);
         result = mix(result, envColor, reflectStrength * envReflectionIntensity);
     }
+
+    // Per-entity brightness boost (e.g. player character)
+    result *= brightnessBoost;
 
     float finalAlpha = material.opacity * u_distanceFadeOpacity;
     if (material.hasOpacityMap) {

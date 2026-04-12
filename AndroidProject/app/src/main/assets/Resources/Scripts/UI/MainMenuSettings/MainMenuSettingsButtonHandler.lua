@@ -116,8 +116,10 @@ return Component {
     Update = function(self, dt)
         local isActive = self._settingsUIActive and self._settingsUIActive.isActive
 
-        -- Rising edge: SettingsUI just became visible
-        if isActive and not self._wasSettingsActive then
+        -- Rising edge: SettingsUI just became visible. Also check C++ justActivated
+        -- flag since _wasSettingsActive can't be cleared during dormancy.
+        local justActivated = self._settingsUIActive and self._settingsUIActive.justActivated
+        if isActive and (not self._wasSettingsActive or justActivated) then
             self._isCloseHovered = false
             self._isResetHovered = false
             self:_resetHoverVisuals()

@@ -48,9 +48,9 @@ return Component {
     Start = function(self)
         local playerEntityId = Engine.GetEntityByName("Player")
         local daggerEntityId = Engine.GetEntityByName("LowPolyFeatherChain")
+        local rootEntityId   = Engine.GetEntityByName("PlayerSlashVFX")
 
         if not playerEntityId or not daggerEntityId then
-            --print("[SlashVFX] ERROR: Player or Dagger not found!")
             return
         end
 
@@ -60,23 +60,43 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._playerAnimation = GetComponent(playerEntityId, "AnimationComponent")
         self.model = self:GetComponent("ModelRenderComponent")
-        
+
+        -- Root entity transform (parent of this child) — we move it to the player
+        if rootEntityId then
+            self._rootTransform = GetComponent(rootEntityId, "Transform")
+        end
+        -- Cache parent scale for offset math
+        self._parentScale = (self._rootTransform and self._rootTransform.localScale.x) or 1.0
+
         -- Runtime State
         self.active = false
         self._hasTriggered = false
         self._playerYawQuat = {w=1, x=0, y=0, z=0}
 
         -- Initial Visibility
-        if self.model then 
-            ModelRenderComponent.SetVisible(self.model, false) 
+        if self.model then
+            ModelRenderComponent.SetVisible(self.model, false)
         end
     end,
     
     Update = function(self, dt)
+        -- Move root entity to player position every frame.
+        -- This makes children (this entity) move with the player automatically
+        -- via the transform hierarchy — no manual tracking needed.
+        if self._rootTransform and _G.player_cc then
+            local pp = CharacterController.GetPosition(_G.player_cc)
+            if pp then
+                self._rootTransform.localPosition.x = pp.x
+                self._rootTransform.localPosition.y = pp.y
+                self._rootTransform.localPosition.z = pp.z
+                self._rootTransform.isDirty = true
+            end
+        end
+
         local currentState = self._playerAnimation:GetCurrentState()
         local cleanAttackState = self.AttackState:gsub('"', '')
         local isAttacking = currentState == cleanAttackState
-        
+
         local normalizedTime = self._playerAnimation:GetNormalizedTime()
 
         if isAttacking then
@@ -91,7 +111,7 @@ return Component {
         else
             self._hasTriggered = false
         end
-        
+
         -- VFX Sweep Logic
         if self.active then
             self.age = self.age + dt
@@ -101,17 +121,6 @@ return Component {
                 self.active = false
                 if self.model then ModelRenderComponent.SetVisible(self.model, false) end
                 return
-            end
-
-            -- Follow player movement during the sweep (lunge, jump, stairs, knockback).
-            -- Recompute position from scratch each frame using the world-space offset
-            -- captured at spawn time. This avoids accumulated drift from delta tracking.
-            if self._offsetFromPlayer then
-                local pPos = self._playerTransform.worldPosition
-                local pScale = self._playerTransform.localScale
-                self._transform.localPosition.x = (pPos.x + self._offsetFromPlayer.x) / pScale.x
-                self._transform.localPosition.y = (pPos.y + self._offsetFromPlayer.y) / pScale.y
-                self._transform.localPosition.z = (pPos.z + self._offsetFromPlayer.z) / pScale.z
             end
 
             local localYaw = self._currentStartRot + sweptAngle
@@ -130,13 +139,13 @@ return Component {
         local targetEndRot = endRot or self.EndRot
         self._currentSpeed = speed or self.Speed
         self._arcLength = math.abs(targetEndRot - self._currentStartRot)
-        
+
         if targetEndRot < self._currentStartRot then
             self._currentSpeed = -math.abs(self._currentSpeed)
         else
             self._currentSpeed = math.abs(self._currentSpeed)
         end
-        
+
         local playerRot = self._playerTransform.localRotation
         local q = playerRot
 
@@ -158,25 +167,23 @@ return Component {
         local playerYawRad = math.atan(forwardX, forwardZ)
         self._playerYawQuat = eulerToQuat(0, math.deg(playerYawRad), 0)
 
-        local daggerPos = self._daggerTransform.worldPosition
-        local playerScale = self._playerTransform.localScale
+        -- Dagger offset relative to player (both stale → staleness cancels)
+        local daggerPos   = self._daggerTransform.worldPosition
+        local playerWorld = self._playerTransform.worldPosition
+        local daggerRelX  = daggerPos.x - playerWorld.x
+        local daggerRelY  = daggerPos.y - playerWorld.y
+        local daggerRelZ  = daggerPos.z - playerWorld.z
 
-        self._transform.localPosition.x = (daggerPos.x + combinedOffsetX) / playerScale.x
-        self._transform.localPosition.y = (daggerPos.y + self.OffsetHeight) / playerScale.y
-        self._transform.localPosition.z = (daggerPos.z + combinedOffsetZ) / playerScale.z
-
-        -- Store world-space offset from player to VFX so Update can recompute
-        -- position from scratch each frame (no accumulated drift).
-        local pPos = self._playerTransform.worldPosition
-        self._offsetFromPlayer = {
-            x = (daggerPos.x + combinedOffsetX) - pPos.x,
-            y = (daggerPos.y + self.OffsetHeight) - pPos.y,
-            z = (daggerPos.z + combinedOffsetZ) - pPos.z
-        }
+        -- Child local position = offset from player / parent scale
+        -- Root is already at player position, so this is just the small offset
+        local ps = self._parentScale
+        self._transform.localPosition.x = (daggerRelX + combinedOffsetX) / ps
+        self._transform.localPosition.y = (daggerRelY + self.OffsetHeight) / ps
+        self._transform.localPosition.z = (daggerRelZ + combinedOffsetZ) / ps
 
         self.active = true
         self.age = 0
-        
+
         if self.model then
             ModelRenderComponent.SetVisible(self.model, true)
         end

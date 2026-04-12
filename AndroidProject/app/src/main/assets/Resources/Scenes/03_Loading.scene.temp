@@ -340,6 +340,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -497,6 +501,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -715,6 +723,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -748,7 +760,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 532.722
+                                    "data": 510
                                 },
                                 {
                                     "type": "float",
@@ -765,7 +777,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1100
+                                    "data": 1200
                                 },
                                 {
                                     "type": "float",
@@ -933,6 +945,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -1034,6 +1050,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -1258,6 +1278,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -1505,6 +1529,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -1551,7 +1579,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 0.001
                                 },
                                 {
                                     "type": "float",
@@ -1729,6 +1757,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -1976,6 +2008,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -2063,6 +2099,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },

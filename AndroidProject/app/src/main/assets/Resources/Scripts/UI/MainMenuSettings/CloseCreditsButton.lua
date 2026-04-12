@@ -33,8 +33,11 @@ return Component {
         -- Check current active state
         local isActive = self._creditsUIActive and self._creditsUIActive.isActive
 
-        -- Detect rising edge (CreditsUI just became active) - reset state
-        if isActive and not self._wasCreditsActive then
+        -- Detect rising edge (CreditsUI just became active) - reset state.
+        -- Also check justActivated since _wasCreditsActive can't be cleared during dormancy.
+        local myAC = self:GetComponent("ActiveComponent")
+        local justActivated = myAC and myAC.justActivated
+        if isActive and (not self._wasCreditsActive or justActivated) then
             if self._button then
                 self._button.interactable = true
             end

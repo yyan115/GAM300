@@ -340,6 +340,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -558,6 +562,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -776,6 +784,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -994,6 +1006,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }
@@ -1081,6 +1097,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -1311,6 +1331,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 }

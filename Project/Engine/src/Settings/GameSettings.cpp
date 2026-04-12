@@ -29,7 +29,7 @@ void GameSettingsManager::Initialize() {
     m_defaults.bgmVolume = 1.0f;
     m_defaults.sfxVolume = 1.0f;
     m_defaults.gamma = 2.2f;
-    m_defaults.exposure = 1.0f;
+    m_defaults.exposure = 1.3f;
     m_defaults.toneMappingMode = 2;
     m_defaults.vsync = true;
     m_defaults.fullscreen = false;
@@ -245,6 +245,7 @@ void GameSettingsManager::ApplySettings() {
     auto* hdr = pm.GetHDREffect();
     if (hdr) {
         hdr->SetGamma(m_settings.gamma);
+        hdr->SetExposure(m_settings.exposure);
         hdr->SetToneMappingMode(static_cast<HDREffect::ToneMappingMode>(m_settings.toneMappingMode));
     }
 

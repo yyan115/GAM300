@@ -30,6 +30,7 @@ private:
     EGLDisplay display;
     EGLContext context;
     EGLSurface surface;
+    EGLConfig  savedConfig;
     int windowWidth, windowHeight;
     bool shouldClose;
     bool isFocused;
@@ -88,6 +89,7 @@ public:
     // Android-specific methods
     ENGINE_API void SetNativeWindow(ANativeWindow* nativeWindow);
     ENGINE_API void SetAssetManager(AAssetManager* manager);
+    ENGINE_API void DestroySurface();
     ENGINE_API AAssetManager* GetAssetManager() const { return assetManager; }
     ENGINE_API void SetWritablePath(const std::string& path) { writablePath = path; }
     std::string GetWritablePath() override { return writablePath; }

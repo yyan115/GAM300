@@ -220,6 +220,13 @@ void ModelSystem::Update()
             }
         }
 
+        // Brighten the player model so it pops against the environment
+        if (ecsManager.HasComponent<TagComponent>(entity)) {
+            static int tagPlayer = TagManager::GetInstance().GetTagIndex("Player");
+            if (ecsManager.GetComponent<TagComponent>(entity).tagIndex == tagPlayer)
+                modelRenderItem->brightnessBoost = 1.35f;
+        }
+
         // Tag items on excluded layers for deferred rendering
         uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
         if (exMask != 0) {

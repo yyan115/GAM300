@@ -178,6 +178,7 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
             batch->GetShader()->setVec3("cameraPos", cameraPos);
             batch->GetShader()->setBool("useInstancing", true);
             batch->GetShader()->setBool("hasBones", false);
+            batch->GetShader()->setFloat("brightnessBoost", 1.0f);
 
             // Apply lighting on shader switch
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();

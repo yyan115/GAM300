@@ -7,7 +7,7 @@
 HDREffect::HDREffect()
     : PostProcessEffect("HDR Tone Mapping"),
     shader(nullptr),
-    exposure(1.0f),
+    exposure(1.3f),
     gamma(2.2f),
     toneMappingMode(ToneMappingMode::REINHARD)
 {

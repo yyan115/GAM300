@@ -1,4 +1,4 @@
-package com.gam300.game;
+package com.teammarbles.kusane;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
@@ -158,6 +158,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         engineReady = true;
 
+        // Resume audio here (not in onResume, where engineReady is still false)
+        resumeAudio();
+
         // Start game loop thread
         if (gameThread == null || !gameThread.isAlive()) {
             gameThread = new GameThread();
@@ -196,9 +199,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "MainActivity onResume");
-        if (engineReady) {
-            resumeAudio();
-        }
+        // Audio resume moved to surfaceChanged — engineReady is still false here
     }
 
     @Override

@@ -87,7 +87,8 @@ return Component {
         CandleLightUpDelay = 0.5,
         CandleLightUpInterval = 0.3,
         StationaryCinematicDuration = 3.0,
-        PanDuration = 0.0,
+        PanDuration = 1.5,
+        CameraTargetName = "CandleCameraTarget",
     },
 
     Awake = function(self)
@@ -97,6 +98,7 @@ return Component {
         self._currentLightUpDelay = 0.0
         self._currentInterval = 0.0
         self._currentPairIndex = 0
+        self._cinematicStarted = false
         self._currentCinematicDuration = 0.0
     end,
 
@@ -148,8 +150,8 @@ return Component {
             end
         end
 
-        -- Phase 3: End camera cinematic
-        if self._currentCinematicDuration < self.StationaryCinematicDuration + self.PanDuration then
+        -- Phase 3: Re-enable attacks after cinematic duration elapses
+        if self._cinematicStarted and self._currentCinematicDuration < self.StationaryCinematicDuration + self.PanDuration then
             self._currentCinematicDuration = self._currentCinematicDuration + dt
             if self._currentCinematicDuration >= self.StationaryCinematicDuration + self.PanDuration then
                 if event_bus and event_bus.publish then
@@ -179,9 +181,15 @@ return Component {
 
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
             self._beginLightUpDelay = true
+            self._cinematicStarted = true
+            self._currentCinematicDuration = 0.0
 
             if event_bus and event_bus.publish then
                 event_bus.publish("set_attacks_enabled", false)
+                -- Tell the cinematic camera to look at the candles
+                if self.CameraTargetName and self.CameraTargetName ~= "" then
+                    event_bus.publish("cinematic.targetName", self.CameraTargetName)
+                end
                 event_bus.publish("cinematic.trigger", true)
                 event_bus.publish("cinematic.stayDuration", self.StationaryCinematicDuration)
                 event_bus.publish("cinematic.transitionDuration", self.PanDuration)

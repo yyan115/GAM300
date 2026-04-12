@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0034ff3938d8ce2d-0004cec2d2000001",
+        "source": "../../Resources/Shaders/bloomandroid",
+        "compiled": "../../Resources/Shaders/bloomandroid.shader"
+    }
+}
