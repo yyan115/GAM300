@@ -520,6 +520,12 @@ return Component {
                 _G.event_bus.publish("request_player_forward", true)
                 _G.event_bus.publish("chain.aim_camera", {active = true})
             end
+            -- Android: the same finger that is holding the chain button should
+            -- now also drive camera drag so the player can swipe to aim without
+            -- releasing the button. No-op on desktop.
+            if Input and Input.PromoteActionToDrag then
+                pcall(function() Input.PromoteActionToDrag("ChainAttack") end)
+            end
         elseif len > 1e-4 and not isExt and isAttached then
             if self._hookedIsThrowable then
                 -- Throwable hooked: never enter length-adjust mode.

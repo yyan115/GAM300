@@ -62,9 +62,20 @@ return Component {
         local inputX, inputY = mc[1], mc[2]
         if not inputX or not inputY then return end
 
-        -- Suppress hover when any overlay is open
+        -- Suppress hover when any overlay is open. Before bailing out, clear
+        -- any stale highlight so the button doesn't linger in its hover state
+        -- (or snap back into hover) when we eventually return to the main menu.
         for _, state in ipairs(self.UIState) do
-            if state.component and state.component.isActive then return end
+            if state.component and state.component.isActive then
+                if self.lastState ~= nil then
+                    for _, data in ipairs(self.buttonBounds) do
+                        if data.spriteComponent then data.spriteComponent.isVisible = false end
+                        applyTextColor(data.textComponent, NORMAL_TEXT_COLOR)
+                    end
+                    self.lastState = nil
+                end
+                return
+            end
         end
 
         self._lockedState = false

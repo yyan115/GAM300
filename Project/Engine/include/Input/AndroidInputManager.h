@@ -38,6 +38,7 @@ public:
 
     bool IsDragging() override;
     glm::vec2 GetDragDelta() override;
+    void PromoteActionToDrag(const std::string& action) override;
 
     bool IsPointerPressed() override;
     bool IsPointerJustPressed() override;

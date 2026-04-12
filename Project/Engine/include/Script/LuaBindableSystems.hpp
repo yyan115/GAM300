@@ -139,6 +139,13 @@ namespace InputWrappers {
         return Vector2D(delta.x, delta.y);
     }
 
+    // Route a currently-held UI button's finger onto camera drag (Android aim modes).
+    // No-op on desktop.
+    inline void PromoteActionToDrag(const std::string& action) {
+        if (!g_inputManager) return;
+        g_inputManager->PromoteActionToDrag(action);
+    }
+
     // ========== Full Touch System ==========
 
     // Convert phase enum to string for Lua

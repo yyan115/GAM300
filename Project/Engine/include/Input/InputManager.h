@@ -112,6 +112,19 @@ public:
      */
     virtual glm::vec2 GetDragDelta() = 0;
 
+    /**
+     * @brief Promote a currently-pressed entity action touch to also drive camera drag (Android)
+     *
+     * When a UI button is pressed on Android, its touch is marked "handled" and does
+     * NOT contribute to camera drag. Some interactions (e.g. chain aim mode) want the
+     * same finger that is holding the button to keep holding the button AND swipe the
+     * camera. Calling this function promotes that finger to be the drag touch until
+     * it lifts. The action remains pressed.
+     *
+     * Desktop: no-op.
+     */
+    virtual void PromoteActionToDrag(const std::string& /*action*/) {}
+
     // ========== Pointer Abstraction (Scene UI Buttons) ==========
 
     /**

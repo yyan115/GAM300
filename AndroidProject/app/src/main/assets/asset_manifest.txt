@@ -40,7 +40,6 @@ Resources/Animations/Enemy/Enemy@Walk.mesh
 Resources/Animations/Enemy/Flying/KarasuFlying@Death.fbx
 Resources/Animations/Enemy/Flying/KarasuFlying@Death.fbx.meta
 Resources/Animations/Enemy/Flying/KarasuFlying@Death.mesh
-Resources/Animations/Enemy/Flying/KarasuFlying@Fall.mesh
 Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.fbx
 Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.fbx.meta
 Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.mesh
@@ -117,17 +116,11 @@ Resources/Animations/Enemy@AttackScratch.mesh
 Resources/Animations/Enemy@AttackThrow.mesh
 Resources/Animations/Enemy@Death.mesh
 Resources/Animations/Enemy@Hurt.mesh
-Resources/Animations/Enemy@Hurt1.mesh
 Resources/Animations/Enemy@Hurt2.mesh
 Resources/Animations/Enemy@Hurt3.mesh
 Resources/Animations/Enemy@Idle.mesh
 Resources/Animations/Enemy@Run.mesh
 Resources/Animations/Enemy@Walk.mesh
-Resources/Animations/KusaneV6@Idle.mesh
-Resources/Animations/KusaneV6@IdleUnarmed.mesh
-Resources/Animations/KusaneV6@Slash1.mesh
-Resources/Animations/KusaneV6@Slash2.mesh
-Resources/Animations/KusaneV6@Slash3.mesh
 Resources/Animations/Miniboss@Taunt.fbx
 Resources/Animations/Miniboss@Taunt.fbx.meta
 Resources/Animations/Miniboss@Taunt.mesh
@@ -136,13 +129,13 @@ Resources/Animations/Placeholders/Kusane_Combined_ModelTest1.mesh
 Resources/Animations/Player/KusaneV6@AimChain.fbx
 Resources/Animations/Player/KusaneV6@AimChain.fbx.meta
 Resources/Animations/Player/KusaneV6@AimChain.mesh
+Resources/Animations/Player/KusaneV6@AimThrow.mesh
 Resources/Animations/Player/KusaneV6@AirLift.fbx
 Resources/Animations/Player/KusaneV6@AirLift.fbx.meta
 Resources/Animations/Player/KusaneV6@AirLift.mesh
 Resources/Animations/Player/KusaneV6@AirSlam.fbx
 Resources/Animations/Player/KusaneV6@AirSlam.fbx.meta
 Resources/Animations/Player/KusaneV6@AirSlam.mesh
-Resources/Animations/Player/KusaneV6@DashPose.mesh
 Resources/Animations/Player/KusaneV6@DashRoll.fbx
 Resources/Animations/Player/KusaneV6@DashRoll.fbx.meta
 Resources/Animations/Player/KusaneV6@DashRoll.mesh
@@ -209,9 +202,6 @@ Resources/Animations/Player/KusaneV6@Standing.mesh
 Resources/Animations/Player/KusaneV6@ThrowChain.fbx
 Resources/Animations/Player/KusaneV6@ThrowChain.fbx.meta
 Resources/Animations/Player/KusaneV6@ThrowChain.mesh
-Resources/Animations/Player/Player@Dash.mesh
-Resources/Animations/Player/Player@Jump.mesh
-Resources/Animations/Player/Player@Land.mesh
 Resources/Animations/Player@Dash.mesh
 Resources/Animations/Player@Death.mesh
 Resources/Animations/Player@Hurt.mesh
@@ -1194,6 +1184,15 @@ Resources/Materials/DoorBreakable_lambert2.mat
 Resources/Materials/DoorBreakable_lambert2.mat.meta
 Resources/Materials/door_low_door.mat
 Resources/Materials/door_low_door.mat.meta
+Resources/Materials/Enemy/feather_m_Materials/feather_m_AO.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_BaseColor.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_ClearCoat.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Metallic.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Normal.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Opacity.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Roughness.dds
+Resources/Materials/Enemy/feather_m_Materials/feather_m_Scatter.dds
+Resources/Materials/Enemy/Nightshade_diffuse.dds
 Resources/Materials/Enemy@AttackScratch_lambert5.mat
 Resources/Materials/Enemy@AttackScratch_lambert5.mat.meta
 Resources/Materials/Enemy@AttackThrow_lambert5.mat
@@ -1498,6 +1497,7 @@ Resources/Materials/PictureFrame_pasted__defaultPolygonShader.mat
 Resources/Materials/PictureFrame_pasted__defaultPolygonShader.mat.meta
 Resources/Materials/Pillar_standardSurface1.mat
 Resources/Materials/Pillar_standardSurface1.mat.meta
+Resources/Materials/Player/SlashEffect_baseColor.dds
 Resources/Materials/RightDoor_surfacematerial1.mat
 Resources/Materials/RightDoor_surfacematerial1.mat.meta
 Resources/Materials/Room1_Ceiling_pasted__pasted__standardSurface2.mat
@@ -1797,10 +1797,6 @@ Resources/Models/Environment/BookStack2.mesh
 Resources/Models/Environment/BookStack3.fbx
 Resources/Models/Environment/BookStack3.fbx.meta
 Resources/Models/Environment/BookStack3.mesh
-Resources/Models/Environment/BossRoom_Arena.mesh
-Resources/Models/Environment/BossRoom_Ceiling.mesh
-Resources/Models/Environment/BossRoom_Floor.mesh
-Resources/Models/Environment/BossRoom_Wall3.mesh
 Resources/Models/Environment/CandleSmallWithFlame.fbx
 Resources/Models/Environment/CandleSmallWithFlame.fbx.meta
 Resources/Models/Environment/CandleSmallWithFlame.mesh
@@ -1811,7 +1807,6 @@ Resources/Models/Environment/Carpet2.fbx
 Resources/Models/Environment/Carpet2.fbx.meta
 Resources/Models/Environment/Carpet2.mesh
 Resources/Models/Environment/Ceiling.mesh
-Resources/Models/Environment/Ceilinghole.mesh
 Resources/Models/Environment/Cloth1.fbx
 Resources/Models/Environment/Cloth1.fbx.meta
 Resources/Models/Environment/Cloth1.mesh
@@ -1896,7 +1891,6 @@ Resources/Models/Environment/RightDoor.fbx
 Resources/Models/Environment/RightDoor.fbx.meta
 Resources/Models/Environment/RightDoor.mesh
 Resources/Models/Environment/RockDebris.mesh
-Resources/Models/Environment/Roof.mesh
 Resources/Models/Environment/Scroll.fbx
 Resources/Models/Environment/Scroll.fbx.meta
 Resources/Models/Environment/Scroll.mesh
@@ -1927,6 +1921,7 @@ Resources/Models/Environment/Shrine.mesh
 Resources/Models/Environment/Shrine2.fbx
 Resources/Models/Environment/Shrine2.fbx.meta
 Resources/Models/Environment/Shrine2.mesh
+Resources/Models/Environment/SideWall2.dds
 Resources/Models/Environment/SideWall2.mesh
 Resources/Models/Environment/SingleBookSlanted1.fbx
 Resources/Models/Environment/SingleBookSlanted1.fbx.meta
@@ -1971,11 +1966,7 @@ Resources/Models/Environment/WeaponHolder.mesh
 Resources/Models/Environment/WoodenBarrier.fbx
 Resources/Models/Environment/WoodenBarrier.fbx.meta
 Resources/Models/Environment/WoodenBarrier.mesh
-Resources/Models/Environment/InUse/Candle1.mesh
-Resources/Models/Environment/InUse/Carpet.mesh
 Resources/Models/Environment/InUse/Cave Side.mesh
-Resources/Models/Environment/InUse/Coffin.mesh
-Resources/Models/Environment/InUse/Creeper.mesh
 Resources/Models/Environment/InUse/JapaneseSmallWall.mesh
 Resources/Models/Environment/InUse/JapaneseToriBtm.mesh
 Resources/Models/Environment/InUse/JapaneseToriTop.mesh
@@ -1984,9 +1975,7 @@ Resources/Models/Environment/InUse/road_C.mesh
 Resources/Models/Environment/InUse/Rock Flat.mesh
 Resources/Models/Environment/InUse/Rock.mesh
 Resources/Models/Environment/InUse/Small Stairs.mesh
-Resources/Models/Environment/InUse/SquarePedestral.mesh
 Resources/Models/Environment/InUse/Trim_Column_2x2x240_Square.mesh
-Resources/Models/Environment/InUse/Trim_Window_4x8.mesh
 Resources/Models/Environment/InUse/Wall Pillar.mesh
 Resources/Models/FinalBaseMesh.mesh
 Resources/Models/FinalBaseMesh.obj
@@ -1998,15 +1987,15 @@ Resources/Models/GroundCrackModel.fbx
 Resources/Models/GroundCrackModel.fbx.meta
 Resources/Models/GroundCrackModel.mesh
 Resources/Models/Kachujin/Kachujin G Rosales.mesh
-Resources/Models/Kachujin/Kachujin.mesh
+Resources/Models/Kachujin/Kachujin_diffuse.dds
+Resources/Models/Kachujin/Kachujin_diffuse_body.dds
+Resources/Models/Kachujin/Kachujin_normal.dds
+Resources/Models/Kachujin/Kachujin_specular.dds
 Resources/Models/KarasuFlyingModel.mesh
 Resources/Models/KarasuGroundedModel.mesh
 Resources/Models/KarasuGroundModelV2.fbx
 Resources/Models/KarasuGroundModelV2.fbx.meta
 Resources/Models/KarasuGroundModelV2.mesh
-Resources/Models/KarasuModel.mesh
-Resources/Models/KarasuTest.mesh
-Resources/Models/Kusane/KusaneRig3.mesh
 Resources/Models/KusaneFixModel.mesh
 Resources/Models/KusaneModel.mesh
 Resources/Models/KusaneV6.fbx
@@ -2016,6 +2005,7 @@ Resources/Models/LowPolyFeatherChain.fbx
 Resources/Models/LowPolyFeatherChain.fbx.meta
 Resources/Models/LowPolyFeatherChain.mesh
 Resources/Models/PlayerModel.mesh
+Resources/Models/Rooms/Alley1/Alley1.mesh
 Resources/Models/Rooms/Alley1/Alley1_Ceiling.fbx
 Resources/Models/Rooms/Alley1/Alley1_Ceiling.fbx.meta
 Resources/Models/Rooms/Alley1/Alley1_Ceiling.mesh
@@ -2053,8 +2043,6 @@ Resources/Models/Rooms/BossRoom/arena_low.fbx
 Resources/Models/Rooms/BossRoom/arena_low.fbx.meta
 Resources/Models/Rooms/BossRoom/arena_low.mesh
 Resources/Models/Rooms/BossRoom/BossRoom_Ceiling.mesh
-Resources/Models/Rooms/BossRoom/BossRoom_CeilingBtm.mesh
-Resources/Models/Rooms/BossRoom/BossRoom_CeilingTop.mesh
 Resources/Models/Rooms/BossRoom/BossRoom_Floor.mesh
 Resources/Models/Rooms/BossRoom/BossRoom_Shrine.mesh
 Resources/Models/Rooms/BossRoom/BossRoom_Stairs.mesh
@@ -2179,6 +2167,7 @@ Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall2.mesh
 Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall3.fbx
 Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall3.fbx.meta
 Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall3.mesh
+Resources/Models/Rooms/Room3/Room3.mesh
 Resources/Models/Rooms/Room3/Room3_Ceiling.fbx
 Resources/Models/Rooms/Room3/Room3_Ceiling.fbx.meta
 Resources/Models/Rooms/Room3/Room3_Ceiling.mesh
@@ -2206,6 +2195,7 @@ Resources/Models/Rooms/Room3/Room3_Wall3.mesh
 Resources/Models/Rooms/Room3/Room3_Wall4.fbx
 Resources/Models/Rooms/Room3/Room3_Wall4.fbx.meta
 Resources/Models/Rooms/Room3/Room3_Wall4.mesh
+Resources/Models/Rooms/Room4/Room4.mesh
 Resources/Models/Rooms/Room4/Room4_Ceiling.fbx
 Resources/Models/Rooms/Room4/Room4_Ceiling.fbx.meta
 Resources/Models/Rooms/Room4/Room4_Ceiling.mesh
@@ -2401,15 +2391,12 @@ Resources/Models/Sphere.fbx
 Resources/Models/Sphere.fbx.meta
 Resources/Models/Sphere.mesh
 Resources/Models/TenguStatue.mesh
-Resources/Models/Test/KusaneTest3.mesh
 Resources/Models/VFXs/SmokeIncenseVFXMesh.fbx
 Resources/Models/VFXs/SmokeIncenseVFXMesh.fbx.meta
 Resources/Models/VFXs/SmokeIncenseVFXMesh.mesh
 Resources/Models/VFXs/SmokeIncenseVFXMeshV2.fbx
 Resources/Models/VFXs/SmokeIncenseVFXMeshV2.fbx.meta
 Resources/Models/VFXs/SmokeIncenseVFXMeshV2.mesh
-Resources/Models/Weapon/FeatherStick.mesh
-Resources/Models/Weapon/FeatherTip.mesh
 Resources/Scripts/Camera/camera_chain_aim.lua
 Resources/Scripts/Camera/camera_chain_aim.lua.meta
 Resources/Scripts/Camera/camera_cinematic_mode.lua
@@ -2924,7 +2911,9 @@ Resources/Sprites/DialogueUI/MonologueOverlay.png.meta
 Resources/Sprites/DialogueUI/MonologueSoundWavesSS.dds
 Resources/Sprites/DialogueUI/MonologueSoundWavesSS.png
 Resources/Sprites/DialogueUI/MonologueSoundWavesSS.png.meta
+Resources/Sprites/FeatherSprite_AI.dds
 Resources/Sprites/GameOverUI/BackToMainMenuButtonWhite.dds
+Resources/Sprites/GameOverUI/DeathScreenBG.dds
 Resources/Sprites/GameOverUI/DeathScreenNew.dds
 Resources/Sprites/GameOverUI/DeathScreenNew.png
 Resources/Sprites/GameOverUI/DeathScreenNew.png.meta
@@ -2940,6 +2929,7 @@ Resources/Sprites/LoadingUI/LoadingBarFill.png.meta
 Resources/Sprites/LoadingUI/LoadingBG.dds
 Resources/Sprites/LoadingUI/LoadingBG.png
 Resources/Sprites/LoadingUI/LoadingBG.png.meta
+Resources/Sprites/MainMenuUI/button_cancel.dds
 Resources/Sprites/MainMenuUI/CreditsUI/CreditsBG.dds
 Resources/Sprites/MainMenuUI/CreditsUI/CreditsBG.png
 Resources/Sprites/MainMenuUI/CreditsUI/CreditsBG.png.meta
@@ -2980,6 +2970,8 @@ Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonHighlighted.png.meta
 Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonNotHighlighted.dds
 Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonNotHighlighted.png
 Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonNotHighlighted.png.meta
+Resources/Sprites/MainMenuUI/QuitPromptUI/YesHighlightedButton.dds
+Resources/Sprites/MainMenuUI/QuitPromptUI/YesNotHighlightedButton.dds
 Resources/Sprites/MainMenuUI/SettingsUI/BackButtonDefault.dds
 Resources/Sprites/MainMenuUI/SettingsUI/BackButtonPressed.dds
 Resources/Sprites/MainMenuUI/SettingsUI/ResetButton.dds
@@ -3299,6 +3291,7 @@ Resources/Sprites/PlayerHUD/ChainPCicon.png.meta
 Resources/Sprites/PlayerHUD/ChainTutorialAndroid.dds
 Resources/Sprites/PlayerHUD/ChainTutorialAndroid.png
 Resources/Sprites/PlayerHUD/ChainTutorialAndroid.png.meta
+Resources/Sprites/PlayerHUD/Crosshair.dds
 Resources/Sprites/PlayerHUD/CrosshairAim.dds
 Resources/Sprites/PlayerHUD/CrosshairAim.png
 Resources/Sprites/PlayerHUD/CrosshairAim.png.meta
@@ -3330,6 +3323,7 @@ Resources/Sprites/PlayerHUD/FeatherCountSS.png.meta
 Resources/Sprites/PlayerHUD/fillFollow.dds
 Resources/Sprites/PlayerHUD/fillFollow.png
 Resources/Sprites/PlayerHUD/fillFollow.png.meta
+Resources/Sprites/PlayerHUD/HealthBacking.dds
 Resources/Sprites/PlayerHUD/HealthBarBack.dds
 Resources/Sprites/PlayerHUD/HealthBarBack.png
 Resources/Sprites/PlayerHUD/HealthBarBack.png.meta
@@ -3339,9 +3333,13 @@ Resources/Sprites/PlayerHUD/HealthBarFillRed.png.meta
 Resources/Sprites/PlayerHUD/HealthBarFillWhite.dds
 Resources/Sprites/PlayerHUD/HealthBarFillWhite.png
 Resources/Sprites/PlayerHUD/HealthBarFillWhite.png.meta
+Resources/Sprites/PlayerHUD/HealthBarFrame.dds
 Resources/Sprites/PlayerHUD/HealthNotch.dds
 Resources/Sprites/PlayerHUD/HealthNotch.png
 Resources/Sprites/PlayerHUD/HealthNotch.png.meta
+Resources/Sprites/PlayerHUD/HPBarBG.dds
+Resources/Sprites/PlayerHUD/HPBarFill.dds
+Resources/Sprites/PlayerHUD/HPBarFillFollow.dds
 Resources/Sprites/PlayerHUD/Jump.dds
 Resources/Sprites/PlayerHUD/Jump.png
 Resources/Sprites/PlayerHUD/Jump.png.meta
@@ -3378,6 +3376,7 @@ Resources/Sprites/PlayerHUD/Underline.png.meta
 Resources/Sprites/PlayerHUD/WhiteCircle.dds
 Resources/Sprites/PlayerHUD/WhiteCircle.png
 Resources/Sprites/PlayerHUD/WhiteCircle.png.meta
+Resources/Sprites/RollButton.dds
 Resources/Sprites/SplashScreenUI/DigiPen_Singapore_WEB_WHITE.dds
 Resources/Sprites/SplashScreenUI/DigiPen_Singapore_WEB_WHITE.png
 Resources/Sprites/SplashScreenUI/DigiPen_Singapore_WEB_WHITE.png.meta
@@ -3387,6 +3386,7 @@ Resources/Sprites/SplashScreenUI/FMOD Logo White - Transparent Background.png.me
 Resources/Sprites/SplashScreenUI/Team Logo.dds
 Resources/Sprites/SplashScreenUI/Team Logo.PNG
 Resources/Sprites/SplashScreenUI/Team Logo.PNG.meta
+Resources/Sprites/SplashScreenUI/TeamLogo.dds
 Resources/Sprites/Tutorial/ChainControl.dds
 Resources/Sprites/Tutorial/ChainControl.png
 Resources/Sprites/Tutorial/ChainControl.png.meta
@@ -3529,6 +3529,14 @@ Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Normal.png.meta
 Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Roughness.dds
 Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Roughness.png
 Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_Roughness.png.meta
+Resources/Textures/Cave Side.dds
+Resources/Textures/cobbleStoneRoadNormal.dds
+Resources/Textures/Flat Rock.dds
+Resources/Textures/idle_1.dds
+Resources/Textures/idle_2.dds
+Resources/Textures/idle_3.dds
+Resources/Textures/japaneseWallDiffuse.dds
+Resources/Textures/japaneseWallNormal.dds
 Resources/Textures/M4/BendScroll_BaseColor.dds
 Resources/Textures/M4/BendScroll_BaseColor.png
 Resources/Textures/M4/BendScroll_BaseColor.png.meta
@@ -3547,6 +3555,9 @@ Resources/Textures/M4/CandleSmall_BaseColor.png.meta
 Resources/Textures/M4/CandleSmall_Normal.dds
 Resources/Textures/M4/CandleSmall_Normal.png
 Resources/Textures/M4/CandleSmall_Normal.png.meta
+Resources/Textures/M4/ceilSurface1_baseColor.dds
+Resources/Textures/M4/ceilSurface1_normal.dds
+Resources/Textures/M4/ceilSurface1_occlusionRoughnessMetallic.dds
 Resources/Textures/M4/Chain Link_standardSurface1_BaseColor.dds
 Resources/Textures/M4/Chain Link_standardSurface1_BaseColor.png
 Resources/Textures/M4/Chain Link_standardSurface1_BaseColor.png.meta
@@ -3562,18 +3573,29 @@ Resources/Textures/M4/Chain Link_standardSurface1_Normal.png.meta
 Resources/Textures/M4/Chain Link_standardSurface1_Roughness.dds
 Resources/Textures/M4/Chain Link_standardSurface1_Roughness.png
 Resources/Textures/M4/Chain Link_standardSurface1_Roughness.png.meta
+Resources/Textures/M4/ColumnModular_baseColor.dds
+Resources/Textures/M4/ColumnModular_normal.dds
+Resources/Textures/M4/Column_baseColor.dds
+Resources/Textures/M4/Column_normal.dds
+Resources/Textures/M4/Column_occlusionRoughnessMetallic.dds
+Resources/Textures/M4/DebrisPlane_BaseColor.dds
+Resources/Textures/M4/DebrisPlane_Normal.dds
 Resources/Textures/M4/Door_LeftDoor_BaseColor.dds
 Resources/Textures/M4/Door_LeftDoor_BaseColor.png
 Resources/Textures/M4/Door_LeftDoor_BaseColor.png.meta
 Resources/Textures/M4/Door_LeftDoor_Normal.dds
 Resources/Textures/M4/Door_LeftDoor_Normal.png
 Resources/Textures/M4/Door_LeftDoor_Normal.png.meta
+Resources/Textures/M4/Door_MainGate_BaseColor.dds
+Resources/Textures/M4/Door_MainGate_Normal.dds
 Resources/Textures/M4/Door_RightDoor_BaseColor.dds
 Resources/Textures/M4/Door_RightDoor_BaseColor.png
 Resources/Textures/M4/Door_RightDoor_BaseColor.png.meta
 Resources/Textures/M4/Door_RightDoor_Normal.dds
 Resources/Textures/M4/Door_RightDoor_Normal.png
 Resources/Textures/M4/Door_RightDoor_Normal.png.meta
+Resources/Textures/M4/EndLedge_baseColor.dds
+Resources/Textures/M4/EndLedge_normal.dds
 Resources/Textures/M4/enemy_BaseColor.dds
 Resources/Textures/M4/enemy_BaseColor.png
 Resources/Textures/M4/enemy_BaseColor.png.meta
@@ -3595,12 +3617,19 @@ Resources/Textures/M4/feather_featherstick_mat_BaseColor.png.meta
 Resources/Textures/M4/feather_feather_mat_BaseColor.dds
 Resources/Textures/M4/feather_feather_mat_BaseColor.png
 Resources/Textures/M4/feather_feather_mat_BaseColor.png.meta
+Resources/Textures/M4/FloorMain_baseColor.dds
+Resources/Textures/M4/FloorMain_baseColor_tiled.dds
+Resources/Textures/M4/FloorMain_normal.dds
+Resources/Textures/M4/FloorMain_normal_tiled.dds
+Resources/Textures/M4/FloorMain_occlusionRoughnessMetallic.dds
 Resources/Textures/M4/floor_floor_BaseColor.dds
 Resources/Textures/M4/floor_floor_BaseColor.png
 Resources/Textures/M4/floor_floor_BaseColor.png.meta
 Resources/Textures/M4/floor_floor_Normal.dds
 Resources/Textures/M4/floor_floor_Normal.png
 Resources/Textures/M4/floor_floor_Normal.png.meta
+Resources/Textures/M4/GroundedPlatform_baseColor.dds
+Resources/Textures/M4/GroundedPlatform_normal.dds
 Resources/Textures/M4/Incense_LowPoly.mesh
 Resources/Textures/M4/Incense_LowPoly_standardSurface1_BaseColor.dds
 Resources/Textures/M4/Incense_LowPoly_standardSurface1_BaseColor.png
@@ -3620,12 +3649,19 @@ Resources/Textures/M4/lantern_BaseColor.png.meta
 Resources/Textures/M4/lantern_lantern_Normal.dds
 Resources/Textures/M4/lantern_lantern_Normal.png
 Resources/Textures/M4/lantern_lantern_Normal.png.meta
+Resources/Textures/M4/LongStairsLandingArea_baseColor.dds
+Resources/Textures/M4/LongStairsLandingArea_normal.dds
+Resources/Textures/M4/LongStairs_baseColor.dds
+Resources/Textures/M4/LongStairs_normal.dds
+Resources/Textures/M4/LongStairs_occlusionRoughnessMetallic.dds
 Resources/Textures/M4/LowPolyFeatherChain_baseColor.dds
 Resources/Textures/M4/LowPolyFeatherChain_baseColor.png
 Resources/Textures/M4/LowPolyFeatherChain_baseColor.png.meta
 Resources/Textures/M4/LowPolyFeatherChain_normal.dds
 Resources/Textures/M4/LowPolyFeatherChain_normal.png
 Resources/Textures/M4/LowPolyFeatherChain_normal.png.meta
+Resources/Textures/M4/MiddleLedge_baseColor.dds
+Resources/Textures/M4/MiddleLedge_normal.dds
 Resources/Textures/M4/NoBendScroll_BaseColor.dds
 Resources/Textures/M4/NoBendScroll_BaseColor.png
 Resources/Textures/M4/NoBendScroll_BaseColor.png.meta
@@ -3638,12 +3674,22 @@ Resources/Textures/M4/offeringbox_low_offering box_BaseColor.png.meta
 Resources/Textures/M4/offeringbox_low_offering box_Normal.dds
 Resources/Textures/M4/offeringbox_low_offering box_Normal.png
 Resources/Textures/M4/offeringbox_low_offering box_Normal.png.meta
+Resources/Textures/M4/Pedestal_baseColor.dds
+Resources/Textures/M4/Pedestal_normal.dds
+Resources/Textures/M4/Pillar_baseColor.dds
+Resources/Textures/M4/Pillar_normal.dds
+Resources/Textures/M4/Player_Retexture_lambert6_BaseColor.dds
+Resources/Textures/M4/Player_Retexture_lambert6_Normal.dds
+Resources/Textures/M4/Rock_rockdebris_BaseColor.dds
+Resources/Textures/M4/Rock_rockdebris_Normal.dds
 Resources/Textures/M4/Scroll_Paper_BaseColor.dds
 Resources/Textures/M4/Scroll_Paper_BaseColor.png
 Resources/Textures/M4/Scroll_Paper_BaseColor.png.meta
 Resources/Textures/M4/Scroll_Paper_Normal.dds
 Resources/Textures/M4/Scroll_Paper_Normal.png
 Resources/Textures/M4/Scroll_Paper_Normal.png.meta
+Resources/Textures/M4/Shrine_BaseColor.dds
+Resources/Textures/M4/Shrine_Normal.dds
 Resources/Textures/M4/shrine_updated_low_shrine_BaseColor.dds
 Resources/Textures/M4/shrine_updated_low_shrine_BaseColor.png
 Resources/Textures/M4/shrine_updated_low_shrine_BaseColor.png.meta
@@ -3656,6 +3702,11 @@ Resources/Textures/M4/SingleChain_baseColor.png.meta
 Resources/Textures/M4/SingleChain_normal.dds
 Resources/Textures/M4/SingleChain_normal.png
 Resources/Textures/M4/SingleChain_normal.png.meta
+Resources/Textures/M4/SmallStairs_baseColor.dds
+Resources/Textures/M4/SmallStairs_normal.dds
+Resources/Textures/M4/SmallStairs_occlusionRoughnessMetallic.dds
+Resources/Textures/M4/StartLedge_baseColor.dds
+Resources/Textures/M4/StartLedge_normal.dds
 Resources/Textures/M4/sword_holder.mesh
 Resources/Textures/M4/sword_holder_sword_BaseColor.dds
 Resources/Textures/M4/sword_holder_sword_BaseColor.png
@@ -3670,6 +3721,19 @@ Resources/Textures/M4/Table_Normal.dds
 Resources/Textures/M4/Table_Normal.png
 Resources/Textures/M4/Table_Normal.png.meta
 Resources/Textures/M4/tori_gate.mesh
+Resources/Textures/M4/tori_gate_low_tori_gate_BaseColor.dds
+Resources/Textures/M4/tori_gate_low_tori_gate_Normal.dds
+Resources/Textures/M4/Vines_Vines_BaseColor.dds
+Resources/Textures/M4/Vines_Vines_Normal.dds
+Resources/Textures/M4/WallCombined_baseColor.dds
+Resources/Textures/M4/WallCombined_normal.dds
+Resources/Textures/M4/WallCombined_occlusionRoughnessMetallic.dds
+Resources/Textures/M4/WallModular_baseColor.dds
+Resources/Textures/M4/WallModular_normal.dds
+Resources/Textures/M4/WallNoHole_baseColor.dds
+Resources/Textures/M4/WallNoHole_normal.dds
+Resources/Textures/M4/WoodFloorMain_baseColor.dds
+Resources/Textures/M4/WoodFloorMain_normal.dds
 Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_BaseColor.dds
 Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_BaseColor.png
 Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_BaseColor.png.meta
@@ -3838,6 +3902,7 @@ Resources/Textures/M5/BookStack1_Height.png.meta
 Resources/Textures/M5/BookStack1_Mixed_AO.dds
 Resources/Textures/M5/BookStack1_Mixed_AO.png
 Resources/Textures/M5/BookStack1_Mixed_AO.png.meta
+Resources/Textures/M5/BookStack1_Normal.dds
 Resources/Textures/M5/BookStack1_Normal_OpenGL.dds
 Resources/Textures/M5/BookStack1_Normal_OpenGL.png
 Resources/Textures/M5/BookStack1_Normal_OpenGL.png.meta
@@ -4036,6 +4101,11 @@ Resources/Textures/M5/Drum_Normal_OpenGL.png.meta
 Resources/Textures/M5/Drum_Roughness.dds
 Resources/Textures/M5/Drum_Roughness.png
 Resources/Textures/M5/Drum_Roughness.png.meta
+Resources/Textures/M5/enemy_02_low_standardSurface1_BaseColor.dds
+Resources/Textures/M5/enemy_02_low_standardSurface1_Height.dds
+Resources/Textures/M5/enemy_02_low_standardSurface1_Metallic.dds
+Resources/Textures/M5/enemy_02_low_standardSurface1_Normal.dds
+Resources/Textures/M5/enemy_02_low_standardSurface1_Roughness.dds
 Resources/Textures/M5/enemy_flying_BaseColor.dds
 Resources/Textures/M5/enemy_flying_BaseColor.png
 Resources/Textures/M5/enemy_flying_BaseColor.png.meta
@@ -4222,6 +4292,11 @@ Resources/Textures/M5/NoBendScroll_Normal.png.meta
 Resources/Textures/M5/NoBendScroll_Roughness.dds
 Resources/Textures/M5/NoBendScroll_Roughness.png
 Resources/Textures/M5/NoBendScroll_Roughness.png.meta
+Resources/Textures/M5/NorenCurtain_Base_color.dds
+Resources/Textures/M5/NorenCurtain_Height.dds
+Resources/Textures/M5/NorenCurtain_Mixed_AO.dds
+Resources/Textures/M5/NorenCurtain_Normal_OpenGL.dds
+Resources/Textures/M5/NorenCurtain_Roughness.dds
 Resources/Textures/M5/Papers_Base_color.dds
 Resources/Textures/M5/Papers_Base_color.png
 Resources/Textures/M5/Papers_Base_color.png.meta
@@ -4480,6 +4555,11 @@ Resources/Textures/M5/Room2Tatami/wall2_wall2_Normal.png.meta
 Resources/Textures/M5/Room2Tatami/wall2_wall2_Roughness.dds
 Resources/Textures/M5/Room2Tatami/wall2_wall2_Roughness.png
 Resources/Textures/M5/Room2Tatami/wall2_wall2_Roughness.png.meta
+Resources/Textures/M5/Room2Tatami/wall3_wall3_BaseColor.dds
+Resources/Textures/M5/Room2Tatami/wall3_wall3_Height.dds
+Resources/Textures/M5/Room2Tatami/wall3_wall3_Metallic.dds
+Resources/Textures/M5/Room2Tatami/wall3_wall3_Normal.dds
+Resources/Textures/M5/Room2Tatami/wall3_wall3_Roughness.dds
 Resources/Textures/M5/Room3/Rm3_floor1_BaseColor.dds
 Resources/Textures/M5/Room3/Rm3_floor1_BaseColor.png
 Resources/Textures/M5/Room3/Rm3_floor1_BaseColor.png.meta
@@ -5548,6 +5628,10 @@ Resources/Textures/M6/VaseStand_Roughness.png.meta
 Resources/Textures/M6/WallTop_standardSurface1_BaseColor.dds
 Resources/Textures/M6/WallTop_standardSurface1_BaseColor.png
 Resources/Textures/M6/WallTop_standardSurface1_BaseColor.png.meta
+Resources/Textures/Nightshade_diffuse.dds
+Resources/Textures/Pillar 2.dds
+Resources/Textures/road_C_fix.dds
+Resources/Textures/Rock.dds
 Resources/Textures/Room6_V2/bossrm_door_L_door_L_BaseColor.dds
 Resources/Textures/Room6_V2/bossrm_door_L_door_L_BaseColor.png
 Resources/Textures/Room6_V2/bossrm_door_L_door_L_BaseColor.png.meta
@@ -5650,6 +5734,14 @@ Resources/Textures/Room6_V2/Rm6_wall3_wall3_Normal.png.meta
 Resources/Textures/Room6_V2/Rm6_wall3_wall3_Roughness.dds
 Resources/Textures/Room6_V2/Rm6_wall3_wall3_Roughness.png
 Resources/Textures/Room6_V2/Rm6_wall3_wall3_Roughness.png.meta
+Resources/Textures/SideWall2.dds
+Resources/Textures/Small Stairs.dds
+Resources/Textures/ToriBottom.dds
+Resources/Textures/ToriTopjpg.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AlbedoTransparency.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_AO.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_MetallicSmoothness.dds
+Resources/Textures/TrimSheet_low_Stone_Trim_01_A_Normal.dds
 Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_baseColor.dds
 Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_baseColor.png
 Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_baseColor.png.meta
@@ -5710,6 +5802,7 @@ Resources/Textures/VFX/SlashEffect_baseColor.png.meta
 Resources/Textures/VFX/SmokeIncenseV2_baseColor.dds
 Resources/Textures/VFX/SmokeIncenseV2_baseColor.png
 Resources/Textures/VFX/SmokeIncenseV2_baseColor.png.meta
+Resources/Textures/Wall Pillar.dds
 Resources/Configs/input_config.json
 Resources/Prefabs/Audio/AudioEnvManager.prefab
 Resources/Prefabs/Audio/AudioManagers.prefab

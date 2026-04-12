@@ -46,6 +46,11 @@ bool LightingSystem::Initialise()
     shadowsEnabled = false;
 #endif
 
+#ifdef __ANDROID__
+    // Allocate the lighting UBO (binding = 1). CameraBlock owns binding = 0.
+    InitLightingUBO();
+#endif
+
     //std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
 }
@@ -55,6 +60,13 @@ void LightingSystem::Update()
 {
     PROFILE_FUNCTION();
     CollectLightData();
+
+#ifdef __ANDROID__
+    // After CollectLightData has sorted/culled/packed the light lists, push
+    // everything into the UBO in one glBufferSubData call. All subsequent draws
+    // this frame read from the UBO with zero per-draw CPU overhead.
+    UploadLightingUBO();
+#endif
 }
 
 void LightingSystem::Shutdown()
@@ -66,6 +78,13 @@ void LightingSystem::Shutdown()
         psm.Shutdown();
     }
     pointShadowMaps.clear();
+
+#ifdef __ANDROID__
+    if (m_lightingUBO != 0) {
+        glDeleteBuffers(1, &m_lightingUBO);
+        m_lightingUBO = 0;
+    }
+#endif
 
     //std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
@@ -183,6 +202,12 @@ void LightingSystem::RenderShadowMaps()
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
+#ifdef __ANDROID__
+    // Android uses the LightingBlock UBO (binding = 1) — populated once per frame
+    // in UploadLightingUBO(). No per-draw work needed.
+    (void)shader;
+    return;
+#else
     shader.setInt("ambientMode", static_cast<int>(ambientMode));
     shader.setVec3("ambientSky", ambientSky);
     shader.setVec3("ambientEquator", ambientEquator);
@@ -242,6 +267,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
         shader.setFloat(base + ".intensity", spotLightData.intensity[i]);
     }
+#endif
 }
 
 void LightingSystem::ApplyShadows(Shader& shader)
@@ -540,3 +566,84 @@ void LightingSystem::CollectLightData()
         }
     }*/
 }
+
+#ifdef __ANDROID__
+// ============================================================================
+// Lighting UBO — allocates a buffer, binds to binding point 1 (CameraBlock = 0)
+// ============================================================================
+void LightingSystem::InitLightingUBO()
+{
+    if (m_lightingUBO != 0) return;
+
+    glGenBuffers(1, &m_lightingUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_lightingUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(LightingUBOData), nullptr, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_lightingUBO);  // binding = 1
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+// ============================================================================
+// Pack current lighting state into the UBO and upload in one call.
+// Called once per frame from Update() after CollectLightData().
+// ============================================================================
+void LightingSystem::UploadLightingUBO()
+{
+    if (m_lightingUBO == 0) return;
+
+    LightingUBOData data{};
+
+    // ---- Ambient (globals) ----
+    data.ambSkyIntensity   = glm::vec4(ambientSky,     ambientIntensity);
+    data.ambEquatorMode    = glm::vec4(ambientEquator, static_cast<float>(static_cast<int>(ambientMode)));
+    data.ambGround         = glm::vec4(ambientGround,  0.0f);
+
+    // ---- Directional light ----
+    if (directionalLightData.hasDirectionalLight) {
+        data.dirLightDir      = glm::vec4(directionalLightData.direction, directionalLightData.intensity);
+        data.dirLightAmbient  = glm::vec4(directionalLightData.ambient,   1.0f);  // w = hasDir flag
+        data.dirLightDiffuse  = glm::vec4(directionalLightData.diffuse,   0.0f);
+        data.dirLightSpecular = glm::vec4(directionalLightData.specular,  0.0f);
+    } else {
+        // Zero everything; shader checks dirLightAmbient.w > 0.5 as "has directional"
+        data.dirLightDir      = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
+        data.dirLightAmbient  = glm::vec4(0.0f);                          // w = 0 → no dir light
+        data.dirLightDiffuse  = glm::vec4(0.0f);
+        data.dirLightSpecular = glm::vec4(0.0f);
+    }
+
+    // ---- Light counts ----
+    const int numPoint = std::min(static_cast<int>(pointLightData.positions.size()),
+                                  LIGHTING_UBO_MAX_POINT_LIGHTS);
+    const int numSpot = std::min(static_cast<int>(spotLightData.positions.size()),
+                                 LIGHTING_UBO_MAX_SPOT_LIGHTS);
+    data.lightCounts = glm::ivec4(numPoint, numSpot, 0, 0);
+
+    // ---- Point lights (5 vec4s each) ----
+    for (int i = 0; i < numPoint; ++i) {
+        int base = i * 5;
+        data.pointLights[base + 0] = glm::vec4(pointLightData.positions[i], pointLightData.range[i]);
+        data.pointLights[base + 1] = glm::vec4(pointLightData.ambient[i],   pointLightData.constant[i]);
+        data.pointLights[base + 2] = glm::vec4(pointLightData.diffuse[i],   pointLightData.linear[i]);
+        data.pointLights[base + 3] = glm::vec4(pointLightData.specular[i],  pointLightData.quadratic[i]);
+        data.pointLights[base + 4] = glm::vec4(pointLightData.intensity[i],
+                                               static_cast<float>(pointLightData.shadowIndex[i]),
+                                               0.0f, 0.0f);
+    }
+
+    // ---- Spot lights (6 vec4s each) ----
+    for (int i = 0; i < numSpot; ++i) {
+        int base = i * 6;
+        data.spotLights[base + 0] = glm::vec4(spotLightData.positions[i],  spotLightData.cutOff[i]);
+        data.spotLights[base + 1] = glm::vec4(spotLightData.directions[i], spotLightData.outerCutOff[i]);
+        data.spotLights[base + 2] = glm::vec4(spotLightData.ambient[i],    spotLightData.constant[i]);
+        data.spotLights[base + 3] = glm::vec4(spotLightData.diffuse[i],    spotLightData.linear[i]);
+        data.spotLights[base + 4] = glm::vec4(spotLightData.specular[i],   spotLightData.quadratic[i]);
+        data.spotLights[base + 5] = glm::vec4(spotLightData.intensity[i],  0.0f, 0.0f, 0.0f);
+    }
+
+    // ---- Upload in one call ----
+    glBindBuffer(GL_UNIFORM_BUFFER, m_lightingUBO);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightingUBOData), &data);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+#endif

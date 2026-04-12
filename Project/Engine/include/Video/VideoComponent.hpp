@@ -77,6 +77,10 @@ struct ENGINE_API VideoComponent {
 	int previousBoardChars = 0;
 	bool skipRequested = false;
 	bool cutsceneEnded = false;
+	// Set by Lua (e.g. SkipHighlight) while the skip fade is running. While true
+	// the Displaying phase ignores pointer taps so the player can't keep clicking
+	// through dialogue boards after they've already chosen to skip.
+	bool inputLocked = false;
 	uint64_t activeBoardSfxChannel = 0; // Runtime channel handle for board SFX (0 = none)
 
 	// Resolved entity handles

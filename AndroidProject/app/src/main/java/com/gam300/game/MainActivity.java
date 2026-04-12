@@ -184,6 +184,24 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i(TAG, "MainActivity onPause");
+        if (engineReady) {
+            pauseAudio();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "MainActivity onResume");
+        if (engineReady) {
+            resumeAudio();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "MainActivity onDestroy");
@@ -193,25 +211,32 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     // Game loop thread
     private class GameThread extends Thread {
         private volatile boolean running = true;
-        
+
         public void stopGameThread() {
             running = false;
         }
-        
+
         @Override
         public void run() {
             Log.i(TAG, "Game thread started");
-            
+
             while (running && engineReady) {
                 renderFrame();
-                
+
+                // Check if Lua called Screen.RequestClose()
+                if (shouldQuit()) {
+                    running = false;
+                    runOnUiThread(() -> finish());
+                    break;
+                }
+
                 try {
                     Thread.sleep(16); // ~60 FPS
                 } catch (InterruptedException e) {
                     break;
                 }
             }
-            
+
             Log.i(TAG, "Game thread stopped");
         }
     }
@@ -226,4 +251,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     // Input handling native methods
     public native void onTouchEventWithId(int action, int pointerId, float x, float y);
     public native void onKeyEvent(int keyCode, int action);
+
+    // Returns true when the engine requests a quit (e.g. Lua Screen.RequestClose())
+    public native boolean shouldQuit();
+
+    // Pause/resume audio when app goes to background/foreground
+    public native void pauseAudio();
+    public native void resumeAudio();
 }

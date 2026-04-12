@@ -101,6 +101,11 @@ void ModelSystem::Update()
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
     InstancingManager& instancing = InstancingManager::GetInstance();
 
+    // Reset bloom dirty flag at the start of the update phase. This runs BEFORE
+    // any system sets it (Model, Sprite, Particle, Text) and BEFORE Render()
+    // checks it for the bloom post-process early-out.
+    gfxManager.ResetBloomFlag();
+
     // Get current view mode and check if rendering for editor
     bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
     bool is3DMode = gfxManager.Is3DMode();
@@ -148,6 +153,10 @@ void ModelSystem::Update()
                 if (bloom.enabled) {
                     entityBloomColor = bloom.bloomColor;
                     entityBloomIntensity = bloom.bloomIntensity;
+                    // Flag the frame as having bloom so post-process doesn't early-out
+                    if (entityBloomIntensity > 0.01f) {
+                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
+                    }
                 }
             }
 
@@ -204,6 +213,10 @@ void ModelSystem::Update()
             if (bloom.enabled) {
                 modelRenderItem->bloomColor = bloom.bloomColor;
                 modelRenderItem->bloomIntensity = bloom.bloomIntensity;
+                // Flag the frame as having bloom so post-process doesn't early-out
+                if (bloom.bloomIntensity > 0.01f) {
+                    GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
+                }
             }
         }
 

@@ -26,9 +26,9 @@ function FlyingPatrol:Update(ai, dt)
     -- always keep hover stable in flying states
     ai:MaintainHover(dt)
 
-    -- detect player -> Chase
+    -- detect player -> Chase (require line of sight)
     local detR = ai.DetectionRange or 4.0
-    if ai:IsPlayerInRange(detR) then
+    if ai:IsPlayerInRange(detR) and ai:HasLineOfSight() then
         ai.fsm:Change("Chase", ai.states.Chase)
         return
     end
@@ -83,6 +83,24 @@ function FlyingPatrol:Update(ai, dt)
     local step = spd * dt
     local maxStep = 0.20
     if step > maxStep then step = maxStep end
+
+    -- Wall collision: raycast before moving
+    if Physics and Physics.Raycast then
+        local _, ey, _ = ai:GetPosition()
+        local wallMargin = 0.4
+        local hitDist = Physics.Raycast(
+            ex, ey, ez,
+            dirX, 0, dirZ,
+            step + wallMargin)
+        if hitDist >= 0 and hitDist < (step + wallMargin) then
+            step = math.max(0, hitDist - wallMargin)
+        end
+    end
+
+    if step < 1e-4 then
+        ai:FaceDirection(dirX, dirZ)
+        return
+    end
 
     local _, y, _ = ai:GetPosition()
     ai:SetPosition(ex + dirX * step, y, ez + dirZ * step)

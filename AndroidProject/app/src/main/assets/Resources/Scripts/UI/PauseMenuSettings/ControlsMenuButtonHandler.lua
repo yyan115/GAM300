@@ -94,7 +94,17 @@ return Component {
                                inputY >= data.minY and inputY <= data.maxY
 
             if justBecameActive then
-                -- First frame page is visible: init state without triggering hover enter
+                -- First frame page is visible: force-reset sprite to match the
+                -- current hover state. Update() doesn't run while the entity is
+                -- disabled, so any stale hover sprite from the previous session
+                -- would otherwise persist until the user hovers off the button.
+                if data.sprite and data.spriteGUIDs then
+                    if isHovering and data.spriteGUIDs[2] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[2])
+                    elseif data.spriteGUIDs[1] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[1])
+                    end
+                end
                 data.wasHovered = isHovering
             else
                 -- Handle hover enter

@@ -213,7 +213,11 @@ bool GameSettingsManager::SaveIfDirty() {
 void GameSettingsManager::ResetToDefaults() {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
+        // Preserve fullscreen: it is not exposed in the settings UI (only Alt+Enter
+        // toggles it), so a Reset button that flips it back to windowed is surprising.
+        const bool preservedFullscreen = m_settings.fullscreen;
         m_settings = m_defaults;
+        m_settings.fullscreen = preservedFullscreen;
         m_dirty = true;
     }
     ApplySettings();
@@ -231,11 +235,17 @@ void GameSettingsManager::ApplySettings() {
     WindowManager::SetVSync(m_settings.vsync);
     WindowManager::SetFullscreen(m_settings.fullscreen);
 
-    // Gamma
+    // Gamma + Tone mapping mode.
+    // The tone mapping mode MUST be pushed from GameSettings because HDREffect's
+    // constructor defaults to REINHARD (which darkens pure white 1.0 → 0.5), while
+    // GameSettingsData::toneMappingMode defaults to ACES (mode 2). Without this line,
+    // every scene renders with Reinhard and the UI sprites with includePostProcess=true
+    // (e.g. splash screen logos) appear grey instead of pure white.
     auto& pm = PostProcessingManager::GetInstance();
     auto* hdr = pm.GetHDREffect();
     if (hdr) {
         hdr->SetGamma(m_settings.gamma);
+        hdr->SetToneMappingMode(static_cast<HDREffect::ToneMappingMode>(m_settings.toneMappingMode));
     }
 
     /*

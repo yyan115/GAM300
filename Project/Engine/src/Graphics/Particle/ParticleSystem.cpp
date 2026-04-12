@@ -321,6 +321,9 @@ void ParticleSystem::Update()
                 if (bloom.enabled) {
                     renderItem->bloomColor = bloom.bloomColor;
                     renderItem->bloomIntensity = bloom.bloomIntensity;
+                    if (bloom.bloomIntensity > 0.01f) {
+                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
+                    }
                 }
             }
 
@@ -372,6 +375,9 @@ void ParticleSystem::Update()
             if (bloom.enabled) {
                 renderItem->bloomColor = bloom.bloomColor;
                 renderItem->bloomIntensity = bloom.bloomIntensity;
+                if (bloom.bloomIntensity > 0.01f) {
+                    GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
+                }
             }
         }
 

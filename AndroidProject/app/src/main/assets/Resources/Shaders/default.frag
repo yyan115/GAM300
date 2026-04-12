@@ -376,7 +376,7 @@ vec3 calculatePointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos, vec3 al
         attenuation *= rangeAtten * rangeAtten;
     }
 
-    float shadow = calculatePointShadow(light.shadowIndex, fragPos, light.position);
+    float shadow = shadowsEnabled ? calculatePointShadow(light.shadowIndex, fragPos, light.position) : 0.0;
 
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
 

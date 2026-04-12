@@ -11,6 +11,7 @@ function ChaseState:Enter(ai)
     ai._animator:SetBool("PlayerInDetectionRange", true)
     ai._animator:SetBool("PatrolEnabled", true)
     ai._footstepTimer = 0
+    ai._chaseLosLostT = 0
 
     -- Play alert SFX once when first detecting player (entering chase)
     ai:_publishSFX("alert")
@@ -26,11 +27,35 @@ function ChaseState:Update(ai, dt)
     local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
-    -- Too far -> Patrol
-    if d2 > (diseng * diseng) and not ai.aggressive then
+    -- Too far -> disengage (clear aggressive so they don't chase forever)
+    if d2 > (diseng * diseng) then
+        ai.aggressive = false
         ai:StopCC()
-        ai.fsm:Change("Patrol", ai.states.Patrol)
+        if ai.config.EnablePatrol then
+            ai.fsm:Change("Patrol", ai.states.Patrol)
+        else
+            ai.fsm:Change("Idle", ai.states.Idle)
+        end
         return
+    end
+
+    -- Lose chase if LOS blocked for sustained period (wall between enemy and player)
+    local losGrace = tonumber(ai.LOSGracePeriod) or 3.0
+    if not ai:HasLineOfSight() then
+        ai._chaseLosLostT = (ai._chaseLosLostT or 0) + dtSec
+        if ai._chaseLosLostT >= losGrace then
+            ai.aggressive = false
+            ai._chaseLosLostT = 0
+            ai:StopCC()
+            if ai.config.EnablePatrol then
+                ai.fsm:Change("Patrol", ai.states.Patrol)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
+            return
+        end
+    else
+        ai._chaseLosLostT = 0
     end
 
     if ai.IsMelee then

@@ -81,16 +81,18 @@ return Component {
         --print("[FeatherSkillExplosion] ONTRIGGERENTER")
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
-        local tagName = tagComp:GetTagName()
-        --print(string.format("[FeatherSkillExplosion] Tag Name: %s", tagName))
+        -- The explosion trigger collides with walls, ground, and anything else
+        -- in range. Most of those have no TagComponent, so we must nil-check
+        -- before touching it or the feather skill crashes on impact.
+        if not tagComp then return end
 
-        if tagComp and (Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Boss")) then
-            if event_bus and event_bus.publish then 
+        if Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Boss") then
+            if event_bus and event_bus.publish then
                 event_bus.publish("deal_damage_to_entity", {
                     entityId = rootId,
                     damage   = self.AOEExplosionDmg,
                     hitType  = "FEATHER",
-                }) 
+                })
             end
         end
     end,

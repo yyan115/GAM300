@@ -138,6 +138,12 @@ public:
     bool IsEnvReflectionActive() const { return envReflectionActive; }
     float GetEnvReflectionIntensity() const { return envReflectionIntensityValue; }
 
+    // Bloom dirty tracking - skip the whole bloom post-process pass when no
+    // entity on screen has bloom emission this frame. Saves ~3-5ms on mobile.
+    void ResetBloomFlag() { m_hasBloomEmissionThisFrame = false; }
+    void NotifyBloomUsedThisFrame() { m_hasBloomEmissionThisFrame = true; }
+    bool HasBloomEmissionThisFrame() const { return m_hasBloomEmissionThisFrame; }
+
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -246,6 +252,11 @@ private:
     // Environment reflection state (set per-frame from active camera)
     bool envReflectionActive = false;
     float envReflectionIntensityValue = 1.0f;
+
+    // Bloom dirty flag - reset at start of each frame, set when any entity
+    // submits a bloom emission > 0. Used to skip the post-process bloom pass
+    // entirely when nothing is glowing this frame.
+    bool m_hasBloomEmissionThisFrame = false;
 
     void RenderModelOptimized(const ModelRenderComponent& item);
 

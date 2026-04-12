@@ -1,1 +1,3 @@
-IDI_APP_ICON ICON "Resources/SetupIcon.ico"
+// Numeric ID 101 so Windows Explorer / taskbar uses this as the default .exe icon.
+// (Named-resource icons can be flaky — Windows picks the lowest-numbered ICON resource.)
+101 ICON "Resources/SetupIcon.ico"

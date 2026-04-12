@@ -12,6 +12,15 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+
+// Force discrete GPU on laptops with hybrid graphics (NVIDIA Optimus / AMD PowerXpress).
+// Without this, Windows graphics drivers default to the integrated GPU when the game is
+// launched from an "unknown" install path, capping the game at ~30fps due to VSync half-rate.
+// These exported symbols are looked up by the NVIDIA / AMD drivers at process start.
+extern "C" {
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 #endif
 
 int main() {

@@ -295,6 +295,12 @@ void GraphicsManager::Render()
 		cullingStats.Reset();
 	}
 
+	// NOTE: m_hasBloomEmissionThisFrame is NOT reset here — it was already set
+	// during the system update phase (ModelSystem, SpriteSystem, ParticleSystem,
+	// TextRenderingSystem) which runs BEFORE Render(). Resetting here would
+	// clear the flag before the post-process pass reads it.
+	// The flag is reset at the start of ModelSystem::Update() instead.
+
 	currentFrameViewport = GetCurrentViewport();
 
 	// Compute view/projection once for the whole frame and upload to Camera UBO.

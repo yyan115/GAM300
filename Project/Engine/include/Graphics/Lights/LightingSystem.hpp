@@ -2,19 +2,25 @@
 #include "ECS/System.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Shadows/ShadowMap.hpp"
-#include "Graphics/Shadows/PointShadowMap.hpp" 
+#include "Graphics/Shadows/PointShadowMap.hpp"
 
 struct DirectionalLightComponent;
 struct PointLightComponent;
 struct SpotLightComponent;
 class Camera;
 
+// Shader-side array sizes for the Android lighting UBO — must match
+// NR_POINT_LIGHTS / NR_SPOT_LIGHTS in defaultandroid.frag EXACTLY.
+// Only used by the Android UBO path; PC keeps the old per-draw uniform path.
+constexpr int LIGHTING_UBO_MAX_POINT_LIGHTS = 16;
+constexpr int LIGHTING_UBO_MAX_SPOT_LIGHTS = 8;
+
 class LightingSystem : public System {
 public:
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
 #ifdef __ANDROID__
-    const int MAX_VISIBLE_POINT_LIGHTS = 8;
+    const int MAX_VISIBLE_POINT_LIGHTS = 16;
     static const int MAX_POINT_LIGHT_SHADOWS = 4;
 #else
     const int MAX_VISIBLE_POINT_LIGHTS = 24;
@@ -34,6 +40,60 @@ public:
     void ResetDefaults();
 
     void ApplyLighting(Shader& shader);
+
+#ifdef __ANDROID__
+    // Android uses a UBO (Uniform Buffer Object) for lighting data instead of
+    // per-draw uniform uploads. This eliminates ~244 uniform setter calls per
+    // draw call (a brutal bottleneck on mobile OpenGL drivers).
+    //
+    // The struct layout below EXACTLY matches `layout(std140) uniform LightingBlock`
+    // in defaultandroid.frag. Fields are packed into vec4s to keep std140 rules
+    // predictable — vec3 in std140 is 16-byte aligned which causes subtle padding
+    // bugs when mixed with scalars.
+    //
+    // Total size: 2176 bytes.
+    struct alignas(16) LightingUBOData {
+        // Ambient (globals)
+        glm::vec4 ambSkyIntensity;   // xyz = ambientSky,     w = ambientIntensity
+        glm::vec4 ambEquatorMode;    // xyz = ambientEquator, w = ambientMode (as float)
+        glm::vec4 ambGround;         // xyz = ambientGround,  w = pad
+
+        // Directional light
+        glm::vec4 dirLightDir;       // xyz = direction,      w = intensity
+        glm::vec4 dirLightAmbient;   // xyz = ambient,        w = hasDirectionalLight (as float)
+        glm::vec4 dirLightDiffuse;   // xyz = diffuse,        w = pad
+        glm::vec4 dirLightSpecular;  // xyz = specular,       w = pad
+
+        // Light counts
+        glm::ivec4 lightCounts;      // x = numPointLights, y = numSpotLights
+
+        // Point lights: 5 vec4s each (std140 array stride = max(elemSize, 16))
+        //   [0] positionRange:     xyz = position, w = range
+        //   [1] ambientConstant:   xyz = ambient,  w = constant
+        //   [2] diffuseLinear:     xyz = diffuse,  w = linear
+        //   [3] specularQuadratic: xyz = specular, w = quadratic
+        //   [4] intensityShadow:   x = intensity, y = shadowIndex (float), zw = pad
+        glm::vec4 pointLights[LIGHTING_UBO_MAX_POINT_LIGHTS * 5];
+
+        // Spot lights: 6 vec4s each
+        //   [0] positionCutoff:    xyz = position,  w = cutOff
+        //   [1] directionOuter:    xyz = direction, w = outerCutOff
+        //   [2] ambientConstant:   xyz = ambient,   w = constant
+        //   [3] diffuseLinear:     xyz = diffuse,   w = linear
+        //   [4] specularQuadratic: xyz = specular,  w = quadratic
+        //   [5] intensityPad:      x = intensity, yzw = pad
+        glm::vec4 spotLights[LIGHTING_UBO_MAX_SPOT_LIGHTS * 6];
+    };
+
+    // Allocate the UBO and bind to binding point 1 (CameraBlock uses 0).
+    void InitLightingUBO();
+
+    // Populate and upload the UBO — call once per frame AFTER CollectLightData().
+    void UploadLightingUBO();
+
+    // Getter so GraphicsManager can bind the UBO explicitly if needed.
+    GLuint GetLightingUBO() const { return m_lightingUBO; }
+#endif
 
     // ========================================================================
     // SHADOW MAPPING - NEW
@@ -158,4 +218,10 @@ private:
 
     // Track active shadow casters for editor warnings
     int activeShadowCasterCount = 0;
+
+#ifdef __ANDROID__
+    // Lighting UBO (binding = 1) — uploaded once per frame, read by all shaders
+    // that declare `layout(std140) uniform LightingBlock`.
+    GLuint m_lightingUBO = 0;
+#endif
 };

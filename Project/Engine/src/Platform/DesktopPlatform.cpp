@@ -24,6 +24,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <sstream>
 #include "Logging.hpp"
 #include "RunTimeVar.hpp"
+#include "Settings/GameSettings.hpp"
 
 // Static instance pointer for callbacks
 static DesktopPlatform* s_instance = nullptr;
@@ -339,10 +340,15 @@ void DesktopPlatform::KeyCallback(GLFWwindow* window, int key, int scancode, int
     (void)engineAction;
 
 #ifndef EDITOR
-    // Alt+Enter to toggle fullscreen (game builds only)
+    // Alt+Enter to toggle fullscreen (game builds only).
+    // Route through GameSettingsManager so the in-memory setting stays in sync
+    // with the actual window state. Otherwise GameSettingsManager::ApplySettings()
+    // (called from SceneManager scene transitions and the settings Reset button)
+    // will overwrite the fullscreen state with the stale value from the JSON file.
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS && (mods & GLFW_MOD_ALT)) {
         if (s_instance) {
-            s_instance->ToggleFullscreen();
+            bool newState = !s_instance->IsFullscreen();
+            GameSettingsManager::GetInstance().SetFullscreen(newState);
         }
         return;
     }

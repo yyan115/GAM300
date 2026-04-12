@@ -96,13 +96,33 @@ return Component {
         if self.active then
             self.age = self.age + dt
             local sweptAngle = self._currentSpeed * self.age
-            
+
             if math.abs(sweptAngle) >= self._arcLength then
                 self.active = false
                 if self.model then ModelRenderComponent.SetVisible(self.model, false) end
-                return  
+                return
             end
-            
+
+            -- Follow player movement during the sweep (lunge, jump, stairs, knockback).
+            -- worldPosition is 1-frame stale (TransformSystem runs after scripts).
+            -- Linear extrapolation from the last two reads predicts the current
+            -- position, eliminating the visible lag when jumping or taking stairs.
+            if self._spawnPlayerPos then
+                local pPos = self._playerTransform.worldPosition
+                local pScale = self._playerTransform.localScale
+                local prev = self._prevPlayerPos or self._spawnPlayerPos
+                local estX = 2 * pPos.x - prev.x
+                local estY = 2 * pPos.y - prev.y
+                local estZ = 2 * pPos.z - prev.z
+                local dx = estX - self._spawnPlayerPos.x
+                local dy = estY - self._spawnPlayerPos.y
+                local dz = estZ - self._spawnPlayerPos.z
+                self._transform.localPosition.x = self._spawnLocalPos.x + dx / pScale.x
+                self._transform.localPosition.y = self._spawnLocalPos.y + dy / pScale.y
+                self._transform.localPosition.z = self._spawnLocalPos.z + dz / pScale.z
+                self._prevPlayerPos = { x = pPos.x, y = pPos.y, z = pPos.z }
+            end
+
             local localYaw = self._currentStartRot + sweptAngle
 
             local sweepQuat      = eulerToQuat(0, localYaw, 0)
@@ -153,7 +173,18 @@ return Component {
         self._transform.localPosition.x = (daggerPos.x + combinedOffsetX) / playerScale.x
         self._transform.localPosition.y = (daggerPos.y + self.OffsetHeight) / playerScale.y
         self._transform.localPosition.z = (daggerPos.z + combinedOffsetZ) / playerScale.z
-        
+
+        -- Snapshot player position + VFX local position at spawn time so the
+        -- Update loop can keep the VFX glued to the player during the sweep.
+        local pPos = self._playerTransform.worldPosition
+        self._spawnPlayerPos = { x = pPos.x, y = pPos.y, z = pPos.z }
+        self._prevPlayerPos  = { x = pPos.x, y = pPos.y, z = pPos.z }
+        self._spawnLocalPos  = {
+            x = self._transform.localPosition.x,
+            y = self._transform.localPosition.y,
+            z = self._transform.localPosition.z
+        }
+
         self.active = true
         self.age = 0
         

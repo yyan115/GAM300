@@ -16,7 +16,13 @@ return Component {
         self._isHovered = false
         self._ScreenRequestClose = false
 
-        --Disable Interactable Button 
+        -- Force the sprite to its normal (non-hover) state on first creation
+        -- so the prefab default doesn't show the hover texture.
+        if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+            self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+        end
+
+        --Disable Interactable Button
         local YesEntity = Engine.GetEntityByName("YesButton")
         local YesButton = GetComponent(YesEntity, "ButtonComponent")
         YesButton.interactable = false
@@ -24,7 +30,7 @@ return Component {
         local NoButton = GetComponent(NoEntity, "ButtonComponent")
         NoButton.interactable = false
 
-        
+
         -- Get the parent Prompt UI to check if it's active
         self._QuitPromptEntity = Engine.GetEntityByName("QuitPromptUI")
         if self._QuitPromptEntity then
@@ -95,6 +101,13 @@ return Component {
     ClosePrompt = function(self)
             if event_bus and event_bus.publish then
                 event_bus.publish("main_menu.click", {})
+            end
+
+            -- Reset hover visuals so the next open starts clean (Update stops
+            -- while QuitPromptUI is inactive, so stale state would linger).
+            self._isHovered = false
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
             end
 
             local YesEntity = Engine.GetEntityByName("YesButton")

@@ -581,8 +581,10 @@ void VideoSystem::Update(float dt)
             vc.stateTimer += dt;
             UpdateTypewriter(vc, dt);
 
-            // Tap input
-            if (g_inputManager->IsPointerJustPressed())
+            // Tap input — suppressed while a skip is fading out (inputLocked set
+            // by SkipHighlight.lua). Without this block the player can still tap
+            // through dialogue boards while the screen is fading to black.
+            if (!vc.inputLocked && g_inputManager->IsPointerJustPressed())
             {
                 if (!IsTypewriterFinished(vc))
                 {
@@ -603,8 +605,9 @@ void VideoSystem::Update(float dt)
                 }
             }
 
-            // Auto-advance
-            if (vc.stateTimer >= board.duration && vc.phase == VideoComponent::Phase::Displaying)
+            // Auto-advance — also paused while skip fade is running so the
+            // cutscene doesn't quietly keep progressing behind the black screen.
+            if (!vc.inputLocked && vc.stateTimer >= board.duration && vc.phase == VideoComponent::Phase::Displaying)
             {
                 int nextBoard = vc.currentBoardIndex + 1;
                 if (nextBoard < static_cast<int>(vc.boards.size()))

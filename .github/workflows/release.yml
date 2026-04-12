@@ -65,12 +65,58 @@ jobs:
       working-directory: Project
 
     - name: Stage game files for installer
+      shell: pwsh
       run: |
-        mkdir Installer\GAMEDIRECTORY
-        copy Project\Build\Release\*.exe Installer\GAMEDIRECTORY\
-        copy Project\Build\Release\*.dll Installer\GAMEDIRECTORY\
-        xcopy Project\Build\Release\Resources Installer\GAMEDIRECTORY\Resources\ /E /I /Y
-      shell: cmd
+        $ErrorActionPreference = "Stop"
+        $gamedir = "Installer\GAMEDIRECTORY"
+        New-Item -ItemType Directory -Force -Path $gamedir | Out-Null
+
+        # Verify the game build exists
+        if (-not (Test-Path "Project\Build\Release\Kusane.exe")) {
+            Write-Error "Kusane.exe not found in Project\Build\Release — build failed?"
+            Get-ChildItem Project\Build\Release -ErrorAction SilentlyContinue | Format-Table -AutoSize
+            exit 1
+        }
+
+        # Copy the exe and every DLL the game needs (Engine, fmod, vcpkg DLLs)
+        Copy-Item -Path "Project\Build\Release\*.exe" -Destination $gamedir -Force
+        Copy-Item -Path "Project\Build\Release\*.dll" -Destination $gamedir -Force
+
+        # Copy Resources DIRECTLY from source. POST_BUILD also copies them into
+        # Build\Release\Resources, but going to source is simpler, removes the dependency
+        # on POST_BUILD, and avoids xcopy quirks with large trees.
+        Copy-Item -Path "Project\Resources" -Destination $gamedir -Recurse -Force
+
+        # Verification — fail fast if something looks wrong so we catch it in CI, not in the wild.
+        Write-Host "=== Staged top-level files ==="
+        Get-ChildItem $gamedir -File | Select-Object Name, @{N='Size(KB)';E={[int]($_.Length/1KB)}} | Format-Table -AutoSize
+
+        Write-Host "=== Resource subdirs ==="
+        Get-ChildItem "$gamedir\Resources" -Directory | Select-Object Name | Format-Table -AutoSize
+
+        $exeOk = Test-Path "$gamedir\Kusane.exe"
+        $engineOk = Test-Path "$gamedir\Engine.dll"
+        $fmodOk = Test-Path "$gamedir\fmod.dll"
+        $resOk = Test-Path "$gamedir\Resources\Scenes"
+        $shaderOk = Test-Path "$gamedir\Resources\Shaders"
+        $modelOk = Test-Path "$gamedir\Resources\Models"
+        $configOk = Test-Path "$gamedir\Resources\Configs\input_config.json"
+
+        Write-Host "Kusane.exe:                 $exeOk"
+        Write-Host "Engine.dll:                 $engineOk"
+        Write-Host "fmod.dll:                   $fmodOk"
+        Write-Host "Resources\Scenes:           $resOk"
+        Write-Host "Resources\Shaders:          $shaderOk"
+        Write-Host "Resources\Models:           $modelOk"
+        Write-Host "Resources\Configs\...json:  $configOk"
+
+        if (-not ($exeOk -and $engineOk -and $fmodOk -and $resOk -and $shaderOk -and $modelOk -and $configOk)) {
+            Write-Error "Staging is missing required files — installer would produce a broken game."
+            exit 1
+        }
+
+        $totalMb = [int](((Get-ChildItem $gamedir -Recurse -File | Measure-Object -Property Length -Sum).Sum) / 1MB)
+        Write-Host "=== Total staged size: $totalMb MB ==="
 
     - name: Install Inno Setup
       run: choco install innosetup -y --no-progress
@@ -81,16 +127,11 @@ jobs:
         "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" Installer\InstallScript.iss
       shell: cmd
 
-    - name: Rename installer
-      run: |
-        move Installer\INSTALLER\Kusane_Setup.exe Installer\INSTALLER\Kusane-Setup-${{ github.event.inputs.version }}.exe
-      shell: cmd
-
     - name: Upload installer artifact
       uses: actions/upload-artifact@v4
       with:
         name: windows-release
-        path: Installer/INSTALLER/Kusane-Setup-${{ github.event.inputs.version }}.exe
+        path: Installer/INSTALLER/Kusane_Setup.exe
         retention-days: 1
 
   # ── Android APK Build ──────────────────────────────────────────────
@@ -151,10 +192,12 @@ jobs:
         path: release-files/
 
     - name: Rename APK
+      # Android install fails when the APK filename contains hyphens/version suffix on some
+      # devices (package installer refuses to read the manifest). Strip everything to `Kusane.apk`.
       run: |
         cd release-files
         for f in *.apk; do
-          mv "$f" "Kusane-Android-${{ github.event.inputs.version }}.apk"
+          mv "$f" "Kusane.apk"
         done
 
     - name: Create GitHub Release
@@ -168,8 +211,8 @@ jobs:
           **Version:** `${{ github.event.inputs.version }}`
 
           ### Downloads
-          - **Windows** — `Kusane-Setup-${{ github.event.inputs.version }}.exe` (installer)
-          - **Android** — `Kusane-Android-${{ github.event.inputs.version }}.apk`
+          - **Windows** — `Kusane_Setup.exe` (installer)
+          - **Android** — `Kusane.apk`
 
           ---
           *Built automatically from `${{ github.sha }}` on `${{ github.ref_name }}`*

@@ -116,6 +116,9 @@ void TextRenderingSystem::Update()
                 if (bloom.enabled) {
                     textRenderItem->bloomColor = bloom.bloomColor;
                     textRenderItem->bloomIntensity = bloom.bloomIntensity;
+                    if (bloom.bloomIntensity > 0.01f) {
+                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
+                    }
                 }
             }
 

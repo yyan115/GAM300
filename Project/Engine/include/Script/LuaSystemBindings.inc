@@ -189,6 +189,7 @@ BEGIN_SYSTEM("Input")
     //          end
     FUNCTION("IsDragging", InputWrappers::IsDragging)
     FUNCTION("GetDragDelta", InputWrappers::GetDragDelta)
+    FUNCTION("PromoteActionToDrag", InputWrappers::PromoteActionToDrag)
 
     // Batch API (for Lua optimization)
     FUNCTION("GetAllActionStates", InputWrappers::GetAllActionStates)

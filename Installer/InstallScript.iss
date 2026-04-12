@@ -13,7 +13,7 @@ AppId={{02F9FA09-A74B-42DA-BB97-6558B0A32FF3}
 ; Standard app data stuff
 ; !!NOTE!!: Replace all instances of "Kusane" with your game name.
 AppName=Kusane
-AppVerName=Kusane Version 0.1
+AppVerName=Kusane
 AppPublisher=DigiPen Institute of Technology
 AppPublisherURL=http://www.digipen.edu/
 AppSupportURL=http://www.digipen.edu/

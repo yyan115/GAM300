@@ -120,6 +120,23 @@ glm::vec2 AndroidInputManager::GetDragDelta() {
     return m_dragDelta;
 }
 
+void AndroidInputManager::PromoteActionToDrag(const std::string& action) {
+    // Find the pressed entity action matching this name and hijack its touch
+    // as the drag touch. The button action remains pressed — we are only
+    // additionally routing the same finger to camera drag so the player can
+    // swipe to aim without releasing the button.
+    for (const auto& entityAction : m_entityActions) {
+        if (entityAction.actionName == action && entityAction.isPressed &&
+            entityAction.activeTouchId != -1) {
+            m_dragTouchId = entityAction.activeTouchId;
+            m_isDragging = true;
+            // Do not pre-seed m_dragDelta — the next ProcessTouchMove for this
+            // pointer will accumulate delta from here on.
+            return;
+        }
+    }
+}
+
 bool AndroidInputManager::IsPointerPressed() {
     // Pointer = any non-handled touch
     for (const auto& [id, touch] : m_activeTouches) {

@@ -359,9 +359,11 @@ bool Shader::SetupShader(const std::string& path) {
 
 	// Auto-bind known UBO blocks to predefined binding points.
 	// CameraBlock (binding=0): view, projection, cameraPos — uploaded once per frame.
+	// LightingBlock (binding=1): all lighting data (Android only) — uploaded once per frame.
 	{
 		static const struct { const char* name; GLuint binding; } kBlocks[] = {
-			{ "CameraBlock", 0 },
+			{ "CameraBlock",   0 },
+			{ "LightingBlock", 1 },
 		};
 		for (auto& b : kBlocks) {
 			GLuint idx = glGetUniformBlockIndex(ID, b.name);

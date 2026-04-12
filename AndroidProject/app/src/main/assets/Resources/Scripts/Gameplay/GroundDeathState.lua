@@ -16,6 +16,18 @@ function DeathState:Enter(ai)
     -- Remove from charVsChar so corpse can't be pushed — controller stays alive
     pcall(function() CharacterController.DisableCollision(ai.entityId) end)
 
+    -- Make the rigidbody kinematic so the physics system can't push the corpse
+    -- around (other enemies, explosions, player body). The character controller
+    -- is still alive and handles the scripted knockback velocity (CC.Move) with
+    -- full wall collision, so the enemy still flies back but stops at walls.
+    if ai._rb then
+        pcall(function()
+            ai._rb.motionID = 1      -- Kinematic
+            ai._rb.motion_dirty = true
+            ai._rb.linearVel = { x = 0, y = 0, z = 0 }
+        end)
+    end
+
     -- init always
     ai._deathTimer = 0
     ai._deathLifetime = tonumber(ai.deathLifetime) or 8.0

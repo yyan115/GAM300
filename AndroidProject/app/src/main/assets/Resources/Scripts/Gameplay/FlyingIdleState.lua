@@ -25,9 +25,9 @@ function FlyingIdle:Update(ai, dt)
         ai:MaintainHover(dt)
     end
 
-    -- detect player -> Chase
+    -- detect player -> Chase (require line of sight)
     local detR = ai.DetectionRange or 4.0
-    if ai:IsPlayerInRange(detR) then
+    if ai:IsPlayerInRange(detR) and ai:HasLineOfSight() then
         ai.fsm:Change("Chase", ai.states.Chase)
         return
     end

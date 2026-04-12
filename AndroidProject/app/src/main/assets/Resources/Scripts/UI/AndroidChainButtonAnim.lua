@@ -67,6 +67,18 @@ return Component {
             --print("[AndroidChainButtonAnim] State -> HOOK (detach)")
             self:_setState(HOOK_FRAMES)
         end)
+        -- Fires the instant an enemy is hooked (EnemyAI publishes this from its
+        -- chain.endpoint_hit_entity handler). Flying enemies -> Slam icon,
+        -- grounded enemies -> Pull icon. This runs BEFORE the player taps to
+        -- actually pull/slam, so the button shows the right next-action hint.
+        self._subHookedType = _G.event_bus.subscribe("chain.hooked_target_type", function(p)
+            if not p then return end
+            if p.isFlying then
+                self:_setState(SLAM_FRAMES)
+            else
+                self:_setState(PULL_FRAMES)
+            end
+        end)
     end,
 
     _setState = function(self, frames)
@@ -112,7 +124,7 @@ return Component {
 
     OnDisable = function(self)
         if not _G.event_bus or not _G.event_bus.unsubscribe then return end
-        local subs = { "_subPull", "_subSlam", "_subRetract", "_subDetach" }
+        local subs = { "_subPull", "_subSlam", "_subRetract", "_subDetach", "_subHookedType" }
         for _, k in ipairs(subs) do
             if self[k] then
                 pcall(function() _G.event_bus.unsubscribe(self[k]) end)

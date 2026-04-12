@@ -24,6 +24,46 @@ local function setTextsActive(active)
     end
 end
 
+-- Pre-position the SettingsUI slider notches/fills using the current saved
+-- GameSettings values. We run this on scene load (before the UI is visible)
+-- so when the user first clicks Settings the notches render at the correct
+-- position immediately. Without this, MainMenuSettingsSlider's Start runs a
+-- frame AFTER the entity becomes active (scripts on inactive entities don't
+-- tick) and the slider visibly flashes from its prefab default to the real
+-- value on first open.
+local SLIDER_DEFS = {
+    { prefix = "Master", getter = function() return GameSettings.GetMasterVolume() end, min = 0.0, max = 1.0 },
+    { prefix = "BGM",    getter = function() return GameSettings.GetBGMVolume()    end, min = 0.0, max = 1.0 },
+    { prefix = "SFX",    getter = function() return GameSettings.GetSFXVolume()    end, min = 0.0, max = 1.0 },
+    { prefix = "Gamma",  getter = function() return GameSettings.GetGamma()        end, min = 1.0, max = 3.0 },
+}
+
+local function prePositionSettingsSliders()
+    if not GameSettings then return end
+    GameSettings.Init()
+    for _, def in ipairs(SLIDER_DEFS) do
+        local notchEnt = Engine.GetEntityByName(def.prefix .. "Notch")
+        local fillEnt  = Engine.GetEntityByName(def.prefix .. "Fill")
+        if notchEnt and fillEnt then
+            local notchTr = GetComponent(notchEnt, "Transform")
+            local fillTr  = GetComponent(fillEnt,  "Transform")
+            local fillSp  = GetComponent(fillEnt,  "SpriteRenderComponent")
+            if notchTr and fillTr then
+                local offsetX = fillTr.localScale.x / 2.0
+                local minX    = fillTr.localPosition.x - offsetX
+                local maxX    = fillTr.localPosition.x + offsetX
+                local value   = def.getter()
+                local normalized = (value - def.min) / (def.max - def.min)
+                if normalized < 0 then normalized = 0 end
+                if normalized > 1 then normalized = 1 end
+                notchTr.localPosition.x = minX + (normalized * (maxX - minX))
+                notchTr.isDirty = true
+                if fillSp then fillSp.fillValue = normalized end
+            end
+        end
+    end
+end
+
 return Component {
     fields = {
         fadeDuration      = 1.0,
@@ -109,6 +149,10 @@ return Component {
         -- Ensure game is not paused when entering main menu
         Time.SetPaused(false)
         Time.SetTimeScale(1.0)
+
+        -- Pre-position settings sliders while SettingsUI is still hidden so
+        -- the user's first open doesn't flash the prefab default position.
+        prePositionSettingsSliders()
 
         self._pendingScene = nil
         self._isFading     = false

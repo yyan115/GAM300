@@ -51,11 +51,16 @@ void BloomEffect::CreateFBOs(int w, int h)
     fboHeight = h;
 
     // Brightness extraction FBO (fallback when no MRT emission texture)
+    // Android uses R11F_G11F_B10F (4 bytes/pixel) vs RGBA16F (8 bytes/pixel) to halve bandwidth.
     glGenFramebuffers(1, &extractFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, extractFBO);
     glGenTextures(1, &extractTexture);
     glBindTexture(GL_TEXTURE_2D, extractTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -65,10 +70,18 @@ void BloomEffect::CreateFBOs(int w, int h)
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[BloomEffect] Extract FBO not complete!\n");
 
-    // Create mip chain at progressively halved resolutions
+    // Create mip chain at progressively halved resolutions.
+    // Android starts at w/4 (quarter res) instead of w/2 to save 75% bandwidth on
+    // the bloom pipeline. Bloom is already blurred so 1 extra level of downsample
+    // is imperceptible.
     activeMipLevels = 0;
+#ifdef __ANDROID__
+    int mipW = w / 4;
+    int mipH = h / 4;
+#else
     int mipW = w / 2;
     int mipH = h / 2;
+#endif
 
     for (int i = 0; i < MAX_MIP_LEVELS; ++i)
     {
@@ -83,7 +96,11 @@ void BloomEffect::CreateFBOs(int w, int h)
         glBindFramebuffer(GL_FRAMEBUFFER, mip.fbo);
         glGenTextures(1, &mip.texture);
         glBindTexture(GL_TEXTURE_2D, mip.texture);
+#ifdef __ANDROID__
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, mipW, mipH, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, mipW, mipH, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

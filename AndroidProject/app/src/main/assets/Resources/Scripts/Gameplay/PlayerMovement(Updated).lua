@@ -157,7 +157,7 @@ return Component {
         DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
         DashDuration           = 0.7,   -- Seconds dash lasts. Match to dash animation.
         DashCooldown           = 2.5,   -- Seconds before a consumed use regenerates.
-        DashMaxUses            = 2,     -- Max consecutive dashes. Uses regenerate one at a time.
+        DashMaxUses            = 1,     -- One dash, then cooldown.
         DashEarlyCancelRatio   = 0.5,   -- Fraction of dash elapsed before early-cancel fires (0=instant, 1=no cancel).
         AirDashSpeedMultiplier = 1.3,   -- Speed multiplier for air dashes.
         AirDashLift            = 1.5,   -- Upward velocity added during air dash. 0 = purely horizontal.
@@ -872,8 +872,10 @@ return Component {
         end
 
         -- ── 9. Dash charge regen ──────────────────────────────────────────────
-        -- Only ticks when uses are depleted. Regenerates one use per DashCooldown.
-        if self._dashUses < self.DashMaxUses then
+        -- Only ticks when uses are depleted AND dash is not active.
+        -- The timer is frozen while dashing so the full cooldown runs after
+        -- the dash animation finishes, not during it.
+        if self._dashUses < self.DashMaxUses and not self._isDashing then
             self._dashRegenTimer = self._dashRegenTimer - dt
             if self._dashRegenTimer <= 0 then
                 self._dashUses       = self._dashUses + 1

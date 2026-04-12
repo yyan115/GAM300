@@ -24,6 +24,7 @@ return Component {
     },
 
     Start = function(self)
+        self._pageWasActive = false
         -- Setup button data with sprite swapping support
         self._buttonData = {}
         local buttonMapping = {
@@ -59,6 +60,18 @@ return Component {
     Update = function(self, dt)
         if not self._buttonData then return end
 
+        -- Rising-edge detection: Update() stops while entity is disabled, so we
+        -- must reset stale sprites the first frame the prompt comes back up.
+        local pageEntity = Engine.GetEntityByName("ConfirmationPromptUI")
+        local pageComp = pageEntity and GetComponent(pageEntity, "ActiveComponent")
+        local pageIsActive = pageComp and pageComp.isActive
+        if not pageIsActive then
+            self._pageWasActive = false
+            return
+        end
+        local justBecameActive = not self._pageWasActive
+        self._pageWasActive = true
+
         local pointerPos = Input.GetPointerPosition()
         if not pointerPos then return end
 
@@ -69,25 +82,38 @@ return Component {
             local isHovering = inputX >= data.minX and inputX <= data.maxX and
                                inputY >= data.minY and inputY <= data.maxY
 
-            -- Handle hover enter
-            if isHovering and not data.wasHovered then
-                -- Publish hover event for PauseMenuAudio
-                if event_bus and event_bus.publish then
-                    event_bus.publish("pause_menu.hover", {})
+            if justBecameActive then
+                -- Force-reset sprite so previous-session hover state never
+                -- carries over. Sync wasHovered without firing hover-enter SFX.
+                if data.sprite and data.spriteGUIDs then
+                    if isHovering and data.spriteGUIDs[2] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[2])
+                    elseif data.spriteGUIDs[1] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[1])
+                    end
                 end
-                -- Switch to hover sprite
-                if data.sprite and data.spriteGUIDs and data.spriteGUIDs[2] then
-                    data.sprite:SetTextureFromGUID(data.spriteGUIDs[2])
+                data.wasHovered = isHovering
+            else
+                -- Handle hover enter
+                if isHovering and not data.wasHovered then
+                    -- Publish hover event for PauseMenuAudio
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("pause_menu.hover", {})
+                    end
+                    -- Switch to hover sprite
+                    if data.sprite and data.spriteGUIDs and data.spriteGUIDs[2] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[2])
+                    end
+                -- Handle hover exit
+                elseif not isHovering and data.wasHovered then
+                    -- Switch back to normal sprite
+                    if data.sprite and data.spriteGUIDs and data.spriteGUIDs[1] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[1])
+                    end
                 end
-            -- Handle hover exit
-            elseif not isHovering and data.wasHovered then
-                -- Switch back to normal sprite
-                if data.sprite and data.spriteGUIDs and data.spriteGUIDs[1] then
-                    data.sprite:SetTextureFromGUID(data.spriteGUIDs[1])
-                end
-            end
 
-            data.wasHovered = isHovering
+                data.wasHovered = isHovering
+            end
         end
     end,
 

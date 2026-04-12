@@ -158,6 +158,13 @@ return Component {
 
         self._isSkipTriggered = true
 
+        -- Lock the VideoSystem's tap-to-advance so the player can't keep
+        -- clicking through dialogue boards while the fade-to-black runs.
+        -- The engine reads this flag in VideoSystem.cpp Displaying phase.
+        if self.videoComp then
+            self.videoComp.inputLocked = true
+        end
+
         -- Play click SFX
         if self._audio and self.HoverSFX and self.HoverSFX[2] then
             self._audio:PlayOneShot(self.HoverSFX[2])

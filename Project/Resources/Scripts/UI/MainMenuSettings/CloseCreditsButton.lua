@@ -41,7 +41,12 @@ return Component {
 
             if self._sprite then
                 self._sprite.isVisible = true
+                -- Reset to normal sprite so previous-session hover never lingers.
+                if self.spriteGUIDs and self.spriteGUIDs[1] then
+                    self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+                end
             end
+            self._isHovered = false
         end
 
         -- Update previous state

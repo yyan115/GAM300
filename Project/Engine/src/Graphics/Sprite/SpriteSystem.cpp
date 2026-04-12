@@ -174,6 +174,9 @@ void SpriteSystem::Update()
                 if (bloom.enabled) {
                     spriteRenderItem->bloomColor = bloom.bloomColor;
                     spriteRenderItem->bloomIntensity = bloom.bloomIntensity;
+                    if (bloom.bloomIntensity > 0.01f) {
+                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
+                    }
                 }
             }
 

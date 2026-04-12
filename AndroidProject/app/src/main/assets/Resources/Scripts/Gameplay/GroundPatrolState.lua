@@ -45,6 +45,10 @@ end
 function PatrolState:Enter(ai)
     ai._animator:SetBool("PlayerInDetectionRange", false)
     ai._animator:SetBool("PatrolEnabled", true)
+    ai._animator:SetBool("PlayerInAttackRange", false)
+    ai._animator:SetBool("ReadyToAttack", false)
+    ai._animator:SetBool("Melee", false)
+    ai._animator:SetBool("Ranged", false)
     -- print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
     -- tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
     -- tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
@@ -130,7 +134,7 @@ function PatrolState:Update(ai, dt)
     local detect = (ai.config and ai.config.DetectionRange) or ai.DetectionRange or 4.0
     local d2 = ai:GetPlayerDistanceSq()
 
-    if d2 <= (detect * detect) then
+    if d2 <= (detect * detect) and ai:HasLineOfSight() then
         stop(ai)
         ai.fsm:Change("Chase", ai.states.Chase)
         return

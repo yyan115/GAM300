@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/GraphicsManager.hpp"
 #include "Logging.hpp"
 #include <WindowManager.hpp>
 
@@ -173,7 +174,11 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     }
 
     // Apply bloom using per-entity emission buffer (no threshold extraction)
-    if (bloomEffect && bloomEffect->IsEnabled() && bloomEffect->GetIntensity() > 0.01f)
+    // Early-out: skip the entire bloom pipeline (downsample mip chain + upsample +
+    // composite) if no entity on screen has bloom > 0 this frame. Saves ~3-5ms on
+    // mobile when nothing is glowing (which is most of the time).
+    if (bloomEffect && bloomEffect->IsEnabled() && bloomEffect->GetIntensity() > 0.01f &&
+        GraphicsManager::GetInstance().HasBloomEmissionThisFrame())
     {
         PROFILE_SCOPED("PostProcess::Bloom");
         bloomEffect->SetBloomEmissionTexture(hdrBloomEmissionTexture);
@@ -258,9 +263,16 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrColorTexture, 0);
 
     // Create bloom emission texture (MRT attachment 1)
+    // Android uses R11F_G11F_B10F (4 bytes/pixel) instead of RGBA16F (8 bytes/pixel)
+    // to halve memory bandwidth. Bloom doesn't need alpha and 10-11 bit precision
+    // is plenty for glow/emission values.
     glGenTextures(1, &hdrBloomEmissionTexture);
     glBindTexture(GL_TEXTURE_2D, hdrBloomEmissionTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

@@ -19,6 +19,7 @@ layout (location = 10) in vec4 aInstanceModelCol3;
 layout (location = 11) in vec4 aInstanceNormalCol0;
 layout (location = 12) in vec4 aInstanceNormalCol1;
 layout (location = 13) in vec4 aInstanceNormalCol2;
+layout (location = 14) in vec4 aInstanceBloomData;  // rgb=color, a=intensity
 
 out vec3 FragPos;
 out vec3 Normal;
@@ -26,6 +27,7 @@ out vec3 Tangent;
 out vec3 color;
 out vec2 TexCoords;
 out vec4 FragPosLightSpace;
+flat out vec4 vBloomData;
 
 layout(std140) uniform CameraBlock {
     mat4 view;
@@ -67,11 +69,17 @@ void main()
             aInstanceNormalCol1.xyz,
             aInstanceNormalCol2.xyz
         );
+
+        // Pass per-instance bloom data to fragment shader
+        vBloomData = aInstanceBloomData;
     }
     else
     {
         modelMatrix = model;
         nrmMatrix = normalMatrixCPU;
+
+        // Non-instanced: fragment shader will use uniforms instead
+        vBloomData = vec4(0.0);
     }
 
     // Start in object space

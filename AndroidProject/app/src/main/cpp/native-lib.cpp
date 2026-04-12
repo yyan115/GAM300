@@ -18,7 +18,7 @@
 #include <fmod/fmod_errors.h>
 #include <fmod/fmod.h>
 
-// NEW: Add include for AudioManager (relative path from Engine/include)
+// AudioManager for pause/resume audio on app lifecycle
 #include "Sound/AudioManager.hpp"
 
 #define LOG_TAG "GAM300"
@@ -175,6 +175,27 @@ Java_com_gam300_game_MainActivity_onTouchEventWithId(JNIEnv* env, jobject /* thi
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
             androidPlatform->HandleTouchEvent(static_cast<int>(action), static_cast<int>(pointerId), static_cast<float>(x), static_cast<float>(y));
         }
+    }
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_gam300_game_MainActivity_shouldQuit(JNIEnv* env, jobject /* this */) {
+    return static_cast<jboolean>(WindowManager::ShouldClose());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_gam300_game_MainActivity_pauseAudio(JNIEnv* env, jobject /* this */) {
+    if (engineInitialized) {
+        AudioManager::GetInstance().SetGlobalPaused(true);
+        LOGI("Audio paused (app backgrounded)");
+    }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_gam300_game_MainActivity_resumeAudio(JNIEnv* env, jobject /* this */) {
+    if (engineInitialized) {
+        AudioManager::GetInstance().SetGlobalPaused(false);
+        LOGI("Audio resumed (app foregrounded)");
     }
 }
 
