@@ -74,14 +74,28 @@ else()
     # TO HIDE CONSOLE:  Use add_executable(Game WIN32 ...) with /ENTRY:mainCRTStartup
     # ============================================================================
 
-    # Console HIDDEN (for release builds)
-    add_executable(Game WIN32 ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE})
+    # Console VISIBLE
+    add_executable(Game ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE})
+
+    # ============================================================================
+    # INSTALLATION RULES
+    # ============================================================================
+    install(TARGETS Game DESTINATION .)
+
+    # Install Resources folder
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/Resources" DESTINATION .)
+
+    # Install FMOD DLL
     if(WIN32)
-        set_target_properties(Game PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
+        install(FILES "${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll" DESTINATION .)
     endif()
 
-    # Console VISIBLE (for debugging) - uncomment below and comment out the WIN32 section above
-    # add_executable(Game ${GAME_SOURCES} ${GAME_HEADERS} ${APP_ICON_RESOURCE})
+    # Install vcpkg DLLs (Release)
+    if(WIN32)
+        install(DIRECTORY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/" 
+                DESTINATION .
+                FILES_MATCHING PATTERN "*.dll")
+    endif()
 
 endif()
 

@@ -330,3 +330,5 @@ set_target_properties(Engine PROPERTIES
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH "\$ORIGIN:${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64"
 )
+
+install(TARGETS Engine DESTINATION .)
