@@ -13,5 +13,6 @@ REFL_REGISTER_START(ModelRenderComponent)
 	REFL_REGISTER_PROPERTY(depthOffset)
 	REFL_REGISTER_PROPERTY(depthOffsetFactor)
 	REFL_REGISTER_PROPERTY(depthOffsetUnits)
+	REFL_REGISTER_PROPERTY(distanceFadeOpacity)
 REFL_REGISTER_END;
 #pragma endregion

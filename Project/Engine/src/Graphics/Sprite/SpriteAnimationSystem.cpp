@@ -113,13 +113,38 @@ void SpriteAnimationSystem::Update()
 
 		auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
 
-        // Detect inactive→active transition: kill any in-progress animation so
-        // the Lua hover scripts control the sprite texture from a clean slate.
-        // Without this, a stale animation frame overwrites whatever Lua sets.
+        // Detect inactive→active transition: reset animation to frame 0 and
+        // force-apply the first frame's texture so stale mid-animation visuals
+        // don't persist (e.g. popup buttons showing a mid-click frame on reopen).
+        // AutoPlay animations are restarted; non-autoPlay are stopped cleanly.
         if (!anim.wasActiveInHierarchy) {
-            anim.playing = false;
             anim.currentFrameIndex = 0;
             anim.timeInCurrentFrame = 0.0f;
+            anim.playing = (anim.enabled && anim.autoPlay && anim.currentClipIndex >= 0);
+
+            // Force sprite visual back to frame 0 of the current clip
+            if (anim.currentClipIndex >= 0 && anim.currentClipIndex < (int)anim.clips.size()) {
+                SpriteAnimationClip& resetClip = anim.clips[anim.currentClipIndex];
+                if (!resetClip.frames.empty()) {
+                    const SpriteFrame& f0 = resetClip.frames[0];
+                    if (f0.textureGUID != GUID_128{}) {
+                        sprite.textureGUID = f0.textureGUID;
+                        sprite.texturePath = f0.texturePath;
+                        try {
+                            std::string tp = AssetManager::GetInstance().GetAssetPathFromGUID(f0.textureGUID);
+                            if (!tp.empty())
+                                sprite.texture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(f0.textureGUID, tp);
+                            else if (!f0.texturePath.empty())
+                                sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(f0.texturePath);
+                        } catch (...) {
+                            if (!f0.texturePath.empty())
+                                sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(f0.texturePath);
+                        }
+                    }
+                    sprite.uvOffset = f0.uvOffset;
+                    sprite.uvScale = f0.uvScale;
+                }
+            }
         }
         anim.wasActiveInHierarchy = true;
 

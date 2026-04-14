@@ -675,6 +675,9 @@ return Component {
         self._vaultAscentLock      = false   -- suppresses landing detection while player is still rising
         self._vaultReadyTimer      = 0       -- holds _vaultDetected alive briefly for forgiving timing
         self._prevAirY             = 0       -- previous frame Y; used to detect peak and start of descent
+        self._groundedFrames       = 0       -- consecutive grounded frames; debounces landing detection
+        self._jumpCycleComplete    = false   -- true after landing from a jump; blocks walk-off-ledge re-trigger
+        self._ascentLockTimer      = 0       -- counts up while ascent lock is active; safety timeout
 
         -- ── Spawn position ────────────────────────────────────────────────────
         local pos = self._transform.worldPosition
@@ -1394,6 +1397,15 @@ return Component {
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
 
+            -- Arm ascent lock for ALL jumps — suppresses landing detection
+            -- until the player starts descending.  Prevents stair/ledge
+            -- clips during ascent from triggering false landings.
+            -- Vault jumps override with their own values below.
+            self._vaultAscentLock  = true
+            self._ascentLockTimer  = 0
+            self._prevAirY         = self._peakAirY
+            self._jumpCycleComplete = false
+
             if self._vaultDetected and not isLiftAttack then
                 -- Arm vault air control: starts full, tapers to normal as player reaches peak.
                 self._vaultJumpActive      = true
@@ -1687,9 +1699,22 @@ return Component {
         local coastVelMag         = math.sqrt(self._velX*self._velX + self._velZ*self._velZ)
         local isEffectivelyMoving = isMoving or coastVelMag > 0.1
 
+        -- Safety timeout for ascent lock.  Normal jumps peak within ~0.5s;
+        -- the Y-descent check clears the lock then.  But tiny hops on stairs
+        -- can land on a higher step before Y ever decreases, leaving the lock
+        -- stuck forever.  This timeout guarantees it clears.
+        if self._vaultAscentLock then
+            self._ascentLockTimer = self._ascentLockTimer + dt
+            if self._ascentLockTimer > 0.75 then
+                self._vaultAscentLock = false
+            end
+        end
+
         if not isGrounded then
-            if not self._isJumping and not self._isLanding then
+            if not self._isJumping and not self._isLanding and not self._jumpCycleComplete then
                 -- Became airborne without jump press (walked off a ledge).
+                -- Blocked by _jumpCycleComplete to prevent re-triggering jump
+                -- after a false landing from a bump/edge during a prior jump.
                 self._isJumping = true
                 self._isRunning = false
                 self._animator:SetBool("IsRunning", false)
@@ -1714,6 +1739,7 @@ return Component {
                 -- Landed.
                 self._isJumping             = false
                 self._isLanding             = true
+                self._jumpCycleComplete     = true
                 self._vaultJumpActive       = false
                 self._vaultAscentLock       = false
                 self._airLiftCooldownTimer  = 0
@@ -1732,7 +1758,7 @@ return Component {
                 -- Set destination state BEFORE clearing IsJumping so the animator
                 -- sees the correct target condition when IsJumping flips to false.
                 self._animator:SetBool("IsLifting", false)
-                if fallDist >= (self.RollHeightThreshold or 2.5) then
+                if fallDist >= (self.RollHeightThreshold or 2.5) and fallDist < 8 then
                     -- High fall -> roll
                     self._isRolling  = true
                     self._rollDirX   = self._facingX or 0
@@ -1768,6 +1794,13 @@ return Component {
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 end
+            end
+
+            -- Clear jump-cycle flag once safely grounded with no pending
+            -- jump or landing state.  This re-enables walk-off-ledge
+            -- detection for future ledge falls.
+            if not self._isJumping and not self._isLanding then
+                self._jumpCycleComplete = false
             end
         end
 

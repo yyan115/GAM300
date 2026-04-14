@@ -260,6 +260,15 @@ return Component {
                 end
             end)
 
+            self._flythroughActiveSub = event_bus.subscribe("flythrough.active", function(active)
+                self._cinematicActive = active
+                if not active then
+                    self._cinematicTarget    = nil
+                    self._cinematicStartPosX = nil
+                    self._cinematicStartRotW = nil
+                end
+            end)
+
             self._cinematicTargetSub = event_bus.subscribe("cinematic.target", function(payload)
                 if payload then self._cinematicTarget = payload end
             end)
@@ -295,7 +304,7 @@ return Component {
         if event_bus and event_bus.unsubscribe then
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
-                "_cinematicActiveSub", "_cinematicTargetSub",
+                "_cinematicActiveSub", "_flythroughActiveSub", "_cinematicTargetSub",
                 "_playerRespawnedSub", "_cameraShakeSub",
             }) do
                 if self[sub] then

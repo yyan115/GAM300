@@ -25,8 +25,9 @@ return Component {
             --print("[PlayerFeathersManager] Subscribing to featherCollected")
             self._featherCollectedSub = event_bus.subscribe("featherCollected", function(payload)
                 if payload then
-                    --print(string.format("[PlayerFeathersManager] Event Received! EntityID: %s", tostring(self.entityId)))
                     _G._numFeathers = _G._numFeathers + 1
+                    print(string.format("[PlayerFeathersManager] featherCollected — count now %d/%d",
+                        _G._numFeathers, _G._featherSkillRequirement or 0))
                     if self._feathersCollectedTextComponent then
                         self._feathersCollectedTextComponent.text = string.format("x%d", _G._numFeathers)
                     end

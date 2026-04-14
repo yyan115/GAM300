@@ -874,6 +874,11 @@ void Engine::Shutdown() {
     SceneManager::GetInstance().ExitScene();
     PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
+
+    // Destroy the platform (EGL display/context on Android, GLFW window on PC).
+    // Must happen last so GL cleanup in the managers above can still run.
+    WindowManager::Exit();
+
     ENGINE_PRINT("[Engine] Shutdown complete\n");
 }
 

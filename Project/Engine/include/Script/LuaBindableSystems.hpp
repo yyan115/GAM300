@@ -603,6 +603,12 @@ namespace CharacterControllerWrappers {
         if (ecsManager.characterControllerSystem)
             ecsManager.characterControllerSystem->SetImmovable(id, immovable);
     }
+
+    inline void SetStepUp(CharacterController* controller, float up, float down)
+    {
+        if (controller)
+            controller->SetStepUp(up, down);
+    }
 }
 
 // ============================================================================
@@ -1846,40 +1852,24 @@ namespace EntityQueryWrappers {
 
 namespace MaterialWrappers {
 
-    // Set the material opacity for a 3D model entity (0.0 = invisible, 1.0 = opaque).
-    // Returns false if the entity has no ModelRenderComponent or no material.
+    // Set per-entity opacity (0.0 = invisible, 1.0 = opaque).
+    // Uses distanceFadeOpacity on the component — per-entity, not shared material.
     inline bool SetModelOpacity(Entity entityId, float opacity) {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         if (!ecs.HasComponent<ModelRenderComponent>(entityId)) return false;
 
         auto& mrc = ecs.GetComponent<ModelRenderComponent>(entityId);
-        if (mrc.material) {
-            mrc.material->SetOpacity(opacity);
-            return true;
-        }
-        // Fall back to per-mesh materials from the model
-        if (mrc.model) {
-            for (auto& mesh : mrc.model->meshes) {
-                if (mesh.material) {
-                    mesh.material->SetOpacity(opacity);
-                }
-            }
-            return true;
-        }
-        return false;
+        mrc.distanceFadeOpacity = glm::clamp(opacity, 0.0f, 1.0f);
+        return true;
     }
 
-    // Get the material opacity for a 3D model entity. Returns -1 if not found.
+    // Get per-entity opacity. Returns -1 if not found.
     inline float GetModelOpacity(Entity entityId) {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         if (!ecs.HasComponent<ModelRenderComponent>(entityId)) return -1.0f;
 
         auto& mrc = ecs.GetComponent<ModelRenderComponent>(entityId);
-        if (mrc.material) return mrc.material->GetOpacity();
-        if (mrc.model && !mrc.model->meshes.empty() && mrc.model->meshes[0].material) {
-            return mrc.model->meshes[0].material->GetOpacity();
-        }
-        return -1.0f;
+        return mrc.distanceFadeOpacity;
     }
 }
 

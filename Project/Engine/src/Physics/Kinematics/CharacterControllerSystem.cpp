@@ -173,6 +173,26 @@ void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) 
         // Sync CharacterVirtual position back to Transform (same role as PhysicsSyncBack for regular bodies)
         if (ecsManager.HasComponent<Transform>(entityId)) {
             Vector3D pos = controller->GetPosition();
+
+            // Smooth Y for immovable (enemy) controllers to prevent visible pop
+            // from Jolt step-up / penetration recovery at ground geometry seams.
+            // Large Y deltas (teleport, juggle, knockup) pass through instantly.
+            if (controller->IsImmovable()) {
+                auto& transform = ecsManager.GetComponent<Transform>(entityId);
+                float currentY = transform.worldPosition.y;
+                float targetY  = pos.y;
+                float dy = targetY - currentY;
+
+                // Only smooth small jumps (< 0.5 units). Anything bigger is an
+                // intentional teleport / combat action — let it through instantly.
+                if (std::abs(dy) < 0.5f && std::abs(dy) > 1e-4f) {
+                    float maxStep = 8.0f * deltaTime; // 8 units/sec — fast enough for slopes
+                    if (dy >  maxStep) dy =  maxStep;
+                    if (dy < -maxStep) dy = -maxStep;
+                    pos.y = currentY + dy;
+                }
+            }
+
             if (ecsManager.HasComponent<ParentComponent>(entityId))
                 ecsManager.transformSystem->SetWorldPosition(entityId, pos);
             else

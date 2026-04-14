@@ -351,9 +351,10 @@ return Component {
             local ok, ctrl = pcall(function()
                 return CharacterController.Create(self.entityId, self._collider, self._transform)
             end)
-            if ok then
+            if ok and ctrl then
                 self._controller = ctrl
                 pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+                pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             else
                 --print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
@@ -815,6 +816,7 @@ return Component {
         if ok and ctrl then
             self._controller = ctrl
             pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+            pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             -- Sync CC to current Transform position
             local x,y,z = self:GetPosition()
             if CharacterController.SetPosition then

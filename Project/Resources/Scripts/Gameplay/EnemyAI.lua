@@ -17,6 +17,7 @@ local FlyingPatrolState = require("Gameplay.FlyingPatrolState")
 local FlyingChaseState  = require("Gameplay.FlyingChaseState")
 local FlyingAttackState = require("Gameplay.FlyingAttackState")
 local FlyingHookedState = require("Gameplay.FlyingHookedState")
+local FlyingDeathState  = require("Gameplay.FlyingDeathState")
 
 local KnifePool     = require("Gameplay.KnifePool")
 local Input = _G.Input
@@ -903,8 +904,11 @@ return Component {
                     -- Should not reach here (CC is nil while juggling) but safe fallback.
                     self:SetPosition(pos.x, self._juggleY or pos.y, pos.z)
                 elseif not self:IsFlying() then
-                    local groundY = (Nav and Nav.GetGroundY) and Nav.GetGroundY(self.entityId) or pos.y
-                    self:SetPosition(pos.x, groundY, pos.z)
+                    -- Use CC's physics Y directly. CharacterControllerSystem::Update
+                    -- overwrites Transform with CC position anyway, so the old
+                    -- Nav.GetGroundY override was dead code.  Letting the CC own Y
+                    -- avoids the discrete cell-boundary jump that groundY causes.
+                    self:SetPosition(pos.x, pos.y, pos.z)
                 else
                     local x, y, z = self:GetPosition()
                     if x ~= nil then self:SetPosition(pos.x, y, pos.z) end
@@ -943,6 +947,12 @@ return Component {
 
             pcall(function()
                 CharacterController.SetImmovable(self.entityId, true)
+            end)
+
+            -- Reduce step-up for enemies. The CC system smooths Y for immovable
+            -- controllers, so even a moderate step-up won't pop visually.
+            pcall(function()
+                CharacterController.SetStepUp(ctrl, 0.15, 0.3)
             end)
 
             -- IMPORTANT: sync using explicit coordinates, not transform object
@@ -1437,7 +1447,7 @@ return Component {
 
                 -- reuse existing
                 Hurt   = GroundHurtState,
-                Death  = GroundDeathState,
+                Death  = FlyingDeathState,
             }
         else
             self.states = {
@@ -2369,15 +2379,19 @@ return Component {
     end,
 
     SpawnFeather = function(self, featherIndex)
-        if not self.FeatherPrefabPath then return end
-        
+        if not self.FeatherPrefabPath then
+            print("[EnemyAI] SpawnFeather SKIP — no FeatherPrefabPath")
+            return
+        end
+
         -- Capture data NOW (before next frame)
         local spawnPos = { x=0, y=0, z=0 }
         local x,y,z = self:GetPosition()
         if x then spawnPos = {x=x, y=y, z=z} end
-        
+
         local hx, hy, hz = self:GetHitDirection()
-        --print("[EnemyAI] SpawnFeather - GOT HIT DIRECTION")
+        print(string.format("[EnemyAI] SpawnFeather #%d pos=(%.1f,%.1f,%.1f) hitDir=(%.2f,%.2f,%.2f)",
+            featherIndex, spawnPos.x, spawnPos.y, spawnPos.z, hx or 0, hy or 0, hz or 0))
 
         -- Stagger slightly
         local delay = featherIndex * 0.02
@@ -2392,24 +2406,29 @@ return Component {
                     -- This survives even if the engine resets the script instance 'self'
                     _G.PendingFeatherData = _G.PendingFeatherData or {}
                     _G.PendingFeatherData[ent] = { x = hx, y = hy, z = hz }
-        
+
                     local featherTr = GetComponent(ent, "Transform")
-                    
+
                     -- 2. Position [FIXED: Don't use a table!]
                     -- Get the existing Vector3D from the new feather
-                    local pos = featherTr.localPosition 
-                    
+                    local pos = featherTr.localPosition
+
                     -- Modify its values
                     pos.x = spawnPos.x
                     pos.y = spawnPos.y + 0.5
                     pos.z = spawnPos.z
-                    
+
                     -- Assign the Vector3D back to the transform
                     featherTr.localPosition = pos
                     featherTr.isDirty = true
+                    print(string.format("[EnemyAI] SpawnFeather OK — entity=%d at (%.1f,%.1f,%.1f)", ent, pos.x, pos.y, pos.z))
+                else
+                    print("[EnemyAI] SpawnFeather FAIL — InstantiatePrefab returned nil")
                 end
             end)
-        end    
+        else
+            print("[EnemyAI] SpawnFeather FAIL — no scheduler")
+        end
     end,
 
     OnDisable = function(self)

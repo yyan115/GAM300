@@ -697,6 +697,9 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	// Per-entity brightness boost
 	item.shader->setFloat("brightnessBoost", item.brightnessBoost);
 
+	// Per-entity fade opacity
+	item.shader->setFloat("u_distanceFadeOpacity", item.distanceFadeOpacity);
+
 	// Apply lighting
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.lightingSystem)

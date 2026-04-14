@@ -489,9 +489,20 @@ return Component {
                 -- Always allow if chain is already extended (retract path).
                 -- Block only if retracted and cooldown is active (would start new extension).
                 local chainIsOut = self._chainIsExtended
+
+                -- Block new chain extension during committed attacks (before 80%)
+                local attackLocked = false
+                if not chainIsOut and self._currentStateId ~= "idle" and self._currentStateId ~= "dash" then
+                    local dur = self._currentStateData.clipDuration or self._currentStateData.duration or 0
+                    local prog = (dur > 0) and math.min(self._stateTimer / dur, 1.0) or 1.0
+                    attackLocked = (prog < 0.6)
+                end
+
                 --print(string.format("[ComboManager] chain press: cooldown=%.2f isExtended=%s",
                 --    self._chainAttackCooldown, tostring(chainIsOut)))
-                if self._chainAttackCooldown <= 0 or chainIsOut then
+                if attackLocked then
+                    self._chainPressBlocked = true
+                elseif self._chainAttackCooldown <= 0 or chainIsOut then
                     event_bus.publish("chain.down", {})
                     self._chainPressBlocked = false
                 else
@@ -633,7 +644,13 @@ return Component {
         --                  a normal jump, cutting the attack's recovery frames.
         -- ══════════════════════════════════════════════════════════════════
         if state.id ~= "idle" then
-            if input:HasBufferedDash() and state.transitions.dash then
+            -- Animation commitment: attacks are locked until 80% of the animation
+            -- plays out. Prevents spam-cancelling attacks with dash/jump.
+            local cancelThreshold = 0.6
+            local animProgress = (refDuration and refDuration > 0)
+                and math.min(self._stateTimer / refDuration, 1.0) or 1.0
+
+            if input:HasBufferedDash() and state.transitions.dash and animProgress >= cancelThreshold then
                 input:ConsumeBufferedDash()
                 self._queuedCombo = nil
                 --print("[ComboManager] DASH CANCEL: " .. state.id .. " -> dash")
@@ -641,7 +658,7 @@ return Component {
                 return
             end
 
-            if input:IsJumpJustPressed() and not _G.player_is_jumping then
+            if input:IsJumpJustPressed() and not _G.player_is_jumping and animProgress >= cancelThreshold then
                 if state.transitions.jump then
                     -- Lift attack: this state explicitly launches into an aerial state
                     self._queuedCombo = nil
@@ -748,7 +765,14 @@ return Component {
             end
 
         elseif input:HasBufferedDash() then
-            candidateStateId = state.transitions.dash
+            -- During active attacks, dash is handled exclusively by the
+            -- immediate cancel system above (gated at 80% animation progress).
+            -- Don't route through the combo window / queuing path here, as that
+            -- would speed up the animation and allow earlier cancels.
+            -- Only allow the regular path when idle (normal dash from standing).
+            if state.id == "idle" then
+                candidateStateId = state.transitions.dash
+            end
         end
 
         -- No valid transition — check for auto-idle at end of animation

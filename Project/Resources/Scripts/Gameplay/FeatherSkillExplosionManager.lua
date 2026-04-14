@@ -26,12 +26,10 @@ return Component {
             self._initialBloom = 1.0
         end
 
-        -- self._transform = self:GetComponent("Transform")
-        -- self._transform.localScale.x = self.AOEExplosionRadius
-        -- self._transform.localScale.y = self.AOEExplosionRadius
-        -- self._transform.localScale.z = self.AOEExplosionRadius
-
         self._flashDuration = self.FlashDuration
+        print(string.format("[FeatherExplosion] Start entity=%d bloom=%s initialBloom=%.2f flashDur=%.2f radius=%.1f",
+            self.entityId, tostring(self._bloomComp ~= nil), self._initialBloom,
+            self.FlashDuration, self.AOEExplosionRadius))
     end,
 
     Update = function(self, dt)
@@ -57,6 +55,7 @@ return Component {
         end
 
         if self._flashDuration <= 0.0 then
+            print(string.format("[FeatherExplosion] Flash done — destroying entity=%d", self.entityId))
             Engine.DestroyEntity(self.entityId)
         end
     end,
@@ -78,7 +77,6 @@ return Component {
     end,
 
     OnTriggerEnter = function(self, otherEntityId)
-        --print("[FeatherSkillExplosion] ONTRIGGERENTER")
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
         -- The explosion trigger collides with walls, ground, and anything else
@@ -86,7 +84,9 @@ return Component {
         -- before touching it or the feather skill crashes on impact.
         if not tagComp then return end
 
+        local rootName = Engine.GetEntityName(rootId) or "?"
         if Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Boss") then
+            print(string.format("[FeatherExplosion] HIT enemy=%s(%d) dmg=%.1f", rootName, rootId, self.AOEExplosionDmg))
             if event_bus and event_bus.publish then
                 event_bus.publish("deal_damage_to_entity", {
                     entityId = rootId,

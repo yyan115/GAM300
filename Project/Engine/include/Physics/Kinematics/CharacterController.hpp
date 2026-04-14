@@ -70,6 +70,13 @@ public:
     void SetImmovable(bool immovable) { mImmovable = immovable; }
     bool IsImmovable() const { return mImmovable; }
 
+    // Stair step-up / stick-to-floor step-down configuration.
+    // Defaults match Jolt's typical values (0.4 up, 0.2 down).
+    // Reduce step-up for NPCs/enemies that don't need stair climbing.
+    void SetStepUp(float up, float down) { mStepUpHeight = up; mStepDownDepth = down; }
+    float GetStepUpHeight() const { return mStepUpHeight; }
+    float GetStepDownDepth() const { return mStepDownDepth; }
+
 
 private:
     JPH::PhysicsSystem* mPhysicsSystem = nullptr;
@@ -81,9 +88,13 @@ private:
 
     float collider_offsetY;
     bool jump_Requested = false;
+    float mJumpGraceTimer = 0.0f;  // counts down after Jump(); gates ascending-protection
 
     bool  mJuggleMode = false;
     float mJuggleVY = 0.0f;   // Y velocity set by Lua this frame (world units/sec)
     bool  mImmovable = false;
+
+    float mStepUpHeight = 0.4f;   // max stair step-up height (Jolt ExtendedUpdate)
+    float mStepDownDepth = 0.2f;  // stick-to-floor step-down depth
 
 };

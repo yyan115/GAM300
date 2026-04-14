@@ -247,7 +247,7 @@ void ModelSystem::Update()
                     static int tagNoCamCol = TagManager::GetInstance().GetTagIndex("NoCameraCollision");
 
                     int tagIdx = ecsManager.GetComponent<TagComponent>(entity).tagIndex;
-                    shouldFade = (tagIdx == tagEnemy || tagIdx == tagNPC ||
+                    shouldFade = (/*tagIdx == tagEnemy ||*/ tagIdx == tagNPC ||
                                   tagIdx == tagCollect || tagIdx == tagNoCamCol);
                 }
 

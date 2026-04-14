@@ -98,6 +98,15 @@ return Component {
         FinalShakeDuration      = 0.45,
         FinalChromaticIntensity = 0.75,
         FinalChromaticDuration  = 0.50,
+
+        -- ── Fade-out after break (optional) ──────────────────────────────
+        -- Set to true to make the dynamic door fade out and disappear
+        -- after it lands. Leave false for the old behaviour (door stays).
+        FadeAfterBreak  = false,
+        FadeSettleSpeed = 0.05,    -- Speed threshold (units/sec) to count as "stopped"
+        FadeSettleTime  = 0.5,     -- Seconds door must be near-still before it counts
+        FadeRestDelay   = 3.0,     -- Seconds to wait after settling before fade begins
+        FadeDuration    = 2.0,     -- Seconds for the opacity fade-out
     },
 
     -- =========================================================================
@@ -216,19 +225,43 @@ return Component {
             _G.BreakableDoorMashProgress[self._groupKey] = 0
         end
 
-        -- ── Deactivate dynamic door at start ──────────────────────────────
+        -- ── Reset & deactivate dynamic door at start ──────────────────────
         local dynName = self._cleanName(self.DynamicDoorName)
         if dynName ~= "" then
             pcall(function()
                 local dynEnt = Engine.GetEntityByName(dynName)
                 if dynEnt then
+                    -- Reset per-entity opacity in case it was faded last session
+                    local allEnts = { dynEnt }
+                    pcall(function()
+                        local children = Engine.GetChildrenEntities(dynEnt)
+                        if children then
+                            for _, cid in ipairs(children) do
+                                allEnts[#allEnts + 1] = cid
+                            end
+                        end
+                    end)
+                    for _, eid in ipairs(allEnts) do
+                        pcall(function() Engine.SetModelOpacity(eid, 1.0) end)
+                        pcall(function()
+                            local mrc = GetComponent(eid, "ModelRenderComponent")
+                            if mrc then ModelRenderComponent.SetVisible(mrc, true) end
+                        end)
+                    end
+                    -- Re-enable collider/rigidbody in case they were disabled
+                    pcall(function()
+                        local col = GetComponent(dynEnt, "ColliderComponent")
+                        if col then col.enabled = true end
+                    end)
+                    pcall(function()
+                        local rb = GetComponent(dynEnt, "RigidBodyComponent")
+                        if rb then rb.enabled = true end
+                    end)
+
                     local ac = GetComponent(dynEnt, "ActiveComponent")
                     if ac then
                         ac.isActive = false
-                        --print(string.format("[BreakableDoor] Dynamic door '%s' → set inactive at start", dynName))
                     end
-                else
-                    --print(string.format("[BreakableDoor] WARNING: dynamic door '%s' not found at start", dynName))
                 end
             end)
         end
@@ -304,16 +337,81 @@ return Component {
                     --print(string.format("[BreakableDoor] '%s': AddTorque done", self._doorName))
                 end
             end)
-            pcall(function()
-                if self._entityId then
-                    local ac = GetComponent(self._entityId, "ActiveComponent")
-                    --print(string.format("[BreakableDoor] '%s': deactivating static, ActiveComponent = %s", self._doorName, tostring(ac)))
-                    if ac then
-                        ac.isActive = false
-                        --print(string.format("[BreakableDoor] '%s': static door deactivated", self._doorName))
+            if self.FadeAfterBreak then
+                -- Keep entity alive so this script can manage the fade.
+                -- Hide the static door's model, collider, and deactivate children
+                -- (e.g. the hook prompt sprite) so only this script keeps running.
+                pcall(function()
+                    if self._entityId then
+                        local model = GetComponent(self._entityId, "ModelRenderComponent")
+                        if model then ModelRenderComponent.SetVisible(model, false) end
+                        local col = GetComponent(self._entityId, "ColliderComponent")
+                        if col then col.enabled = false end
+                        -- Deactivate children (hook prompt icons etc.)
+                        local children = Engine.GetChildrenEntities(self._entityId)
+                        if children then
+                            for _, cid in ipairs(children) do
+                                pcall(function()
+                                    local cac = GetComponent(cid, "ActiveComponent")
+                                    if cac then cac.isActive = false end
+                                end)
+                            end
+                        end
                     end
+                end)
+                -- Resolve the dynamic door entity for fade tracking
+                local dynName = self._cleanName(self.DynamicDoorName)
+                if dynName ~= "" then
+                    pcall(function()
+                        self._dynEntity = Engine.GetEntityByName(dynName)
+                    end)
                 end
-            end)
+                -- Collect dynamic door + its children for fade
+                self._dynFadeEntities = {}
+                if self._dynEntity then
+                    self._dynFadeEntities[1] = self._dynEntity
+                    pcall(function()
+                        local children = Engine.GetChildrenEntities(self._dynEntity)
+                        if children then
+                            for _, cid in ipairs(children) do
+                                self._dynFadeEntities[#self._dynFadeEntities + 1] = cid
+                            end
+                        end
+                    end)
+                end
+                -- Snapshot dynamic door position
+                self._fadePhase = "settling"
+                self._fadeSettleTimer = 0
+                self._fadeRestTimer   = 0
+                self._fadeFadeTimer   = 0
+                local dx, dy, dz = 0, 0, 0
+                if self._dynEntity then
+                    pcall(function()
+                        local tr = GetComponent(self._dynEntity, "Transform")
+                        if tr and tr.localPosition then
+                            dx = tr.localPosition.x or 0
+                            dy = tr.localPosition.y or 0
+                            dz = tr.localPosition.z or 0
+                        end
+                    end)
+                end
+                self._fadePrevX, self._fadePrevY, self._fadePrevZ = dx, dy, dz
+            else
+                pcall(function()
+                    if self._entityId then
+                        local ac = GetComponent(self._entityId, "ActiveComponent")
+                        if ac then
+                            ac.isActive = false
+                        end
+                    end
+                end)
+            end
+            return
+        end
+
+        -- ── Dynamic door fade-out tracking ───────────────────────────────
+        if self._mashDone and self.FadeAfterBreak and self._fadePhase then
+            self:_updateFade(dt)
             return
         end
 
@@ -649,6 +747,80 @@ return Component {
         self._endpointPos    = nil
         self._endpointPrev   = nil
         if _G.chain_retract_veto ~= nil then _G.chain_retract_veto = nil end
+    end,
+
+    -- =========================================================================
+    -- INTERNAL — fade-out logic for the dynamic door after break
+    -- =========================================================================
+
+    _updateFade = function(self, dt)
+        if not self._dynEntity then return end
+
+        -- Read dynamic door position
+        local x, y, z = 0, 0, 0
+        pcall(function()
+            local tr = GetComponent(self._dynEntity, "Transform")
+            if tr and tr.localPosition then
+                x = tr.localPosition.x or 0
+                y = tr.localPosition.y or 0
+                z = tr.localPosition.z or 0
+            end
+        end)
+
+        if self._fadePhase == "settling" then
+            local dx = x - self._fadePrevX
+            local dy = y - self._fadePrevY
+            local dz = z - self._fadePrevZ
+            self._fadePrevX, self._fadePrevY, self._fadePrevZ = x, y, z
+
+            local speed = math.sqrt(dx*dx + dy*dy + dz*dz) / math.max(dt, 0.001)
+            if speed < self.FadeSettleSpeed then
+                self._fadeSettleTimer = self._fadeSettleTimer + dt
+                if self._fadeSettleTimer >= self.FadeSettleTime then
+                    self._fadePhase = "resting"
+                end
+            else
+                self._fadeSettleTimer = 0
+            end
+
+        elseif self._fadePhase == "resting" then
+            self._fadeRestTimer = self._fadeRestTimer + dt
+            if self._fadeRestTimer >= self.FadeRestDelay then
+                self._fadePhase = "fading"
+            end
+
+        elseif self._fadePhase == "fading" then
+            self._fadeFadeTimer = self._fadeFadeTimer + dt
+            local t = math.min(self._fadeFadeTimer / math.max(self.FadeDuration, 0.01), 1.0)
+
+            -- Per-entity opacity (doesn't bleed to other doors)
+            local opacity = 1.0 - t
+            for _, eid in ipairs(self._dynFadeEntities) do
+                pcall(function() Engine.SetModelOpacity(eid, opacity) end)
+            end
+
+            if t >= 1.0 then
+                -- Disable dynamic door completely
+                pcall(function()
+                    local col = GetComponent(self._dynEntity, "ColliderComponent")
+                    if col then col.enabled = false end
+                end)
+                pcall(function()
+                    local rb = GetComponent(self._dynEntity, "RigidBodyComponent")
+                    if rb then rb.enabled = false end
+                end)
+                pcall(function()
+                    local ac = GetComponent(self._dynEntity, "ActiveComponent")
+                    if ac then ac.isActive = false end
+                end)
+                -- Now deactivate this static door entity too
+                pcall(function()
+                    local ac = GetComponent(self._entityId, "ActiveComponent")
+                    if ac then ac.isActive = false end
+                end)
+                self._fadePhase = "done"
+            end
+        end
     end,
 
     -- =========================================================================

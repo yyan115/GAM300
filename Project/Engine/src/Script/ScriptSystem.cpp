@@ -916,7 +916,14 @@ void ScriptSystem::Update()
     }
 
     // Phase 4: Update all entities
+    // Two-pass approach for justActivated: set ALL flags first so any script can
+    // read justActivated on ANY entity during Update (cross-entity reads).
+    // Previously, the flag was set and cleared per-entity, making it invisible
+    // to scripts on other entities (e.g. PauseMenuButtonHandler reading
+    // PauseMenuUI.justActivated).
     float dt = static_cast<float>(TimeManager::GetDeltaTime());
+
+    // Pass 4a: detect inactive→active transitions, set justActivated flags
     for (Entity e : entities)
     {
         bool isActive = m_ecs->IsEntityActiveInHierarchy(e);
@@ -926,8 +933,6 @@ void ScriptSystem::Update()
             continue;
         }
 
-        // Detect inactive→active transition and flag the ActiveComponent so
-        // Lua scripts can detect reactivation (e.g. popup button sprite reset).
         bool wasActive = m_prevActiveEntities.count(e) > 0;
         if (!wasActive) {
             m_prevActiveEntities.insert(e);
@@ -935,13 +940,16 @@ void ScriptSystem::Update()
                 m_ecs->GetComponent<ActiveComponent>(e).justActivated = true;
             }
         }
+    }
+
+    // Pass 4b: run script Updates (all justActivated flags are visible)
+    for (Entity e : entities)
+    {
+        if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;
 
         ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
         if (!comp) continue;
 
-        // call Update(dt) on all script instances for this entity
-        // Use scaled delta time so scripts receive dt=0 when paused
-        // UI scripts that need to run during pause should use Time.GetUnscaledDeltaTime() directly
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -962,10 +970,14 @@ void ScriptSystem::Update()
                 }
             }
         }
+    }
 
-        // Clear the flag after Lua had a chance to read it this frame
-        if (!wasActive && m_ecs->HasComponent<ActiveComponent>(e)) {
-            m_ecs->GetComponent<ActiveComponent>(e).justActivated = false;
+    // Pass 4c: clear all justActivated flags now that every script has run
+    for (Entity e : entities)
+    {
+        if (m_ecs->HasComponent<ActiveComponent>(e)) {
+            auto& ac = m_ecs->GetComponent<ActiveComponent>(e);
+            if (ac.justActivated) ac.justActivated = false;
         }
     }
 

@@ -144,16 +144,23 @@ return Component {
     fields = {
         TotalDuration = 10.0,
         Loop = false,
-        ToggleKey = "F5",
+        -- Which F-key triggers this flythrough (5 = F5, 6 = F6, ... 10 = F10)
+        FKey = 5,
         EaseInOut = true,
     },
 
     Awake = function(self)
-        print("[CameraFlythrough] Awake — entityId=" .. tostring(self.entityId) .. ", ToggleKey=" .. tostring(self.ToggleKey))
         self._active = false
         self._paused = false
         self._timer = 0.0
         self._waypoints = nil
+        self._keyEnum = nil
+        self._debugPrinted = false
+
+        print("========== [CameraFlythrough] AWAKE CALLED ==========")
+        print("[CameraFlythrough] entityId=" .. tostring(self.entityId) .. ", FKey=" .. tostring(self.FKey))
+        print("[CameraFlythrough] _G.Input = " .. tostring(_G.Input))
+        print("[CameraFlythrough] _G.Engine = " .. tostring(_G.Engine))
 
         -- Listen for other flythroughs starting so we auto-stop
         if event_bus and event_bus.subscribe then
@@ -167,10 +174,9 @@ return Component {
     end,
 
     Start = function(self)
-        print("[CameraFlythrough] Start — building waypoints...")
         self:_buildWaypoints()
         if self._waypoints then
-            print("[CameraFlythrough] Ready — " .. #self._waypoints .. " waypoints, key=" .. self.ToggleKey)
+            print("[CameraFlythrough] Ready — " .. #self._waypoints .. " waypoints, F" .. self.FKey)
         end
     end,
 
@@ -192,21 +198,53 @@ return Component {
     end,
 
     Update = function(self, dt)
+        -- One-time debug dump
+        if not self._debugPrinted then
+            self._debugPrinted = true
+            print("========== [CameraFlythrough] FIRST UPDATE ==========")
+            print("[CameraFlythrough] Keyboard = " .. tostring(Keyboard))
+            if Keyboard then
+                print("[CameraFlythrough] Keyboard.Key = " .. tostring(Keyboard.Key))
+                if Keyboard.Key then
+                    print("[CameraFlythrough] Keyboard.Key.F5 = " .. tostring(Keyboard.Key.F5))
+                end
+                print("[CameraFlythrough] Keyboard.IsKeyPressed = " .. tostring(Keyboard.IsKeyPressed))
+            end
+            local childCount = Engine and Engine.GetChildCount and Engine.GetChildCount(self.entityId) or "N/A"
+            print("[CameraFlythrough] Child count = " .. tostring(childCount))
+        end
+
+        -- Lazy-resolve the key enum
+        if not self._keyEnum then
+            if Keyboard and Keyboard.Key then
+                local fkeyMap = {
+                    [5]  = Keyboard.Key.F5,
+                    [6]  = Keyboard.Key.F6,
+                    [7]  = Keyboard.Key.F7,
+                    [8]  = Keyboard.Key.F8,
+                    [9]  = Keyboard.Key.F9,
+                    [10] = Keyboard.Key.F10,
+                }
+                self._keyEnum = fkeyMap[self.FKey]
+                if self._keyEnum then
+                    print("[CameraFlythrough] Resolved F" .. tostring(self.FKey) .. " = " .. tostring(self._keyEnum))
+                else
+                    print("[CameraFlythrough] ERROR: No key enum for FKey=" .. tostring(self.FKey))
+                end
+            else
+                print("[CameraFlythrough] WARNING: Keyboard or Keyboard.Key not available!")
+            end
+        end
+
         -- Toggle on/off
-        if Input and Input.GetKeyTriggered then
-            if Input.GetKeyTriggered(self.ToggleKey) then
-                print("[CameraFlythrough] Key '" .. self.ToggleKey .. "' pressed!")
+        if self._keyEnum and Keyboard and Keyboard.IsKeyPressed then
+            if Keyboard.IsKeyPressed(self._keyEnum) then
+                print("========== [CameraFlythrough] F" .. tostring(self.FKey) .. " PRESSED! ==========")
                 if self._active then
                     self:_stop()
                 else
                     self:_start()
                 end
-            end
-        else
-            -- Log once if Input system isn't available
-            if not self._inputWarned then
-                print("[CameraFlythrough] WARNING: Input or Input.GetKeyTriggered not available")
-                self._inputWarned = true
             end
         end
 
@@ -297,7 +335,7 @@ return Component {
         self._timer = 0.0
 
         if event_bus and event_bus.publish then
-            event_bus.publish("cinematic.active", true)
+            event_bus.publish("flythrough.active", true)
             event_bus.publish("set_attacks_enabled", false)
         end
         print("[CameraFlythrough] Started — " .. #self._waypoints .. " waypoints, " .. self.TotalDuration .. "s")
@@ -308,7 +346,7 @@ return Component {
         self._paused = false
 
         if event_bus and event_bus.publish then
-            event_bus.publish("cinematic.active", false)
+            event_bus.publish("flythrough.active", false)
             event_bus.publish("set_attacks_enabled", true)
         end
         print("[CameraFlythrough] Stopped")

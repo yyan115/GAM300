@@ -67,6 +67,8 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb = self:GetComponent("RigidBodyComponent")
         self._audio = self:GetComponent("AudioComponent")
+        print(string.format("[EnemyHurtFeather] Start entity=%d transform=%s rb=%s audio=%s",
+            self.entityId, tostring(self._transform ~= nil), tostring(self._rb ~= nil), tostring(self._audio ~= nil)))
     end,
 
     Update = function(self, dt)
@@ -90,8 +92,7 @@ return Component {
         if not self._appliedInitialForce and _G.PendingFeatherData and _G.PendingFeatherData[self.entityId] then
             local data = _G.PendingFeatherData[self.entityId]
             local dirX, dirY, dirZ = data.x, data.y + 0.5, data.z
-            
-            --print("Feather received Hit Direction via Registry!") -- This should print now
+            print(string.format("[EnemyHurtFeather] entity=%d applying impulse dir=(%.2f,%.2f,%.2f)", self.entityId, dirX, dirY, dirZ))
 
             -- Cleanup to save memory
             _G.PendingFeatherData[self.entityId] = nil

@@ -153,6 +153,9 @@ void CharacterController::Update(float deltaTime)
     if (!mCharacter || !mPhysicsSystem)
         return;
 
+    if (mJumpGraceTimer > 0.0f)
+        mJumpGraceTimer -= deltaTime;
+
     JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
 
     const JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
@@ -167,7 +170,7 @@ void CharacterController::Update(float deltaTime)
     if (mJuggleMode)
     {
         newVelocity = JPH::Vec3(mVelocity.GetX(), mJuggleVY, mVelocity.GetZ());
-        mJuggleVY = 0.0f; // consumed � Lua must set it again next frame
+        mJuggleVY = 0.0f; // consumed — Lua must set it again next frame
     }
     else if (isOnGround)
     {
@@ -175,9 +178,19 @@ void CharacterController::Update(float deltaTime)
         {
             newVelocity = JPH::Vec3(currentVel.GetX(), mVelocity.GetY(), currentVel.GetZ());
             jump_Requested = false;
+            mJumpGraceTimer = 0.5f;   // arm ascending-protection window
+        }
+        else if (mJumpGraceTimer > 0.0f && currentVel.GetY() > 0.5f)
+        {
+            // Within the jump grace window AND still ascending — Jolt
+            // reports OnGround from a stair/ledge clip during ascent.
+            // Preserve the jump arc instead of zeroing Y velocity.
+            float verticalVel = currentVel.GetY() + gravity.GetY() * deltaTime;
+            newVelocity = JPH::Vec3(mVelocity.GetX(), verticalVel, mVelocity.GetZ());
         }
         else
         {
+            mJumpGraceTimer = 0.0f;   // genuinely grounded — clear grace
             JPH::Vec3 groundVel = mCharacter->GetGroundVelocity();
             newVelocity = JPH::Vec3(
                 groundVel.GetX() + mVelocity.GetX(),
@@ -195,10 +208,17 @@ void CharacterController::Update(float deltaTime)
     mCharacter->SetLinearVelocity(newVelocity);
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
-    updateSettings.mStickToFloorStepDown = mJuggleMode
-        ? JPH::Vec3::sZero()            // disabled - Lua drives Y
-        : JPH::Vec3(0, -0.2f, 0);       // normal grounding
-    updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.4f, 0);
+    // Disable stick-to-floor and stair step-up only during a confirmed
+    // jump (grace timer active + positive Y velocity).  Using the timer
+    // avoids false positives from stair step-up velocity, which can be
+    // large but is not from a player jump.
+    const bool isJumpAscending = mJumpGraceTimer > 0.0f && newVelocity.GetY() > 0.5f;
+    updateSettings.mStickToFloorStepDown = (mJuggleMode || isJumpAscending)
+        ? JPH::Vec3::sZero()
+        : JPH::Vec3(0, -mStepDownDepth, 0);
+    updateSettings.mWalkStairsStepUp = isJumpAscending
+        ? JPH::Vec3::sZero()
+        : JPH::Vec3(0, mStepUpHeight, 0);
 
     mCharacter->ExtendedUpdate(
         deltaTime,
@@ -258,7 +278,13 @@ Vector3D CharacterController::GetPosition() const
 }
 void CharacterController::SetPosition(Transform transform)
 {
-    JPH::RVec3 newPosition(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+    // Must add collider_offsetY to convert from feet position (Transform convention)
+    // to capsule center (Jolt convention), same as Initialise does.
+    JPH::RVec3 newPosition(
+        transform.localPosition.x,
+        transform.localPosition.y + collider_offsetY,
+        transform.localPosition.z
+    );
 
     mCharacter->SetPosition(newPosition);
     mCharacter->SetLinearVelocity(JPH::Vec3::sZero());

@@ -433,6 +433,7 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("SetMass", CharacterControllerWrappers::SetMass)
     FUNCTION("GetMass", CharacterControllerWrappers::GetMass)
     FUNCTION("SetImmovable", CharacterControllerWrappers::SetImmovable)
+    FUNCTION("SetStepUp", CharacterControllerWrappers::SetStepUp)
 END_SYSTEM()
 
 BEGIN_SYSTEM("PhysicsSystem")
