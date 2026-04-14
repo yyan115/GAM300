@@ -675,7 +675,8 @@ return Component {
         self._vaultAscentLock      = false   -- suppresses landing detection while player is still rising
         self._vaultReadyTimer      = 0       -- holds _vaultDetected alive briefly for forgiving timing
         self._prevAirY             = 0       -- previous frame Y; used to detect peak and start of descent
-        self._groundedFrames       = 0       -- consecutive grounded frames; debounces landing detection
+        self._groundedFrames       = 0       -- consecutive grounded frames while jump+lock active; clears stuck lock
+        self._airborneFrames       = 0       -- consecutive airborne frames; debounces walk-off-ledge detection
         self._jumpCycleComplete    = false   -- true after landing from a jump; blocks walk-off-ledge re-trigger
         self._ascentLockTimer      = 0       -- counts up while ascent lock is active; safety timeout
 
@@ -1392,7 +1393,10 @@ return Component {
             end
             CharacterController.Jump(self._controller, jumpH)
             isJumping = true
+            self._isJumping = true
+            self._isRunning = false
             self._animator:SetBool("IsJumping", true)
+            self._animator:SetBool("IsRunning", false)
             if event_bus and event_bus.publish then event_bus.publish("player_jumped", {}) end
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
@@ -1699,10 +1703,7 @@ return Component {
         local coastVelMag         = math.sqrt(self._velX*self._velX + self._velZ*self._velZ)
         local isEffectivelyMoving = isMoving or coastVelMag > 0.1
 
-        -- Safety timeout for ascent lock.  Normal jumps peak within ~0.5s;
-        -- the Y-descent check clears the lock then.  But tiny hops on stairs
-        -- can land on a higher step before Y ever decreases, leaving the lock
-        -- stuck forever.  This timeout guarantees it clears.
+        -- Safety timeout for ascent lock (ultimate fallback).
         if self._vaultAscentLock then
             self._ascentLockTimer = self._ascentLockTimer + dt
             if self._ascentLockTimer > 0.75 then
@@ -1711,16 +1712,21 @@ return Component {
         end
 
         if not isGrounded then
+            self._groundedFrames = 0
+            self._airborneFrames = self._airborneFrames + 1
+
             if not self._isJumping and not self._isLanding and not self._jumpCycleComplete then
-                -- Became airborne without jump press (walked off a ledge).
-                -- Blocked by _jumpCycleComplete to prevent re-triggering jump
-                -- after a false landing from a bump/edge during a prior jump.
-                self._isJumping = true
-                self._isRunning = false
-                self._animator:SetBool("IsRunning", false)
-                self._animator:SetBool("IsJumping", true)
-                local walkOffPos = CharacterController.GetPosition(self._controller)
-                self._peakAirY   = walkOffPos and walkOffPos.y or 0
+                if self._airborneFrames >= 3 then
+                    -- Airborne for 3+ frames without a jump press — walked off
+                    -- a ledge.  The frame requirement filters 1-2 frame airborne
+                    -- blips from stair bumps that aren't real falls.
+                    self._isJumping = true
+                    self._isRunning = false
+                    self._animator:SetBool("IsRunning", false)
+                    self._animator:SetBool("IsJumping", true)
+                    local walkOffPos = CharacterController.GetPosition(self._controller)
+                    self._peakAirY   = walkOffPos and walkOffPos.y or 0
+                end
             end
 
             -- Track Y each airborne frame to detect when ascent has peaked.
@@ -1735,6 +1741,20 @@ return Component {
                 self._prevAirY = curY
             end
         else
+            self._airborneFrames = 0
+
+            -- If grounded for 3+ frames with jump flag and ascent lock still
+            -- active, the lock is stuck (tiny hop on stairs where the character
+            -- never truly went airborne).  Clear it so landing can fire.
+            if self._isJumping and self._vaultAscentLock then
+                self._groundedFrames = self._groundedFrames + 1
+                if self._groundedFrames >= 3 then
+                    self._vaultAscentLock = false
+                end
+            else
+                self._groundedFrames = 0
+            end
+
             if self._isJumping and not self._vaultAscentLock then
                 -- Landed.
                 self._isJumping             = false

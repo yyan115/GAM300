@@ -276,9 +276,13 @@ void LightingSystem::ApplyShadows(Shader& shader)
     // to prevent conflict with sampler2D textures at units 0-7.
     // If these aren't set, they default to 0 which causes "samplers of different type
     // assigned to same texture unit" error on OpenGL ES.
+    static const std::string shadowMapNames[MAX_POINT_LIGHT_SHADOWS] = {
+        "pointShadowMaps[0]", "pointShadowMaps[1]",
+        "pointShadowMaps[2]", "pointShadowMaps[3]"
+    };
     for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
-        shader.setInt("pointShadowMaps[" + std::to_string(i) + "]", 9 + i);
+        shader.setInt(shadowMapNames[i], 9 + i);
     }
 
     if (!shadowsEnabled)

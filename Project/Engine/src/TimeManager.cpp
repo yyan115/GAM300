@@ -17,6 +17,18 @@ void TimeManager::UpdateDeltaTime() {
         RunTimeVar::deltaTime = 0.25;
     }
 
+    // Smooth delta time over recent frames to prevent jitter from VSync fluctuations
+    dtHistory[dtHistoryIndex] = RunTimeVar::deltaTime;
+    dtHistoryIndex = (dtHistoryIndex + 1) % DT_HISTORY_SIZE;
+    if (!dtHistoryFilled && dtHistoryIndex == 0) dtHistoryFilled = true;
+
+    int count = dtHistoryFilled ? DT_HISTORY_SIZE : dtHistoryIndex;
+    if (count > 0) {
+        double sum = 0.0;
+        for (int i = 0; i < count; ++i) sum += dtHistory[i];
+        RunTimeVar::deltaTime = sum / count;
+    }
+
     // Accumulate time for fixed updates
     accumulator += RunTimeVar::deltaTime;
 

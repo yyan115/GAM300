@@ -60,7 +60,7 @@ function DeathState:Update(ai, dt)
     end
 end
 
-function DeathState:Exit(ai) 
+function DeathState:Exit(ai)
     ai._animator:SetBool("Dead", false)
 end
 

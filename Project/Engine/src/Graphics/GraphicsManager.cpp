@@ -1814,11 +1814,11 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 
 		if (item.HasAnimation())
 		{
-			item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
+			item.model->DrawFast(*shader, item.material, item, item.animator);
 		}
 		else
 		{
-			item.model->Draw(*shader, *currentCamera, item.material, item);
+			item.model->DrawFast(*shader, item.material, item);
 		}
 
 		if (item.depthOffset)

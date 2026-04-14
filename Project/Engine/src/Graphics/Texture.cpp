@@ -291,9 +291,34 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	GUID_128 guid = AssetManager::GetInstance().GetGUID128FromAssetMeta(assetPath);
 	metaData = dynamic_pointer_cast<TextureMeta>(AssetManager::GetInstance().GetAssetMeta(guid));
 
-	// Load the DDS file using GLI
+	// Load the DDS/KTX file using GLI
 	if (!platform->FileExists(resourcePath)) {
-		//std::cerr << "[TEXTURE] DEBUG: DDS file does not exist: " << path << std::endl;
+#ifdef ANDROID
+		// Fallback: load raw PNG/JPG directly on Android when no compiled
+		// KTX exists (e.g. UI sprites without android_compiled in meta).
+		if (!assetPath.empty() && platform->FileExists(assetPath)) {
+			std::vector<uint8_t> rawData = platform->ReadAsset(assetPath);
+			if (!rawData.empty()) {
+				int w = 0, h = 0, channels = 0;
+				unsigned char* pixels = stbi_load_from_memory(
+					rawData.data(), static_cast<int>(rawData.size()), &w, &h, &channels, 4);
+				if (pixels) {
+					target = GL_TEXTURE_2D;
+					glGenTextures(1, &ID);
+					glBindTexture(GL_TEXTURE_2D, ID);
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
+								 GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					stbi_image_free(pixels);
+					ENGINE_LOG_INFO("[TEXTURE] Loaded raw PNG fallback: " + assetPath);
+					return true;
+				}
+			}
+		}
+#endif
 		return false;
 	}
 

@@ -1094,6 +1094,43 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 
 }
 
+void Model::DrawFast(Shader& shader, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator)
+{
+    // Bones — same logic as existing Draw methods
+    bool hasBones = !modelComp.mFinalBoneMatrices.empty();
+    shader.setBool("hasBones", hasBones);
+
+    if (hasBones) {
+        constexpr size_t MAX_BONES = 100;
+        const auto& t = modelComp.mFinalBoneMatrices;
+        const size_t n = std::min(t.size(), MAX_BONES);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
+    }
+
+    if (entityMaterial) {
+        // Entity material already applied by caller — just draw geometry
+        for (size_t i = 0; i < meshes.size(); ++i) {
+            meshes[i].DrawGeometryOnly();
+        }
+    } else {
+        // No entity material — apply per-mesh materials
+        Material* lastApplied = nullptr;
+        for (size_t i = 0; i < meshes.size(); ++i) {
+            Material* meshMat = meshes[i].material.get();
+            if (!meshMat) {
+                meshes[i].material = Material::CreateDefault();
+                meshMat = meshes[i].material.get();
+            }
+            if (meshMat != lastApplied) {
+                meshMat->ApplyToShader(shader);
+                lastApplied = meshMat;
+            }
+            meshes[i].DrawGeometryOnly();
+        }
+    }
+}
+
 void Model::DrawDepthOnly()
 {
     for (auto& mesh : meshes)

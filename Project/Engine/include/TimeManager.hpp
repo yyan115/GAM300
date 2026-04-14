@@ -26,5 +26,11 @@ private:
 	inline static double fpsUpdateTimer = 0.0;
 	inline static double currentFps = 0.0;
 
+	// Delta time smoothing — averages over recent frames to prevent jitter
+	static constexpr int DT_HISTORY_SIZE = 5;
+	inline static double dtHistory[DT_HISTORY_SIZE] = {};
+	inline static int dtHistoryIndex = 0;
+	inline static bool dtHistoryFilled = false;
+
 
 };

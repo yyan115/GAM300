@@ -37,6 +37,26 @@ function FlyingIdle:Update(ai, dt)
         ai.fsm:Change("Patrol", ai.states.Patrol)
         return
     end
+
+    -- Drift back toward spawn if far from home (no patrol to carry us back)
+    if ai._spawnX and ai._spawnZ and ai.MoveTowardPlayerXZ_Flying then
+        local ex, _, ez = ai:GetPosition()
+        if ex then
+            local dx = ex - ai._spawnX
+            local dz = ez - ai._spawnZ
+            if (dx*dx + dz*dz) > 1.0 then
+                -- Reuse flying move but aim at spawn instead of player
+                local d = math.sqrt(dx*dx + dz*dz)
+                local dirX, dirZ = -dx / d, -dz / d
+                local spd = ai.FlyingChaseSpeed or 0.8
+                local step = spd * dt
+                if step > 0.25 then step = 0.25 end
+                local _, y, _ = ai:GetPosition()
+                ai:SetPosition(ex + dirX * step, y, ez + dirZ * step)
+                ai:FaceDirection(dirX, dirZ)
+            end
+        end
+    end
 end
 
 function FlyingIdle:Exit(ai) end

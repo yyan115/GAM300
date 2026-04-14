@@ -29,6 +29,7 @@ public:
 	ENGINE_API ~Mesh();
 	void Prewarm(); // forces the setup to happen
 	void Draw(Shader& shader, const Camera& camera);
+	void DrawGeometryOnly();
 	void DrawDepthOnly();
 
 	Mesh(const Mesh& other)

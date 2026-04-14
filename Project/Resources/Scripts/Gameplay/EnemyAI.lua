@@ -181,6 +181,7 @@ return Component {
         HoverBobAmp      = 0.02,   -- Amplitude of the idle hover bob (world units). 0 = no bob.
         HoverBobFreq     = 0.9,    -- Frequency of the idle hover bob (Hz).
         SlamDownSpeed    = 16.0,   -- Descent speed during the chain-hook slam-down (world units/sec).
+        MaxChaseDistance = 10.0,   -- Max XZ distance from spawn before flying enemy deaggros and returns.
 
         -- === Squash & stretch ===
         -- SquashStrength : how dramatic the effect is. Start here.

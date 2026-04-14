@@ -95,6 +95,7 @@ public:
     void Draw(Shader& shader, const Camera& camera, const ModelRenderComponent* modelComp = nullptr);
     void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp);
     void Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator);
+    void DrawFast(Shader& shader, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator = nullptr);
     void DrawDepthOnly();
 
 	// Helper functions for Bones
