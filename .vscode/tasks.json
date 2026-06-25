@@ -20,6 +20,9 @@
             "type": "shell",
             "command": "cmake",
             "args": ["--preset", "debug"],
+            "linux": {
+                "args": ["--preset", "linux-debug"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"
@@ -37,6 +40,9 @@
             "type": "shell",
             "command": "cmake",
             "args": ["--build", "Build/debug", "-j8"],
+            "linux": {
+                "args": ["--build", "--preset", "linux-debug"]
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -58,6 +64,9 @@
             "type": "shell",
             "command": "cmake", 
             "args": ["--preset", "release"],
+            "linux": {
+                "args": ["--preset", "linux-release"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"
@@ -75,6 +84,9 @@
             "type": "shell",
             "command": "cmake",
             "args": ["--build", "Build/release", "-j8"],
+            "linux": {
+                "args": ["--build", "--preset", "linux-release"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"
@@ -93,6 +105,9 @@
             "type": "shell",
             "command": "cmake",
             "args": ["--preset", "editor-debug"],
+            "linux": {
+                "args": ["--preset", "linux-editor-debug"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"
@@ -110,6 +125,9 @@
             "type": "shell", 
             "command": "cmake",
             "args": ["--build", "Build/editor-debug", "-j8"],
+            "linux": {
+                "args": ["--build", "--preset", "linux-editor-debug"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"
@@ -128,6 +146,9 @@
             "type": "shell",
             "command": "cmake",
             "args": ["--preset", "editor-release"],
+            "linux": {
+                "args": ["--preset", "linux-editor-release"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"
@@ -145,6 +166,9 @@
             "type": "shell",
             "command": "cmake", 
             "args": ["--build", "Build/editor-release", "-j8"],
+            "linux": {
+                "args": ["--build", "--preset", "linux-editor-release"]
+            },
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/Project"

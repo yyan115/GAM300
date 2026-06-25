@@ -1,0 +1,92 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "linux-base",
+            "hidden": true,
+            "description": "Linux Ninja build using vcpkg x64-linux",
+            "generator": "Ninja",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "VCPKG_TARGET_TRIPLET": "x64-linux"
+            }
+        },
+        {
+            "name": "linux-debug",
+            "displayName": "Linux - Build Game (Debug)",
+            "description": "Linux game executable - Debug build",
+            "inherits": "linux-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/LinuxDebug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "OUTPUT_DIR": "${sourceDir}/Build/LinuxDebug"
+            }
+        },
+        {
+            "name": "linux-release",
+            "displayName": "Linux - Build Game (Release)",
+            "description": "Linux game executable - Release build",
+            "inherits": "linux-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/LinuxRelease",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "OUTPUT_DIR": "${sourceDir}/Build/LinuxRelease"
+            }
+        },
+        {
+            "name": "linux-editor-debug",
+            "displayName": "Linux - Build Editor (Debug)",
+            "description": "Linux editor executable - Debug build",
+            "inherits": "linux-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/LinuxEditorDebug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorDebug",
+                "OUTPUT_DIR": "${sourceDir}/Build/LinuxEditorDebug"
+            }
+        },
+        {
+            "name": "linux-editor-release",
+            "displayName": "Linux - Build Editor (Release)",
+            "description": "Linux editor executable - Release build",
+            "inherits": "linux-base",
+            "binaryDir": "${sourceDir}/Build/Intermediate/LinuxEditorRelease",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "EditorRelease",
+                "OUTPUT_DIR": "${sourceDir}/Build/LinuxEditorRelease"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux-debug",
+            "displayName": "Linux - Build Game (Debug)"
+        },
+        {
+            "name": "linux-release",
+            "configurePreset": "linux-release",
+            "displayName": "Linux - Build Game (Release)"
+        },
+        {
+            "name": "linux-editor-debug",
+            "configurePreset": "linux-editor-debug",
+            "displayName": "Linux - Build Editor (Debug)"
+        },
+        {
+            "name": "linux-editor-release",
+            "configurePreset": "linux-editor-release",
+            "displayName": "Linux - Build Editor (Release)"
+        }
+    ]
+}

@@ -99,6 +99,42 @@ You can then choose the compile option in Visual Studio Code to compile and run.
 
 Visual Studio Code primarily uses vcpkg to source libraries. However, some libraries are not available inside, such as FMOD, so they have to be downloaded instead.
 
+### Linux
+
+Linux uses Visual Studio Code with CMake Tools, CMake, Ninja, and vcpkg.
+Windows still uses the existing Visual Studio folder workflow with `Project/CMakePresets.json`.
+
+Linux presets live in `Project/CMakeUserPresets.json` so the existing Windows preset file does not need to change.
+CMake automatically reads both files when you run commands from `Project`.
+
+Supported Linux host status: Fedora is the only validated Linux development host right now. Other distributions may work, but their package names have not been verified yet.
+
+Install system tools first. On Fedora:
+
+```bash
+sudo dnf install -y git git-lfs cmake ninja-build gcc-c++ make zip unzip tar pkgconf-pkg-config libX11-devel libXcursor-devel libXinerama-devel libXrandr-devel libXi-devel libXext-devel libXrender-devel libXfixes-devel libXxf86vm-devel mesa-libGLU-devel
+```
+
+For other Linux distributions, install equivalent packages for: Git, Git LFS, CMake, Ninja, a C++ compiler, archive tools, pkg-config, X11 development headers/libraries, and GLU development headers/libraries.
+
+Then set up vcpkg and build:
+
+```bash
+./setup-vcpkg.sh
+cd Project
+cmake --preset linux-editor-debug
+cmake --build --preset linux-editor-debug
+```
+
+Available Linux presets:
+
+- `linux-editor-debug`
+- `linux-editor-release`
+- `linux-debug`
+- `linux-release`
+
+Run the editor first to compile assets before running the game, same as Windows.
+
 ## Android Development
 
 First install Android Studio. Go through the initial setup.
