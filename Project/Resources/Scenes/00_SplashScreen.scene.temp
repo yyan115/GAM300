@@ -340,10 +340,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 }
@@ -491,7 +487,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "bool",
@@ -562,10 +558,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 }
@@ -713,7 +705,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "bool",
@@ -784,10 +776,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 }
@@ -874,7 +862,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         "006ff4898d32d305-000405d112000003",
                         "00374a216e66dbbc-000331fc80000069",
@@ -1006,10 +994,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 }
@@ -1097,10 +1081,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 },
@@ -1260,7 +1240,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "bool",
@@ -1331,10 +1311,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 }
