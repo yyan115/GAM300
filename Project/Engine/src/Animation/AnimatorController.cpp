@@ -215,6 +215,8 @@ bool AnimatorController::SaveToFile(const std::string& filePath) const
 bool AnimatorController::LoadFromFile(const std::string& filePath)
 {
 	std::string content;
+	std::string normalizedPath = filePath;
+	std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
 
 #ifdef ANDROID
 	// On Android, use platform asset reading
@@ -225,8 +227,7 @@ bool AnimatorController::LoadFromFile(const std::string& filePath)
 	}
 
 	// Normalize path for Android - strip leading "../" and convert backslashes
-	std::string assetPath = filePath;
-	std::replace(assetPath.begin(), assetPath.end(), '\\', '/');
+	std::string assetPath = normalizedPath;
 	while (assetPath.size() >= 3 && assetPath.substr(0, 3) == "../") {
 		assetPath = assetPath.substr(3);
 	}
@@ -239,10 +240,10 @@ bool AnimatorController::LoadFromFile(const std::string& filePath)
 	content.assign(buffer.begin(), buffer.end());
 #else
 	// On desktop, use standard file I/O
-	std::ifstream file(filePath);
+	std::ifstream file(normalizedPath);
 	if (!file.is_open())
 	{
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to open file for reading: ", filePath, "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to open file for reading: ", filePath, " (tried: ", normalizedPath, ")\n");
 		return false;
 	}
 
@@ -253,7 +254,7 @@ bool AnimatorController::LoadFromFile(const std::string& filePath)
 	Document doc;
 	if (doc.Parse(content.c_str()).HasParseError())
 	{
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to parse JSON: ", filePath, "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to parse JSON: ", normalizedPath, "\n");
 		return false;
 	}
 
@@ -361,11 +362,13 @@ bool AnimatorController::LoadFromFile(const std::string& filePath)
 	{
 		for (const auto& pathVal : doc["clipPaths"].GetArray())
 		{
-			mClipPaths.push_back(pathVal.GetString());
+			std::string clipPath = pathVal.GetString();
+			std::replace(clipPath.begin(), clipPath.end(), '\\', '/');
+			mClipPaths.push_back(clipPath);
 		}
 	}
 
-	ENGINE_PRINT("[AnimatorController] Loaded controller from: ", filePath, "\n");
+	ENGINE_PRINT("[AnimatorController] Loaded controller from: ", normalizedPath, "\n");
 	return true;
 }
 

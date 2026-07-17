@@ -178,6 +178,23 @@ function(import_compressonator)
             message(STATUS "Patched codec_dxtc_alpha.cpp to fix function name conflict")
         endif()
 
+        # GCC 15 no longer accepts Compressonator's Linux AVX512 flag "-march=knl".
+        # Keep the AVX512 target enabled, but use a current GCC-supported AVX512 CPU.
+        foreach(CMP_CORE_CMAKE
+            "${compressonator_SOURCE_DIR}/cmp_core/CMakeLists.txt"
+            "${compressonator_SOURCE_DIR}/build/sdk/cmp_core/CMakeLists.txt"
+        )
+            if(EXISTS "${CMP_CORE_CMAKE}")
+                file(READ "${CMP_CORE_CMAKE}" CMP_CORE_CONTENT)
+                string(REPLACE
+                    "target_compile_options(CMP_Core_AVX512 PRIVATE -march=knl)"
+                    "target_compile_options(CMP_Core_AVX512 PRIVATE -march=skylake-avx512)"
+                    CMP_CORE_CONTENT "${CMP_CORE_CONTENT}")
+                file(WRITE "${CMP_CORE_CMAKE}" "${CMP_CORE_CONTENT}")
+            endif()
+        endforeach()
+        message(STATUS "Patched Compressonator AVX512 Linux compile flag")
+
         # Now add the subdirectory with our options
         # Following the official docs: disable all apps, enable only SDK
         set(OPTION_ENABLE_ALL_APPS OFF CACHE BOOL "" FORCE)
@@ -195,8 +212,12 @@ function(import_compressonator)
         add_subdirectory(${compressonator_SOURCE_DIR} ${compressonator_BINARY_DIR})
     endif()
 
-    # The library target should be CMP_Framework or similar - check what was created
-    if(TARGET CMP_Framework)
+    # The engine uses the public Compressonator SDK API (CMP_ConvertTexture),
+    # which is provided by CMP_Compressonator. CMP_Framework is a different SDK layer.
+    if(TARGET CMP_Compressonator)
+        add_library(Compressonator ALIAS CMP_Compressonator)
+        message(STATUS "Compressonator SDK built from source (target: CMP_Compressonator)")
+    elseif(TARGET CMP_Framework)
         add_library(Compressonator ALIAS CMP_Framework)
         message(STATUS "Compressonator SDK built from source (target: CMP_Framework)")
     elseif(TARGET CompressonatorLib)

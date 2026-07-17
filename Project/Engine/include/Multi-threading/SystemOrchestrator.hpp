@@ -1,4 +1,5 @@
 #pragma once
+#include "Compatibility/XContainerCompat.hpp"
 #include "xscheduler/xscheduler.h"
 
 // Abstract orchestrator interface

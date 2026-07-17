@@ -8,6 +8,14 @@
 #include "Engine.h"
 #include <execution>
 
+namespace {
+	std::string NormalizeAnimationAssetPath(std::string path)
+	{
+		std::replace(path.begin(), path.end(), '\\', '/');
+		return path;
+	}
+}
+
 bool AnimationSystem::Initialise()
 {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -44,7 +52,9 @@ void AnimationSystem::InitialiseAnimationComponent(Entity entity, ModelRenderCom
 		// Load animator controller if path is set
 		if (!animComp.controllerPath.empty()) {
 			AnimatorController controller;
-			if (controller.LoadFromFile(animComp.controllerPath)) {
+			std::string controllerPath = NormalizeAnimationAssetPath(animComp.controllerPath);
+			if (controller.LoadFromFile(controllerPath)) {
+				animComp.controllerPath = controllerPath;
 				// Apply state machine configuration
 				AnimationStateMachine* stateMachine = animComp.EnsureStateMachine();
 				controller.ApplyToStateMachine(stateMachine);

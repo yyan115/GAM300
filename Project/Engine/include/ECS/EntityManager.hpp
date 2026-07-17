@@ -30,7 +30,7 @@ public:
 
 	std::vector<Entity> ENGINE_API GetActiveEntities() const;
 
-	std::vector<Entity> GetAllEntities() const;
+	std::vector<Entity> ENGINE_API GetAllEntities() const;
 
 private:
 	std::queue<Entity> availableEntities{}; // Queue of available entity IDs.

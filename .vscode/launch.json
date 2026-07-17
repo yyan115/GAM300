@@ -18,8 +18,8 @@
             ],
             "preLaunchTask": "Build Debug (Game)",
             "linux": {
-                "program": "${workspaceFolder}/Project/Build/debug/bin/Game",
-                "cwd": "${workspaceFolder}/Project/Build/debug/bin",
+                "program": "${workspaceFolder}/Project/Build/LinuxDebug/Kusane",
+                "cwd": "${workspaceFolder}/Project/Build/LinuxDebug",
                 "MIMode": "gdb",
                 "miDebuggerPath": "/usr/bin/gdb"
             },
@@ -39,8 +39,8 @@
             "externalConsole": false,
             "preLaunchTask": "Build Release (Game)",
             "linux": {
-                "program": "${workspaceFolder}/Project/Build/release/bin/Game",
-                "cwd": "${workspaceFolder}/Project/Build/release/bin",
+                "program": "${workspaceFolder}/Project/Build/LinuxRelease/Kusane",
+                "cwd": "${workspaceFolder}/Project/Build/LinuxRelease",
                 "MIMode": "gdb",
                 "miDebuggerPath": "/usr/bin/gdb"
             },
@@ -67,8 +67,8 @@
             ],
             "preLaunchTask": "Build Editor Debug",
             "linux": {
-                "program": "${workspaceFolder}/Project/Build/editor-debug/bin/Editor",
-                "cwd": "${workspaceFolder}/Project/Build/editor-debug/bin",
+                "program": "${workspaceFolder}/Project/Build/LinuxEditorDebug/Editor",
+                "cwd": "${workspaceFolder}/Project/Build/LinuxEditorDebug",
                 "MIMode": "gdb",
                 "miDebuggerPath": "/usr/bin/gdb"
             },
@@ -88,8 +88,8 @@
             "externalConsole": false,
             "preLaunchTask": "Build Editor Release",
             "linux": {
-                "program": "${workspaceFolder}/Project/Build/editor-release/bin/Editor",
-                "cwd": "${workspaceFolder}/Project/Build/editor-release/bin",
+                "program": "${workspaceFolder}/Project/Build/LinuxEditorRelease/Editor",
+                "cwd": "${workspaceFolder}/Project/Build/LinuxEditorRelease",
                 "MIMode": "gdb",
                 "miDebuggerPath": "/usr/bin/gdb"
             },

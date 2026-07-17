@@ -1,10 +1,7 @@
 {
     "cmake.configureOnOpen": false,
-    "cmake.buildDirectory": "${workspaceFolder}/Build/${buildType}",
-    "cmake.generator": "Unix Makefiles",
-    "cmake.configureSettings": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-    },
+    "cmake.sourceDirectory": "${workspaceFolder}/Project",
+    "cmake.useCMakePresets": "always",
     "cmake.buildArgs": [
         "-j8"
     ],

@@ -8,6 +8,14 @@
 #include "Graphics/Model/Model.h"
 #include "Asset Manager/AssetManager.hpp"
 
+namespace {
+    std::string NormalizeAnimationAssetPath(std::string path)
+    {
+        std::replace(path.begin(), path.end(), '\\', '/');
+        return path;
+    }
+}
+
 #pragma region Reflection
 REFL_REGISTER_START(AnimationComponent)
 	REFL_REGISTER_PROPERTY(enabled)
@@ -325,7 +333,7 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
     //ENGINE_PRINT("[AnimationComponent] clipGUIDs size: ", clipGUIDs.size());
 
     for (size_t i = 0; i < clipPaths.size(); ++i) {
-        const auto& path = clipPaths[i];
+        const auto path = NormalizeAnimationAssetPath(clipPaths[i]);
         //ENGINE_PRINT("[AnimationComponent] Clip ", i, " path: ", path);
         std::string pathToLoad{};
 
@@ -337,7 +345,7 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
             if (currentGUID.high != 0 || currentGUID.low != 0) {
                 std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(currentGUID);
                 if (!guidPath.empty()) {
-                    pathToLoad = guidPath;
+                    pathToLoad = NormalizeAnimationAssetPath(guidPath);
                     //ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
                 }
             }
@@ -353,6 +361,7 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
             } else {
                 pathToLoad = path;  // Use as-is if "Resources" not found
             }
+            pathToLoad = NormalizeAnimationAssetPath(pathToLoad);
         }
 
         if (pathToLoad.empty()) {
