@@ -1,12 +1,12 @@
 # GAM300
 
-GAM300 - Team Marbles - C
+GAM300 - Team Marbles.
 
-Custom 3D game engine writtein in C++. Supports cross platform for Windows, Linux, and android. MacOS TBD.
+Custom 3D game engine written in C++. Supports cross platform for Windows, Linux, and android.
 
 **Live Website:** https://yyan115.github.io/GAM300/
 
-Our engine is called Engine Engine, as a tribute to the Engines back in 1900s. Shout out to my favorite engines!
+Our engine is called Engine Engine, because we have great naming sense.
 
 ## Quick Start
 
