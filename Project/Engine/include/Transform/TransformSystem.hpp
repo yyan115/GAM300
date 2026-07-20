@@ -5,7 +5,9 @@
 #include "TransformComponent.hpp"
 #include "../Engine.h"  // For ENGINE_API macro
 
-# define M_PI           3.14159265358979323846f
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 
 class TransformSystem : public System {
 public:
@@ -19,6 +21,7 @@ public:
 	void ENGINE_API UpdateTransform(Entity entity);
 	void TraverseHierarchy(Entity entity, std::function<void(Entity)> updateTransform);
 	static Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
+	static Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Quaternion const& rotation);
 
 	void ENGINE_API SetWorldPosition(Entity entity, Vector3D position);
 	void ENGINE_API SetLocalPosition(Entity entity, Vector3D position);
@@ -45,4 +48,5 @@ public:
 
 private:
 	bool isInitialised = false;
+	std::vector<Entity> rootEntitiesScratch;
 };

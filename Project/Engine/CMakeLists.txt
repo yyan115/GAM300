@@ -99,12 +99,25 @@ target_compile_definitions(Engine PUBLIC
     $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
 )
 
-# Enable Tracy profiler for Editor builds only (EditorDebug, EditorRelease)
-# Game builds (Debug, Release) must not include Tracy to avoid network firewall popups
-# TRACY_ON_DEMAND is baked into the Tracy DLL via vcpkg feature (see vcpkg.json)
+# Enable Tracy in EditorDebug. Keep the existing Windows EditorRelease behavior,
+# while allowing optimized non-Windows editor builds to run without profiler
+# instrumentation unless explicitly requested at configure time.
+if(WIN32)
+    set(GAM300_TRACY_EDITOR_RELEASE_DEFAULT ON)
+else()
+    set(GAM300_TRACY_EDITOR_RELEASE_DEFAULT OFF)
+endif()
+option(GAM300_ENABLE_TRACY_EDITOR_RELEASE
+    "Enable Tracy instrumentation in EditorRelease builds"
+    ${GAM300_TRACY_EDITOR_RELEASE_DEFAULT}
+)
+
+# Game builds (Debug, Release) must not include Tracy to avoid network firewall popups.
+# TRACY_ON_DEMAND is baked into the Tracy DLL via vcpkg feature (see vcpkg.json).
 if(NOT ANDROID)
     target_compile_definitions(Engine PUBLIC
-        $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:TRACY_ENABLE>
+        $<$<CONFIG:EditorDebug>:TRACY_ENABLE>
+        $<$<AND:$<CONFIG:EditorRelease>,$<BOOL:${GAM300_ENABLE_TRACY_EDITOR_RELEASE}>>:TRACY_ENABLE>
     )
 endif()
 
@@ -281,7 +294,8 @@ else()
             spdlog::spdlog
             gli
             meshoptimizer::meshoptimizer
-            $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:Tracy::TracyClient>
+            $<$<CONFIG:EditorDebug>:Tracy::TracyClient>
+            $<$<AND:$<CONFIG:EditorRelease>,$<BOOL:${GAM300_ENABLE_TRACY_EDITOR_RELEASE}>>:Tracy::TracyClient>
     )
 
     # Platform-specific FMOD and system libraries

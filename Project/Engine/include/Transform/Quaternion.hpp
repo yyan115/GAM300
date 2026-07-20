@@ -3,7 +3,9 @@
 #include <Math/Vector3D.hpp>
 #include <Math/Matrix4x4.hpp>
 
-# define M_PI           3.14159265358979323846f
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 
 
 struct Quaternion 

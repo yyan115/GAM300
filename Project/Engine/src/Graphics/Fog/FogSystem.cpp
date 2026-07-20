@@ -70,6 +70,8 @@ void FogSystem::Update()
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
+    renderItems.reserve(entities.size());
 
     for (const auto& entity : entities)
     {
@@ -152,8 +154,9 @@ void FogSystem::Update()
 
         // Submit to renderer
         auto renderItem = std::make_unique<FogVolumeComponent>(fogComp);
-        gfxManager.Submit(std::move(renderItem));
+        renderItems.push_back(std::move(renderItem));
     }
+    gfxManager.SubmitBatch(std::move(renderItems));
 }
 
 void FogSystem::Shutdown()

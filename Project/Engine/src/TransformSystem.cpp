@@ -29,7 +29,7 @@ static void UpdateTransformRecursive(
 		Matrix4x4 localMatrix = TransformSystem::CalculateModelMatrix(
 			transform.localPosition,
 			transform.localScale,
-			transform.localRotation.ToEulerDegrees() // Ensure this conversion is cheap!
+			transform.localRotation
 		);
 
 		// Calculate World Matrix
@@ -135,15 +135,15 @@ void TransformSystem::Update() {
 
 	// 1. Collect Roots
 	// We only iterate the top-level entities. The recursion handles the rest.
-	std::vector<Entity> rootEntities;
+	rootEntitiesScratch.clear();
 	{
 		PROFILE_SCOPED("TS::CollectRoots");
-		rootEntities.reserve(entities.size() / 4); // Heuristic reservation
+		rootEntitiesScratch.reserve(entities.size() / 4); // Heuristic reservation
 
 		for (const auto& entity : entities) {
 			// If no parent, it's a root
 			if (!ecsManager.HasComponent<ParentComponent>(entity)) {
-				rootEntities.push_back(entity);
+				rootEntitiesScratch.push_back(entity);
 			}
 		}
 	}
@@ -172,7 +172,7 @@ void TransformSystem::Update() {
 	// SEQUENTIAL FALLBACK (Still much faster than your original code):
 	{
 		PROFILE_SCOPED("TS::RecursiveUpdate");
-		for (const auto& root : rootEntities) {
+		for (const auto& root : rootEntitiesScratch) {
 			// Pass nullptr for parent matrix, false for parentChanged (unless root is dirty)
 			UpdateTransformRecursive(ecsManager, root, nullptr, false);
 		}
@@ -227,13 +227,13 @@ void TransformSystem::UpdateTransform(Entity entity) {
 			Matrix4x4 localMatrix = CalculateModelMatrix(
 				transform.localPosition,   // unaffected by parent scale
 				transform.localScale,
-				transform.localRotation.ToEulerDegrees()
+				transform.localRotation
 			);
 
 			transform.worldMatrix = parentTransform.worldMatrix * localMatrix;
 		}
 		else {
-			transform.worldMatrix = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation.ToEulerDegrees());
+			transform.worldMatrix = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
 		}
 
 		transform.worldPosition = Matrix4x4::ExtractTranslation(transform.worldMatrix);
@@ -292,6 +292,14 @@ Matrix4x4 TransformSystem::CalculateModelMatrix(Vector3D const& position, Vector
 	Matrix4x4 R = Matrix4x4::RotationZ(radz) * Matrix4x4::RotationY(rady) * Matrix4x4::RotationX(radx);
 
 	return Matrix4x4::TRS(position, R, scale);
+}
+
+Matrix4x4 TransformSystem::CalculateModelMatrix(
+	Vector3D const& position,
+	Vector3D const& scale,
+	Quaternion const& rotation)
+{
+	return Matrix4x4::TRS(position, rotation.ToMatrix(), scale);
 }
 
 void TransformSystem::SetWorldPosition(Entity entity, Vector3D position) {

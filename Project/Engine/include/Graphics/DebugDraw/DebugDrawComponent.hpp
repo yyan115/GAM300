@@ -60,4 +60,6 @@ public:
     // Simple data accessors - no logic
     size_t GetCommandCount() const { return drawCommands.size(); }
     bool HasCommands() const { return !drawCommands.empty(); }
+
+    RenderComponentKind GetRenderKind() const override { return RenderComponentKind::DebugDraw; }
 };

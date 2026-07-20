@@ -57,7 +57,6 @@ private:
     void InitializeParticleComponent(ParticleComponent& particleComp);
     void UpdateParticles(ParticleComponent& comp, float dt);
     void EmitParticles(ParticleComponent& comp, float dt, const glm::vec3& worldPos);
-    void RemoveDeadParticles(ParticleComponent& comp);
     void UpdateInstanceBuffer(ParticleComponent& comp);
 
     std::mt19937 rng;

@@ -300,6 +300,16 @@ bool AndroidPlatform::MakeContextCurrent() {
     //                    display, context, surface);
 
     if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE && context != EGL_NO_CONTEXT) {
+        // eglMakeCurrent may enter the graphics driver. Most render-time callers
+        // already run on the owning thread with this context bound, so avoid
+        // rebinding it unless the EGL state actually changed.
+        if (eglGetCurrentDisplay() == display &&
+            eglGetCurrentContext() == context &&
+            eglGetCurrentSurface(EGL_DRAW) == surface &&
+            eglGetCurrentSurface(EGL_READ) == surface) {
+            return true;
+        }
+
         EGLBoolean result = eglMakeCurrent(display, surface, surface, context);
         if (result == EGL_TRUE) {
             // __android_log_print(ANDROID_LOG_INFO, "GAM300", "eglMakeCurrent() SUCCESS");

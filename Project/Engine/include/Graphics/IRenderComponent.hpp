@@ -2,6 +2,17 @@
 #include "Reflection/ReflectionBase.hpp"
 #include <glm/glm.hpp>
 
+enum class RenderComponentKind {
+	Unknown,
+	Model,
+	Text,
+	Sprite,
+	DebugDraw,
+	Particle,
+	ParticleRenderItem,
+	Fog
+};
+
 class IRenderComponent {
 public:
 	REFL_SERIALIZABLE
@@ -19,5 +30,7 @@ public:
 
 	IRenderComponent() = default;
 	virtual ~IRenderComponent() = default;
+
+	virtual RenderComponentKind GetRenderKind() const { return RenderComponentKind::Unknown; }
 
 };

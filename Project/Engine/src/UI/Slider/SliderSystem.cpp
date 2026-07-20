@@ -351,6 +351,10 @@ void SliderSystem::InvokeOnValueChanged(Entity sliderEntity, SliderComponent& sl
 void SliderSystem::Update() {
     PROFILE_FUNCTION();
     if (!m_ecs || !g_inputManager) return;
+    if (entities.empty()) {
+        m_activeSlider = InvalidEntity();
+        return;
+    }
 
     const bool mousePressed = g_inputManager->IsPointerJustPressed();
     const bool mouseHeld = g_inputManager->IsPointerPressed();
@@ -359,7 +363,15 @@ void SliderSystem::Update() {
         m_activeSlider = InvalidEntity();
     }
 
-    Vector3D mousePos = GetMousePosInGameSpace();
+    Vector3D mousePos;
+    bool hasMousePos = false;
+    auto getMousePos = [&]() -> const Vector3D& {
+        if (!hasMousePos) {
+            mousePos = GetMousePosInGameSpace();
+            hasMousePos = true;
+        }
+        return mousePos;
+    };
 
     for (Entity sliderEntity : entities) {
         if (!m_ecs->HasComponent<SliderComponent>(sliderEntity)) continue;
@@ -379,21 +391,21 @@ void SliderSystem::Update() {
             if (mousePressed && m_activeSlider == InvalidEntity()) {
                 // Click on handle starts drag
                 Entity handleEntity = InvalidEntity();
-                if (TryResolveEntity(sliderComp.handleEntityGuid, handleEntity) && IsMouseOverEntity(handleEntity, mousePos)) {
+                if (TryResolveEntity(sliderComp.handleEntityGuid, handleEntity) && IsMouseOverEntity(handleEntity, getMousePos())) {
                     m_activeSlider = sliderEntity;
                 }
                 // Clicking track sets value and activates slider
                 else {
                     Entity trackEntity = InvalidEntity();
-                    if (TryResolveEntity(sliderComp.trackEntityGuid, trackEntity) && IsMouseOverEntity(trackEntity, mousePos)) {
+                    if (TryResolveEntity(sliderComp.trackEntityGuid, trackEntity) && IsMouseOverEntity(trackEntity, getMousePos())) {
                         m_activeSlider = sliderEntity;
-                        UpdateValueFromMouse(sliderEntity, sliderComp, mousePos);
+                        UpdateValueFromMouse(sliderEntity, sliderComp, getMousePos());
                     }
                 }
             }
 
             if (mouseHeld && m_activeSlider == sliderEntity) {
-                UpdateValueFromMouse(sliderEntity, sliderComp, mousePos);
+                UpdateValueFromMouse(sliderEntity, sliderComp, getMousePos());
             }
         }
 

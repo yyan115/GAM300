@@ -14,6 +14,8 @@ class Camera;
 
 class ModelRenderComponent : public IRenderComponent {
 public:
+	struct RenderSnapshotTag {};
+
 	// Serialize these.
 	REFL_SERIALIZABLE
 	bool overrideFromPrefab = false;
@@ -44,7 +46,35 @@ public:
 	}
 
 	ModelRenderComponent() { mFinalBoneMatrices.assign(100, glm::mat4(1.0f)); }
+
+	// Render submissions do not need the model hierarchy lookup map. Static
+	// models also do not need the component's placeholder bone matrices.
+	ModelRenderComponent(const ModelRenderComponent& other, RenderSnapshotTag)
+		: IRenderComponent(other),
+		overrideFromPrefab(other.overrideFromPrefab),
+		modelGUID(other.modelGUID),
+		shaderGUID(other.shaderGUID),
+		materialGUID(other.materialGUID),
+		transform(other.transform),
+		isVisible(other.isVisible),
+		childBonesSaved(other.childBonesSaved),
+		depthOffset(other.depthOffset),
+		depthOffsetFactor(other.depthOffsetFactor),
+		depthOffsetUnits(other.depthOffsetUnits),
+		distanceFadeOpacity(other.distanceFadeOpacity),
+		model(other.model),
+		shader(other.shader),
+		material(other.material),
+		animator(other.animator)
+	{
+		if (model && !model->mBoneInfoMap.empty()) {
+			mFinalBoneMatrices = other.mFinalBoneMatrices;
+		}
+	}
+
 	~ModelRenderComponent() = default;
+
+	RenderComponentKind GetRenderKind() const override { return RenderComponentKind::Model; }
 
 	// Get material for a specific mesh (returns entity material if set, otherwise model default)
 	std::shared_ptr<Material> GetMaterial(size_t meshIndex) const {

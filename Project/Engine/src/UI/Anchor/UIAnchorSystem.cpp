@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "UI/Anchor/UIAnchorSystem.hpp"
 #include "UI/Anchor/UIAnchorComponent.hpp"
-#include "ECS/ECSRegistry.hpp"
+#include "ECS/ECSManager.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/GraphicsManager.hpp"
@@ -17,6 +17,7 @@ void UIAnchorSystem::Update()
 {
     PROFILE_FUNCTION();
     if (!m_ecs) return;
+    if (entities.empty()) return;
 
     // Get current viewport size
     GraphicsManager& gfx = GraphicsManager::GetInstance();
@@ -26,7 +27,7 @@ void UIAnchorSystem::Update()
     // Skip if viewport not set yet
     if (viewportWidth <= 0 || viewportHeight <= 0) return;
 
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    ECSManager& ecsManager = *m_ecs;
 
     for (const auto& entity : entities)
     {
@@ -45,6 +46,7 @@ void UIAnchorSystem::Update()
         auto& transform = ecsManager.GetComponent<Transform>(entity);
 
         // Initialize original scale on first frame
+        const bool wasInitialized = anchor.hasInitialized;
         if (!anchor.hasInitialized)
         {
             anchor.originalScaleX = transform.localScale.x;
@@ -112,21 +114,34 @@ void UIAnchorSystem::Update()
         }
         }
 
+        bool transformChanged = !wasInitialized;
+
         // Update Transform position
         // For 2D UI, we use X and Y as screen coordinates, Z stays the same for layering
-        transform.localPosition.x = screenX;
-        transform.localPosition.y = screenY;
+        if (transform.localPosition.x != screenX || transform.localPosition.y != screenY)
+        {
+            transform.localPosition.x = screenX;
+            transform.localPosition.y = screenY;
+            transformChanged = true;
+        }
         // Keep Z for sorting/layering
 
         // Update Transform scale if size mode requires it
         if (anchor.sizeMode != UISizeMode::Fixed)
         {
-            transform.localScale.x = newScaleX;
-            transform.localScale.y = newScaleY;
+            if (transform.localScale.x != newScaleX || transform.localScale.y != newScaleY)
+            {
+                transform.localScale.x = newScaleX;
+                transform.localScale.y = newScaleY;
+                transformChanged = true;
+            }
         }
 
         // Mark transform as dirty so it recalculates world matrix
-        transform.isDirty = true;
+        if (transformChanged)
+        {
+            transform.isDirty = true;
+        }
     }
 
     // Cache viewport size

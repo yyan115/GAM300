@@ -820,7 +820,7 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
     if (tr.isDirty) {
         // Simple TRS calculation (ignoring parent for frame 1 stability)
         spawnMatrix = TransformSystem::CalculateModelMatrix(
-            tr.localPosition, tr.localScale, tr.localRotation.ToEulerDegrees()
+            tr.localPosition, tr.localScale, tr.localRotation
         );
     }
 

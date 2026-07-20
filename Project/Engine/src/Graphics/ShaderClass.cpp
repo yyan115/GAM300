@@ -357,20 +357,7 @@ bool Shader::SetupShader(const std::string& path) {
 	}
 #endif
 
-	// Auto-bind known UBO blocks to predefined binding points.
-	// CameraBlock (binding=0): view, projection, cameraPos — uploaded once per frame.
-	// LightingBlock (binding=1): all lighting data (Android only) — uploaded once per frame.
-	{
-		static const struct { const char* name; GLuint binding; } kBlocks[] = {
-			{ "CameraBlock",   0 },
-			{ "LightingBlock", 1 },
-		};
-		for (auto& b : kBlocks) {
-			GLuint idx = glGetUniformBlockIndex(ID, b.name);
-			if (idx != GL_INVALID_INDEX)
-				glUniformBlockBinding(ID, idx, b.binding);
-		}
-	}
+    BindKnownUniformBlocks();
 
 	return true;
 }
@@ -557,17 +544,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 #endif
 		}
 
-		// Bind known UBO blocks for the binary-loaded program.
-		{
-			static const struct { const char* name; GLuint binding; } kBlocks[] = {
-				{ "CameraBlock", 0 },
-			};
-			for (auto& b : kBlocks) {
-				GLuint idx = glGetUniformBlockIndex(ID, b.name);
-				if (idx != GL_INVALID_INDEX)
-					glUniformBlockBinding(ID, idx, b.binding);
-			}
-		}
+        BindKnownUniformBlocks();
 
 		return true;
 	}
@@ -635,6 +612,25 @@ std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, 
 void Shader::Activate()
 {
 	glUseProgram(ID);
+}
+
+void Shader::BindKnownUniformBlocks()
+{
+    // A reload creates a new program, so cached locations and block metadata
+    // from the previous program are no longer valid.
+    m_uniformCache.clear();
+
+    const GLuint cameraBlock = glGetUniformBlockIndex(ID, "CameraBlock");
+    m_usesCameraBlock = cameraBlock != GL_INVALID_INDEX;
+    if (m_usesCameraBlock) {
+        glUniformBlockBinding(ID, cameraBlock, 0);
+    }
+
+    const GLuint lightingBlock = glGetUniformBlockIndex(ID, "LightingBlock");
+    m_usesLightingBlock = lightingBlock != GL_INVALID_INDEX;
+    if (m_usesLightingBlock) {
+        glUniformBlockBinding(ID, lightingBlock, 1);
+    }
 }
 
 void Shader::Delete()

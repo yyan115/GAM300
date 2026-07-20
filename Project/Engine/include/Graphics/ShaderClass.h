@@ -43,6 +43,9 @@ public:
     // instead of calling setMat4 in a loop (avoids 100 hash lookups + 100 GL calls).
     void setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count);
 
+    bool UsesCameraBlock() const noexcept { return m_usesCameraBlock; }
+    bool UsesLightingBlock() const noexcept { return m_usesLightingBlock; }
+
     //void clearUniformCache();
 
 private:
@@ -55,5 +58,9 @@ private:
     GLenum binaryFormat{};
     bool binarySupported = true;
 
+    bool m_usesCameraBlock = false;
+    bool m_usesLightingBlock = false;
+
     bool SetupShader(const std::string& path);
+    void BindKnownUniformBlocks();
 };

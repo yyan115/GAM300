@@ -294,19 +294,20 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	shader.Activate();
 	vao.Bind();
 
-	// Set camera matrices
-	glm::mat4 view = camera.GetViewMatrix();
-	shader.setMat4("view", view);
+	if (!shader.UsesCameraBlock()) {
+		// Legacy/custom shaders receive camera uniforms directly. Built-in shaders
+		// consume the CameraBlock uploaded once by GraphicsManager.
+		glm::mat4 view = camera.GetViewMatrix();
+		shader.setMat4("view", view);
 
-	// Use GraphicsManager's viewport dimensions for correct aspect ratio
-	// This ensures Scene Panel and Game Panel use their own viewport dimensions
-	int vpWidth, vpHeight;
-	GraphicsManager::GetInstance().GetViewportSize(vpWidth, vpHeight);
-	if (vpWidth <= 0) vpWidth = 1;
-	if (vpHeight <= 0) vpHeight = 1;
-	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)vpWidth / (float)vpHeight, 0.1f, GraphicsManager::GetInstance().GetFarPlane());
-	shader.setMat4("projection", projection);
-	shader.setVec3("cameraPos", camera.Position);
+		int vpWidth, vpHeight;
+		GraphicsManager::GetInstance().GetViewportSize(vpWidth, vpHeight);
+		if (vpWidth <= 0) vpWidth = 1;
+		if (vpHeight <= 0) vpHeight = 1;
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)vpWidth / (float)vpHeight, 0.1f, GraphicsManager::GetInstance().GetFarPlane());
+		shader.setMat4("projection", projection);
+		shader.setVec3("cameraPos", camera.Position);
+	}
 
 	// Apply material if available
 	if (!material)
@@ -347,8 +348,9 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 		}
 	}
 
-#ifdef __ANDROID__
-	// Add extensive debugging for Android crash
+#if defined(__ANDROID__) && !defined(NDEBUG)
+	// Android driver validation is useful during crash investigation, but these
+	// GL queries are synchronization points and must not run in release draws.
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to draw mesh: indices.size=%zu, VAO.ID=%u", indices.size(), vao.ID);
 
 	// Check if we have valid indices
@@ -387,9 +389,9 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 
 
-#ifdef __ANDROID__
-GLenum err2;
-while ((err2 = glGetError()) != GL_NO_ERROR) {
+#if defined(__ANDROID__) && !defined(NDEBUG)
+	GLenum err2;
+	while ((err2 = glGetError()) != GL_NO_ERROR) {
     //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "GL Error after DrawElements: 0x%x (count=%zu, VAO=%u)",
     //                   err2, indices.size(), vao.ID);
 }
@@ -422,4 +424,3 @@ void Mesh::DrawDepthOnly()
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 	vao.Unbind();
 }
-

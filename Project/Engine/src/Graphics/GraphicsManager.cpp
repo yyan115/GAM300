@@ -29,6 +29,24 @@
 #include "TimeManager.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
+namespace {
+	#if !defined(_WIN32) && !defined(ANDROID)
+	bool ShaderResourceExists(const std::string& shaderPath)
+	{
+		if (shaderPath.empty())
+		{
+			return false;
+		}
+
+		return std::filesystem::exists(shaderPath) ||
+			std::filesystem::exists(shaderPath + ".meta") ||
+			std::filesystem::exists(shaderPath + ".vert") ||
+			std::filesystem::exists(shaderPath + ".frag") ||
+			std::filesystem::exists(shaderPath + ".geom");
+	}
+	#endif
+}
+
 GraphicsManager& GraphicsManager::GetInstance()
 {
 	static GraphicsManager instance;
@@ -37,7 +55,8 @@ GraphicsManager& GraphicsManager::GetInstance()
 
 bool GraphicsManager::Initialize(int window_width, int window_height)
 {
-	(void)window_width, window_height;
+	(void)window_width;
+	(void)window_height;
 	// Enable depth testing
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -69,15 +88,25 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 #else
 	{
 		std::string prepassPath = ResourceManager::GetPlatformShaderPath("depth_prepass");
-		m_depthPrepassShader = ResourceManager::GetInstance().GetResource<Shader>(prepassPath);
-		if (!m_depthPrepassShader)
+	#if !defined(_WIN32)
+		if (!ShaderResourceExists(prepassPath))
 		{
-			ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GraphicsManager] depth_prepass shader not found — depth prepass disabled\n");
+			ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GraphicsManager] depth_prepass shader not found - depth prepass disabled\n");
 			m_depthPrepassEnabled = false;
 		}
 		else
+	#endif
 		{
-			ENGINE_PRINT("[GraphicsManager] Depth prepass shader loaded\n");
+			m_depthPrepassShader = ResourceManager::GetInstance().GetResource<Shader>(prepassPath);
+			if (!m_depthPrepassShader)
+			{
+				ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GraphicsManager] depth_prepass shader failed to load - depth prepass disabled\n");
+				m_depthPrepassEnabled = false;
+			}
+			else
+			{
+				ENGINE_PRINT("[GraphicsManager] Depth prepass shader loaded\n");
+			}
 		}
 	}
 #endif
@@ -159,26 +188,8 @@ void GraphicsManager::EndFrame()
 
 void GraphicsManager::Clear(float r, float g, float b, float a)
 {
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() called");
-
-	// Ensure EGL context is current before making OpenGL calls
-	auto* platform = WindowManager::GetPlatform();
-	if (platform) {
-		platform->MakeContextCurrent();
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context made current");
-	}
-
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClearColor");
-#endif
 	glClearColor(r, g, b, a);
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "About to call glClear");
-#endif
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#ifdef ANDROID
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "GraphicsManager::Clear() completed");
-#endif
 }
 
 void GraphicsManager::SetCamera(Camera* camera)
@@ -215,6 +226,24 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 	if (renderItem && renderItem->isVisible)
 	{
 		renderQueue.push_back(std::move(renderItem));
+	}
+}
+
+void GraphicsManager::SubmitBatch(std::vector<std::unique_ptr<IRenderComponent>>&& renderItems)
+{
+	if (renderItems.empty())
+	{
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(renderQueueMutex);
+	renderQueue.reserve(renderQueue.size() + renderItems.size());
+	for (auto& renderItem : renderItems)
+	{
+		if (renderItem && renderItem->isVisible)
+		{
+			renderQueue.push_back(std::move(renderItem));
+		}
 	}
 }
 
@@ -272,18 +301,6 @@ void GraphicsManager::Render()
 		PROFILE_SCOPED("GM::GPUZoneScope");
 		PROFILE_GPU_ZONE("Render");
 
-	// Context is only ever lost on Android (EGL surface destroyed/recreated).
-	// On PC the GLFW context stays current for the lifetime of the window, so
-	// calling glfwMakeContextCurrent every frame just wastes ~126µs in driver overhead.
-#ifdef ANDROID
-	{
-		PROFILE_SCOPED("GM::MakeContextCurrent");
-		if (auto* platform = WindowManager::GetPlatform()) {
-			platform->MakeContextCurrent();
-		}
-	}
-#endif
-
 	if (!currentCamera)
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Warning: No camera set for rendering!\n");
@@ -325,7 +342,10 @@ void GraphicsManager::Render()
 		PROFILE_SCOPED("GM::ShadowMaps");
 		if (ecsManager.lightingSystem)
 		{
-			ecsManager.lightingSystem->RenderShadowMaps();
+			ecsManager.lightingSystem->RenderShadowMaps(
+				PostProcessingManager::GetInstance().GetHDRFramebuffer(),
+				currentFrameViewport.width,
+				currentFrameViewport.height);
 		}
 	}
 
@@ -336,25 +356,33 @@ void GraphicsManager::Render()
 	}
 
 	// Separate models from other render items, moving excluded items to deferred queue
-	std::vector<IRenderComponent*> modelItems;
-	std::vector<IRenderComponent*> otherItems;
+	m_modelRenderItems.clear();
+	m_otherRenderItems.clear();
+	m_modelRenderItems.reserve(renderQueue.size());
+	m_otherRenderItems.reserve(renderQueue.size());
+	deferredQueue.reserve(deferredQueue.size() + renderQueue.size());
 
 	{
 		PROFILE_SCOPED("GM::QueueSeparation");
 		for (auto& item : renderQueue)
 		{
+			if (!item)
+			{
+				continue;
+			}
+
 			if (item->excludeFromPostProcess)
 			{
 				deferredQueue.push_back(std::move(item));
 				continue;
 			}
-			if (dynamic_cast<ModelRenderComponent*>(item.get()))
+			if (item->GetRenderKind() == RenderComponentKind::Model)
 			{
-				modelItems.push_back(item.get());
+				m_modelRenderItems.push_back(item.get());
 			}
 			else
 			{
-				otherItems.push_back(item.get());
+				m_otherRenderItems.push_back(item.get());
 			}
 		}
 	}
@@ -435,57 +463,64 @@ void GraphicsManager::Render()
 
 	{
 		PROFILE_SCOPED("GM::ModelSort");
-		std::sort(modelItems.begin(), modelItems.end(),
-			[this](IRenderComponent* a, IRenderComponent* b) {
-				auto* modelA = static_cast<ModelRenderComponent*>(a);
-				auto* modelB = static_cast<ModelRenderComponent*>(b);
+		m_modelSortEntries.clear();
+		m_modelSortEntries.reserve(m_modelRenderItems.size());
+		const glm::vec3 camPos = currentCamera ? currentCamera->Position : glm::vec3(0.0f);
 
-				RenderLayer::Type layerA = modelA->material && modelA->material->GetOpacity() < 1.0f
-					? RenderLayer::Type::LAYER_TRANSPARENT
-					: RenderLayer::Type::LAYER_OPAQUE;
-				RenderLayer::Type layerB = modelB->material && modelB->material->GetOpacity() < 1.0f
-					? RenderLayer::Type::LAYER_TRANSPARENT
-					: RenderLayer::Type::LAYER_OPAQUE;
+		for (IRenderComponent* item : m_modelRenderItems)
+		{
+			auto* model = static_cast<ModelRenderComponent*>(item);
+			ModelSortEntry entry;
+			entry.item = item;
+			entry.layer = model->material && model->material->GetOpacity() < 1.0f
+				? RenderLayer::Type::LAYER_TRANSPARENT
+				: RenderLayer::Type::LAYER_OPAQUE;
 
+			const Vector3D pos = Matrix4x4::ExtractTranslation(model->transform);
+			const float dx = pos.x - camPos.x;
+			const float dy = pos.y - camPos.y;
+			const float dz = pos.z - camPos.z;
+			entry.distanceSq = dx * dx + dy * dy + dz * dz;
+
+			if (entry.layer == RenderLayer::Type::LAYER_OPAQUE)
+			{
+				// Front-to-back: group into ~5-unit buckets so objects at similar
+				// depths still batch by state (reduces shader/material switches).
+				entry.depthBucket = static_cast<int>(entry.distanceSq / 25.0f);
+				entry.stateKey = RenderSortKey(entry.layer,
+					m_idCache.GetShaderId(model->shader.get()),
+					m_idCache.GetMaterialId(model->material.get()),
+					m_idCache.GetModelId(model->model.get()));
+			}
+
+			m_modelSortEntries.push_back(entry);
+		}
+
+		std::sort(m_modelSortEntries.begin(), m_modelSortEntries.end(),
+			[](const ModelSortEntry& a, const ModelSortEntry& b) {
 				// Layer is always primary (opaque before transparent)
-				if (layerA != layerB)
-					return layerA < layerB;
+				if (a.layer != b.layer)
+					return a.layer < b.layer;
 
-				// Compute squared distances from camera
-				glm::vec3 camPos = currentCamera ? currentCamera->Position : glm::vec3(0.0f);
-				Vector3D posA = Matrix4x4::ExtractTranslation(modelA->transform);
-				Vector3D posB = Matrix4x4::ExtractTranslation(modelB->transform);
-				float dxA = posA.x - camPos.x, dyA = posA.y - camPos.y, dzA = posA.z - camPos.z;
-				float dxB = posB.x - camPos.x, dyB = posB.y - camPos.y, dzB = posB.z - camPos.z;
-				float distSqA = dxA * dxA + dyA * dyA + dzA * dzA;
-				float distSqB = dxB * dxB + dyB * dyB + dzB * dzB;
+				if (a.layer == RenderLayer::Type::LAYER_OPAQUE)
+				{
+					if (a.depthBucket != b.depthBucket)
+						return a.depthBucket < b.depthBucket;
+					// Same depth bucket — sort by state to minimise GPU state switches.
+					return a.stateKey < b.stateKey;
+				}
 
-				if (layerA == RenderLayer::Type::LAYER_OPAQUE) {
-					// Front-to-back: group into ~5-unit buckets so objects at similar
-					// depths still batch by state (reduces shader/material switches).
-					int bucketA = static_cast<int>(distSqA / 25.0f);
-					int bucketB = static_cast<int>(distSqB / 25.0f);
-					if (bucketA != bucketB)
-						return bucketA < bucketB;
-					// Same depth bucket — sort by state to minimise GPU state switches
-					RenderSortKey keyA(layerA,
-						m_idCache.GetShaderId(modelA->shader.get()),
-						m_idCache.GetMaterialId(modelA->material.get()),
-						m_idCache.GetModelId(modelA->model.get()));
-					RenderSortKey keyB(layerB,
-						m_idCache.GetShaderId(modelB->shader.get()),
-						m_idCache.GetMaterialId(modelB->material.get()),
-						m_idCache.GetModelId(modelB->model.get()));
-					return keyA < keyB;
-				}
-				else {
-					// Back-to-front for transparency: correct alpha blending
-					return distSqA > distSqB;
-				}
+				// Back-to-front for transparency: correct alpha blending.
+				return a.distanceSq > b.distanceSq;
 			});
 
+		for (size_t i = 0; i < m_modelSortEntries.size(); ++i)
+		{
+			m_modelRenderItems[i] = m_modelSortEntries[i].item;
+		}
+
 		// Sort other items by their existing sorting logic (sprites, text, etc.)
-		std::sort(otherItems.begin(), otherItems.end(),
+		std::sort(m_otherRenderItems.begin(), m_otherRenderItems.end(),
 			[](IRenderComponent* a, IRenderComponent* b) {
 				// Keep your existing 2D sorting logic here
 				return a->renderOrder < b->renderOrder;
@@ -498,7 +533,7 @@ void GraphicsManager::Render()
 	{
 		PROFILE_SCOPED("GM::ModelRenderLoop");
 		bool blendingOn = false;
-		for (IRenderComponent* item : modelItems)
+		for (IRenderComponent* item : m_modelRenderItems)
 		{
 			ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
 			// Skip if it was handled by instancing — but only for fully opaque, non-fading objects.
@@ -548,24 +583,31 @@ void GraphicsManager::Render()
 	// =========================================================================
 	{
 		PROFILE_SCOPED("GM::OtherItemsRender");
-		for (IRenderComponent* item : otherItems) {
-			// ... your existing rendering logic for sprites, text, etc. ...
-			if (auto* textItem = dynamic_cast<TextRenderComponent*>(item)) {
-				RenderText(*textItem);
-			}
-			else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item)) {
-				RenderSprite(*spriteItem);
-			}
-			else if (auto* debugItem = dynamic_cast<DebugDrawComponent*>(item)) {
-				RenderDebugDraw(*debugItem);
-			}
-			else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item)) {
-				RenderParticles(*particleItem);
-			}
-			else if (auto* fogItem = dynamic_cast<FogVolumeComponent*>(item)) {
+		for (IRenderComponent* item : m_otherRenderItems) {
+			switch (item->GetRenderKind())
+			{
+			case RenderComponentKind::Text:
+				RenderText(*static_cast<TextRenderComponent*>(item));
+				break;
+			case RenderComponentKind::Sprite:
+				RenderSprite(*static_cast<SpriteRenderComponent*>(item));
+				break;
+			case RenderComponentKind::DebugDraw:
+				RenderDebugDraw(*static_cast<DebugDrawComponent*>(item));
+				break;
+			case RenderComponentKind::Particle:
+				RenderParticles(*static_cast<ParticleComponent*>(item));
+				break;
+			case RenderComponentKind::ParticleRenderItem:
+				RenderParticles(*static_cast<ParticleRenderItem*>(item));
+				break;
+			case RenderComponentKind::Fog:
 #ifndef ANDROID
-				RenderFogVolume(*fogItem);
+				RenderFogVolume(*static_cast<FogVolumeComponent*>(item));
 #endif
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -585,12 +627,14 @@ void GraphicsManager::Render()
 	}
 
 	// Per-frame render stats plots
+#ifdef TRACY_ENABLE
 	{
 		const auto& instStats = InstancingManager::GetInstance().GetStats();
 		PROFILE_PLOT("InstancedObjects", (double)instStats.instancedObjects);
 		PROFILE_PLOT("InstancingBatches",(double)instStats.batchCount);
 		PROFILE_PLOT("CulledObjects",    (double)instStats.culledObjects);
 	}
+#endif
 
 	// Debug output (optional - remove in release)
 	/*static int frameCount = 0;
@@ -609,20 +653,22 @@ void GraphicsManager::RenderDeferred()
 	if (deferredQueue.empty()) return;
 
 	// Separate deferred items into models/others
-	std::vector<IRenderComponent*> modelItems;
-	std::vector<IRenderComponent*> otherItems;
+	m_deferredModelRenderItems.clear();
+	m_deferredOtherRenderItems.clear();
+	m_deferredModelRenderItems.reserve(deferredQueue.size());
+	m_deferredOtherRenderItems.reserve(deferredQueue.size());
 
 	for (auto& item : deferredQueue)
 	{
 		if (!item) continue;
-		if (dynamic_cast<ModelRenderComponent*>(item.get()))
-			modelItems.push_back(item.get());
+		if (item->GetRenderKind() == RenderComponentKind::Model)
+			m_deferredModelRenderItems.push_back(item.get());
 		else
-			otherItems.push_back(item.get());
+			m_deferredOtherRenderItems.push_back(item.get());
 	}
 
 	// Sort others by render order
-	std::sort(otherItems.begin(), otherItems.end(),
+	std::sort(m_deferredOtherRenderItems.begin(), m_deferredOtherRenderItems.end(),
 		[](IRenderComponent* a, IRenderComponent* b) {
 			return a->renderOrder < b->renderOrder;
 		});
@@ -632,19 +678,30 @@ void GraphicsManager::RenderDeferred()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	for (IRenderComponent* item : modelItems)
+	for (IRenderComponent* item : m_deferredModelRenderItems)
 	{
 		RenderModel(*static_cast<ModelRenderComponent*>(item));
 	}
 
-	for (IRenderComponent* item : otherItems)
+	for (IRenderComponent* item : m_deferredOtherRenderItems)
 	{
-		if (auto* textItem = dynamic_cast<TextRenderComponent*>(item))
-			RenderText(*textItem);
-		else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item))
-			RenderSprite(*spriteItem);
-		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item))
-			RenderParticles(*particleItem);
+		switch (item->GetRenderKind())
+		{
+		case RenderComponentKind::Text:
+			RenderText(*static_cast<TextRenderComponent*>(item));
+			break;
+		case RenderComponentKind::Sprite:
+			RenderSprite(*static_cast<SpriteRenderComponent*>(item));
+			break;
+		case RenderComponentKind::Particle:
+			RenderParticles(*static_cast<ParticleComponent*>(item));
+			break;
+		case RenderComponentKind::ParticleRenderItem:
+			RenderParticles(*static_cast<ParticleRenderItem*>(item));
+			break;
+		default:
+			break;
+		}
 	}
 
 	// Restore state
@@ -748,7 +805,7 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 		shader.setMat3("normalMatrixCPU", normalMatrix);
 	}
 
-	if (currentCamera)
+	if (currentCamera && !shader.UsesCameraBlock())
 	{
 		int renderWidth = currentFrameViewport.width;
 		int renderHeight = currentFrameViewport.height;
@@ -1057,62 +1114,97 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 #endif
 }
 
-void GraphicsManager::RenderParticles(const ParticleComponent& item) {
+void GraphicsManager::RenderParticles(const ParticleComponent& item)
+{
+	RenderParticleInstances(
+		item,
+		item.particleTexture,
+		item.particleShader,
+		item.particleVAO,
+		item.quadEBO,
+		item.particles.size(),
+		item.additiveBlending);
+}
+
+void GraphicsManager::RenderParticles(const ParticleRenderItem& item)
+{
+	RenderParticleInstances(
+		item,
+		item.particleTexture,
+		item.particleShader,
+		item.particleVAO,
+		item.quadEBO,
+		item.particleCount,
+		item.additiveBlending);
+}
+
+void GraphicsManager::RenderParticleInstances(
+	const IRenderComponent& renderState,
+	const std::shared_ptr<Texture>& texture,
+	const std::shared_ptr<Shader>& shader,
+	VAO* vao,
+	EBO* ebo,
+	std::size_t particleCount,
+	bool additiveBlending)
+{
 #ifdef ANDROID
 	assert(eglGetCurrentContext() != EGL_NO_CONTEXT);
 #endif
-	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
+	if (!renderState.isVisible || particleCount == 0 || !shader || !vao) return;
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
-	if (item.additiveBlending)
+	if (additiveBlending)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
 	else
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
 	glDepthMask(GL_FALSE);
 
-	item.particleShader->Activate();
+	shader->Activate();
 
 	// Setup camera matrices ONCE for all particles
 	if (currentCamera) {
-		glm::mat4 view = currentCamera->GetViewMatrix();
-		item.particleShader->setMat4("view", view);
+		if (!shader->UsesCameraBlock()) {
+			glm::mat4 view = currentCamera->GetViewMatrix();
+			shader->setMat4("view", view);
 
-		float aspectRatio = (float)RunTimeVar::window.width / (float)RunTimeVar::window.height;
-		glm::mat4 projection = glm::perspective(
-			glm::radians(currentCamera->Zoom),
-			aspectRatio,
-			0.1f, m_farPlane
-		);
-		item.particleShader->setMat4("projection", projection);
+			glm::mat4 projection = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				currentFrameViewport.aspectRatio,
+				0.1f, m_farPlane
+			);
+			shader->setMat4("projection", projection);
+		}
 
 		// Send camera vectors for billboard calculations in vertex shader
 		glm::vec3 cameraRight = glm::normalize(glm::cross(currentCamera->Front, currentCamera->Up));
-		item.particleShader->setVec3("cameraRight", cameraRight);
-		item.particleShader->setVec3("cameraUp", currentCamera->Up);
+		shader->setVec3("cameraRight", cameraRight);
+		shader->setVec3("cameraUp", currentCamera->Up);
 	}
 
 	// Bind texture if available
-	if (item.particleTexture) {
+	if (texture) {
 		glActiveTexture(GL_TEXTURE0);
-		item.particleTexture->Bind(0);
-		item.particleShader->setInt("particleTexture", 0);
+		texture->Bind(0);
+		shader->setInt("particleTexture", 0);
 	}
 
 	// Per-entity bloom emission
-	item.particleShader->setFloat("bloomIntensity", item.bloomIntensity);
-	if (item.bloomIntensity > 0.0f) {
-		item.particleShader->setVec3("bloomColor", item.bloomColor);
+	shader->setFloat("bloomIntensity", renderState.bloomIntensity);
+	if (renderState.bloomIntensity > 0.0f) {
+		shader->setVec3("bloomColor", renderState.bloomColor);
 	}
 
 	// Draw ALL particles with ONE instanced draw call using indices
-	item.particleVAO->Bind();
-	if (item.quadEBO) item.quadEBO->Bind();  // explicitly ensure EBO is bound
+	vao->Bind();
+	if (ebo) ebo->Bind();  // explicitly ensure EBO is bound
+#ifndef NDEBUG
 	GLint eboBinding = 0;
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eboBinding);
 	assert(eboBinding != 0 && "VAO has no EBO bound after setup");
+#endif
 
-	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(item.particles.size()));
-	item.particleVAO->Unbind();
+	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(particleCount));
+	vao->Unbind();
 	//item.quadEBO->Unbind();
 
 	glDepthMask(GL_TRUE);
@@ -1245,11 +1337,13 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.spriteVAO->Bind();
 	//item.spriteEBO->Bind();
 
+#ifndef NDEBUG
 	GLint ebo = 0;
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &ebo);
 	if (ebo == 0) {
-		ENGINE_LOG_ERROR("VAO %d has no EBO bound!" + std::to_string(item.spriteVAO->ID));
+		ENGINE_LOG_ERROR("VAO " + std::to_string(item.spriteVAO->ID) + " has no EBO bound!");
 	}
+#endif
 
 	// The SpriteSystem should have already bound the VAO, so just draw
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -1442,8 +1536,9 @@ void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& pr
 
 	for (const auto& renderItem : renderQueue)
 	{
-		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
-		if (!modelItem || !modelItem->isVisible || !modelItem->model) continue;
+		if (!renderItem || renderItem->GetRenderKind() != RenderComponentKind::Model) continue;
+		const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem.get());
+		if (!modelItem->isVisible || !modelItem->model) continue;
 
 		// Skip transparent / fading objects — they need correct alpha blending, not prepass depth
 		bool isTransparent = (modelItem->distanceFadeOpacity < 1.0f) ||
@@ -1538,8 +1633,11 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 #else
 		for (const auto& renderItem : renderQueue)
 		{
-			const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
-			if (!modelItem || !modelItem->isVisible || !modelItem->model)
+			if (!renderItem || renderItem->GetRenderKind() != RenderComponentKind::Model)
+				continue;
+
+			const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem.get());
+			if (!modelItem->isVisible || !modelItem->model)
 				continue;
 
 			glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
@@ -1578,8 +1676,11 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		// ---------------------------------------------------------------
 		for (const auto& renderItem : renderQueue)
 		{
-			const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
-			if (!modelItem || !modelItem->isVisible || !modelItem->model)
+			if (!renderItem || renderItem->GetRenderKind() != RenderComponentKind::Model)
+				continue;
+
+			const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem.get());
+			if (!modelItem->isVisible || !modelItem->model)
 				continue;
 
 			count++;
@@ -1616,8 +1717,6 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 
 void GraphicsManager::RenderSkybox()
 {
-	static bool checkedOnce = false;
-
 	if (!currentCamera || !skyboxShader || skyboxVAO == 0) {
 		//if (!checkedOnce) {
 		//	std::cout << "[GraphicsManager] Skybox render skipped - camera: " << (currentCamera != nullptr)
@@ -1667,17 +1766,19 @@ void GraphicsManager::RenderSkybox()
 
 	skyboxShader->Activate();
 
-	glm::mat4 view = glm::mat4(glm::mat3(currentCamera->GetViewMatrix()));
+	if (!skyboxShader->UsesCameraBlock()) {
+		glm::mat4 view = glm::mat4(glm::mat3(currentCamera->GetViewMatrix()));
 
-	float aspectRatio = (float)viewportWidth / (float)viewportHeight;
-	glm::mat4 projection = glm::perspective(
-		glm::radians(currentCamera->Zoom),
-		aspectRatio,
-		0.1f, m_farPlane
-	);
+		float aspectRatio = (float)viewportWidth / (float)viewportHeight;
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			0.1f, m_farPlane
+		);
 
-	skyboxShader->setMat4("view", view);
-	skyboxShader->setMat4("projection", projection);
+		skyboxShader->setMat4("view", view);
+		skyboxShader->setMat4("projection", projection);
+	}
 
 	glBindVertexArray(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);
@@ -1752,6 +1853,10 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		PROFILE_SCOPED("GM::ShaderSwitch+Lighting");
 		shader->Activate();
 		m_currentShader = shader;
+		// Uniform and sampler state belongs to the shader program. Force the
+		// current material to bind when switching programs even if its pointer is
+		// the same as the previous draw.
+		m_currentMaterial = nullptr;
 		m_sortingStats.shaderSwitches++;
 		shader->setBool("useInstancing", false);
 
@@ -1787,12 +1892,11 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		shader->setVec3("bloomColor", glm::vec3(0.0f));
 	}
 
-	// Switch material only if different
-	if (material != m_currentMaterial) {
+	// Entity-level materials are applied here. Models using their imported
+	// per-mesh materials continue the same state cache inside DrawFast.
+	if (material && material != m_currentMaterial) {
 		PROFILE_SCOPED("GM::MaterialBind");
-		if (material) {
-			material->ApplyToShader(*shader);
-		}
+		material->ApplyToShader(*shader);
 		m_currentMaterial = material;
 		m_sortingStats.materialSwitches++;
 	}
@@ -1812,14 +1916,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 			glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
 		}
 
-		if (item.HasAnimation())
-		{
-			item.model->DrawFast(*shader, item.material, item, item.animator);
-		}
-		else
-		{
-			item.model->DrawFast(*shader, item.material, item);
-		}
+		item.model->DrawFast(*shader, item.material, item, m_currentMaterial, item.animator);
 
 		if (item.depthOffset)
 		{
@@ -1864,11 +1961,13 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 			aspectRatio,
 			nearP, farP
 		);
-		item.fogShader->setMat4("view", view);
-		item.fogShader->setMat4("projection", projection);
+		if (!item.fogShader->UsesCameraBlock()) {
+			item.fogShader->setMat4("view", view);
+			item.fogShader->setMat4("projection", projection);
+			item.fogShader->setVec3("cameraPos", currentCamera->Position);
+		}
 		item.fogShader->setMat4("inverseView", glm::inverse(view));
 		item.fogShader->setMat4("inverseProjection", glm::inverse(projection));
-		item.fogShader->setVec3("cameraPos", currentCamera->Position);
 		item.fogShader->setFloat("nearPlane", nearP);
 		item.fogShader->setFloat("farPlane",  farP);
 		item.fogShader->setVec2("viewportSize",

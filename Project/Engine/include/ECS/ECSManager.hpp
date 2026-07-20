@@ -3,7 +3,9 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
-#include <shared_mutex>
+#include <array>
+#include <atomic>
+#include <cstdint>
 
 #include "EntityManager.hpp"
 #include "ComponentManager.hpp"
@@ -104,7 +106,7 @@ public:
 
 	template <typename T>
 	bool HasComponent(Entity entity) {
-		return TryGetComponent<T>(entity).has_value();
+		return componentManager->HasComponent<T>(entity);
 	}
 
 	template <typename T>
@@ -138,14 +140,14 @@ public:
 	bool ENGINE_API IsEntityActiveInHierarchy(Entity entity);
 
 	/** Clear the per-frame active-hierarchy cache. Call once at the start of each frame. */
-	void ClearActiveHierarchyCache() { m_activeHierarchyCache.clear(); }
+	void ClearActiveHierarchyCache() {
+		// Epochs are always even; the low bit in each cache entry stores the
+		// active state. Advancing the epoch invalidates every entry in O(1).
+		m_activeHierarchyEpoch.fetch_add(2, std::memory_order_acq_rel);
+	}
 
 	/** Pre-warm the cache for ALL active entities so parallel systems only do reads (thread-safe). */
-	void PreWarmActiveHierarchyCache() {
-		for (Entity e : GetActiveEntities()) {
-			IsEntityActiveInHierarchy(e);
-		}
-	}
+	void ENGINE_API PreWarmActiveHierarchyCache();
 
 	// Get system manager for profiling access
 	const SystemManager* GetSystemManager() const {
@@ -184,7 +186,9 @@ private:
 	std::unique_ptr<ComponentManager> componentManager;
 	std::unique_ptr<SystemManager> systemManager;
 
-	// Per-frame cache for IsEntityActiveInHierarchy (cleared each frame by orchestrator)
-	std::unordered_map<Entity, bool> m_activeHierarchyCache;
-	std::shared_mutex m_cacheMutex;
+	// A packed entry is the current even epoch plus a low active-state bit.
+	// Atomic direct indexing keeps parallel system reads lock-free and avoids a
+	// hash lookup for every entity processed by every system.
+	std::array<std::atomic<std::uint64_t>, MAX_ENTITIES> m_activeHierarchyCache{};
+	std::atomic<std::uint64_t> m_activeHierarchyEpoch{2};
 };

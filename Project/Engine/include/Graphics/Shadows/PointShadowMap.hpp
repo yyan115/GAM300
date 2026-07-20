@@ -1,7 +1,7 @@
 #pragma once
 #include "../OpenGL.h"
 #include <glm/glm.hpp>
-#include <vector>
+#include <array>
 #include <memory>
 #include <functional>
 #include <cfloat>
@@ -16,7 +16,8 @@ public:
     bool Initialize(int resolution = 1024);
     void Shutdown();
 
-    // Render shadow map for a point light
+    // Render shadow map for a point light. Leaves the shadow framebuffer bound;
+    // LightingSystem restores the main render target after all shadow passes.
     void Render(const glm::vec3& lightPos, float farPlane, std::function<void(Shader&)> renderCallback);
 
     // Apply shadow uniforms to a shader
@@ -89,7 +90,7 @@ public:
     void ResetCacheStats() { cacheStats.Reset(); }
 
 private:
-    std::vector<glm::mat4> GetLightSpaceMatrices(const glm::vec3& lightPos, float nearPlane, float farPlane);
+    std::array<glm::mat4, 6> GetLightSpaceMatrices(const glm::vec3& lightPos, float nearPlane, float farPlane);
 
     GLuint depthMapFBO = 0;
     GLuint depthCubemap = 0;

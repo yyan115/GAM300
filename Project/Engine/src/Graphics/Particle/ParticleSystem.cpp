@@ -29,6 +29,55 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ECS/LayerComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/BloomComponent.hpp"
+#include "Graphics/Particle/ParticleRenderItem.hpp"
+
+namespace {
+std::unique_ptr<ParticleRenderItem> BuildRenderItem(
+    const ParticleComponent& particleComp,
+    Entity entity,
+    ECSManager& ecsManager,
+    GraphicsManager& graphicsManager,
+    uint32_t excludedLayerMask)
+{
+    if (particleComp.particles.empty() || !particleComp.particleShader || !particleComp.particleVAO) {
+        return nullptr;
+    }
+
+    auto renderItem = std::make_unique<ParticleRenderItem>();
+    renderItem->isVisible = particleComp.isVisible;
+    renderItem->renderOrder = particleComp.renderOrder;
+    renderItem->excludeFromPostProcess = particleComp.excludeFromPostProcess;
+    renderItem->bloomColor = particleComp.bloomColor;
+    renderItem->bloomIntensity = particleComp.bloomIntensity;
+    renderItem->brightnessBoost = particleComp.brightnessBoost;
+    renderItem->particleTexture = particleComp.particleTexture;
+    renderItem->particleShader = particleComp.particleShader;
+    renderItem->particleVAO = particleComp.particleVAO;
+    renderItem->quadEBO = particleComp.quadEBO;
+    renderItem->particleCount = particleComp.particles.size();
+    renderItem->additiveBlending = particleComp.additiveBlending;
+
+    if (ecsManager.HasComponent<BloomComponent>(entity)) {
+        auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+        if (bloom.enabled) {
+            renderItem->bloomColor = bloom.bloomColor;
+            renderItem->bloomIntensity = bloom.bloomIntensity;
+            if (bloom.bloomIntensity > 0.01f) {
+                graphicsManager.NotifyBloomUsedThisFrame();
+            }
+        }
+    }
+
+    if (excludedLayerMask != 0) {
+        const int layerIndex = GetEffectiveLayerIndex(entity, ecsManager);
+        if (layerIndex >= 0 && layerIndex < 32 && (excludedLayerMask & (1u << layerIndex))) {
+            renderItem->excludeFromPostProcess = true;
+        }
+    }
+
+    return renderItem;
+}
+}
 
 /******************************************************************************/
 /*!
@@ -266,6 +315,9 @@ void ParticleSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
     float dt = static_cast<float>(TimeManager::GetDeltaTime());
+    const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
+    renderItems.reserve(entities.size());
 
     for (const auto& entity : entities)
     {
@@ -300,9 +352,6 @@ void ParticleSystem::Update()
             }
         }
 
-        // Halve emission rate on Android to reduce per-frame particle count
-        float originalRate = particleComp.emissionRate;
-        particleComp.emissionRate *= 0.5f;
 #endif
 
         // Only update particle physics if:
@@ -311,91 +360,47 @@ void ParticleSystem::Update()
         bool shouldUpdateParticles = Engine::ShouldRunGameLogic() ||
                                     (particleComp.isPlayingInEditor && !particleComp.isPausedInEditor);
 
-        if (!shouldUpdateParticles) {
-            // Still submit to renderer (to show existing particles), but don't update physics or emit new particles
-            auto renderItem = std::make_unique<ParticleComponent>(particleComp);
+        if (shouldUpdateParticles) {
+            // Update particle physics
+            UpdateParticles(particleComp, dt);
 
-            // Per-entity bloom emission
-            if (ecsManager.HasComponent<BloomComponent>(entity)) {
-                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
-                if (bloom.enabled) {
-                    renderItem->bloomColor = bloom.bloomColor;
-                    renderItem->bloomIntensity = bloom.bloomIntensity;
-                    if (bloom.bloomIntensity > 0.01f) {
-                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
-                    }
-                }
+            // Calculate world emission position (transform + local offset)
+            glm::vec3 emitterWorldPos = particleComp.emitterPosition.ConvertToGLM();
+            if (ecsManager.HasComponent<Transform>(entity))
+            {
+                auto& transform = ecsManager.GetComponent<Transform>(entity);
+                emitterWorldPos += glm::vec3(
+                    transform.worldMatrix.m.m03,
+                    transform.worldMatrix.m.m13,
+                    transform.worldMatrix.m.m23
+                );
             }
 
-            // Tag items on excluded layers for deferred rendering
-            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-            if (exMask != 0) {
-                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-                if (exMask & (1u << layerIdx))
-                    renderItem->excludeFromPostProcess = true;
-            }
-
-            gfxManager.Submit(std::move(renderItem));
-            continue;
-        }
-
-        // Update particle physics
-        UpdateParticles(particleComp, dt);
-
-        // Calculate world emission position (transform + local offset)
-        glm::vec3 emitterWorldPos = particleComp.emitterPosition.ConvertToGLM();
-        if (ecsManager.HasComponent<Transform>(entity))
-        {
-            auto& transform = ecsManager.GetComponent<Transform>(entity);
-            emitterWorldPos += glm::vec3(
-                transform.worldMatrix.m.m03,
-                transform.worldMatrix.m.m13,
-                transform.worldMatrix.m.m23
-            );
-        }
-
-        // Emit new particles
-        if (particleComp.isEmitting)
-        {
-            EmitParticles(particleComp, dt, emitterWorldPos);
-        }
-
-        // Remove dead particles
-        RemoveDeadParticles(particleComp);
-
-        // Update instance buffer with current particle data
-        UpdateInstanceBuffer(particleComp);
-
-        // Submit to renderer
-        auto renderItem = std::make_unique<ParticleComponent>(particleComp);
-
-        // Per-entity bloom emission
-        if (ecsManager.HasComponent<BloomComponent>(entity)) {
-            auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
-            if (bloom.enabled) {
-                renderItem->bloomColor = bloom.bloomColor;
-                renderItem->bloomIntensity = bloom.bloomIntensity;
-                if (bloom.bloomIntensity > 0.01f) {
-                    GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
-                }
-            }
-        }
-
-        // Tag items on excluded layers for deferred rendering
-        uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-        if (exMask != 0) {
-            int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-            if (exMask & (1u << layerIdx))
-                renderItem->excludeFromPostProcess = true;
-        }
-
-        gfxManager.Submit(std::move(renderItem));
-
+            // Emit new particles
+            if (particleComp.isEmitting)
+            {
 #ifdef __ANDROID__
-        // Restore original emission rate so the halving doesn't compound
-        particleComp.emissionRate = originalRate;
+                float originalRate = particleComp.emissionRate;
+                particleComp.emissionRate *= 0.5f;
 #endif
+                EmitParticles(particleComp, dt, emitterWorldPos);
+#ifdef __ANDROID__
+                particleComp.emissionRate = originalRate;
+#endif
+            }
+
+            // UpdateParticles compacts expired particles in the same pass.
+            UpdateInstanceBuffer(particleComp);
+        }
+
+        // The GPU instance buffer contains all per-particle data. Queue only a
+        // lightweight draw snapshot, including while simulation is paused.
+        if (auto renderItem = BuildRenderItem(
+                particleComp, entity, ecsManager, gfxManager, excludedLayerMask)) {
+            renderItems.push_back(std::move(renderItem));
+        }
     }
+    gfxManager.SubmitBatch(std::move(renderItems));
 }
 
 /******************************************************************************/
@@ -458,22 +463,43 @@ void ParticleSystem::Shutdown()
 
 void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
 {
-    for (auto& particle : comp.particles) 
+    const glm::vec3 gravityStep = comp.gravity.ConvertToGLM() * dt;
+    const float lifeStep = dt / comp.particleLifetime;
+    const glm::vec4 startColor{
+        comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha
+    };
+    const glm::vec4 endColor{
+        comp.endColor.x, comp.endColor.y, comp.endColor.z, comp.endColorAlpha
+    };
+
+    std::size_t aliveCount = 0;
+    for (std::size_t index = 0; index < comp.particles.size(); ++index)
     {
+        Particle& particle = comp.particles[index];
+
         // Update physics
-        particle.velocity += comp.gravity.ConvertToGLM() * dt;
+        particle.velocity += gravityStep;
         particle.position += particle.velocity * dt;
 
         // Update life
-        particle.life -= dt / comp.particleLifetime;
+        particle.life -= lifeStep;
 
         // Interpolate properties based on life
         float t = 1.0f - particle.life;
         particle.size = glm::mix(comp.startSize, comp.endSize, t);
-        glm::vec4 startColor{ comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha };
-        glm::vec4 endColor{ comp.endColor.x, comp.endColor.y, comp.endColor.z, comp.endColorAlpha };
         particle.color = glm::mix(startColor, endColor, t);
+
+        if (particle.life > 0.0f)
+        {
+            if (aliveCount != index)
+            {
+                comp.particles[aliveCount] = std::move(particle);
+            }
+            ++aliveCount;
+        }
     }
+
+    comp.particles.resize(aliveCount);
 }
 
 /******************************************************************************/
@@ -494,6 +520,10 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm:
 {
     comp.timeSinceEmission += dt;
     float emissionInterval = 1.0f / comp.emissionRate;
+    const glm::vec3 initialVelocity = comp.initialVelocity.ConvertToGLM();
+    const glm::vec4 startColor{
+        comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha
+    };
 
     while (comp.timeSinceEmission >= emissionInterval) 
     {
@@ -505,7 +535,7 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm:
         p.position = worldPos;
         p.life = 1.0f;
         p.size = comp.startSize;
-        p.color = glm::vec4{ comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha };
+        p.color = startColor;
         p.rotation = dist(rng) * 360.0f;
 
         // Add velocity randomness
@@ -514,30 +544,10 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm:
             dist(rng) * comp.velocityRandomness,
             dist(rng) * comp.velocityRandomness
         );
-        p.velocity = comp.initialVelocity.ConvertToGLM() + randomVel;
+        p.velocity = initialVelocity + randomVel;
 
         comp.particles.push_back(p);
     }
-}
-
-/******************************************************************************/
-/*!
-\fn         void ParticleSystem::RemoveDeadParticles(ParticleComponent& comp)
-\brief      Removes particles that have exceeded their lifetime
-
-\details    Uses erase-remove idiom to efficiently remove all particles with
-            life <= 0.0f from the particle vector, maintaining contiguous memory.
-
-\param      comp - Reference to the particle component to clean up
-*/
-/******************************************************************************/
-void ParticleSystem::RemoveDeadParticles(ParticleComponent& comp)
-{
-    comp.particles.erase(
-        std::remove_if(comp.particles.begin(), comp.particles.end(),
-            [](const Particle& p) { return p.life <= 0.0f; }),
-        comp.particles.end()
-    );
 }
 
 /******************************************************************************/

@@ -173,9 +173,11 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
         if (batch->GetShader() != currentShader) 
         {
             batch->GetShader()->Activate();
-            batch->GetShader()->setMat4("view", view);
-            batch->GetShader()->setMat4("projection", projection);
-            batch->GetShader()->setVec3("cameraPos", cameraPos);
+            if (!batch->GetShader()->UsesCameraBlock()) {
+                batch->GetShader()->setMat4("view", view);
+                batch->GetShader()->setMat4("projection", projection);
+                batch->GetShader()->setVec3("cameraPos", cameraPos);
+            }
             batch->GetShader()->setBool("useInstancing", true);
             batch->GetShader()->setBool("hasBones", false);
             batch->GetShader()->setFloat("brightnessBoost", 1.0f);

@@ -17,20 +17,31 @@ void SequentialSystemOrchestrator::Update() {
 
 	// Update systems.
 	PROFILE_PLOT_TIMED("Script",              mainECS.scriptSystem->Update());
+
+	// Scripts may have changed entity active states. Refresh before any system
+	// consumes the hierarchy cache.
+	{
+		PROFILE_SCOPED("HierarchyCache::PostScriptRefresh");
+		mainECS.ClearActiveHierarchyCache();
+		mainECS.PreWarmActiveHierarchyCache();
+	}
+
 	PROFILE_PLOT_TIMED("Physics",             mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS));
 	PROFILE_PLOT_TIMED("CharacterController", mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS));
+	PROFILE_PLOT_TIMED("UIAnchor",            mainECS.uiAnchorSystem->Update());
 	PROFILE_PLOT_TIMED("Transform",           mainECS.transformSystem->Update());
 	PROFILE_PLOT_TIMED("Animation",           mainECS.animationSystem->Update());
 	PROFILE_PLOT_TIMED("Camera",              mainECS.cameraSystem->Update());
 	PROFILE_PLOT_TIMED("Lighting",            mainECS.lightingSystem->Update());
 
-	// Scripts may have changed entity active states; flush cache so subsequent systems see updates
+	// Simulation and camera updates may have changed active states. Refresh once
+	// so the remaining update and draw systems use direct cache hits.
 	{
-		PROFILE_SCOPED("HierarchyCache::Flush");
+		PROFILE_SCOPED("HierarchyCache::DrawRefresh");
 		mainECS.ClearActiveHierarchyCache();
+		mainECS.PreWarmActiveHierarchyCache();
 	}
 
-	PROFILE_PLOT_TIMED("UIAnchor",        mainECS.uiAnchorSystem->Update());
 	PROFILE_PLOT_TIMED("Button",          mainECS.buttonSystem->Update());
 	PROFILE_PLOT_TIMED("Slider",          mainECS.sliderSystem->Update());
 	PROFILE_PLOT_TIMED("Video",           mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime()));

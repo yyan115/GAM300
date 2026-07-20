@@ -14,6 +14,7 @@
 #include <Math/Matrix4x4.hpp>
 #include "Engine.h"  // For ENGINE_API macro
 #include "Particle/ParticleComponent.hpp"
+#include "Particle/ParticleRenderItem.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Frustum/Frustum.hpp"
 #include "RenderSorter.hpp"
@@ -93,6 +94,7 @@ public:
 
     // Render queue management
     void Submit(std::unique_ptr<IRenderComponent> renderItem);
+    void SubmitBatch(std::vector<std::unique_ptr<IRenderComponent>>&& renderItems);
 
     // Main rendering
     void Render();
@@ -189,6 +191,15 @@ private:
 
     // Particle
     void RenderParticles(const ParticleComponent& item);
+    void RenderParticles(const ParticleRenderItem& item);
+    void RenderParticleInstances(
+        const IRenderComponent& renderState,
+        const std::shared_ptr<Texture>& texture,
+        const std::shared_ptr<Shader>& shader,
+        VAO* vao,
+        EBO* ebo,
+        std::size_t particleCount,
+        bool additiveBlending);
 
     // Sprite rendering methods
     void RenderSprite(const SpriteRenderComponent& item);
@@ -241,7 +252,22 @@ private:
     glm::vec3 m_shadowLightPos = glm::vec3(0.0f);
     float m_shadowFarPlane = -1.0f;
 
+    // Per-frame render scratch. These hold non-owning pointers only during a
+    // render pass; keeping capacity avoids allocator churn in the frame loop.
+    std::vector<IRenderComponent*> m_modelRenderItems;
+    std::vector<IRenderComponent*> m_otherRenderItems;
+    std::vector<IRenderComponent*> m_deferredModelRenderItems;
+    std::vector<IRenderComponent*> m_deferredOtherRenderItems;
+
     // State sorting support
+    struct ModelSortEntry {
+        IRenderComponent* item = nullptr;
+        RenderLayer::Type layer = RenderLayer::Type::LAYER_OPAQUE;
+        float distanceSq = 0.0f;
+        int depthBucket = 0;
+        RenderSortKey stateKey;
+    };
+    std::vector<ModelSortEntry> m_modelSortEntries;
     ResourceIdCache m_idCache;
     SortingStats m_sortingStats;
 

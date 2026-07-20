@@ -107,4 +107,6 @@ public:
 
     ParticleComponent() = default;
     ~ParticleComponent() = default;
+
+    RenderComponentKind GetRenderKind() const override { return RenderComponentKind::Particle; }
 };

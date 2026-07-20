@@ -380,31 +380,9 @@ void SceneRenderer::BeginGameRender(int width, int height)
 
 void SceneRenderer::EndGameRender()
 {
-    // Prevent double blur: SceneInstance::Draw already applied blur in its own
-    // EndHDRRender pass. Running blur again here with different dimensions would
-    // partially overwrite hdrColorTexture, causing a double image artifact.
-    BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
-    if (blur) blur->SetIntensity(0.0f);
-
-    // Prevent double directional blur: same issue as Gaussian blur.
-    DirectionalBlurEffect* dirBlur = PostProcessingManager::GetInstance().GetDirectionalBlurEffect();
-    if (dirBlur) dirBlur->SetIntensity(0.0f);
-
-    // Prevent double bloom: same issue as blur — SceneInstance::Draw already applied
-    // bloom in its first EndHDRRender pass. Save/restore since bloom intensity is persistent.
-    BloomEffect* bloom = PostProcessingManager::GetInstance().GetBloomEffect();
-    float savedBloomIntensity = bloom ? bloom->GetIntensity() : 0.0f;
-    if (bloom) bloom->SetIntensity(0.0f);
-
-    // NOTE: Chromatic aberration, vignette, and color grading are NOT zeroed here.
-    // They are tonemapping shader effects that sample hdrColorTexture read-only,
-    // so they don't cause double-application. They must stay active because this
-    // second EndHDRRender pass is what writes to the game framebuffer.
-
+    // SceneInstance leaves its HDR result pending while the Game panel is active,
+    // so the complete post-processing chain runs once into the panel framebuffer.
     PostProcessingManager::GetInstance().EndHDRRender(gameFrameBuffer, gameWidth, gameHeight);
-
-    // Restore bloom intensity for next frame
-    if (bloom) bloom->SetIntensity(savedBloomIntensity);
 
     // Render deferred items (excluded from post-processing) on top of blurred output
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
@@ -458,7 +436,10 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
         if (!outlineShader) return;
         if (sceneFrameBuffer == 0) return;
 
-        // Save GL state
+        // Windows retains the legacy query-and-restore behavior. On Linux these
+        // synchronous state readbacks are disproportionately expensive, and this
+        // renderer owns the state contract at the end of the outline pass.
+#ifdef _WIN32
         GLboolean depthTestEnabled, depthWriteEnabled, stencilTestEnabled, cullFaceEnabled, blendEnabled;
         GLint prevStencilFunc, prevStencilRef, prevStencilMask;
         GLint prevStencilFail, prevStencilZFail, prevStencilZPass;
@@ -475,6 +456,7 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
         glGetIntegerv(GL_STENCIL_FAIL, &prevStencilFail);
         glGetIntegerv(GL_STENCIL_PASS_DEPTH_FAIL, &prevStencilZFail);
         glGetIntegerv(GL_STENCIL_PASS_DEPTH_PASS, &prevStencilZPass);
+#endif
 
         // Bind the scene FBO
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
@@ -494,8 +476,10 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
 
         outlineShader->Activate();
         outlineShader->setMat4("model", modelMatrix);
-        outlineShader->setMat4("view", view);
-        outlineShader->setMat4("projection", proj);
+        if (!outlineShader->UsesCameraBlock()) {
+            outlineShader->setMat4("view", view);
+            outlineShader->setMat4("projection", proj);
+        }
         outlineShader->setFloat("outlineThickness", 0.0f);
         outlineShader->setBool("isAnimated", isAnimated);
 
@@ -516,8 +500,10 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
 
         outlineShader->Activate();
         outlineShader->setMat4("model", modelMatrix);
-        outlineShader->setMat4("view", view);
-        outlineShader->setMat4("projection", proj);
+        if (!outlineShader->UsesCameraBlock()) {
+            outlineShader->setMat4("view", view);
+            outlineShader->setMat4("projection", proj);
+        }
         outlineShader->setFloat("outlineThickness", outlineThickness);
         outlineShader->setVec4("outlineColor", glm::vec4(1.0f, 0.647f, 0.0f, 1.0f));
         outlineShader->setBool("isAnimated", isAnimated);
@@ -531,6 +517,7 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
         glStencilMask(0xFF);
         glDisable(GL_STENCIL_TEST);
 
+#ifdef _WIN32
         if (depthTestEnabled) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
         glDepthMask(depthWriteEnabled);
         if (stencilTestEnabled) glEnable(GL_STENCIL_TEST); else glDisable(GL_STENCIL_TEST);
@@ -539,6 +526,19 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
         glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
         glStencilFunc(prevStencilFunc, prevStencilRef, prevStencilMask);
         glStencilOp(prevStencilFail, prevStencilZFail, prevStencilZPass);
+#else
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        if (GraphicsManager::GetInstance().IsFaceCullingEnabled()) {
+            glEnable(GL_CULL_FACE);
+        } else {
+            glDisable(GL_CULL_FACE);
+        }
+        glDisable(GL_BLEND);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+#endif
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

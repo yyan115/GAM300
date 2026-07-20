@@ -70,6 +70,8 @@ public:
     SpriteRenderComponent() = default;
     ~SpriteRenderComponent() = default;
 
+    RenderComponentKind GetRenderKind() const override { return RenderComponentKind::Sprite; }
+
     // Lua-friendly texture setters (avoids shared_ptr in Lua bindings)
     void SetTextureFromGUID(const std::string& guidString);
     void SetTextureFromPath(const std::string& path);

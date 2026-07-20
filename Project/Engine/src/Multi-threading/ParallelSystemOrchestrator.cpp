@@ -16,11 +16,13 @@ void ParallelSystemOrchestrator::Update() {
     // Running this in parallel is risky due to potential logic race conditions.
     PROFILE_PLOT_TIMED("Script", mainECS.scriptSystem->Update());
 
-    // Clear/Pre-warm cache for the parallel threads to read safely
+    // Scripts may have changed ActiveComponent values. Build one immutable
+    // snapshot before parallel simulation so workers only perform direct
+    // atomic cache reads.
     {
-        PROFILE_SCOPED("HierarchyCache::PreWarm");
+        PROFILE_SCOPED("HierarchyCache::Reset");
         { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
-        //{ PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
+        { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
     }
 
     bool gamePaused = TimeManager::IsPaused();
@@ -67,12 +69,10 @@ void ParallelSystemOrchestrator::Update() {
     // -------------------------------------------------------------------------
     // 3. TRANSFORM PHASE (Sequential)
     // -------------------------------------------------------------------------
-    // Must run AFTER Physics/Anim so that World Matrices reflect this frame's changes.
-    // This is the bottleneck (3.8ms), but it relies on the data from above.
-    PROFILE_PLOT_TIMED("Transform", mainECS.transformSystem->Update());
-
-    // Update anchors after transform so UI is positioned correctly
+    // Anchors write local transforms, so apply them before propagating world
+    // matrices. Transform must still run after Physics/Animation.
     PROFILE_PLOT_TIMED("UIAnchor", mainECS.uiAnchorSystem->Update());
+    PROFILE_PLOT_TIMED("Transform", mainECS.transformSystem->Update());
 
     // OpenGL calls must be on main thread
     PROFILE_PLOT_TIMED("Video", mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()));
@@ -93,6 +93,15 @@ void ParallelSystemOrchestrator::Update() {
     PROFILE_PLOT_TIMED("Button",   mainECS.buttonSystem->Update());
     PROFILE_PLOT_TIMED("Slider",   mainECS.sliderSystem->Update());
     PROFILE_PLOT_TIMED("Dialogue", mainECS.dialogueSystem->Update((float)TimeManager::GetDeltaTime()));
+
+    // UI callbacks and dialogue can toggle entities after the simulation phase.
+    // Rebuild here so parallel draw preparation performs read-only cache hits
+    // and observes those changes in this same frame.
+    {
+        PROFILE_SCOPED("HierarchyCache::DrawPreWarm");
+        { PROFILE_SCOPED("HC::DrawClear"); mainECS.ClearActiveHierarchyCache(); }
+        { PROFILE_SCOPED("HC::DrawWarm");  mainECS.PreWarmActiveHierarchyCache(); }
+    }
 }
 
 void ParallelSystemOrchestrator::Draw() {

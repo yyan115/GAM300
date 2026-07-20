@@ -11,6 +11,9 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+#include <signal.h>
+#include <unistd.h>
 #endif
 
 PerformancePanel::PerformancePanel()

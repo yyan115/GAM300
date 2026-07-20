@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <assert.h>
+#include <array>
 #include <string>
 
 #include "Component.hpp"
@@ -31,8 +32,12 @@ public:
 	void RegisterComponent() {
 		const std::string& typeName = GetReadableTypeName<T>();
 		assert(components.find(typeName) == components.end() && "Registering component type more than once.");
+		assert(nextComponentID < MAX_COMPONENTS && "Exceeded maximum registered component count.");
+
+		auto componentArray = std::make_shared<ComponentArray<T>>();
 		components[typeName] = nextComponentID;
-		componentArrays[typeName] = std::make_shared<ComponentArray<T>>();
+		componentArrays[typeName] = componentArray;
+		componentArraysByID[nextComponentID] = componentArray.get();
 		++nextComponentID;
 	}
 
@@ -45,10 +50,7 @@ public:
 
 	template <typename T>
 	ComponentID GetComponentID() {
-		const std::string& typeName = GetReadableTypeName<T>();
-		auto it = components.find(typeName);
-		assert(it != components.end() && "Component not registered before use.");
-		return it->second;
+		return GetCachedComponentID<T>();
 	}
 
 	template <typename T>
@@ -71,6 +73,11 @@ public:
 		return GetComponentArray<T>()->TryGetComponent(entity);
 	}
 
+	template <typename T>
+	bool HasComponent(Entity entity) {
+		return GetComponentArray<T>()->Contains(entity);
+	}
+
 	void EntityDestroyed(Entity entity) {
 		for (auto const& pair : componentArrays) {
 			auto const& componentArray = pair.second;
@@ -88,15 +95,35 @@ public:
 private:
 	std::unordered_map<std::string, ComponentID> components{}; // Map from component type name to component ID.
 	std::unordered_map<std::string, std::shared_ptr<IComponentArray>> componentArrays{}; // Map from component type name to component array.
+	std::array<IComponentArray*, MAX_COMPONENTS> componentArraysByID{}; // Non-owning fast lookup by stable component ID.
 	ComponentID nextComponentID{}; // The next available component ID to assign.
 
 	template<typename T>
-	std::shared_ptr<ComponentArray<T>> GetComponentArray() {
+	ComponentID GetCachedComponentID() const {
+		// Every ECSManager registers components in the same order, which is already
+		// required for entity signatures. Resolve each type once per binary, then
+		// use its compact ID for all frame-time component access.
+		static const ComponentID cachedID = [this]() {
+			const std::string& typeName = GetReadableTypeName<T>();
+			auto it = components.find(typeName);
+			assert(it != components.end() && "Component not registered before use.");
+			return it->second;
+		}();
+
+#ifndef NDEBUG
 		const std::string& typeName = GetReadableTypeName<T>();
+		auto it = components.find(typeName);
+		assert(it != components.end() && it->second == cachedID &&
+			"Component registration order differs between ECS managers.");
+#endif
+		return cachedID;
+	}
 
-		auto it = componentArrays.find(typeName);
-		assert(it != componentArrays.end() && "Component not registered before use.");
-
-		return std::static_pointer_cast<ComponentArray<T>>(it->second);
+	template<typename T>
+	ComponentArray<T>* GetComponentArray() {
+		const ComponentID componentID = GetCachedComponentID<T>();
+		IComponentArray* componentArray = componentArraysByID[componentID];
+		assert(componentArray != nullptr && "Component not registered before use.");
+		return static_cast<ComponentArray<T>*>(componentArray);
 	}
 };
