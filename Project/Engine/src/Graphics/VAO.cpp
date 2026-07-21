@@ -75,7 +75,7 @@ void VAO::Bind()
 #endif
 		ClearGLErrors();
 		glGenVertexArrays(1, &ID);  
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(NDEBUG)
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] glGenVertexArrays completed, Generated VAO ID: %u", ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
@@ -87,11 +87,13 @@ void VAO::Bind()
 	}
 
 	if (ID != 0) {
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(NDEBUG)
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] About to bind VAO ID: %u", ID);
 #endif
 		glBindVertexArray(ID);
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(NDEBUG)
+		// glGetError can synchronize with the driver; validate every bind only
+		// in debug builds, not in the production draw loop.
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] glBindVertexArray completed for VAO ID: %u", ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {

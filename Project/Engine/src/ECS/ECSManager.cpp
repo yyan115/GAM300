@@ -45,6 +45,23 @@
 #include "Graphics/BloomComponent.hpp"
 #include "Dialogue/DialogueSystem.hpp"
 
+namespace {
+	constexpr std::uint64_t kActiveHierarchyStateBit = 1;
+	constexpr std::uint64_t kActiveHierarchyEpochMask = ~kActiveHierarchyStateBit;
+
+	bool IsActiveHierarchyCacheHit(std::uint64_t cachedValue, std::uint64_t epoch) {
+		return (cachedValue & kActiveHierarchyEpochMask) == epoch;
+	}
+
+	bool CachedActiveHierarchyState(std::uint64_t cachedValue) {
+		return (cachedValue & kActiveHierarchyStateBit) != 0;
+	}
+
+	std::uint64_t PackActiveHierarchyState(std::uint64_t epoch, bool isActive) {
+		return epoch | (isActive ? kActiveHierarchyStateBit : 0);
+	}
+}
+
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
 	componentManager = std::make_unique<ComponentManager>();
@@ -342,56 +359,136 @@ std::vector<Entity> ECSManager::GetAllRootEntities() {
 	return rootEntities;
 }
 
-bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
-	// Check per-frame cache first
-	{
-		std::shared_lock<std::shared_mutex> readLock(m_cacheMutex);
-		auto cacheIt = m_activeHierarchyCache.find(entity);
-		if (cacheIt != m_activeHierarchyCache.end()) {
-			return cacheIt->second;
-		}
-	}
-
-	// Check if entity itself is active
-	if (HasComponent<ActiveComponent>(entity)) {
-		auto& activeComp = GetComponent<ActiveComponent>(entity);
-		if (!activeComp.isActive) {
-			std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
-			m_activeHierarchyCache[entity] = false;
-			return false;
-		}
-	}
-
-	// Traverse up the parent hierarchy and check each ancestor
-	Entity currentEntity = entity;
+void ECSManager::PreWarmActiveHierarchyCache() {
+	const std::vector<Entity> activeEntities = GetActiveEntities();
+	const std::uint64_t epoch = m_activeHierarchyEpoch.load(std::memory_order_acquire);
+	std::vector<Entity> hierarchyPath;
+	hierarchyPath.reserve(16);
 	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
-	while (HasComponent<ParentComponent>(currentEntity)) {
-		// Get parent entity
-		auto& parentComp = GetComponent<ParentComponent>(currentEntity);
-		GUID_128 parentGUID = parentComp.parent;
-		Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
-
-		// Check if parent is valid
-		if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
-			break; // Invalid parent, stop traversal
+	for (Entity entity : activeEntities) {
+		const std::uint64_t cachedValue = m_activeHierarchyCache[entity].load(std::memory_order_acquire);
+		if (IsActiveHierarchyCacheHit(cachedValue, epoch)) {
+			continue;
 		}
 
-		// Check if parent is active
-		if (HasComponent<ActiveComponent>(parentEntity)) {
-			auto& parentActiveComp = GetComponent<ActiveComponent>(parentEntity);
-			if (!parentActiveComp.isActive) {
-				std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
-				m_activeHierarchyCache[entity] = false;
-				return false; // Parent is inactive, so this entity is inactive in hierarchy
+		hierarchyPath.clear();
+		Entity currentEntity = entity;
+		bool hierarchyActive = true;
+
+		while (true) {
+			if (currentEntity >= MAX_ENTITIES) {
+				hierarchyActive = false;
+				break;
 			}
+
+			const std::uint64_t currentCachedValue =
+				m_activeHierarchyCache[currentEntity].load(std::memory_order_acquire);
+			if (IsActiveHierarchyCacheHit(currentCachedValue, epoch)) {
+				hierarchyActive = CachedActiveHierarchyState(currentCachedValue);
+				break;
+			}
+
+			// Parent cycles are invalid, but treating them as inactive keeps a bad
+			// hierarchy from hanging the frame while it is being repaired.
+			if (std::find(hierarchyPath.begin(), hierarchyPath.end(), currentEntity) != hierarchyPath.end()) {
+				hierarchyActive = false;
+				break;
+			}
+			hierarchyPath.push_back(currentEntity);
+
+			if (HasComponent<ActiveComponent>(currentEntity) &&
+				!GetComponent<ActiveComponent>(currentEntity).isActive) {
+				hierarchyActive = false;
+				break;
+			}
+
+			if (!HasComponent<ParentComponent>(currentEntity)) {
+				break;
+			}
+
+			const GUID_128 parentGuid = GetComponent<ParentComponent>(currentEntity).parent;
+			const Entity parentEntity = guidRegistry.GetEntityByGUID(parentGuid);
+			if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
+				break;
+			}
+
+			currentEntity = parentEntity;
 		}
 
-		// Move up to the parent
+		for (Entity pathEntity : hierarchyPath) {
+			m_activeHierarchyCache[pathEntity].store(
+				PackActiveHierarchyState(epoch, hierarchyActive),
+				std::memory_order_release);
+		}
+	}
+}
+
+bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
+	if (entity >= MAX_ENTITIES) {
+		return false;
+	}
+
+	const std::uint64_t epoch = m_activeHierarchyEpoch.load(std::memory_order_acquire);
+	const std::uint64_t cachedValue = m_activeHierarchyCache[entity].load(std::memory_order_acquire);
+	if (IsActiveHierarchyCacheHit(cachedValue, epoch)) {
+		return CachedActiveHierarchyState(cachedValue);
+	}
+
+	// Cache misses are uncommon after pre-warming. Keep one path allocation per
+	// worker thread so an unexpected miss can also populate every ancestor it
+	// traverses without allocating in subsequent frames.
+	thread_local std::vector<Entity> hierarchyPath;
+	hierarchyPath.clear();
+	if (hierarchyPath.capacity() < 16) {
+		hierarchyPath.reserve(16);
+	}
+
+	Entity currentEntity = entity;
+	bool hierarchyActive = true;
+	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+	while (true) {
+		if (currentEntity >= MAX_ENTITIES) {
+			hierarchyActive = false;
+			break;
+		}
+
+		const std::uint64_t currentCachedValue =
+			m_activeHierarchyCache[currentEntity].load(std::memory_order_acquire);
+		if (IsActiveHierarchyCacheHit(currentCachedValue, epoch)) {
+			hierarchyActive = CachedActiveHierarchyState(currentCachedValue);
+			break;
+		}
+
+		if (std::find(hierarchyPath.begin(), hierarchyPath.end(), currentEntity) != hierarchyPath.end()) {
+			hierarchyActive = false;
+			break;
+		}
+		hierarchyPath.push_back(currentEntity);
+
+		if (HasComponent<ActiveComponent>(currentEntity) &&
+			!GetComponent<ActiveComponent>(currentEntity).isActive) {
+			hierarchyActive = false;
+			break;
+		}
+
+		if (!HasComponent<ParentComponent>(currentEntity)) {
+			break;
+		}
+
+		const GUID_128 parentGuid = GetComponent<ParentComponent>(currentEntity).parent;
+		const Entity parentEntity = guidRegistry.GetEntityByGUID(parentGuid);
+		if (parentEntity == INVALID_ENTITY || parentEntity == UINT32_MAX) {
+			break;
+		}
+
 		currentEntity = parentEntity;
 	}
 
-	std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
-	m_activeHierarchyCache[entity] = true;
-	return true; // Entity and all ancestors are active
+	const std::uint64_t packedValue = PackActiveHierarchyState(epoch, hierarchyActive);
+	for (Entity pathEntity : hierarchyPath) {
+		m_activeHierarchyCache[pathEntity].store(packedValue, std::memory_order_release);
+	}
+	return hierarchyActive;
 }

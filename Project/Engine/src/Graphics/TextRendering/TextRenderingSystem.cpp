@@ -38,6 +38,9 @@ void TextRenderingSystem::Update()
     PROFILE_FUNCTION();
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
+    renderItems.reserve(entities.size());
 
     for (const auto& entity : entities)
     {
@@ -126,17 +129,17 @@ void TextRenderingSystem::Update()
             if (!textComponent.is3D) {
                 textRenderItem->excludeFromPostProcess = true;
             } else {
-                uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-                if (exMask != 0) {
+                if (excludedLayerMask != 0) {
                     int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-                    if (exMask & (1u << layerIdx))
+                    if (layerIdx >= 0 && layerIdx < 32 && (excludedLayerMask & (1u << layerIdx)))
                         textRenderItem->excludeFromPostProcess = true;
                 }
             }
 
-            gfxManager.Submit(std::move(textRenderItem));
+            renderItems.push_back(std::move(textRenderItem));
         }
     }
+    gfxManager.SubmitBatch(std::move(renderItems));
 }
 
 void TextRenderingSystem::Shutdown()

@@ -58,6 +58,7 @@ void SpriteSystem::Update()
 #endif
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
 
     // Get current view mode and check if rendering for editor
     bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
@@ -69,6 +70,8 @@ void SpriteSystem::Update()
 #endif
 
     // Submit all visible sprites to the graphics manager
+    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
+    renderItems.reserve(entities.size());
     for (const auto& entity : entities)
     {
         // Skip entities that are inactive in hierarchy (checks parents too)
@@ -184,15 +187,14 @@ void SpriteSystem::Update()
             if (!spriteComponent.is3D && !spriteComponent.includePostProcess) {
                 spriteRenderItem->excludeFromPostProcess = true;
             } else {
-                uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-                if (exMask != 0) {
+                if (excludedLayerMask != 0) {
                     int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-                    if (exMask & (1u << layerIdx))
+                    if (layerIdx >= 0 && layerIdx < 32 && (excludedLayerMask & (1u << layerIdx)))
                         spriteRenderItem->excludeFromPostProcess = true;
                 }
             }
 
-            gfxManager.Submit(std::move(spriteRenderItem));
+            renderItems.push_back(std::move(spriteRenderItem));
         }
 #ifdef ANDROID
         else {
@@ -201,6 +203,7 @@ void SpriteSystem::Update()
         }
 #endif
     }
+    gfxManager.SubmitBatch(std::move(renderItems));
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "SpriteSystem::Update() completed");
 #endif

@@ -98,7 +98,7 @@ public:
     // ========================================================================
     // SHADOW MAPPING - NEW
     // ========================================================================
-    void RenderShadowMaps();
+    void RenderShadowMaps(unsigned int restoreFramebuffer, int restoreViewportWidth, int restoreViewportHeight);
     void ApplyShadows(Shader& shader);
 
     // Shadow settings

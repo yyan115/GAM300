@@ -24,6 +24,7 @@ void ButtonSystem::Update() {
 
 void ButtonSystem::UpdateButtonStates() {
     if (!m_ecs) return;
+    if (entities.empty()) return;
 
     // Use unified input system (works on both desktop and Android)
     if (!g_inputManager) {
@@ -60,7 +61,7 @@ void ButtonSystem::UpdateButtonStates() {
         //               " | Pointer viewport: (" + std::to_string(pointerX) + ", " + std::to_string(pointerY) + ")" +
         //               " | Pointer game: (" + std::to_string(gameX) + ", " + std::to_string(gameY) + ")");
 
-        for (Entity e : m_ecs->GetActiveEntities()) {
+        for (Entity e : entities) {
             if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
             // Skip buttons on inactive entities or those with an inactive parent
             if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;

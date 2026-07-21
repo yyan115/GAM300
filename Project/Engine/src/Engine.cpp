@@ -47,6 +47,14 @@ namespace TEMP {
 	std::string windowTitle = "Kusane";
 }
 
+#ifdef ANDROID
+namespace {
+	// Android rendering is driven by one JNI renderFrame call. Bind and validate
+	// EGL once at the frame boundary, then let the render pipeline share it.
+	bool androidGraphicsFrameReady = false;
+}
+#endif
+
 #if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
 namespace {
     void UpdateStandaloneWindowTitleWithFps() {
@@ -613,10 +621,13 @@ bool Engine::Initialize() {
 
 	ENGINE_LOG_INFO("Engine initialization completed successfully");
 	
-	// Add some test logging messages
+#if !defined(NDEBUG) || defined(_WIN32)
+	// Preserve the legacy Windows startup diagnostics. Optimized non-Windows
+	// builds omit these intentional test messages.
 	ENGINE_LOG_DEBUG("This is a test debug message");
 	ENGINE_LOG_WARN("This is a test warning message");
 	ENGINE_LOG_ERROR("This is a test error message");
+#endif
 	    
 	return true;
 }
@@ -751,71 +762,54 @@ void Engine::Update() {
 }
 
 void Engine::StartDraw() {
-    
 #ifdef ANDROID
-    // Ensure context is current before rendering
-    WindowManager::GetPlatform()->MakeContextCurrent();
-
-    // Check if OpenGL context is current
-    EGLDisplay display = eglGetCurrentDisplay();
-    EGLContext context = eglGetCurrentContext();
-    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
-
-    // __android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL State - Display: %p, Context: %p, Surface: %p",
-    //                    display, context, surface);
-
-    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
-        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT!");
-        return;
-    }
+	androidGraphicsFrameReady = false;
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform || !platform->MakeContextCurrent()) {
+		return;
+	}
+	androidGraphicsFrameReady = true;
 #endif
 
     //glClearColor(1.0f, 0.0f, 0.0f, 1.0f); // Bright red - should be very obvious
 
-#ifdef ANDROID
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClearColor: %d", error);
-    }
+#if defined(ANDROID) && !defined(NDEBUG)
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR) {
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClearColor: %d", error);
+	}
 #endif
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Actually clear the screen!
 
-#ifdef ANDROID
-    error = glGetError();
-    if (error != GL_NO_ERROR) {
-        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClear: %d", error);
-    } else {
+#if defined(ANDROID) && !defined(NDEBUG)
+	error = glGetError();
+	if (error != GL_NO_ERROR) {
+		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClear: %d", error);
+	} else {
         // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Engine::StartDraw() - Successfully cleared screen with RED");
     }
 #endif
 }
 
 void Engine::Draw() {
-    
 #ifdef ANDROID
-    // Ensure the EGL context is current
-    if (!WindowManager::GetPlatform()->MakeContextCurrent()) {
-        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current in Draw()");
-        return;
-    }
+	if (!androidGraphicsFrameReady) {
+		return;
+	}
 
-    EGLDisplay display = eglGetCurrentDisplay();
-    EGLContext context = eglGetCurrentContext();
-    EGLSurface surface = eglGetCurrentSurface(EGL_DRAW);
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		androidGraphicsFrameReady = false;
+		return;
+	}
 
-    if (display == EGL_NO_DISPLAY || context == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) {
-        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL CONTEXT NOT CURRENT - skipping draw!");
-        return;
-    }
-
-    // Additional check: verify the surface is still valid
-    EGLint surfaceWidth, surfaceHeight;
-    if (!eglQuerySurface(display, surface, EGL_WIDTH, &surfaceWidth) ||
-        !eglQuerySurface(display, surface, EGL_HEIGHT, &surfaceHeight)) {
-        //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "EGL surface is invalid - skipping draw!");
-        return;
-    }
+	const int surfaceWidth = platform->GetWindowWidth();
+	const int surfaceHeight = platform->GetWindowHeight();
+	if (surfaceWidth <= 0 || surfaceHeight <= 0) {
+		androidGraphicsFrameReady = false;
+		return;
+	}
 
     try {
         SceneManager::GetInstance().DrawScene();
@@ -837,7 +831,17 @@ void Engine::Draw() {
 }
 
 void Engine::EndDraw() {
+#ifdef ANDROID
+	if (!androidGraphicsFrameReady) {
+		return;
+	}
+#endif
+
 	WindowManager::SwapBuffers();
+
+#ifdef ANDROID
+	androidGraphicsFrameReady = false;
+#endif
 
 	// Input is now updated at the start of Engine::Update() for immediate responsiveness
 	// This ensures ButtonSystem and other systems have fresh input state

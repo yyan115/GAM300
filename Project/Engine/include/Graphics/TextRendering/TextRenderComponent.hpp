@@ -112,4 +112,6 @@ public:
     // Default constructor for ECS requirements
     TextRenderComponent() = default;
     ~TextRenderComponent() = default;
+
+    RenderComponentKind GetRenderKind() const override { return RenderComponentKind::Text; }
 };

@@ -113,27 +113,19 @@ void PointShadowMap::Shutdown()
     m_forceDirty = true;
 }
 
-std::vector<glm::mat4> PointShadowMap::GetLightSpaceMatrices(const glm::vec3& lightPos, float nearPlane, float farPlane)
+std::array<glm::mat4, 6> PointShadowMap::GetLightSpaceMatrices(const glm::vec3& lightPos, float nearPlane, float farPlane)
 {
     // 90 degree FOV to cover each cube face exactly
     glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
 
-    std::vector<glm::mat4> shadowTransforms;
-
-    // +X (right)
-    shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-    // -X (left)
-    shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-    // +Y (up)
-    shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-    // -Y (down)
-    shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-    // +Z (front)
-    shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-    // -Z (back)
-    shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-
-    return shadowTransforms;
+    return {
+        shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+        shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+        shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
+    };
 }
 
 void PointShadowMap::Render(const glm::vec3& lightPos, float farPlane, std::function<void(Shader&)> renderCallback)
@@ -145,14 +137,8 @@ void PointShadowMap::Render(const glm::vec3& lightPos, float farPlane, std::func
 
     currentFarPlane = farPlane;
 
-    // Store current state
-    GLint previousFramebuffer;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
     // Get light space matrices for all 6 faces
-    std::vector<glm::mat4> shadowTransforms = GetLightSpaceMatrices(lightPos, 0.1f, farPlane);
+    const std::array<glm::mat4, 6> shadowTransforms = GetLightSpaceMatrices(lightPos, 0.1f, farPlane);
 
     // Bind framebuffer and set viewport
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
@@ -194,10 +180,7 @@ void PointShadowMap::Render(const glm::vec3& lightPos, float farPlane, std::func
     glClear(GL_DEPTH_BUFFER_BIT);
 
     depthShader->Activate();
-    for (int i = 0; i < 6; ++i)
-    {
-        depthShader->setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-    }
+    depthShader->setMat4Array("shadowMatrices[0]", shadowTransforms.data(), static_cast<GLsizei>(shadowTransforms.size()));
     depthShader->setVec3("lightPos", lightPos);
     depthShader->setFloat("farPlane", farPlane);
 
@@ -206,9 +189,6 @@ void PointShadowMap::Render(const glm::vec3& lightPos, float farPlane, std::func
 
 #endif
 
-    // Restore state
-    glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
 void PointShadowMap::Apply(Shader& shader, int textureUnit, int shadowIndex)

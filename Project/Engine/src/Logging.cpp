@@ -18,6 +18,23 @@
 #include <filesystem>
 
 namespace EngineLogging {
+    namespace {
+        constexpr spdlog::level::level_enum ActiveSpdlogLevel() {
+        #if ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_TRACE
+            return spdlog::level::trace;
+        #elif ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_DEBUG
+            return spdlog::level::debug;
+        #elif ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_INFO
+            return spdlog::level::info;
+        #elif ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_WARN
+            return spdlog::level::warn;
+        #elif ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_ERROR
+            return spdlog::level::err;
+        #else
+            return spdlog::level::off;
+        #endif
+        }
+    }
        
     // Custom GUI sink that pushes to thread-safe queue
     class GuiSink : public spdlog::sinks::base_sink<std::mutex> {
@@ -141,14 +158,14 @@ namespace EngineLogging {
             // On Android, use logcat instead of stdout and skip file logging
             auto android_sink = std::make_shared<AndroidSink>();
             assert(android_sink != nullptr && "Android sink creation failed");
-            android_sink->set_level(spdlog::level::trace);
+            android_sink->set_level(ActiveSpdlogLevel());
             android_sink->set_pattern("%v");
             sinks.push_back(android_sink);
 #else
             // Desktop: use stdout logging (always works)
             auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             assert(console_sink != nullptr && "Console sink creation failed");
-            console_sink->set_level(spdlog::level::trace);
+            console_sink->set_level(ActiveSpdlogLevel());
             console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
             sinks.push_back(console_sink);
 
@@ -158,7 +175,7 @@ namespace EngineLogging {
                 if (std::filesystem::exists("logs")) {
                     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/engine.log", true);
                     if (file_sink) {
-                        file_sink->set_level(spdlog::level::trace);
+                        file_sink->set_level(ActiveSpdlogLevel());
                         file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
                         sinks.push_back(file_sink);
                     }
@@ -172,7 +189,7 @@ namespace EngineLogging {
             // GUI sink for editor (all platforms)
             auto gui_sink = std::make_shared<GuiSink>(guiLogQueue);
             assert(gui_sink != nullptr && "GUI sink creation failed");
-            gui_sink->set_level(spdlog::level::trace);
+            gui_sink->set_level(ActiveSpdlogLevel());
             gui_sink->set_pattern("%v");
             sinks.push_back(gui_sink);
 
@@ -181,8 +198,11 @@ namespace EngineLogging {
             logger = std::make_shared<spdlog::logger>("engine", sinks.begin(), sinks.end());
             assert(logger != nullptr && "Logger creation failed");
             
-            logger->set_level(spdlog::level::trace);
-            logger->flush_on(spdlog::level::trace);  // Flush immediately on all messages to see output before crash
+            logger->set_level(ActiveSpdlogLevel());
+            // Flush every level that can reach this logger. Windows and debug
+            // builds retain the original trace-level flushing behavior, while
+            // filtered release builds only flush warnings and above.
+            logger->flush_on(ActiveSpdlogLevel());
 
             // Register as default logger
             spdlog::set_default_logger(logger);
@@ -225,6 +245,10 @@ namespace EngineLogging {
 
     // Internal helper for logging
     void LogInternal(LogLevel level, const std::string& message) {
+        if (!ShouldLog(level)) {
+            return;
+        }
+
         assert(!message.empty() && "Log message cannot be empty");
 
         if (!initialized || !logger) {

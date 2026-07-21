@@ -948,21 +948,18 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 #ifdef ANDROID
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Starting Model::Draw - meshes.size=%zu, shader.ID=%u", meshes.size(), shader.ID);
 
-	// Ensure OpenGL context is current for Android
-	auto platform = WindowManager::GetPlatform();
-	if (platform) {
-		if (!platform->MakeContextCurrent()) {
-			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Failed to make OpenGL context current for model drawing");
-			return;
-		}
-		/*__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] OpenGL context made current for model drawing");*/
-	}
-
-	// Validate shader
-	if (shader.ID == 0 || !glIsProgram(shader.ID)) {
+	// GraphicsManager owns the EGL context for the render pass. Switching it for
+	// every submitted model adds driver overhead and can disrupt context ownership.
+	if (shader.ID == 0) {
 		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Invalid shader program ID: %u", shader.ID);
 		return;
 	}
+
+#ifndef NDEBUG
+	if (!glIsProgram(shader.ID)) {
+		return;
+	}
+#endif
 
 	// Check if meshes vector is empty
 	if (meshes.empty()) {
@@ -973,7 +970,7 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 
     if (!modelComp) return;
 
-    bool hasBones = !modelComp->mFinalBoneMatrices.empty();
+    bool hasBones = !mBoneInfoMap.empty() && !modelComp->mFinalBoneMatrices.empty();
     shader.setBool("hasBones", hasBones);
 
     if (hasBones)
@@ -1020,7 +1017,7 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#endif
 
 
-    bool hasBones = !modelComp.mFinalBoneMatrices.empty();
+    bool hasBones = !mBoneInfoMap.empty() && !modelComp.mFinalBoneMatrices.empty();
 	shader.setBool("hasBones", hasBones);
 
     if (hasBones)
@@ -1064,7 +1061,7 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 
 void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator)
 {
-    bool hasBones = animator && !modelComp.mFinalBoneMatrices.empty();
+    bool hasBones = animator && !mBoneInfoMap.empty() && !modelComp.mFinalBoneMatrices.empty();
 	shader.setBool("hasBones", hasBones);
 
     if (hasBones)
@@ -1094,10 +1091,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 
 }
 
-void Model::DrawFast(Shader& shader, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator)
+void Model::DrawFast(Shader& shader, std::shared_ptr<Material> entityMaterial,
+    const ModelRenderComponent& modelComp, Material*& currentMaterial,
+    const Animator* animator)
 {
+    (void)animator;
+
     // Bones — same logic as existing Draw methods
-    bool hasBones = !modelComp.mFinalBoneMatrices.empty();
+    bool hasBones = !mBoneInfoMap.empty() && !modelComp.mFinalBoneMatrices.empty();
     shader.setBool("hasBones", hasBones);
 
     if (hasBones) {
@@ -1115,16 +1116,15 @@ void Model::DrawFast(Shader& shader, std::shared_ptr<Material> entityMaterial, c
         }
     } else {
         // No entity material — apply per-mesh materials
-        Material* lastApplied = nullptr;
         for (size_t i = 0; i < meshes.size(); ++i) {
             Material* meshMat = meshes[i].material.get();
             if (!meshMat) {
                 meshes[i].material = Material::CreateDefault();
                 meshMat = meshes[i].material.get();
             }
-            if (meshMat != lastApplied) {
+            if (meshMat != currentMaterial) {
                 meshMat->ApplyToShader(shader);
-                lastApplied = meshMat;
+                currentMaterial = meshMat;
             }
             meshes[i].DrawGeometryOnly();
         }

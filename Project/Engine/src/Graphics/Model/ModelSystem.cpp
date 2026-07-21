@@ -115,6 +115,9 @@ void ModelSystem::Update()
     bool enableCulling = gfxManager.IsFrustumCullingEnabled() && !isRenderingForEditor;
     // Reset stats each frame
     cullingStats.Reset();
+    const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
+    renderItems.reserve(entities.size());
 
 
     // Submit all visible models to the graphics manager
@@ -186,17 +189,29 @@ void ModelSystem::Update()
         }
 
         // Passed culling test, create and submit render item
-        auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
+        auto modelRenderItem = std::make_unique<ModelRenderComponent>(
+            modelComponent, ModelRenderComponent::RenderSnapshotTag{});
         auto& entityTransform = ecsManager.GetComponent<Transform>(entity);
         modelRenderItem->transform = entityTransform.worldMatrix;
 
         // If model doesn't have an animation controller, allow manual manipulation of bone entities.
-        if (!modelRenderItem->HasAnimation()) {
+        if (!modelRenderItem->HasAnimation() && !modelRenderItem->model->mBoneInfoMap.empty()) {
             glm::mat4 rootInverse = glm::inverse(entityTransform.worldMatrix.ConvertToGLM());
             for (const auto& [name, boneInfo] : modelRenderItem->model->mBoneInfoMap)
             {
+                if (boneInfo.id < 0 || static_cast<size_t>(boneInfo.id) >= modelRenderItem->mFinalBoneMatrices.size()) {
+                    continue;
+                }
+
                 // Get the child entity representing this bone.
-			    Entity boneEntity = modelRenderItem->boneNameToEntityMap[name];
+			    auto boneEntityIt = modelComponent.boneNameToEntityMap.find(name);
+			    if (boneEntityIt == modelComponent.boneNameToEntityMap.end()) {
+			        continue;
+			    }
+			    Entity boneEntity = boneEntityIt->second;
+			    if (!ecsManager.HasComponent<Transform>(boneEntity)) {
+			        continue;
+			    }
 
 			    // Get the transform of the bone entity.
                 glm::mat4 currentWorld = ecsManager.GetComponent<Transform>(boneEntity).worldMatrix.ConvertToGLM();
@@ -228,10 +243,9 @@ void ModelSystem::Update()
         }
 
         // Tag items on excluded layers for deferred rendering
-        uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-        if (exMask != 0) {
+        if (excludedLayerMask != 0) {
             int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-            if (exMask & (1u << layerIdx))
+            if (layerIdx >= 0 && layerIdx < 32 && (excludedLayerMask & (1u << layerIdx)))
                 modelRenderItem->excludeFromPostProcess = true;
         }
 
@@ -279,8 +293,9 @@ void ModelSystem::Update()
             }
         }
 
-        gfxManager.Submit(std::move(modelRenderItem));
+        renderItems.push_back(std::move(modelRenderItem));
     }
+    gfxManager.SubmitBatch(std::move(renderItems));
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() completed");
 #endif

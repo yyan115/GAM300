@@ -199,12 +199,25 @@ void SceneInstance::Draw()
 	// Set to false so game view shows ALL sprites (not filtered by 2D/3D mode)
 	gfxManager.SetRenderingForEditor(false);
 
-	// Update viewport dimensions to match window size
-	WindowManager::SetViewportDimensions(RunTimeVar::window.width, RunTimeVar::window.height);
-	gfxManager.SetViewportSize(RunTimeVar::window.width, RunTimeVar::window.height);
+	int renderWidth = RunTimeVar::window.width;
+	int renderHeight = RunTimeVar::window.height;
+	if (gfxManager.IsGamePanelActive())
+	{
+		// BeginGameRender already selected the editor panel's render resolution.
+		// Do not replace it with the full application-window resolution here.
+		gfxManager.GetViewportSize(renderWidth, renderHeight);
+		if (renderWidth <= 0 || renderHeight <= 0)
+		{
+			renderWidth = RunTimeVar::window.width;
+			renderHeight = RunTimeVar::window.height;
+		}
+	}
+
+	WindowManager::SetViewportDimensions(renderWidth, renderHeight);
+	gfxManager.SetViewportSize(renderWidth, renderHeight);
 
 	// Begin HDR rendering to floating-point framebuffer (this also clears the buffer)
-	PostProcessingManager::GetInstance().BeginHDRRender(RunTimeVar::window.width, RunTimeVar::window.height);
+	PostProcessingManager::GetInstance().BeginHDRRender(renderWidth, renderHeight);
 	gfxManager.BeginFrame();
 
 	Entity activeCam = mainECS.cameraSystem ? mainECS.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
@@ -271,14 +284,18 @@ void SceneInstance::Draw()
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "gfxManager.EndFrame() completed");
 #endif
 
-	// End HDR rendering and apply tone-mapping to default framebuffer (screen)
-	PostProcessingManager::GetInstance().EndHDRRender(0, RunTimeVar::window.width, RunTimeVar::window.height);
+	// The editor Game panel owns the final output framebuffer. Leave the HDR
+	// result pending so EndGameRender can process it directly into that target.
+	if (!gfxManager.IsGamePanelActive())
+	{
+		PostProcessingManager::GetInstance().EndHDRRender(0, renderWidth, renderHeight);
+	}
 
 	// Render deferred items (excluded from post-processing) on top of blurred output
 	if (!gfxManager.IsGamePanelActive() && gfxManager.HasDeferredItems())
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, RunTimeVar::window.width, RunTimeVar::window.height);
+		glViewport(0, 0, renderWidth, renderHeight);
 		gfxManager.RenderDeferred();
 	}
 }

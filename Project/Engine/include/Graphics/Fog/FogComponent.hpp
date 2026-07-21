@@ -66,4 +66,6 @@ public:
 	}
 	~FogVolumeComponent() = default;
 
+	RenderComponentKind GetRenderKind() const override { return RenderComponentKind::Fog; }
+
 };

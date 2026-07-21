@@ -4,12 +4,19 @@
 #include "Logging.hpp"
 #include <WindowManager.hpp>
 
-// Add to PostProcessingManager.cpp
+namespace {
 void CheckGLError(const char* location) {
+#if !defined(NDEBUG) || defined(_WIN32)
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[OpenGL Error] at ", location, ": ", err, "\n");
     }
+#else
+    // glGetError can synchronize with the driver. Release rendering relies on
+    // explicit framebuffer/shader validation performed during initialization.
+    (void)location;
+#endif
+}
 }
 
 PostProcessingManager& PostProcessingManager::GetInstance() 
@@ -505,4 +512,3 @@ void PostProcessingManager::DeleteScreenQuad()
         screenQuadVBO = 0;
     }
 }
-

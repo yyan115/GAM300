@@ -346,9 +346,15 @@ Matrix4x4 Matrix4x4::RotationAxisAngle(const Vector3D& axis_unit, float a) {
 
 // Compose T * R * S  (applies S then R then T to column vectors)
 Matrix4x4 Matrix4x4::TRS(const Vector3D& t, const Matrix4x4& R, const Vector3D& s) {
-    Matrix4x4 S = Scale(s.x, s.y, s.z);
-    Matrix4x4 T = Translate(t.x, t.y, t.z);
-    return T * R * S;
+    // T * R * S for an affine rotation matrix. Scaling the three basis
+    // columns and writing translation directly avoids two general 4x4
+    // multiplications in every dirty-transform update.
+    return {
+        R.m.m00 * s.x, R.m.m01 * s.y, R.m.m02 * s.z, t.x,
+        R.m.m10 * s.x, R.m.m11 * s.y, R.m.m12 * s.z, t.y,
+        R.m.m20 * s.x, R.m.m21 * s.y, R.m.m22 * s.z, t.z,
+        0.0f,            0.0f,            0.0f,            1.0f
+    };
 }
 
 // ============================

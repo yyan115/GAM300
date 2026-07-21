@@ -55,6 +55,29 @@ namespace EngineLogging {
         Critical = 5
     };
 
+    // Compile-time log filtering. Linux release and Android builds keep warnings
+    // and errors by default; Windows retains its existing full logging behavior.
+    // Override ENGINE_LOG_ACTIVE_LEVEL from CMake when a build needs different
+    // verbosity.
+    #define ENGINE_LOG_LEVEL_TRACE 0
+    #define ENGINE_LOG_LEVEL_DEBUG 1
+    #define ENGINE_LOG_LEVEL_INFO  2
+    #define ENGINE_LOG_LEVEL_WARN  3
+    #define ENGINE_LOG_LEVEL_ERROR 4
+    #define ENGINE_LOG_LEVEL_NONE  6
+
+    #ifndef ENGINE_LOG_ACTIVE_LEVEL
+        #if defined(ANDROID) || (defined(NDEBUG) && !defined(_WIN32))
+            #define ENGINE_LOG_ACTIVE_LEVEL ENGINE_LOG_LEVEL_WARN
+        #else
+            #define ENGINE_LOG_ACTIVE_LEVEL ENGINE_LOG_LEVEL_TRACE
+        #endif
+    #endif
+
+    inline constexpr bool ShouldLog(LogLevel level) {
+        return static_cast<int>(level) >= ENGINE_LOG_ACTIVE_LEVEL;
+    }
+
     // Structure for queued log messages for GUI
     struct LogMessage {
         std::string text;
@@ -137,6 +160,9 @@ namespace EngineLogging {
     // Default - prints to EDITOR (Info level)
     template<typename... Args>
     void PrintEditorVariadic(Args&&... args) {
+        if constexpr (!ShouldLog(LogLevel::Info)) {
+            return;
+        }
         std::ostringstream oss;
         (oss << ... << ToString(std::forward<Args>(args)));
         PrintOutput(oss.str());
@@ -145,6 +171,9 @@ namespace EngineLogging {
     // LOGTYPE SPECIFIED
     template<typename... Args>
     void PrintEditorVariadic(LogLevel logType, Args&&... args) {
+        if (!ShouldLog(logType)) {
+            return;
+        }
         std::ostringstream oss;
         (oss << ... << ToString(std::forward<Args>(args)));
         PrintOutput(oss.str(), logType);
@@ -153,6 +182,9 @@ namespace EngineLogging {
     // LOGTYPE AND toEDITOR SPECIFIED
     template<typename... Args>
     void PrintEditorVariadic(LogLevel logType, bool toEditor, Args&&... args) {
+        if (!ShouldLog(logType)) {
+            return;
+        }
         std::ostringstream oss;
         (oss << ... << ToString(std::forward<Args>(args)));
         PrintOutput(oss.str(), logType, toEditor);
@@ -206,9 +238,24 @@ namespace EngineLogging {
 #define ENGINE_PRINT(...)        ((void)0)
 
 #else // ENGINE_LOGGING_DISABLED not defined - logging enabled
+#if ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_TRACE
 #define ENGINE_LOG_TRACE(msg)    EngineLogging::LogTrace(msg)
+#else
+#define ENGINE_LOG_TRACE(msg)    ((void)0)
+#endif
+
+#if ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_DEBUG
 #define ENGINE_LOG_DEBUG(msg)    EngineLogging::LogDebug(msg)
+#else
+#define ENGINE_LOG_DEBUG(msg)    ((void)0)
+#endif
+
+#if ENGINE_LOG_ACTIVE_LEVEL <= ENGINE_LOG_LEVEL_INFO
 #define ENGINE_LOG_INFO(msg)     EngineLogging::LogInfo(msg)
+#else
+#define ENGINE_LOG_INFO(msg)     ((void)0)
+#endif
+
 #define ENGINE_LOG_WARN(msg)     EngineLogging::LogWarn(msg)
 #define ENGINE_LOG_ERROR(msg)    EngineLogging::LogError(msg)
 #define ENGINE_LOG_CRITICAL(msg) EngineLogging::LogCritical(msg)

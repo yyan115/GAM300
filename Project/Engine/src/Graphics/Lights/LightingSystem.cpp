@@ -128,7 +128,7 @@ void LightingSystem::ResetDefaults()
     ambientIntensity = 1.0f;
 }
 
-void LightingSystem::RenderShadowMaps()
+void LightingSystem::RenderShadowMaps(unsigned int restoreFramebuffer, int restoreViewportWidth, int restoreViewportHeight)
 {
     PROFILE_FUNCTION();
 
@@ -198,16 +198,23 @@ void LightingSystem::RenderShadowMaps()
         }
     }
 
+    // Shadow passes deliberately leave their framebuffer bound. Restore the
+    // known HDR target once here instead of forcing synchronous GL state reads
+    // inside every directional and point-light pass.
+    glBindFramebuffer(GL_FRAMEBUFFER, restoreFramebuffer);
+    glViewport(0, 0, restoreViewportWidth, restoreViewportHeight);
 }
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
 #ifdef __ANDROID__
-    // Android uses the LightingBlock UBO (binding = 1) — populated once per frame
-    // in UploadLightingUBO(). No per-draw work needed.
-    (void)shader;
-    return;
-#else
+    // Built-in Android shaders use the LightingBlock populated once per frame.
+    // Keep the legacy uniform path available for custom shaders without that block.
+    if (shader.UsesLightingBlock()) {
+        return;
+    }
+#endif
+
     shader.setInt("ambientMode", static_cast<int>(ambientMode));
     shader.setVec3("ambientSky", ambientSky);
     shader.setVec3("ambientEquator", ambientEquator);
@@ -267,7 +274,6 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
         shader.setFloat(base + ".intensity", spotLightData.intensity[i]);
     }
-#endif
 }
 
 void LightingSystem::ApplyShadows(Shader& shader)

@@ -14,11 +14,13 @@ public:
     bool Initialize(int resolution = 2048);
     void Shutdown();
 
-    // Render shadow map using the provided callback to draw scene
+    // Render shadow map using the provided callback to draw scene. The shadow
+    // framebuffer remains bound so LightingSystem can restore render state once
+    // after all shadow passes instead of synchronously querying GL state here.
     void Render(const glm::vec3& lightDir, const glm::vec3& sceneCenter,
         float shadowDistance, std::function<void(Shader&)> renderCallback);
 
-    // Clear shadow map to max depth (no shadow) - call when no directional light exists
+    // Clear shadow map to max depth (no shadow). Leaves the shadow framebuffer bound.
     void Clear();
 
     // Apply shadow uniforms to a shader

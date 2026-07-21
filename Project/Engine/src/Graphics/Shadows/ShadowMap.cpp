@@ -91,13 +91,8 @@ void DirectionalShadowMap::Clear()
 {
     if (!initialized) return;
 
-    GLint previousFramebuffer;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
-
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
 }
 
 void DirectionalShadowMap::CalculateLightSpaceMatrix(const glm::vec3& lightDir, const glm::vec3& sceneCenter, float shadowDistance)
@@ -129,12 +124,6 @@ void DirectionalShadowMap::Render(const glm::vec3& lightDir, const glm::vec3& sc
     // Calculate light space matrix
     CalculateLightSpaceMatrix(lightDir, sceneCenter, shadowDistance);
 
-    // Store current state
-    GLint previousFramebuffer;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
     // Bind and clear shadow map
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glViewport(0, 0, resolution, resolution);
@@ -144,10 +133,6 @@ void DirectionalShadowMap::Render(const glm::vec3& lightDir, const glm::vec3& sc
     depthShader->Activate();
     depthShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
     renderCallback(*depthShader);
-
-    // Restore state
-    glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
 void DirectionalShadowMap::Apply(Shader& shader, int textureUnit)
