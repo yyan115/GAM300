@@ -26,6 +26,7 @@ public:
     Matrix4x4 transform; // Used for 3D text positioning
     Vector3D transformScale{ 1.0f, 1.0f, 1.0f }; // Scale from Transform component (not serialized, runtime only)
     GUID_128 lastLoadedFontGUID{}; // Track which font is currently loaded (not serialized, runtime only)
+    float fontRetrySeconds = 0.0f; // Cooldown before retrying a failed font load (not serialized, runtime only)
 
     // LINE WRAPPING PROPERTIES
     bool wordWrap = false;        // Enable/disable word wrapping
@@ -80,6 +81,7 @@ public:
         transform(other.transform),
         transformScale(other.transformScale),
         lastLoadedFontGUID(other.lastLoadedFontGUID),
+        fontRetrySeconds(other.fontRetrySeconds),
         wordWrap(other.wordWrap),           // ADD THIS
         maxWidth(other.maxWidth),           // ADD THIS
         lineSpacing(other.lineSpacing),     // ADD THIS
@@ -108,6 +110,7 @@ public:
             sortingOrder = other.sortingOrder;
             transform = other.transform;
             transformScale = other.transformScale;
+            fontRetrySeconds = other.fontRetrySeconds;
             lastLoadedFontGUID = other.lastLoadedFontGUID;
             wordWrap = other.wordWrap;           // ADD THIS
             maxWidth = other.maxWidth;           // ADD THIS

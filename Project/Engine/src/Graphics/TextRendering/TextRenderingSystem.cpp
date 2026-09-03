@@ -11,6 +11,14 @@
 #include "ECS/LayerComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/BloomComponent.hpp"
+#include "TimeManager.hpp"
+
+namespace {
+
+// How long a text component waits before retrying a font load that failed.
+constexpr float kFontRetryCooldownSeconds = 1.0f;
+
+}  // namespace
 
 bool TextRenderingSystem::Initialise()
 {
@@ -62,9 +70,24 @@ void TextRenderingSystem::Update()
         bool hasValidFontGUID = textComponent.fontGUID.high != 0 || textComponent.fontGUID.low != 0;
         if (needsFontReload && hasValidFontGUID)
         {
-            std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.fontGUID);
-            textComponent.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComponent.fontGUID, fontPath, textComponent.fontSize);
-            textComponent.lastLoadedFontGUID = textComponent.fontGUID;
+            // A font that failed to load (missing or uncompiled asset) is retried
+            // on a cooldown instead of every frame: each attempt reads the file
+            // and initialises FreeType, which is too expensive to repeat per text
+            // component per frame.
+            if (textComponent.fontRetrySeconds > 0.0f)
+            {
+                textComponent.fontRetrySeconds -= static_cast<float>(TimeManager::GetUnscaledDeltaTime());
+            }
+            else
+            {
+                std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.fontGUID);
+                textComponent.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComponent.fontGUID, fontPath, textComponent.fontSize);
+                textComponent.lastLoadedFontGUID = textComponent.fontGUID;
+                if (!textComponent.font)
+                {
+                    textComponent.fontRetrySeconds = kFontRetryCooldownSeconds;
+                }
+            }
         }
 
         // Ensure shader is loaded (handles newly added components or missing shader)

@@ -17,6 +17,11 @@ endif()
 # build. Set this cache entry to "Debug" to step through the engine at -O0.
 set(GAM300_ANDROID_DEBUG_ENGINE_CONFIG "RelWithDebInfo" CACHE STRING
     "Engine CMAKE_BUILD_TYPE used when Android Studio builds the debug variant")
+# Set to ON to have the engine log FrameStats summaries (per-zone frame
+# timings) to logcat every few seconds. The engine is configured once, so run
+# clean-android.bat after changing this.
+set(GAM300_FRAME_STATS OFF CACHE BOOL
+    "Log in-engine frame profiler summaries to logcat")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENGINE_BUILD_CONFIG "${GAM300_ANDROID_DEBUG_ENGINE_CONFIG}")
 else()
@@ -48,6 +53,7 @@ if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
             -DANDROID_PLATFORM=android-33
             -DCMAKE_BUILD_TYPE=${ENGINE_BUILD_CONFIG}
             -DANDROID_STL=c++_shared
+            -DGAM300_FRAME_STATS=${GAM300_FRAME_STATS}
             RESULT_VARIABLE CONFIG_RESULT
             OUTPUT_VARIABLE CONFIG_OUTPUT
             ERROR_VARIABLE CONFIG_ERROR

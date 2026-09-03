@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <type_traits>
 #include <string>
 #include <unordered_map>
 #include <filesystem>
@@ -44,25 +45,37 @@ public:
 	}
 
 	std::shared_ptr<Font> GetFontResourceFromGUID(const GUID_128& guid, const std::string& assetPath, unsigned int fontSize) {
+		// A font is rasterised per pixel size and the same asset is routinely
+		// live at several sizes at once (HUD, pause menu, dialogue). Each size is
+		// cached separately so components stop evicting and re-rasterising each
+		// other's atlas; the generic map keeps the most recently loaded size for
+		// the path-based lookups and the editor's unload/reload flow.
+		auto& sizes = fontsBySize[guid];
+		if (auto sizeIt = sizes.find(fontSize); sizeIt != sizes.end() && sizeIt->second) {
+			return sizeIt->second;
+		}
+
 		auto& resourceMap = GetResourceMap<Font>();
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
-			// Check if cached font has the correct size, reload if different
-			if (it->second && it->second->GetFontSize() != fontSize) {
-				// Remove from cache and reload with new size
-				resourceMap.erase(it);
-			}
-			else {
+			if (it->second && it->second->GetFontSize() == fontSize) {
+				sizes[fontSize] = it->second;
 				return it->second;
 			}
+			// A different size is cached; drop it from the generic map so the
+			// path-based loader below rasterises the requested size.
+			resourceMap.erase(it);
 		}
-		// Load font with requested size
 #ifndef EDITOR
 		std::string gameAssetPath = assetPath.substr(assetPath.find("Resources"));
-		return GetFontResource(gameAssetPath, fontSize);
+		std::shared_ptr<Font> font = GetFontResource(gameAssetPath, fontSize);
 #else
-		return GetFontResource(assetPath, fontSize);
+		std::shared_ptr<Font> font = GetFontResource(assetPath, fontSize);
 #endif
+		if (font) {
+			sizes[fontSize] = font;
+		}
+		return font;
 	}
 
 	template <typename T>
@@ -167,6 +180,9 @@ public:
 	bool UnloadResource(GUID_128 guid, const std::string& resourcePath) {
 		// Implementation for unloading the resource
 		auto& resourceMap = GetResourceMap<T>();
+		if constexpr (std::is_same_v<T, Font>) {
+			fontsBySize.erase(guid);
+		}
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
 			resourceMap.erase(it);
@@ -215,6 +231,9 @@ public:
 
 	template <typename T>
 	void UnloadAllResourcesOfType() {
+		if constexpr (std::is_same_v<T, Font>) {
+			fontsBySize.clear();
+		}
 		GetResourceMap<T>().clear();
 	}
 
@@ -292,6 +311,9 @@ private:
 	//}
 
 	std::unordered_map<std::type_index, std::any> resourceMaps;
+
+	// Fonts live at one rasterised size per object; see GetFontResourceFromGUID.
+	std::unordered_map<GUID_128, std::unordered_map<unsigned int, std::shared_ptr<Font>>> fontsBySize;
 	template <typename T>
 	std::unordered_map<GUID_128, std::shared_ptr<T>>& GetResourceMap() {
 		auto& anyMap = resourceMaps[typeid(T)];

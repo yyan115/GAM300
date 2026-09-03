@@ -679,7 +679,19 @@ bool Engine::InitializeGraphicsResources() {
 // 	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
 // 	ENGINE_LOG_INFO("Loaded main menu scene");
 // #endif
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/00_SplashScreen.scene");
+	// Game builds boot into the splash screen. GAM300_START_SCENE (a path
+	// relative to the root asset directory, e.g. "Scenes/04_Level.scene") lets
+	// profiling and repro runs open a scene directly instead of clicking
+	// through the menus; it is only consulted on desktop.
+	std::string startScene = "/Scenes/00_SplashScreen.scene";
+#ifndef ANDROID
+	if (const char* overrideScene = std::getenv("GAM300_START_SCENE");
+		overrideScene != nullptr && overrideScene[0] != '\0') {
+		startScene = std::string("/") + overrideScene;
+		ENGINE_LOG_INFO("Start scene overridden by GAM300_START_SCENE: " + startScene);
+	}
+#endif
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + startScene);
 #endif
 
 #ifdef ANDROID

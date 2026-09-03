@@ -278,6 +278,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSeriali
 
 ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool isSerializing, bool preserveSourceGuids)
 {
+    PROFILE_FUNCTION();
     //ENGINE_LOG_INFO("[PrefabIO_v2] InstantiatePrefabFromFile called with: " + prefabPath);
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     IPlatform* platform = WindowManager::GetPlatform();
@@ -367,6 +368,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
 }
 
 ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Entity intoEntity) {
+    PROFILE_FUNCTION();
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     IPlatform* platform = WindowManager::GetPlatform();
 

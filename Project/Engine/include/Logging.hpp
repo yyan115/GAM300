@@ -209,6 +209,7 @@ namespace EngineLogging {
 #define PROFILE_SCOPED(name)  ZoneScopedN(name)
 #define PROFILE_MESSAGE(msg, len) TracyMessage(msg, len)
 #define PROFILE_PLOT(name, val)   TracyPlot(name, val)
+#define PROFILE_COUNT(name, n)    ((void)0)
 #define PROFILE_PLOT_TIMED(name, stmt) do {                                  \
         auto _t = std::chrono::high_resolution_clock::now();                 \
         stmt;                                                                \
@@ -217,12 +218,35 @@ namespace EngineLogging {
             _elapsed).count();                                               \
         TracyPlot(name, _us / 1000.0);                                       \
     } while (0)
+#elif defined(GAM300_FRAME_STATS)
+// Lightweight on-device alternative to Tracy (see Performance/FrameStats.hpp):
+// zones are timed on the calling thread and a summary is logged every few
+// seconds. Enable with the GAM300_FRAME_STATS CMake option.
+#include "Performance/FrameStats.hpp"
+#define GAM300_FRAME_STATS_CONCAT_IMPL(a, b) a##b
+#define GAM300_FRAME_STATS_CONCAT(a, b) GAM300_FRAME_STATS_CONCAT_IMPL(a, b)
+#if defined(_MSC_VER)
+#define GAM300_FRAME_STATS_FUNCTION __FUNCTION__
+#else
+#define GAM300_FRAME_STATS_FUNCTION __PRETTY_FUNCTION__
+#endif
+#define ENGINE_FRAME_MARK          FrameStats::EndFrame()
+#define PROFILE_FUNCTION()          FrameStats::Scope GAM300_FRAME_STATS_CONCAT(_frameStatsScope, __LINE__)(GAM300_FRAME_STATS_FUNCTION)
+#define PROFILE_SCOPED(name)  FrameStats::Scope GAM300_FRAME_STATS_CONCAT(_frameStatsScope, __LINE__)(name)
+#define PROFILE_MESSAGE(msg, len) ((void)0)
+#define PROFILE_PLOT(name, val)   ((void)0)
+#define PROFILE_COUNT(name, n)    FrameStats::RecordCount(name, static_cast<std::uint64_t>(n))
+#define PROFILE_PLOT_TIMED(name, stmt) do {                                  \
+        FrameStats::Scope _frameStatsPlotScope(name);                        \
+        stmt;                                                                \
+    } while (0)
 #else
 #define ENGINE_FRAME_MARK          ((void)0)
 #define PROFILE_FUNCTION()          ((void)0)
 #define PROFILE_SCOPED(name)  ((void)0)
 #define PROFILE_MESSAGE(msg, len) ((void)0)
 #define PROFILE_PLOT(name, val)   ((void)0)
+#define PROFILE_COUNT(name, n)    ((void)0)
 #define PROFILE_PLOT_TIMED(name, stmt) stmt
 #endif
 

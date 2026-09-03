@@ -118,11 +118,27 @@ if(GAM300_ENABLE_GL_VALIDATION)
     target_compile_definitions(Engine PRIVATE GAM300_GL_VALIDATION)
 endif()
 
+# Lightweight frame profiler: routes the PROFILE_* zones to
+# Performance/FrameStats and logs a per-zone summary every few seconds.
+# Works on device without Tracy (read it from logcat). Tracy still wins in
+# the editor configurations that define TRACY_ENABLE.
+option(GAM300_FRAME_STATS
+    "Log per-zone frame timing summaries from the in-engine frame profiler"
+    OFF
+)
+if(GAM300_FRAME_STATS)
+    target_compile_definitions(Engine PUBLIC GAM300_FRAME_STATS)
+endif()
+
 # Define ANDROID for Android builds (needed for #ifdef ANDROID in code)
 if(ANDROID)
-    set(GAM300_ANDROID_RENDER_SCALE "0.75" CACHE STRING
+    # Both default to 1.0 so Android renders at native resolution like the
+    # desktop build. Lowering the maximum (e.g. 0.75) trades sharpness for
+    # fill-rate on GPU-bound phones; a minimum below the maximum lets the
+    # runtime drop the scale further after sustained missed frame deadlines.
+    set(GAM300_ANDROID_RENDER_SCALE "1.0" CACHE STRING
         "Maximum Android internal 3D render scale; the final image is upscaled to the native surface")
-    set(GAM300_ANDROID_MIN_RENDER_SCALE "0.50" CACHE STRING
+    set(GAM300_ANDROID_MIN_RENDER_SCALE "1.0" CACHE STRING
         "Minimum Android internal 3D render scale used after sustained missed frame deadlines")
     set(GAM300_ANDROID_MAX_TEXTURE_SIZE "1024" CACHE STRING
         "Maximum resident dimension for non-UI Android textures")

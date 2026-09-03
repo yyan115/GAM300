@@ -417,8 +417,14 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     //    it is removed from the physics simulation entirely.
     // =========================================================================================
     for (auto& e : entities) {
-        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+        // The system signature admits an entity that has either component, so
+        // collider-only and rigid-body-only entities are members of this set
+        // and must be skipped rather than dereferenced.
+        auto rbOpt = ecsManager.TryGetComponent<RigidBodyComponent>(e);
+        auto colOpt = ecsManager.TryGetComponent<ColliderComponent>(e);
+        if (!rbOpt || !colOpt) continue;
+        auto& rb = rbOpt->get();
+        auto& col = colOpt->get();
         const bool shouldBeActive = col.enabled && rb.enabled &&
             ecsManager.IsEntityActiveInHierarchy(e);
 
@@ -656,7 +662,10 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     }
 
     // ========== RUN PHYSICS SIMULATION ==========
-    physics.Update(safeFixedDt, /*collisionSteps=*/1, temp.get(), jobs.get());
+    {
+        PROFILE_SCOPED("Physics::JoltStep");
+        physics.Update(safeFixedDt, /*collisionSteps=*/1, temp.get(), jobs.get());
+    }
 
     // ========== DISPATCH COLLISION/TRIGGER EVENTS TO LUA ==========
     if (contactListener && ecsManager.scriptSystem) {
@@ -794,6 +803,7 @@ void PhysicsSystem::EditorUpdate(ECSManager& ecs) {
 }
 
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
+    PROFILE_FUNCTION();
 //#ifdef __ANDROID__
 //    static int syncCount = 0;
 //    if (syncCount++ % 60 == 0) {

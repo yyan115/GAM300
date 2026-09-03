@@ -463,6 +463,7 @@ void PostProcessingManager::RenderScreenQuad()
     }
 
     VAO::BindID(screenQuadVAO);
+    PROFILE_COUNT("GL::DrawCalls", 1);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 

@@ -1,6 +1,7 @@
 // ScriptSystem.cpp
 #include "pch.h"
 #include "Script/ScriptSystem.hpp"
+#include "Script/LuaHeapReport.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
 #include "Script/LuaBindableComponents.hpp"
@@ -970,6 +971,11 @@ void ScriptSystem::Update()
     // Use scaled delta time so coroutines respect pause state
     Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
     lua_State* const luaState = Scripting::GetLuaState();
+    if (luaState) {
+        // Heap size in KB; a sawtooth in the profiler report is the collector.
+        PROFILE_COUNT("Lua::HeapKB", lua_gc(luaState, LUA_GCCOUNT, 0));
+    }
+    LuaHeapReport::Tick(luaState);
 
     // Single lock for entire Update — m_runtimeMap is only accessed from main thread
     // (SequentialSystemOrchestrator::Update is single-threaded)

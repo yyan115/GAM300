@@ -552,7 +552,10 @@ namespace Scripting {
         }
         if (!snapshotL) return;
         m_activeUsers.fetch_add(1);
-        lua_gc(snapshotL, LUA_GCSTEP, 1);
+        {
+            PROFILE_SCOPED("Lua::GCStep");
+            lua_gc(snapshotL, LUA_GCSTEP, 1);
+        }
         m_activeUsers.fetch_sub(1);
         m_cv.notify_all();
     }
@@ -565,7 +568,10 @@ namespace Scripting {
         }
         if (!snapshotL) return;
         m_activeUsers.fetch_add(1);
-        lua_gc(snapshotL, LUA_GCCOLLECT, 0);
+        {
+            PROFILE_SCOPED("Lua::GCCollect");
+            lua_gc(snapshotL, LUA_GCCOLLECT, 0);
+        }
         m_activeUsers.fetch_sub(1);
         m_cv.notify_all();
     }
@@ -635,12 +641,16 @@ namespace Scripting {
         lua_State* L = luaL_newstate();
         if (!L) return false;
         if (m_config.openLibs) luaL_openlibs(L);
-        // Gameplay scripts create many short-lived tables and closures every
-        // frame. Lua 5.4's generational collector reclaims those in cheap minor
-        // collections instead of periodically sweeping the whole heap, which
-        // keeps frame times steadier on mobile CPUs. Parameters stay at Lua's
-        // defaults (0 keeps the current value).
-        lua_gc(L, LUA_GCGEN, 0, 0);
+        // Incremental collection with a 130% pause (a cycle starts once the
+        // heap is 30% above the live size; Lua's default is 200%). Measured in
+        // the level on desktop (Sep 2026): generational mode let the heap grow
+        // ~1 MB every 5 s until a major collection paused a frame for 8-19 ms;
+        // the incremental default let the heap reach 22 MB between cycles and
+        // paused 3-5 ms per cycle; at 130% the heap stays under 7 MB and no
+        // collector pause exceeded 2.4 ms, at the same average cost. Phones are
+        // several times slower, so shorter pauses matter more there. Step
+        // multiplier and step size stay at Lua's defaults (0 keeps them).
+        lua_gc(L, LUA_GCINC, 130, 0, 0);
         register_core_bindings(L);
         out = L;
         return true;

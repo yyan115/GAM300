@@ -49,8 +49,8 @@ flat in uint vLightMask;
 // Fields are packed into vec4s to keep std140 layout deterministic and avoid
 // vec3-padding footguns.
 // ============================================================================
-#define NR_POINT_LIGHTS 8
-#define NR_SPOT_LIGHTS 4
+#define NR_POINT_LIGHTS 16
+#define NR_SPOT_LIGHTS 8
 
 struct PointLightGPU {
     highp vec4 positionInvRange; // xyz = position, w = 1/range (0 = unlimited)

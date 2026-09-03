@@ -157,6 +157,7 @@ void Mesh::DrawPrewarmTriangle()
 
 	Prewarm();
 	vao.Bind();
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElements(GL_TRIANGLES, 3, ebo.GetIndexType(), nullptr);
 }
 
@@ -210,6 +211,7 @@ void Mesh::DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount
 
 	// Bind VAO and draw instanced
 	vao.Bind();
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElementsInstanced(
 		GL_TRIANGLES,
 		static_cast<GLsizei>(indices.size()),
@@ -240,6 +242,7 @@ void Mesh::DrawInstancedDepthOnly(VBO& instanceVBO, GLsizei instanceCount)
 
 	// Bind VAO and draw instanced (no textures or materials for depth pass)
 	vao.Bind();
+	PROFILE_COUNT("GL::DepthDrawCalls", 1);
 	glDrawElementsInstanced(GL_TRIANGLES,
 		static_cast<GLsizei>(indices.size()),
 		ebo.GetIndexType(),
@@ -602,6 +605,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 #endif
 
 
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElements(
 		GL_TRIANGLES,
 		static_cast<GLsizei>(indices.size()),
@@ -628,6 +632,7 @@ void Mesh::DrawGeometryOnly()
 	}
 
 	vao.Bind();
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElements(
 		GL_TRIANGLES,
 		static_cast<GLsizei>(indices.size()),
@@ -644,6 +649,7 @@ void Mesh::DrawDepthOnly()
 	}
 
 	vao.Bind();
+	PROFILE_COUNT("GL::DepthDrawCalls", 1);
 	glDrawElements(
 		GL_TRIANGLES,
 		static_cast<GLsizei>(indices.size()),

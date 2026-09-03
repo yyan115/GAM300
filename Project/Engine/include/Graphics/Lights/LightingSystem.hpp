@@ -14,15 +14,19 @@ class Camera;
 // Shader-side array sizes for the Android lighting UBO — must match
 // NR_POINT_LIGHTS / NR_SPOT_LIGHTS in defaultandroid.frag EXACTLY.
 // Only used by the Android UBO path; PC keeps the old per-draw uniform path.
-constexpr int LIGHTING_UBO_MAX_POINT_LIGHTS = 8;
-constexpr int LIGHTING_UBO_MAX_SPOT_LIGHTS = 4;
+constexpr int LIGHTING_UBO_MAX_POINT_LIGHTS = 16;
+constexpr int LIGHTING_UBO_MAX_SPOT_LIGHTS = 8;
 
 class LightingSystem : public System {
 public:
 #ifdef __ANDROID__
-    int MAX_POINT_LIGHTS = 8;
-    int MAX_SPOT_LIGHTS = 4;
-    const int MAX_VISIBLE_POINT_LIGHTS = 8;
+    // Same capacity the mobile renderer shipped with before the performance
+    // pass; the per-object light masks keep the fragment cost proportional to
+    // the lights that actually reach each draw, so the cap does not need to
+    // cut lights the desktop build shows.
+    int MAX_POINT_LIGHTS = 16;
+    int MAX_SPOT_LIGHTS = 8;
+    const int MAX_VISIBLE_POINT_LIGHTS = 16;
 #else
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
@@ -56,7 +60,7 @@ public:
     //
     // Only values consumed by the mobile PBR shader are stored here. Keeping the
     // block compact reduces uniform-cache pressure in every lit fragment.
-    // Total size: 736 bytes.
+    // Total size: 1376 bytes.
     struct alignas(16) LightingUBOData {
         // Ambient (globals)
         glm::vec4 ambSkyIntensity;   // xyz = ambientSky,     w = ambientIntensity
@@ -86,7 +90,7 @@ public:
         //                             z = intensity, w = 1/(cutOff-outerCutOff)
         glm::vec4 spotLights[LIGHTING_UBO_MAX_SPOT_LIGHTS * 4];
     };
-    static_assert(sizeof(LightingUBOData) == 736,
+    static_assert(sizeof(LightingUBOData) == 1376,
         "Lighting UBO must match defaultandroid.frag's std140 block");
 
     // Allocate the UBO and bind to binding point 1 (CameraBlock uses 0).

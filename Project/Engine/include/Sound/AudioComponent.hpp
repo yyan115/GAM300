@@ -44,6 +44,7 @@ private:
     ChannelHandle CurrentChannel{ 0 };
     std::shared_ptr<Audio> CachedAudioAsset{ nullptr };
     bool AssetLoaded{ false };
+    float LoadRetrySeconds{ 0.0f };  // Cooldown before retrying a failed asset load
     bool WasPlayingBeforePause{ false };
     bool PlayOnAwakeTriggered{ false };
     ChannelHandle LastPropertiesChannel{ 0 };

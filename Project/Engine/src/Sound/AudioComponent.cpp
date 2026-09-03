@@ -5,6 +5,14 @@
 #include "Logging.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "TimeManager.hpp"
+
+namespace {
+
+// How long a component waits before retrying an audio asset load that failed.
+constexpr float kAudioLoadRetrySeconds = 1.0f;
+
+}  // namespace
 
 #pragma region Reflection
 REFL_REGISTER_START(AudioComponent)
@@ -256,7 +264,15 @@ bool AudioComponent::HasValidClip() const {
 
 void AudioComponent::UpdateComponent(const Vector3D* worldPosition) {
     if (!AssetLoaded && (audioGUID.high != 0 || audioGUID.low != 0)) {
-        EnsureAssetLoaded();
+        // A clip that failed to load (missing asset, audio device unavailable)
+        // is retried on a cooldown: every attempt reads the file and asks FMOD
+        // to decode it, far too expensive to repeat per component per frame.
+        if (LoadRetrySeconds > 0.0f) {
+            LoadRetrySeconds -= static_cast<float>(TimeManager::GetUnscaledDeltaTime());
+        }
+        else if (!EnsureAssetLoaded()) {
+            LoadRetrySeconds = kAudioLoadRetrySeconds;
+        }
     }
 
     if (worldPosition) {

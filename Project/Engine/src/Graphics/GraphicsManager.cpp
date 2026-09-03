@@ -1241,6 +1241,7 @@ void GraphicsManager::RenderText(const TextRenderItem& item)
 		fontVBO->UpdateBoundData(
 			m_textVertexScratch.data(),
 			m_textVertexScratch.size() * sizeof(glm::vec4));
+		PROFILE_COUNT("GL::DrawCalls", 1);
 		glDrawArrays(
 			GL_TRIANGLES,
 			0,
@@ -1332,10 +1333,12 @@ void GraphicsManager::RenderDebugDraw(const DebugDrawComponent& item)
 		if (drawCommand.type == DebugDrawType::LINE)
 		{
 			glLineWidth(drawCommand.lineWidth);
+			PROFILE_COUNT("GL::DrawCalls", 1);
 			glDrawArrays(GL_LINES, 0, indexCount);
 		}
 		else
 		{
+			PROFILE_COUNT("GL::DrawCalls", 1);
 			glDrawElements(GL_LINES, indexCount, GL_UNSIGNED_INT, 0);
 		}
 		currentVAO->Unbind();
@@ -1448,6 +1451,7 @@ void GraphicsManager::RenderParticleInstances(
 	assert(eboBinding != 0 && "VAO has no EBO bound after setup");
 #endif
 
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(particleCount));
 }
 
@@ -1592,6 +1596,7 @@ void GraphicsManager::RenderSprite(const SpriteRenderItem& item)
 #endif
 
 	// The SpriteSystem should have already bound the VAO, so just draw
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -2158,6 +2163,7 @@ void GraphicsManager::RenderSkybox()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cameraComp.skyboxTexture->ID);
 	skyboxShader->setInt("skyboxTexture", 0);
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	VAO::BindID(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -2409,6 +2415,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 
 	// --- Draw ---
 	item.fogVAO->Bind();
+	PROFILE_COUNT("GL::DrawCalls", 1);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	item.fogVAO->Unbind();
 

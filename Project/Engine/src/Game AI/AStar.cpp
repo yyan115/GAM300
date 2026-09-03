@@ -46,6 +46,8 @@ GridPos AStar::FindNearestWalkable(const NavGrid& grid, const GridPos& target)
 
 std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, float gx, float gz)
 {
+    PROFILE_FUNCTION();
+
     //std::cout << "[AStar] ========== PATH REQUEST ==========\n";
     //std::cout << "[AStar] World coords: (" << sx << "," << sz << ") -> (" << gx << "," << gz << ")\n";
 
@@ -94,9 +96,30 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
 
     const int R = grid.Rows();
     const int C = grid.Cols();
-    std::vector<Node> nodes(R * C);
+    const std::size_t cellCount = static_cast<std::size_t>(R) * static_cast<std::size_t>(C);
+    if (m_nodes.size() != cellCount)
+    {
+        m_nodes.assign(cellCount, Node{});
+        m_generation = 0;
+    }
+    if (++m_generation == 0)
+    {
+        // Generation counter wrapped; every stale stamp is ambiguous now.
+        std::fill(m_nodes.begin(), m_nodes.end(), Node{});
+        m_generation = 1;
+    }
+    const uint32_t generation = m_generation;
 
     auto idx = [C](int r, int c) { return r * C + c; };
+    auto nodeAt = [this, &idx, generation](int r, int c) -> Node& {
+        Node& n = m_nodes[idx(r, c)];
+        if (n.generation != generation)
+        {
+            n = Node{};
+            n.generation = generation;
+        }
+        return n;
+    };
 
     struct PQItem {
         float f;
@@ -106,7 +129,7 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
 
     std::priority_queue<PQItem> open;
 
-    Node& sN = nodes[idx(start.row, start.col)];
+    Node& sN = nodeAt(start.row, start.col);
     sN.g = 0.0f;
     sN.f = HeuristicOctile(start, goal);
     sN.parent = { -1, -1 };
@@ -122,7 +145,7 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
     while (!open.empty())
     {
         auto cur = open.top(); open.pop();
-        Node& curN = nodes[idx(cur.r, cur.c)];
+        Node& curN = nodeAt(cur.r, cur.c);
         if (curN.closed) continue;
 
         curN.closed = true;
@@ -151,7 +174,7 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
             float stepCost = diag ? 1.41421356f : 1.0f;
             float tentativeG = curN.g + stepCost;
 
-            Node& nN = nodes[idx(nr, nc)];
+            Node& nN = nodeAt(nr, nc);
             if (tentativeG < nN.g)
             {
                 nN.g = tentativeG;
@@ -164,7 +187,7 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
     }
 
     // reconstruct if reached
-    Node& gN = nodes[idx(goal.row, goal.col)];
+    Node& gN = nodeAt(goal.row, goal.col);
     if (!std::isfinite(gN.g))
         return {};
 
@@ -174,7 +197,7 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
     while (!(cur.row == -1 && cur.col == -1))
     {
         path.push_back(grid.CellToWorld(cur.row, cur.col));
-        Node& n = nodes[idx(cur.row, cur.col)];
+        Node& n = nodeAt(cur.row, cur.col);
         cur = n.parent;
     }
 
