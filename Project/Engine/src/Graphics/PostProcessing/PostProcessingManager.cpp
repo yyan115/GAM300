@@ -1,12 +1,12 @@
 #include "pch.h"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
+#include "Graphics/VAO.h"
 #include "Logging.hpp"
-#include <WindowManager.hpp>
 
 namespace {
 void CheckGLError(const char* location) {
-#if !defined(NDEBUG) || defined(_WIN32)
+#if defined(GAM300_GL_VALIDATION) || defined(_WIN32) || (!defined(NDEBUG) && !defined(ANDROID))
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[OpenGL Error] at ", location, ": ", err, "\n");
@@ -40,6 +40,7 @@ bool PostProcessingManager::Initialize()
     hdrColorTexture = 0;
     hdrBloomEmissionTexture = 0;
     hdrDepthTexture = 0;
+    hdrDepthRenderbuffer = 0;
     hdrWidth = 0;
     hdrHeight = 0;
     screenQuadVAO = 0;
@@ -65,7 +66,9 @@ bool PostProcessingManager::Initialize()
         return false;
     }
 
-    // Initialize SSAO effect (applied before blur/bloom)
+    // Android's lean tone-mapping shader does not consume SSAO. Do not create
+    // or execute an invisible two-pass effect on bandwidth-limited mobile GPUs.
+#ifndef ANDROID
     ssaoEffect = std::make_unique<SSAOEffect>();
     if (!ssaoEffect->Initialize())
     {
@@ -73,8 +76,12 @@ bool PostProcessingManager::Initialize()
         // Non-fatal: SSAO is optional
     }
     ssaoEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
+#endif
 
-    // Initialize Directional Blur effect (applied after Gaussian blur)
+    // Initialize Directional Blur effect (applied after Gaussian blur).
+    // There is no GLES directional-blur shader; keeping a dead effect object on
+    // Android only causes failed resource work and pointless per-frame state.
+#ifndef ANDROID
     directionalBlurEffect = std::make_unique<DirectionalBlurEffect>();
     if (!directionalBlurEffect->Initialize())
     {
@@ -82,6 +89,7 @@ bool PostProcessingManager::Initialize()
         // Non-fatal: directional blur is optional
     }
     directionalBlurEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
+#endif
 
     // Initialize Bloom effect (applied after blur, before HDR tonemapping)
     bloomEffect = std::make_unique<BloomEffect>();
@@ -92,7 +100,9 @@ bool PostProcessingManager::Initialize()
     }
     bloomEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
 
-    CreateHDRFramebuffer(RunTimeVar::window.width, RunTimeVar::window.height);
+    // Allocate lazily in BeginHDRRender. Android renders below native
+    // resolution, so allocating a native-size target here would immediately be
+    // deleted and recreated on the first frame.
     initialized = true;
     ENGINE_PRINT("[PostProcessingManager] Initialized successfully\n");
     return true;
@@ -140,7 +150,8 @@ void PostProcessingManager::Shutdown()
     ENGINE_PRINT("[PostProcessingManager] Shutdown complete\n");
 }
 
-void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outputFBO, int width, int height)
+void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outputFBO,
+    int renderWidth, int renderHeight, int outputWidth, int outputHeight)
 {
     PROFILE_FUNCTION();
 
@@ -150,26 +161,35 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         return;
     }
 
+    if (outputWidth <= 0) outputWidth = renderWidth;
+    if (outputHeight <= 0) outputHeight = renderHeight;
+
     // Current pipeline: SSAO -> Blur -> Directional Blur -> Bloom -> HDR tone mapping -> Output
 
     unsigned int currentInput = inputTexture;
     unsigned int currentOutput = outputFBO;
+#ifdef ANDROID
+    unsigned int resolvedBloomTexture = 0;
+    float resolvedBloomIntensity = 0.0f;
+#endif
 
-    // Apply SSAO (generates half-res AO texture, consumed by HDR pass)
+    // Apply SSAO (generates half-res AO texture, consumed by HDR pass).
+#ifndef ANDROID
     if (ssaoEffect && ssaoEffect->IsEnabled())
     {
         PROFILE_SCOPED("PostProcess::SSAO");
         ssaoEffect->SetDepthTexture(hdrDepthTexture);
         ssaoEffect->SetProjectionMatrix(currentProjection);
         ssaoEffect->SetInvProjectionMatrix(currentInvProjection);
-        ssaoEffect->Apply(currentInput, hdrFramebuffer, width, height);
+        ssaoEffect->Apply(currentInput, hdrFramebuffer, renderWidth, renderHeight);
     }
+#endif
 
     // Apply blur before tonemapping (modifies HDR framebuffer in-place)
     if (blurEffect && blurEffect->IsEnabled() && blurEffect->GetIntensity() > 0.01f)
     {
         PROFILE_SCOPED("PostProcess::Blur");
-        blurEffect->Apply(currentInput, hdrFramebuffer, width, height);
+        blurEffect->Apply(currentInput, hdrFramebuffer, renderWidth, renderHeight);
         // hdrColorTexture now contains blurred image, currentInput still points to it
     }
 
@@ -177,7 +197,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     if (directionalBlurEffect && directionalBlurEffect->IsEnabled() && directionalBlurEffect->GetIntensity() > 0.01f)
     {
         PROFILE_SCOPED("PostProcess::DirectionalBlur");
-        directionalBlurEffect->Apply(currentInput, hdrFramebuffer, width, height);
+        directionalBlurEffect->Apply(currentInput, hdrFramebuffer, renderWidth, renderHeight);
     }
 
     // Apply bloom using per-entity emission buffer (no threshold extraction)
@@ -189,14 +209,24 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     {
         PROFILE_SCOPED("PostProcess::Bloom");
         bloomEffect->SetBloomEmissionTexture(hdrBloomEmissionTexture);
-        bloomEffect->Apply(currentInput, hdrFramebuffer, width, height);
+        bloomEffect->Apply(currentInput, hdrFramebuffer, renderWidth, renderHeight);
+#ifdef ANDROID
+        resolvedBloomTexture = bloomEffect->GetResolvedBloomTexture();
+        if (resolvedBloomTexture != 0) {
+            resolvedBloomIntensity = bloomEffect->GetIntensity();
+        }
+#endif
     }
 
     // Apply HDR effect (shader will bypass tonemapping if disabled)
     if (hdrEffect)
     {
         PROFILE_SCOPED("PostProcess::HDR");
-        // Pass vignette/color grading settings to HDR effect
+        // Android's compact shader intentionally omits these effects.
+#ifdef ANDROID
+        hdrEffect->SetBloomInput(
+            resolvedBloomTexture, resolvedBloomIntensity);
+#else
         hdrEffect->SetVignetteEnabled(vignetteEnabled);
         hdrEffect->SetVignetteIntensity(vignetteIntensity_);
         hdrEffect->SetVignetteSmoothness(vignetteSmoothness_);
@@ -221,22 +251,10 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
             hdrEffect->SetSSAOEnabled(false);
             hdrEffect->SetSSAOTexture(0);
         }
+#endif
 
-        // Bind output framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, currentOutput);
-        glViewport(0, 0, width, height);
-
-        // Disable depth testing
-        glDisable(GL_DEPTH_TEST);
-
-        // Clear output
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Apply the effect (shader checks enableTonemapping uniform)
-        hdrEffect->Apply(currentInput, currentOutput, width, height);
-
-        // Re-enable depth testing
-        glEnable(GL_DEPTH_TEST);
+        // Apply the effect (it binds and fully overwrites the output).
+        hdrEffect->Apply(currentInput, currentOutput, outputWidth, outputHeight);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -259,10 +277,15 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glGenFramebuffers(1, &hdrFramebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, hdrFramebuffer);
 
-    // Create HDR color texture (16-bit floating point)
+    // Create HDR color texture. Android uses packed HDR because the final
+    // scene target does not need alpha; this halves color-buffer bandwidth.
     glGenTextures(1, &hdrColorTexture);
     glBindTexture(GL_TEXTURE_2D, hdrColorTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -295,7 +318,21 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 #endif
 
-    // Create depth texture (sampleable, so fog can read scene depth for soft intersections)
+    // Desktop fog/SSAO sample scene depth. Android disables both consumers, so
+    // use an attachment-only renderbuffer; mobile tile drivers can keep it
+    // transient and discard it without backing a full sampled texture.
+#ifdef __ANDROID__
+    glGenRenderbuffers(1, &hdrDepthRenderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, hdrDepthRenderbuffer);
+    glRenderbufferStorage(
+        GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glFramebufferRenderbuffer(
+        GL_FRAMEBUFFER,
+        GL_DEPTH_ATTACHMENT,
+        GL_RENDERBUFFER,
+        hdrDepthRenderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+#else
     glGenTextures(1, &hdrDepthTexture);
     glBindTexture(GL_TEXTURE_2D, hdrDepthTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
@@ -305,6 +342,7 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, hdrDepthTexture, 0);
+#endif
 
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -332,6 +370,11 @@ void PostProcessingManager::DeleteHDRFramebuffer()
         glDeleteTextures(1, &hdrDepthTexture);
         hdrDepthTexture = 0;
     }
+    if (hdrDepthRenderbuffer != 0)
+    {
+        glDeleteRenderbuffers(1, &hdrDepthRenderbuffer);
+        hdrDepthRenderbuffer = 0;
+    }
     if (hdrFramebuffer != 0)
     {
         glDeleteFramebuffers(1, &hdrFramebuffer);
@@ -353,15 +396,8 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, hdrFramebuffer);
     glViewport(0, 0, width, height);
 
-    // Clear bloom emission texture (attachment 1) to black
-    // This is separate from the main color clear so the scene background color
-    // doesn't leak into the bloom emission buffer
-    GLenum bloomAttachment = GL_COLOR_ATTACHMENT1;
-    glDrawBuffers(1, &bloomAttachment);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Restore single draw buffer (attachment 0 only) for normal rendering
+    // Start with the main color attachment only. The bloom attachment is
+    // cleared and enabled later only if this frame actually emits bloom.
 #ifdef ANDROID
     GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, drawBufs);
@@ -370,15 +406,36 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
 #endif
 }
 
-void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int height)
+void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int renderWidth, int renderHeight,
+    int outputWidth, int outputHeight)
 {
     PROFILE_FUNCTION();
+
+#ifdef ANDROID
+    // No Android post-process consumes scene depth. Avoid storing the tile
+    // depth attachment back to memory; the next frame clears it before use.
+    const GLenum depthAttachment = GL_DEPTH_ATTACHMENT;
+    glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, &depthAttachment);
+#endif
 
     // Unbind HDR framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Apply post-processing effects (HDR tone mapping, etc.)
-    Process(hdrColorTexture, outputFBO, width, height);
+    Process(hdrColorTexture, outputFBO, renderWidth, renderHeight, outputWidth, outputHeight);
+}
+
+void PostProcessingManager::PrepareBloomMRT()
+{
+    // Clear emission only on frames that will consume it. Keep attachment 1
+    // disabled afterwards so ordinary geometry does not pay a second
+    // full-resolution color write just because one object glows.
+    const unsigned int bloomAttachment = GL_COLOR_ATTACHMENT1;
+    glDrawBuffers(1, &bloomAttachment);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    DisableBloomMRT();
 }
 
 void PostProcessingManager::EnableBloomMRT()
@@ -405,9 +462,8 @@ void PostProcessingManager::RenderScreenQuad()
         return;
     }
 
-    glBindVertexArray(screenQuadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6); 
-    glBindVertexArray(0);
+    VAO::BindID(screenQuadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void PostProcessingManager::ResetRuntimeState()
@@ -481,7 +537,7 @@ void PostProcessingManager::CreateScreenQuad()
     glGenVertexArrays(1, &screenQuadVAO);
     glGenBuffers(1, &screenQuadVBO);
 
-    glBindVertexArray(screenQuadVAO);
+    VAO::BindID(screenQuadVAO);
     glBindBuffer(GL_ARRAY_BUFFER, screenQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 
@@ -493,7 +549,7 @@ void PostProcessingManager::CreateScreenQuad()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-    glBindVertexArray(0);
+    VAO::BindID(0);
 
     ENGINE_PRINT("[PostProcessingManager] Screen quad created\n");
 }

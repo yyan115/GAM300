@@ -1,6 +1,7 @@
 #pragma once
 
 #include "InputManager.h"
+#include "ECS/Entity.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -98,6 +99,7 @@ private:
         std::string entityName;      // Entity name to look up (e.g., "(ANDROID)AttackButton")
 
         // Cached entity data (updated each frame)
+        Entity cachedEntity = INVALID_ENTITY;
         bool entityFound = false;
         bool circleHitbox = false;   // If true, use circle hit test (radius = min(w,h)/2)
         glm::vec2 entityCenter;      // Screen position (normalized 0-1)
@@ -152,6 +154,11 @@ private:
         bool beganConsumed = false;  // True after Began phase has been seen for one full frame
     };
 
+    struct ActionState {
+        bool current = false;
+        bool previous = false;
+    };
+
     // Touches that ended this frame (kept for one frame with Ended phase)
     std::vector<TouchPoint> m_endedTouches;
 
@@ -171,10 +178,13 @@ private:
     glm::vec2 m_dragDelta;           // accumulates during the frame (written by OnTouchMove)
     glm::vec2 m_committedDragDelta;  // snapshotted at start of Update; read by GetAxis("Look")
     bool m_isDragging = false;
+    glm::vec2 m_viewportSize{1920.0f, 1080.0f};
+    glm::vec2 m_gameResolution{1920.0f, 1080.0f};
+    float m_entityTransformRefreshTimer = 0.0f;
+    bool m_entityTransformsInitialized = false;
 
     // Action state tracking
-    std::unordered_set<std::string> m_currentActions;
-    std::unordered_set<std::string> m_previousActions;
+    std::unordered_map<std::string, ActionState> m_actionStates;
     std::unordered_set<std::string> m_pendingActions;  // Buffered from OnTouchDown for quick taps
 
     // Thread-safe touch event queue (UI thread writes, game thread drains in Update)
@@ -195,7 +205,7 @@ private:
     /**
      * @brief Look up all entity transforms and cache their positions/sizes
      */
-    void UpdateEntityTransforms();
+    void UpdateEntityTransforms(bool pressedOnly = false);
 
     /**
      * @brief Check if a touch point is inside an entity's bounds

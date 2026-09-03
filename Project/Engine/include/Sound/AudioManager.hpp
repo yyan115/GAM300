@@ -97,6 +97,7 @@ public:
     void SetChannelPriority(ChannelHandle channel, int priority);
     void SetChannelStereoPan(ChannelHandle channel, float pan);
     void SetChannelDopplerLevel(ChannelHandle channel, float level);
+    void QueueChannelUpdate(ChannelHandle channel, const ChannelUpdate& update);
 
     // Batch update processing
     void ApplyBatchUpdates();
@@ -159,6 +160,8 @@ private:
 
     // Pending batch updates
     std::unordered_map<ChannelHandle, ChannelUpdate> PendingUpdates;
+    std::unordered_map<ChannelHandle, ChannelUpdate> PendingUpdatesScratch;
+    std::vector<ChannelHandle> m_stoppedChannelsScratch;
 
     // Channel groups (buses)
     std::unordered_map<std::string, FMOD_CHANNELGROUP*> BusMap;

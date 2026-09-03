@@ -31,6 +31,7 @@ private:
     EGLContext context;
     EGLSurface surface;
     EGLConfig  savedConfig;
+    int swapInterval;
     int windowWidth, windowHeight;
     bool shouldClose;
     bool isFocused;

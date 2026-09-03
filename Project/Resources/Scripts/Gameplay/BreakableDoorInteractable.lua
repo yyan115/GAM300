@@ -167,15 +167,10 @@ return Component {
         if self._transform then
             pcall(function()
                 -- Position
-                if Engine and Engine.GetTransformWorldPosition then
-                    local p = Engine.GetTransformWorldPosition(self._transform)
-                    if p then
-                        self._basePos = {
-                            x = p[1] or p.x or 0,
-                            y = p[2] or p.y or 0,
-                            z = p[3] or p.z or 0,
-                        }
-                    end
+                if Engine and Engine.GetTransformWorldPositionXYZ then
+                    local x, y, z =
+                        Engine.GetTransformWorldPositionXYZ(self._transform)
+                    self._basePos = { x = x, y = y, z = z }
                 elseif self._transform.localPosition then
                     local p = self._transform.localPosition
                     self._basePos = { x = p.x or 0, y = p.y or 0, z = p.z or 0 }
@@ -274,6 +269,8 @@ return Component {
         self._detachDisarmed = false
         self._endpointPos    = nil
         self._endpointPrev   = nil
+        self._endpointPosScratch = {x=0, y=0, z=0}
+        self._endpointPrevScratch = {0, 0, 0}
         self._currentStep    = 0   -- 0 = closed; counts up with each mash tap
 
         -- ── Subscribe to chain events ─────────────────────────────────────
@@ -283,7 +280,7 @@ return Component {
         end
 
         self._subMoved = _G.event_bus.subscribe("chain.endpoint_moved", function(payload)
-            if payload then pcall(function() self:_onEndpointMoved(payload) end) end
+            if payload then pcall(self._onEndpointMoved, self, payload) end
         end)
         self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function(payload)
             if payload then pcall(function() self:_onChainRetracted(payload) end) end
@@ -638,9 +635,17 @@ return Component {
 
         -- Track previous endpoint position for segment-sweep
         if self._endpointPos then
-            self._endpointPrev = { self._endpointPos.x, self._endpointPos.y, self._endpointPos.z }
+            local previous = self._endpointPrevScratch
+            previous[1], previous[2], previous[3] =
+                self._endpointPos.x, self._endpointPos.y, self._endpointPos.z
+            self._endpointPrev = previous
         end
-        if payload.position then self._endpointPos = payload.position end
+        if payload.position then
+            local position = self._endpointPosScratch
+            position.x, position.y, position.z =
+                payload.position.x, payload.position.y, payload.position.z
+            self._endpointPos = position
+        end
 
         if self._hitFired       then return end
         if self._detachDisarmed then return end
@@ -830,12 +835,8 @@ return Component {
     _getWorldPos = function(self)
         local tr = self._transform
         if not tr then return nil end
-        if Engine and Engine.GetTransformWorldPosition then
-            local ok, p = pcall(function() return Engine.GetTransformWorldPosition(tr) end)
-            if ok and p then
-                if type(p) == "table" then return p[1] or p.x or 0, p[2] or p.y or 0, p[3] or p.z or 0 end
-                if type(p) == "number" then return p, 0, 0 end
-            end
+        if Engine and Engine.GetTransformWorldPositionXYZ then
+            return Engine.GetTransformWorldPositionXYZ(tr)
         end
         if type(tr.GetPosition) == "function" then
             local ok, a, b, c = pcall(function() return tr:GetPosition() end)

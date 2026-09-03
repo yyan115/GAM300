@@ -24,12 +24,55 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Input/AndroidInputManager.h"
 #include "Settings/GameSettings.hpp"
 
+namespace {
+struct CachedEglBinding {
+    const AndroidPlatform* owner = nullptr;
+    EGLDisplay display = EGL_NO_DISPLAY;
+    EGLContext context = EGL_NO_CONTEXT;
+    EGLSurface surface = EGL_NO_SURFACE;
+};
+
+// All EGL binding changes go through AndroidPlatform. Remembering the binding
+// per thread avoids four EGL driver queries at the start of every frame.
+thread_local CachedEglBinding currentEglBinding;
+
+bool IsCachedBinding(
+    const AndroidPlatform* owner,
+    EGLDisplay display,
+    EGLContext context,
+    EGLSurface surface)
+{
+    return currentEglBinding.owner == owner &&
+        currentEglBinding.display == display &&
+        currentEglBinding.context == context &&
+        currentEglBinding.surface == surface;
+}
+
+void CacheBinding(
+    const AndroidPlatform* owner,
+    EGLDisplay display,
+    EGLContext context,
+    EGLSurface surface)
+{
+    currentEglBinding = {owner, display, context, surface};
+}
+
+void ClearCachedBinding(const AndroidPlatform* owner)
+{
+    if (currentEglBinding.owner == owner) {
+        currentEglBinding = {};
+    }
+}
+}
+
 AndroidPlatform::AndroidPlatform()
     : window(nullptr)
+    , assetManager(nullptr)
     , display(EGL_NO_DISPLAY)
     , context(EGL_NO_CONTEXT)
     , surface(EGL_NO_SURFACE)
     , savedConfig(nullptr)
+    , swapInterval(1)
     , windowWidth(0)
     , windowHeight(0)
     , shouldClose(false)
@@ -55,6 +98,11 @@ bool AndroidPlatform::InitializeWindow(int width, int height, const char* title)
 }
 
 void AndroidPlatform::DestroyWindow() {
+    if (display != EGL_NO_DISPLAY && IsCachedBinding(this, display, context, surface)) {
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    }
+    ClearCachedBinding(this);
+
     if (surface != EGL_NO_SURFACE) {
         eglDestroySurface(display, surface);
         surface = EGL_NO_SURFACE;
@@ -81,6 +129,8 @@ void AndroidPlatform::DestroySurface() {
     if (display != EGL_NO_DISPLAY) {
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     }
+    ClearCachedBinding(this);
+
     if (surface != EGL_NO_SURFACE) {
         eglDestroySurface(display, surface);
         surface = EGL_NO_SURFACE;
@@ -89,6 +139,13 @@ void AndroidPlatform::DestroySurface() {
 
 void AndroidPlatform::SwapBuffers() {
     if (surface != EGL_NO_SURFACE) {
+        // Nothing reads the window depth/stencil after this frame. Saying so
+        // lets tile-based GPUs skip writing them back to memory even when the
+        // chosen EGL config still carries those buffers.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        static constexpr GLenum kDiscardedAttachments[] = { GL_DEPTH, GL_STENCIL };
+        glInvalidateFramebuffer(GL_FRAMEBUFFER, 2, kDiscardedAttachments);
+
         eglSwapBuffers(display, surface);
     // __android_log_print(ANDROID_LOG_INFO, "GAM300", "SWAPPED BUFFED\n");
     }
@@ -113,9 +170,13 @@ void AndroidPlatform::SetWindowTitle(const char* title) {
 }
 
 void AndroidPlatform::SetVSync(bool enabled) {
-    // Android usually enforces VSync at the OS level
-    // This is a no-op stub for platform compatibility
-    (void)enabled;
+    swapInterval = enabled ? 1 : 0;
+
+    // eglSwapInterval applies to the current draw surface. Settings can be
+    // loaded before EGL exists, so always cache the value and apply it later.
+    if (IsCachedBinding(this, display, context, surface)) {
+        eglSwapInterval(display, swapInterval);
+    }
 }
 
 void AndroidPlatform::SetFullscreen(bool enabled) {
@@ -196,10 +257,17 @@ bool AndroidPlatform::InitializeGraphics() {
     if (display != EGL_NO_DISPLAY && context != EGL_NO_CONTEXT && surface == EGL_NO_SURFACE && savedConfig) {
         surface = eglCreateWindowSurface(display, savedConfig, window, nullptr);
         if (surface == EGL_NO_SURFACE) return false;
-        eglMakeCurrent(display, surface, surface, context);
+        if (!eglMakeCurrent(display, surface, surface, context)) {
+            eglDestroySurface(display, surface);
+            surface = EGL_NO_SURFACE;
+            return false;
+        }
+        CacheBinding(this, display, context, surface);
+        eglSwapInterval(display, swapInterval);
         eglQuerySurface(display, surface, EGL_WIDTH, &windowWidth);
         eglQuerySurface(display, surface, EGL_HEIGHT, &windowHeight);
         glViewport(0, 0, windowWidth, windowHeight);
+        WindowManager::fbsize_cb(static_cast<PlatformWindow>(window), windowWidth, windowHeight);
         return true;
     }
 
@@ -224,8 +292,13 @@ bool AndroidPlatform::InitializeGraphics() {
         EGL_GREEN_SIZE, 8,
         EGL_RED_SIZE, 8,
         EGL_ALPHA_SIZE, 8,
-        EGL_DEPTH_SIZE, 24,
-        EGL_STENCIL_SIZE, 8,
+        // The scene renders into its own HDR framebuffer with a private depth
+        // renderbuffer; only the fullscreen tone-map pass and depth-test-free UI
+        // touch the window surface. A swapchain depth/stencil buffer would just
+        // cost memory and tile store bandwidth on every frame, so prefer
+        // configs without one (EGL picks the smallest size that satisfies 0).
+        EGL_DEPTH_SIZE, 0,
+        EGL_STENCIL_SIZE, 0,
         EGL_NONE
     };
 
@@ -258,8 +331,12 @@ bool AndroidPlatform::InitializeGraphics() {
     // Make context current
     if (!eglMakeCurrent(display, surface, surface, context)) {
         //__android_log_print(ANDROID_LOG_ERROR, "GAM300", "Failed to make EGL context current");
+        eglDestroySurface(display, surface);
+        surface = EGL_NO_SURFACE;
         return false;
     }
+    CacheBinding(this, display, context, surface);
+    eglSwapInterval(display, swapInterval);
 
     const char* versionStr = (const char*)glGetString(GL_VERSION);
 //#ifdef ANDROID
@@ -291,6 +368,7 @@ bool AndroidPlatform::InitializeGraphics() {
 void AndroidPlatform::ReleaseContext() {
     if (display != EGL_NO_DISPLAY) {
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        ClearCachedBinding(this);
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "EGL context released from main thread");
     }
 }
@@ -300,18 +378,13 @@ bool AndroidPlatform::MakeContextCurrent() {
     //                    display, context, surface);
 
     if (display != EGL_NO_DISPLAY && surface != EGL_NO_SURFACE && context != EGL_NO_CONTEXT) {
-        // eglMakeCurrent may enter the graphics driver. Most render-time callers
-        // already run on the owning thread with this context bound, so avoid
-        // rebinding it unless the EGL state actually changed.
-        if (eglGetCurrentDisplay() == display &&
-            eglGetCurrentContext() == context &&
-            eglGetCurrentSurface(EGL_DRAW) == surface &&
-            eglGetCurrentSurface(EGL_READ) == surface) {
+        if (IsCachedBinding(this, display, context, surface)) {
             return true;
         }
 
         EGLBoolean result = eglMakeCurrent(display, surface, surface, context);
         if (result == EGL_TRUE) {
+            CacheBinding(this, display, context, surface);
             // __android_log_print(ANDROID_LOG_INFO, "GAM300", "eglMakeCurrent() SUCCESS");
             return true;
         } else {

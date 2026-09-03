@@ -9,6 +9,27 @@ local function normalize(x,y,z)
 end
 local function dot(ax,ay,az, bx,by,bz) return (ax or 0)*(bx or 0) + (ay or 0)*(by or 0) + (az or 0)*(bz or 0) end
 local function cross(ax,ay,az, bx,by,bz) return (ay or 0)*(bz or 0) - (az or 0)*(by or 0), (az or 0)*(bx or 0) - (ax or 0)*(bz or 0), (ax or 0)*(by or 0) - (ay or 0)*(bx or 0) end
+local ALT_TWIST_COS, ALT_TWIST_SIN = 0, 1 -- Fixed 90-degree twist.
+local applyNativePositions = ChainPhysics and ChainPhysics.ApplyPositions
+local applyNativeRotations = ChainPhysics and ChainPhysics.ApplyRotations
+
+local function write_local_position(tr, x, y, z)
+    local pos = tr.localPosition
+    if type(pos) == "table" or type(pos) == "userdata" then
+        pos.x, pos.y, pos.z = x,y,z
+        tr.isDirty = true
+    end
+end
+
+local function write_local_rotation(transform, w, x, y, z)
+    if transform and transform.localRotation then
+        local rot = transform.localRotation
+        if type(rot) == "table" or type(rot) == "userdata" then
+            rot.w, rot.x, rot.y, rot.z = w, x, y, z
+            transform.isDirty = true
+        end
+    end
+end
 
 -- Minimal safe write position helper uses component._write_world_pos if present, else tr:SetPosition/localPosition
 local function write_pos_safe(component, tr, x,y,z)
@@ -16,17 +37,11 @@ local function write_pos_safe(component, tr, x,y,z)
         return component:_write_world_pos(tr, x,y,z)
     end
     if type(tr) == "table" and type(tr.SetPosition) == "function" then
-        pcall(function() tr:SetPosition(x,y,z) end)
+        pcall(tr.SetPosition, tr, x,y,z)
         return true
     end
     if type(tr.localPosition) ~= "nil" then
-        pcall(function()
-            local pos = tr.localPosition
-            if type(pos) == "table" or type(pos) == "userdata" then
-                pos.x, pos.y, pos.z = x,y,z
-                tr.isDirty = true
-            end
-        end)
+        pcall(write_local_position, tr, x,y,z)
         return true
     end
     return false
@@ -36,14 +51,19 @@ function M.New(component)
     local self = {}
     self.component = component
     self.transforms = {}
+    self.models = {}
+    self.visibilityManaged = {}
+    self.visibleCount = nil
     self.proxies = {}
     -- rotation continuity storage
     self.qprev = {}
+    self.forward = {}
     return setmetatable(self, {__index = M})
 end
 
-function M:InitTransforms(transformArray)
+function M:InitTransforms(transformArray, modelArray)
     self.transforms = transformArray or {}
+    self.models = modelArray or {}
     -- cache a minimal proxy API to avoid repeated GetComponent checks
     self.proxies = {}
     for i, tr in ipairs(self.transforms) do
@@ -76,25 +96,52 @@ function M:InitTransforms(transformArray)
         end
         proxy._component_owner = self.component
         self.proxies[i] = proxy
+        self.forward[i] = self.forward[i] or {1, 0, 0}
+        self.qprev[i] = self.qprev[i] or {1, 0, 0, 0}
     end
+end
+
+function M:SetActiveCount(activeN)
+    activeN = math.max(0, math.min(activeN or #self.transforms, #self.transforms))
+    if self.visibleCount == activeN then return end
+    local setVisible = ModelRenderComponent and ModelRenderComponent.SetVisible
+    for i = 1, #self.transforms do
+        local model = self.models[i]
+        if model and type(setVisible) == "function" then
+            self.visibilityManaged[i] = pcall(setVisible, model, i <= activeN)
+        else
+            self.visibilityManaged[i] = false
+        end
+    end
+    self.visibleCount = activeN
 end
 
 -- activeN: number of links from the pool that are currently in use.
 -- Links beyond activeN are snapped to the start position (hidden in pool).
 function M:ApplyPositions(positions, activeN)
     activeN = activeN or #self.proxies
-    for i = 1, #self.proxies do
-        local proxy = self.proxies[i]
-        if not proxy then break end
-        if i <= activeN then
+    self:SetActiveCount(activeN)
+    local proxyCount = #self.proxies
+    local activeCount = math.min(activeN, proxyCount)
+    local appliedNatively = applyNativePositions
+        and applyNativePositions(self.transforms, positions, activeCount)
+    if not appliedNatively then
+        for i = 1, activeCount do
+            local proxy = self.proxies[i]
+            if not proxy then break end
             local p = positions[i]
             if p then
                 proxy:SetPosition(p[1], p[2], p[3])
             end
-        else
-            -- Pool link not in use: snap to start position to hide it
+        end
+    end
+    -- If a link has no model visibility binding, retain the old positional
+    -- fallback so an unused mesh cannot remain visible away from the hand.
+    for i = activeCount + 1, proxyCount do
+        if not self.visibilityManaged[i] then
+            local proxy = self.proxies[i]
             local p = positions[1]
-            if p then
+            if proxy and p then
                 proxy:SetPosition(p[1], p[2], p[3])
             end
         end
@@ -108,8 +155,8 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
     local n = activeN
     if n == 0 then return end
 
-    -- build forward array only for active links
-    local forward = {}
+    -- Reuse per-link vectors; this runs for up to 200 links every frame.
+    local forward = self.forward
     for i = 1, n do
         local fx,fy,fz = 0,0,0
         if n == 1 then
@@ -131,16 +178,19 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
         if nfx == 0 and nfy == 0 and nfz == 0 then
             nfx, nfy, nfz = 1,0,0
         end
-        forward[i] = {nfx, nfy, nfz}
+        local f = forward[i]
+        if not f then
+            f = {1, 0, 0}
+            forward[i] = f
+        end
+        f[1], f[2], f[3] = nfx, nfy, nfz
     end
 
-    -- compute world up
-    local WORLD_UP = {0,1,0}
     maxStepRad = maxStepRad or math.rad(60)
 
     for i = 1, n do
         local fx,fy,fz = forward[i][1], forward[i][2], forward[i][3]
-        local refUpX, refUpY, refUpZ = WORLD_UP[1], WORLD_UP[2], WORLD_UP[3]
+        local refUpX, refUpY, refUpZ = 0, 1, 0
         if math.abs(dot(fx,fy,fz, refUpX, refUpY, refUpZ)) > 0.99 then
             refUpX, refUpY, refUpZ = 1,0,0
         end
@@ -155,8 +205,7 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
         ux,uy,uz = normalize(ux,uy,uz)
 
         if altTwist and (i % 2) == 0 then
-            local angle = math.pi * 0.5
-            local ca = math.cos(angle); local sa = math.sin(angle)
+            local ca, sa = ALT_TWIST_COS, ALT_TWIST_SIN
             local ax,ay,az = fx,fy,fz
             local cross_rx_x = (ay * rz - az * ry)
             local cross_rx_y = (az * rx - ax * rz)
@@ -256,19 +305,21 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
             end
         end
 
-        -- write rotation to transform safely
-        local transform = self.transforms[i]
-        pcall(function()
-            if transform and transform.localRotation then
-                local rot = transform.localRotation
-                if type(rot) == "table" or type(rot) == "userdata" then
-                    rot.w, rot.x, rot.y, rot.z = final_w, final_x, final_y, final_z
-                    transform.isDirty = true
-                end
-            end
-        end)
+        local previous = self.qprev[i]
+        if not previous then
+            previous = {1, 0, 0, 0}
+            self.qprev[i] = previous
+        end
+        previous[1], previous[2], previous[3], previous[4] =
+            final_w, final_x, final_y, final_z
+    end
 
-        self.qprev[i] = { final_w, final_x, final_y, final_z }
+    if not (applyNativeRotations and applyNativeRotations(self.transforms, self.qprev, n)) then
+        for i = 1, n do
+            local rotation = self.qprev[i]
+            pcall(write_local_rotation, self.transforms[i],
+                rotation[1], rotation[2], rotation[3], rotation[4])
+        end
     end
 end
 

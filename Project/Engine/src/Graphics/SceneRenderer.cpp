@@ -309,9 +309,6 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Reset editor rendering flag
         gfxManager.SetRenderingForEditor(false);
 
-		// Set all isDirty flags to false after rendering
-        mainECS.transformSystem->PostUpdate();
-
     } catch (const std::exception& e) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Exception in SceneRenderer::RenderSceneForEditor: ", e.what(), "\n");
     }

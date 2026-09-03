@@ -36,7 +36,8 @@ public:
     Vector3D GetPosition() const;
     Vector3D GetVelocity() const;
 
-    void SetPosition(Transform position);
+    void SetPosition(const Transform& position);
+    void SetPosition(float x, float y, float z);
 
     // Set/Get velocity
     void SetVelocity(const Vector3D vel);

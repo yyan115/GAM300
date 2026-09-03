@@ -440,6 +440,9 @@ void GUIManager::RenderMenuBar() {
 		for (const auto& path : remainingToCompile) {
 			AssetManager::GetInstance().CompileAsset(path, true, true);
 		}
+		if (!AssetManager::GetInstance().WriteAndroidAssetManifest()) {
+			ENGINE_LOG_ERROR("[GUIManager] Failed to write the Android asset manifest");
+		}
 		AssetManager::GetInstance().androidCompilationStatus.finishedCompiling = false;
 		AssetManager::GetInstance().androidCompilationStatus.isCompiling = false;
 		ENGINE_LOG_INFO("[GUIManager] Android assets compiled successfully!");

@@ -24,11 +24,13 @@ function FlyingPatrol:Update(ai, dt)
     end
 
     -- always keep hover stable in flying states
-    ai:MaintainHover(dt)
+    local hoverX, hoverY, hoverZ = ai:MaintainHover(dt)
 
     -- detect player -> Chase
     local detR = ai.DetectionRange or 4.0
-    if ai:IsPlayerInRange(detR) then
+    local playerDistanceSq, _, _, ex, ez, ey =
+        ai:GetPlayerDistanceSq(hoverX, hoverZ, hoverY)
+    if playerDistanceSq <= (detR * detR) then
         ai.fsm:Change("Chase", ai.states.Chase)
         return
     end
@@ -61,7 +63,9 @@ function FlyingPatrol:Update(ai, dt)
     if not tgt then return end
 
     -- move in XZ only (Y handled by hover)
-    local ex, _, ez = ai:GetPosition()
+    if ex == nil then
+        ex, ey, ez = ai:GetPosition()
+    end
     if ex == nil then return end
 
     local dx = (tgt.x or ex) - ex
@@ -84,8 +88,7 @@ function FlyingPatrol:Update(ai, dt)
     local maxStep = 0.20
     if step > maxStep then step = maxStep end
 
-    local _, y, _ = ai:GetPosition()
-    ai:SetPosition(ex + dirX * step, y, ez + dirZ * step)
+    ai:SetPosition(ex + dirX * step, ey, ez + dirZ * step)
     ai:FaceDirection(dirX, dirZ)
 end
 

@@ -49,8 +49,8 @@ return Component {
         if not pp or not cp then return end
 
         local dx, dz = pp.x - cp.x, pp.z - cp.z
-        local dist = math.sqrt(dx*dx + dz*dz)
-        local isNear = dist <= self.CheckpointRadius
+        local isNear = (dx*dx + dz*dz) <=
+            (self.CheckpointRadius * self.CheckpointRadius)
 
         if isNear then
             -- Show tooltip

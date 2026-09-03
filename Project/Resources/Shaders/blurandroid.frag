@@ -1,15 +1,15 @@
 #version 300 es
 
-precision highp float;
+precision mediump float;
 precision highp sampler2D;
 
 out vec4 FragColor;
-in vec2 TexCoords;
+in highp vec2 TexCoords;
 
 uniform sampler2D inputTexture;
 uniform bool horizontal;
 uniform float blurRadius;
-uniform vec2 texelSize;
+uniform highp vec2 texelSize;
 uniform float intensity;    // 0-1, blend between sharp and blurred
 
 // Gaussian weights (sigma ~ 3)

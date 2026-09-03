@@ -2,6 +2,8 @@ package com.teammarbles.kusane;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.PerformanceHintManager;
+import android.os.Process;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -10,6 +12,7 @@ import android.view.KeyEvent;
 import android.util.Log;
 import android.widget.TextView;
 import org.fmod.FMOD;
+import java.util.concurrent.locks.LockSupport;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
@@ -19,10 +22,18 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private static final String TAG = "GAM300";
+    private static final float TARGET_FRAME_RATE = 60.0f;
+    private static final long TARGET_FRAME_TIME_NS = 1_000_000_000L / 60L;
+    // The 3D renderer scales internally, but tone mapping and deferred UI run
+    // at surface resolution. Avoid spending frame time on 1440p/ultrawide phone
+    // buffers that are visually indistinguishable at normal viewing distance.
+    private static final int MAX_SURFACE_LONG_EDGE = 1920;
     private SurfaceView surfaceView;
     private SurfaceHolder surfaceHolder;
     private GameThread gameThread;
     private boolean engineReady = false;
+    private float touchToSurfaceScaleX = 1.0f;
+    private float touchToSurfaceScaleY = 1.0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,20 +91,26 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_POINTER_DOWN:
                     // A finger went down
-                    onTouchEventWithId(0, pointerId, event.getX(pointerIndex), event.getY(pointerIndex));
+                    onTouchEventWithId(0, pointerId,
+                            event.getX(pointerIndex) * touchToSurfaceScaleX,
+                            event.getY(pointerIndex) * touchToSurfaceScaleY);
                     break;
 
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_POINTER_UP:
                     // A finger went up
-                    onTouchEventWithId(1, pointerId, event.getX(pointerIndex), event.getY(pointerIndex));
+                    onTouchEventWithId(1, pointerId,
+                            event.getX(pointerIndex) * touchToSurfaceScaleX,
+                            event.getY(pointerIndex) * touchToSurfaceScaleY);
                     break;
 
                 case MotionEvent.ACTION_MOVE:
                     // One or more fingers moved - send all pointer positions
                     for (int i = 0; i < event.getPointerCount(); i++) {
                         int id = event.getPointerId(i);
-                        onTouchEventWithId(2, id, event.getX(i), event.getY(i));
+                        onTouchEventWithId(2, id,
+                                event.getX(i) * touchToSurfaceScaleX,
+                                event.getY(i) * touchToSurfaceScaleY);
                     }
                     break;
 
@@ -101,7 +118,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     // All fingers cancelled - release all
                     for (int i = 0; i < event.getPointerCount(); i++) {
                         int id = event.getPointerId(i);
-                        onTouchEventWithId(1, id, event.getX(i), event.getY(i));
+                        onTouchEventWithId(1, id,
+                                event.getX(i) * touchToSurfaceScaleX,
+                                event.getY(i) * touchToSurfaceScaleY);
                     }
                     break;
 
@@ -149,6 +168,31 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         Log.i(TAG, "Surface changed: " + width + "x" + height);
+
+        int longEdge = Math.max(width, height);
+        if (longEdge > MAX_SURFACE_LONG_EDGE) {
+            float scale = (float) MAX_SURFACE_LONG_EDGE / (float) longEdge;
+            int optimizedWidth = Math.max(2, Math.round(width * scale)) & ~1;
+            int optimizedHeight = Math.max(2, Math.round(height * scale)) & ~1;
+            Log.i(TAG, "Requesting optimized game surface: "
+                    + optimizedWidth + "x" + optimizedHeight);
+            holder.setFixedSize(optimizedWidth, optimizedHeight);
+            return;
+        }
+
+        // MotionEvent coordinates use the full-screen SurfaceView dimensions,
+        // while native input normalizes against the fixed-size buffer. Convert
+        // into buffer pixels first so hit testing remains resolution-independent.
+        int viewWidth = surfaceView.getWidth();
+        int viewHeight = surfaceView.getHeight();
+        touchToSurfaceScaleX = viewWidth > 0 ? (float) width / viewWidth : 1.0f;
+        touchToSurfaceScaleY = viewHeight > 0 ? (float) height / viewHeight : 1.0f;
+
+        // Tell SurfaceFlinger this is a fixed-rate 60 Hz game surface. This lets
+        // high-refresh devices choose a display mode with clean 60 Hz cadence.
+        holder.getSurface().setFrameRate(
+                TARGET_FRAME_RATE,
+                Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
 
         // Initialize engine first with surface dimensions and AssetManager
         initEngine(getAssets(), getFilesDir().getAbsolutePath(), width, height);
@@ -215,14 +259,43 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         public void stopGameThread() {
             running = false;
+            interrupt();
         }
 
         @Override
         public void run() {
             Log.i(TAG, "Game thread started");
+            Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
+            long nextFrameDeadlineNs = System.nanoTime();
+            PerformanceHintManager.Session performanceSession = null;
+
+            // ADPF lets Android schedule the engine thread against the same
+            // 16.67 ms budget used by the frame pacer instead of reacting only
+            // after missed frames. Unsupported devices simply return no session.
+            try {
+                PerformanceHintManager hintManager =
+                        getSystemService(PerformanceHintManager.class);
+                if (hintManager != null) {
+                    performanceSession = hintManager.createHintSession(
+                            new int[] { Process.myTid() }, TARGET_FRAME_TIME_NS);
+                }
+            } catch (RuntimeException e) {
+                Log.w(TAG, "Performance hint session unavailable", e);
+            }
 
             while (running && engineReady) {
+                long workStartNs = System.nanoTime();
                 renderFrame();
+                long workDurationNs = Math.max(1L, System.nanoTime() - workStartNs);
+                if (performanceSession != null) {
+                    try {
+                        performanceSession.reportActualWorkDuration(workDurationNs);
+                    } catch (RuntimeException e) {
+                        performanceSession.close();
+                        performanceSession = null;
+                        Log.w(TAG, "Performance hint reporting disabled", e);
+                    }
+                }
 
                 // Check if Lua called Screen.RequestClose()
                 if (shouldQuit()) {
@@ -231,11 +304,28 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     break;
                 }
 
-                try {
-                    Thread.sleep(16); // ~60 FPS
-                } catch (InterruptedException e) {
-                    break;
+                // Pace to a 60 Hz deadline instead of sleeping 16 ms after all
+                // frame work. The old loop added render time + 16 ms, which
+                // turns a 16 ms frame into ~32 ms (roughly 30 FPS).
+                nextFrameDeadlineNs += TARGET_FRAME_TIME_NS;
+                long remainingNs = nextFrameDeadlineNs - System.nanoTime();
+                while (running && remainingNs > 0L) {
+                    LockSupport.parkNanos(remainingNs);
+                    if (Thread.interrupted()) {
+                        running = false;
+                        break;
+                    }
+                    remainingNs = nextFrameDeadlineNs - System.nanoTime();
                 }
+
+                // Do not accumulate lateness after a slow frame.
+                if (remainingNs <= 0L) {
+                    nextFrameDeadlineNs = System.nanoTime();
+                }
+            }
+
+            if (performanceSession != null) {
+                performanceSession.close();
             }
 
             Log.i(TAG, "Game thread stopped");

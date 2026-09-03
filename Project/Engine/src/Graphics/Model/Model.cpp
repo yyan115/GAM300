@@ -729,6 +729,17 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
         std::memcpy(&meshCount, buffer.data() + offset, sizeof(meshCount));
         offset += sizeof(meshCount);
 
+#ifdef __ANDROID__
+        struct MeshRun {
+            std::vector<Vertex> vertices;
+            std::vector<GLuint> indices;
+            std::shared_ptr<Material> material;
+            std::string materialPath;
+        };
+        std::vector<MeshRun> meshRuns;
+        meshRuns.reserve(meshCount);
+#endif
+
         // For each mesh, read its data from the file.
         for (size_t i = 0; i < meshCount; ++i) {
             size_t vertexCount, indexCount;
@@ -784,10 +795,77 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
             // Load the material
             auto material = ResourceManager::GetInstance().GetResource<Material>(materialPath);
 
+#ifdef __ANDROID__
+            constexpr size_t kMax16BitVertexCount =
+                static_cast<size_t>(std::numeric_limits<GLushort>::max()) + 1;
+            const bool sameMaterial =
+                !meshRuns.empty() && meshRuns.back().materialPath == materialPath;
+            const bool wouldPromoteMergedIndices = sameMaterial &&
+                meshRuns.back().vertices.size() <= kMax16BitVertexCount &&
+                (vertices.size() > kMax16BitVertexCount -
+                    meshRuns.back().vertices.size());
+
+            // Exported FBX files frequently contain dozens of consecutive
+            // submeshes that all use the same material. They are separate draw
+            // calls in the source asset but have identical render state. Merge
+            // them while retaining 16-bit indices: crossing 65,536 vertices
+            // doubles index traffic, so start one additional exact run instead.
+            if (!sameMaterial || wouldPromoteMergedIndices) {
+                meshRuns.push_back({
+                    std::move(vertices),
+                    std::move(indices),
+                    std::move(material),
+                    std::move(materialPath)
+                });
+            }
+            else {
+                MeshRun& run = meshRuns.back();
+                const size_t baseVertex = run.vertices.size();
+                if (baseVertex > std::numeric_limits<GLuint>::max()) {
+                    ENGINE_PRINT(
+                        EngineLogging::LogLevel::Error,
+                        "[Model] Android mesh exceeds 32-bit index range: ",
+                        resourcePath,
+                        "\n");
+                    return false;
+                }
+
+                run.vertices.insert(
+                    run.vertices.end(),
+                    std::make_move_iterator(vertices.begin()),
+                    std::make_move_iterator(vertices.end()));
+                run.indices.reserve(run.indices.size() + indices.size());
+                for (GLuint index : indices) {
+                    const uint64_t mergedIndex =
+                        static_cast<uint64_t>(baseVertex) + index;
+                    if (mergedIndex > std::numeric_limits<GLuint>::max()) {
+                        ENGINE_PRINT(
+                            EngineLogging::LogLevel::Error,
+                            "[Model] Android mesh index overflow: ",
+                            resourcePath,
+                            "\n");
+                        return false;
+                    }
+                    run.indices.push_back(static_cast<GLuint>(mergedIndex));
+                }
+            }
+#else
             Mesh newMesh(vertices, indices, material);
             newMesh.CalculateBoundingBox();
             meshes.push_back(std::move(newMesh));
+#endif
         }
+
+#ifdef __ANDROID__
+        meshes.reserve(meshRuns.size());
+        for (MeshRun& run : meshRuns) {
+            meshes.emplace_back(
+                std::move(run.vertices),
+                std::move(run.indices),
+                std::move(run.material));
+            meshes.back().CalculateBoundingBox();
+        }
+#endif
 
         // Read BoneInfo Map
         {
@@ -846,6 +924,7 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
         }
 
         CalculateBoundingBox();
+        BuildSkinningBounds();
 
         //// Now that all meshes are loaded into RAM, push them to the GPU immediately!
         //PrewarmMeshes();
@@ -854,6 +933,177 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
     }
 
     return false;
+}
+
+void Model::BuildSkinningBounds()
+{
+    constexpr int kMaxShaderBones = 100;
+    const int supportedBoneCount =
+        std::clamp(mBoneCounter, 0, kMaxShaderBones);
+
+    mBoneInfluenceBounds.assign(
+        static_cast<std::size_t>(supportedBoneCount), AABB{});
+    mBoneInfluenceBoundsValid.assign(
+        static_cast<std::size_t>(supportedBoneCount), std::uint8_t{0});
+    mHasRigidVertices = false;
+    mSkinningBoundsValid = false;
+    mMinEffectiveWeightSum = std::numeric_limits<float>::max();
+    mMaxEffectiveWeightSum = 0.0f;
+
+    if (supportedBoneCount == 0) {
+        return;
+    }
+
+    glm::vec3 rigidMin(std::numeric_limits<float>::max());
+    glm::vec3 rigidMax(std::numeric_limits<float>::lowest());
+    std::vector<glm::vec3> boneMins(
+        static_cast<std::size_t>(supportedBoneCount),
+        glm::vec3(std::numeric_limits<float>::max()));
+    std::vector<glm::vec3> boneMaxs(
+        static_cast<std::size_t>(supportedBoneCount),
+        glm::vec3(std::numeric_limits<float>::lowest()));
+
+    bool hasSkinnedVertices = false;
+    for (const Mesh& mesh : meshes) {
+        for (const Vertex& vertex : mesh.vertices) {
+            if (!std::isfinite(vertex.position.x) ||
+                !std::isfinite(vertex.position.y) ||
+                !std::isfinite(vertex.position.z)) {
+                return;
+            }
+
+            float effectiveWeightSum = 0.0f;
+            bool hasSupportedInfluence = false;
+            for (int influence = 0; influence < MaxBoneInfluences; ++influence) {
+                const int boneID = vertex.mBoneIDs[influence];
+                const float weight = vertex.mWeights[influence];
+                if (!(weight > 0.0f) || !std::isfinite(weight) ||
+                    boneID < 0 || boneID >= kMaxShaderBones) {
+                    continue;
+                }
+                if (boneID >= supportedBoneCount) {
+                    // The shader would index a matrix not represented by this
+                    // model's bone table, so do not claim a conservative bound.
+                    return;
+                }
+
+                const std::size_t index = static_cast<std::size_t>(boneID);
+                boneMins[index] = glm::min(boneMins[index], vertex.position);
+                boneMaxs[index] = glm::max(boneMaxs[index], vertex.position);
+                mBoneInfluenceBoundsValid[index] = 1;
+                effectiveWeightSum += weight;
+                hasSupportedInfluence = true;
+            }
+
+            if (hasSupportedInfluence && effectiveWeightSum > 0.0f &&
+                std::isfinite(effectiveWeightSum)) {
+                hasSkinnedVertices = true;
+                mMinEffectiveWeightSum =
+                    std::min(mMinEffectiveWeightSum, effectiveWeightSum);
+                mMaxEffectiveWeightSum =
+                    std::max(mMaxEffectiveWeightSum, effectiveWeightSum);
+            }
+            else {
+                rigidMin = glm::min(rigidMin, vertex.position);
+                rigidMax = glm::max(rigidMax, vertex.position);
+                mHasRigidVertices = true;
+            }
+        }
+    }
+
+    for (std::size_t index = 0;
+        index < mBoneInfluenceBounds.size(); ++index) {
+        if (mBoneInfluenceBoundsValid[index] != 0) {
+            mBoneInfluenceBounds[index] =
+                AABB(boneMins[index], boneMaxs[index]);
+        }
+    }
+    if (mHasRigidVertices) {
+        mRigidVertexBounds = AABB(rigidMin, rigidMax);
+    }
+
+    mSkinningBoundsValid =
+        hasSkinnedVertices &&
+        mMinEffectiveWeightSum > 0.0f &&
+        std::isfinite(mMinEffectiveWeightSum) &&
+        std::isfinite(mMaxEffectiveWeightSum);
+}
+
+bool Model::TryGetSkinnedBoundingBox(
+    const std::vector<glm::mat4>& boneMatrices,
+    AABB& outBounds) const
+{
+    if (!mSkinningBoundsValid ||
+        boneMatrices.size() < mBoneInfluenceBounds.size()) {
+        return false;
+    }
+
+    glm::vec3 transformedMin(std::numeric_limits<float>::max());
+    glm::vec3 transformedMax(std::numeric_limits<float>::lowest());
+    bool hasTransformedBone = false;
+
+    for (std::size_t index = 0;
+        index < mBoneInfluenceBounds.size(); ++index) {
+        if (mBoneInfluenceBoundsValid[index] == 0) {
+            continue;
+        }
+
+        const glm::mat4& matrix = boneMatrices[index];
+        const float* matrixValues = &matrix[0][0];
+        if (!std::all_of(
+                matrixValues,
+                matrixValues + 16,
+                [](float value) { return std::isfinite(value); })) {
+            return false;
+        }
+
+        const AABB transformed =
+            mBoneInfluenceBounds[index].Transform(matrix);
+        transformedMin = glm::min(transformedMin, transformed.min);
+        transformedMax = glm::max(transformedMax, transformed.max);
+        hasTransformedBone = true;
+    }
+
+    if (!hasTransformedBone) {
+        return false;
+    }
+
+    // Every transformed influence lies in this union. A skinned position is
+    // their weighted sum, so scaling its convex box by the imported effective
+    // weight-sum range remains conservative even with minor normalization error.
+    auto scaledAxisBounds = [this](float minValue, float maxValue) {
+        const std::array<float, 4> products = {
+            minValue * mMinEffectiveWeightSum,
+            minValue * mMaxEffectiveWeightSum,
+            maxValue * mMinEffectiveWeightSum,
+            maxValue * mMaxEffectiveWeightSum
+        };
+        return std::pair{
+            *std::min_element(products.begin(), products.end()),
+            *std::max_element(products.begin(), products.end())
+        };
+    };
+
+    const auto xBounds =
+        scaledAxisBounds(transformedMin.x, transformedMax.x);
+    const auto yBounds =
+        scaledAxisBounds(transformedMin.y, transformedMax.y);
+    const auto zBounds =
+        scaledAxisBounds(transformedMin.z, transformedMax.z);
+    glm::vec3 resultMin(xBounds.first, yBounds.first, zBounds.first);
+    glm::vec3 resultMax(xBounds.second, yBounds.second, zBounds.second);
+
+    if (mHasRigidVertices) {
+        resultMin = glm::min(resultMin, mRigidVertexBounds.min);
+        resultMax = glm::max(resultMax, mRigidVertexBounds.max);
+    }
+
+    const glm::vec3 magnitude =
+        glm::max(glm::abs(resultMin), glm::abs(resultMax));
+    const glm::vec3 padding =
+        glm::max(glm::vec3(1.0e-4f), magnitude * 1.0e-5f);
+    outBounds = AABB(resultMin - padding, resultMax + padding);
+    return true;
 }
 
 void Model::ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, ModelNode& node) {
@@ -955,7 +1205,7 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 		return;
 	}
 
-#ifndef NDEBUG
+#if defined(GAM300_GL_VALIDATION) || (!defined(NDEBUG) && !defined(ANDROID))
 	if (!glIsProgram(shader.ID)) {
 		return;
 	}
@@ -970,13 +1220,14 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 
     if (!modelComp) return;
 
-    bool hasBones = !mBoneInfoMap.empty() && !modelComp->mFinalBoneMatrices.empty();
+	const auto& renderBoneMatrices = modelComp->GetRenderBoneMatrices();
+	bool hasBones = !mBoneInfoMap.empty() && !renderBoneMatrices.empty();
     shader.setBool("hasBones", hasBones);
 
-    if (hasBones)
+    if (hasBones && !shader.UsesBonesBlock())
     {
         constexpr size_t MAX_BONES = 100;
-        const auto& t = modelComp->mFinalBoneMatrices;
+		const auto& t = renderBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
         if (n > 0)
             shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
@@ -988,7 +1239,7 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] Drawing mesh %zu/%zu - vertices=%zu, indices=%zu", i+1, meshes.size(), meshes[i].vertices.size(), meshes[i].indices.size());
 
 		// Validate mesh before drawing
-		if (meshes[i].vertices.empty()) {
+		if (meshes[i].GetVertexCount() == 0) {
 			//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[MODEL] Mesh %zu has no vertices, skipping", i+1);
 			continue;
 		}
@@ -1017,13 +1268,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 //#endif
 
 
-    bool hasBones = !mBoneInfoMap.empty() && !modelComp.mFinalBoneMatrices.empty();
+	const auto& renderBoneMatrices = modelComp.GetRenderBoneMatrices();
+	bool hasBones = !mBoneInfoMap.empty() && !renderBoneMatrices.empty();
 	shader.setBool("hasBones", hasBones);
 
-    if (hasBones)
+    if (hasBones && !shader.UsesBonesBlock())
     {
         constexpr size_t MAX_BONES = 100;
-        const auto& t = modelComp.mFinalBoneMatrices;
+		const auto& t = renderBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
         if (n > 0)
             shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
@@ -1061,13 +1313,14 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
 
 void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material> entityMaterial, const ModelRenderComponent& modelComp, const Animator* animator)
 {
-    bool hasBones = animator && !mBoneInfoMap.empty() && !modelComp.mFinalBoneMatrices.empty();
+	const auto& renderBoneMatrices = modelComp.GetRenderBoneMatrices();
+	bool hasBones = animator && !mBoneInfoMap.empty() && !renderBoneMatrices.empty();
 	shader.setBool("hasBones", hasBones);
 
-    if (hasBones)
+    if (hasBones && !shader.UsesBonesBlock())
     {
         constexpr size_t MAX_BONES = 100;
-        const auto& t = modelComp.mFinalBoneMatrices;
+		const auto& t = renderBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
         if (n > 0)
             shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
@@ -1098,12 +1351,13 @@ void Model::DrawFast(Shader& shader, std::shared_ptr<Material> entityMaterial,
     (void)animator;
 
     // Bones — same logic as existing Draw methods
-    bool hasBones = !mBoneInfoMap.empty() && !modelComp.mFinalBoneMatrices.empty();
+	const auto& renderBoneMatrices = modelComp.GetRenderBoneMatrices();
+	bool hasBones = !mBoneInfoMap.empty() && !renderBoneMatrices.empty();
     shader.setBool("hasBones", hasBones);
 
-    if (hasBones) {
+    if (hasBones && !shader.UsesBonesBlock()) {
         constexpr size_t MAX_BONES = 100;
-        const auto& t = modelComp.mFinalBoneMatrices;
+		const auto& t = renderBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
         if (n > 0)
             shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));

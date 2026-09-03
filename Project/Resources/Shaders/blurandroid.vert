@@ -5,7 +5,7 @@ precision highp float;
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aTexCoords;
 
-out vec2 TexCoords;
+out highp vec2 TexCoords;
 
 void main()
 {

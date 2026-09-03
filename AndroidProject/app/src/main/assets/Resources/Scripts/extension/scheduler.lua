@@ -3,6 +3,7 @@
 
 local S = {}
 S._timers = {}
+S._expired = {}
 S._nextId = 1
 
 function S.after(seconds, fn)
@@ -20,7 +21,12 @@ end
 function S.cancel(id) S._timers[id] = nil end
 
 function S.tick(dt)
-    local toRemove = {}
+    local toRemove = S._expired
+    if not toRemove then
+        toRemove = {}
+        S._expired = toRemove
+    end
+    for i = #toRemove, 1, -1 do toRemove[i] = nil end
     for id, t in pairs(S._timers) do
         t.remaining = t.remaining - dt
         while t.remaining <= 0 do
@@ -32,12 +38,12 @@ function S.tick(dt)
                 t.remaining = t.remaining + t.every
                 break
             else
-                table.insert(toRemove, id)
+                toRemove[#toRemove + 1] = id
                 break
             end
         end
     end
-    for _, id in ipairs(toRemove) do S._timers[id] = nil end
+    for i = 1, #toRemove do S._timers[toRemove[i]] = nil end
 end
 
 return S

@@ -24,7 +24,7 @@ function ChaseState:Update(ai, dt)
 
     local chaseSpd = ai.config.ChaseSpeed or 1.8
     local attackR, meleeR, diseng = ai:GetRanges()
-    local d2 = ai:GetPlayerDistanceSq()
+    local d2, px, pz, ex, ez = ai:GetPlayerDistanceSq()
 
     -- Too far -> Patrol
     if d2 > (diseng * diseng) and not ai.aggressive then
@@ -55,10 +55,7 @@ function ChaseState:Update(ai, dt)
         end
     end
 
-    local tr = ai._playerTr
-    if not tr then return end
-    local pp = Engine.GetTransformPosition(tr)
-    local px, pz = pp[1], pp[3]
+    if px == nil or pz == nil then return end
 
     -- Repath conditions:
     -- 1) timed interval
@@ -71,7 +68,7 @@ function ChaseState:Update(ai, dt)
 
     if needRepath then
         ai._pathRepathT = 0
-        local pathFound = ai:RequestPathToXZ(px, pz)
+        local pathFound = ai:RequestPathToXZ(px, pz, ex, ez)
         
         if not pathFound then
             --print("[Chase] NO PATH to player - stopping movement")
@@ -81,14 +78,14 @@ function ChaseState:Update(ai, dt)
     end
 
     -- Follow the path
-    local arrived = ai:FollowPath(dtSec, chaseSpd)
+    local arrived = ai:FollowPath(dtSec, chaseSpd, ex, ez)
 
     -- If we "arrived" but still not in attack range (can happen if path ends early), do a soft fallback
     if arrived then
         ai:StopCC()
         ai._footstepTimer = 0
         -- optional: face player for aiming
-        ai:FacePlayer()
+        ai:FacePlayer(px, pz, ex, ez)
     else
         ai._footstepTimer = (ai._footstepTimer or 0) + dtSec
         if ai._footstepTimer >= (ai.ChaseFootstepInterval or 0.35) then

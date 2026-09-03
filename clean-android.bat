@@ -8,6 +8,7 @@ echo Deleting Project build directories...
 REM Delete Android build directories
 if exist "%SCRIPT_DIR%Project\Build\android-debug" rmdir /s /q "%SCRIPT_DIR%Project\Build\android-debug"
 if exist "%SCRIPT_DIR%Project\Build\android-release" rmdir /s /q "%SCRIPT_DIR%Project\Build\android-release"
+if exist "%SCRIPT_DIR%Project\Build\android-relwithdebinfo" rmdir /s /q "%SCRIPT_DIR%Project\Build\android-relwithdebinfo"
 
 echo Deleting Android Studio cache...
 REM Delete Android Studio build cache

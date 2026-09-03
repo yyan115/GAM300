@@ -276,14 +276,23 @@ void SliderSystem::UpdateHandleFromValue(Entity sliderEntity, SliderComponent& s
     t = Clamp01(t);
 
     float offset = (-range / 2.0f) + t * range;
+    float newX = handleTransform.localPosition.x;
+    float newY = handleTransform.localPosition.y;
     if (sliderComp.horizontal) {
-        handleTransform.localPosition.x = offset;
-        handleTransform.localPosition.y = 0.0f;
+        newX = offset;
+        newY = 0.0f;
     } else {
-        handleTransform.localPosition.y = offset;
-        handleTransform.localPosition.x = 0.0f;
+        newY = offset;
+        newX = 0.0f;
     }
 
+    if (handleTransform.localPosition.x == newX &&
+        handleTransform.localPosition.y == newY) {
+        return;
+    }
+
+    handleTransform.localPosition.x = newX;
+    handleTransform.localPosition.y = newY;
     handleTransform.isDirty = true;
 
     if (m_ecs->transformSystem) {

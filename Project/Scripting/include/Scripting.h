@@ -35,6 +35,7 @@
 //   Scripting::Shutdown();
 
 #include <string>
+#include <string_view>
 #include <vector>
 #include <functional>
 
@@ -89,7 +90,10 @@ namespace Scripting {
     // Semantic: callback receives the lua_State* and must push exactly one Lua value
     // (the component representation) on the Lua stack and return true on success.
     // If the callback returns false or pushes nothing, the scripting runtime will return nil.
-    using HostGetComponentFn = std::function<bool(lua_State* L, uint32_t entityId, const std::string& compName)>;
+    using HostGetComponentFn = std::function<bool(
+        lua_State* L,
+        uint32_t entityId,
+        std::string_view compName)>;
 
     // Set handler (engine should call this early in initialization).
     SCRIPTING_API void SetHostGetComponentHandler(HostGetComponentFn fn);

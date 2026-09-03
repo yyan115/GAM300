@@ -3,6 +3,7 @@
 #include "Graphics/IRenderComponent.hpp"
 
 #include <cstddef>
+#include <glm/glm.hpp>
 #include <memory>
 
 class EBO;
@@ -20,6 +21,10 @@ public:
     EBO* quadEBO = nullptr;
     std::size_t particleCount = 0;
     bool additiveBlending = false;
+    glm::vec4 startColor{1.0f};
+    glm::vec4 endColor{1.0f};
+    float startSize = 0.1f;
+    float endSize = 0.0f;
 
     RenderComponentKind GetRenderKind() const override { return RenderComponentKind::ParticleRenderItem; }
 };

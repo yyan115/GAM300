@@ -72,6 +72,8 @@ return Component {
         self.active = false
         self._hasTriggered = false
         self._playerYawQuat = {w=1, x=0, y=0, z=0}
+        self._cleanAttackState = tostring(self.AttackState or "NA3"):gsub('"', '')
+        self._ownsRootSync = self._cleanAttackState == "NA1"
 
         -- Initial Visibility
         if self.model then
@@ -83,23 +85,20 @@ return Component {
         -- Move root entity to player position every frame.
         -- This makes children (this entity) move with the player automatically
         -- via the transform hierarchy — no manual tracking needed.
-        if self._rootTransform and _G.player_cc then
-            local pp = CharacterController.GetPosition(_G.player_cc)
-            if pp then
-                self._rootTransform.localPosition.x = pp.x
-                self._rootTransform.localPosition.y = pp.y
-                self._rootTransform.localPosition.z = pp.z
+        if self._ownsRootSync and self._rootTransform and _G.player_cc then
+            local px, py, pz = CharacterController.GetPositionXYZ(_G.player_cc)
+            local position = self._rootTransform.localPosition
+            if position.x ~= px or position.y ~= py or position.z ~= pz then
+                position.x, position.y, position.z = px, py, pz
                 self._rootTransform.isDirty = true
             end
         end
 
         local currentState = self._playerAnimation:GetCurrentState()
-        local cleanAttackState = self.AttackState:gsub('"', '')
-        local isAttacking = currentState == cleanAttackState
-
-        local normalizedTime = self._playerAnimation:GetNormalizedTime()
+        local isAttacking = currentState == self._cleanAttackState
 
         if isAttacking then
+            local normalizedTime = self._playerAnimation:GetNormalizedTime()
             if normalizedTime >= self.SpawnTime and not self._hasTriggered then
                 self:TriggerSlash(self.StartRot, self.EndRot, self.Speed)
                 self._hasTriggered = true

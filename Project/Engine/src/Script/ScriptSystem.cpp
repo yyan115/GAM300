@@ -22,15 +22,79 @@
 #include <unordered_map>
 #include <functional>
 #include <set>
+#include <string_view>
 
 
 // Define destructor where Scripting::ScriptComponent is a complete type
 ScriptSystem::~ScriptSystem() = default;
 
-static std::unordered_map<std::string, std::function<void(lua_State*, void*)>> g_componentPushers;
+namespace {
+struct TransparentStringHash {
+    using is_transparent = void;
+
+    std::size_t operator()(std::string_view value) const noexcept {
+        return std::hash<std::string_view>{}(value);
+    }
+};
+
+constexpr std::array<std::string_view, 6> kTrackedIntEvents{{
+    "OnTriggerEnter",
+    "OnCollisionEnter",
+    "OnTriggerExit",
+    "OnCollisionExit",
+    "OnTriggerStay",
+    "OnCollisionStay",
+}};
+constexpr std::uint8_t kIntEventMaskKnown = 1u << 7;
+
+constexpr std::uint8_t GetTrackedIntEventBit(std::string_view functionName) noexcept {
+    for (std::size_t i = 0; i < kTrackedIntEvents.size(); ++i) {
+        if (kTrackedIntEvents[i] == functionName) {
+            return static_cast<std::uint8_t>(1u << i);
+        }
+    }
+    return 0;
+}
+}
+
+static std::unordered_map<
+    std::string,
+    std::function<void(lua_State*, void*)>,
+    TransparentStringHash,
+    std::equal_to<>> g_componentPushers;
 static std::set<std::string> g_luaRegisteredComponents_global;
 static bool g_luaBindingsDone = false;
 static ECSManager* g_ecsManager = nullptr;
+static std::unordered_map<
+    std::string,
+    Entity,
+    TransparentStringHash,
+    std::equal_to<>> g_entityByNameCache;
+
+static Entity FindActiveEntityByName(ECSManager& ecs, const std::string& name)
+{
+    auto cached = g_entityByNameCache.find(name);
+    if (cached != g_entityByNameCache.end()) {
+        const Entity entity = cached->second;
+        if (ecs.IsEntityAlive(entity)) {
+            auto nameComponent = ecs.TryGetComponent<NameComponent>(entity);
+            if (nameComponent && nameComponent->get().name == name) {
+                return entity;
+            }
+        }
+        g_entityByNameCache.erase(cached);
+    }
+
+    for (Entity entity : ecs.GetActiveEntitiesView())
+    {
+        auto nameComponent = ecs.TryGetComponent<NameComponent>(entity);
+        if (nameComponent && nameComponent->get().name == name) {
+            g_entityByNameCache.insert_or_assign(name, entity);
+            return entity;
+        }
+    }
+    return INVALID_ENTITY;
+}
 
 // Template to register component getters into the existing ComponentRegistry.
 // This is idempotent per component type.
@@ -41,8 +105,8 @@ static void RegisterCompGetter(const char* compName) {
     ComponentRegistry::Instance().Register<CompT>(compName,
         [](ECSManager* ecs, Entity e) -> CompT* {
             if (!ecs) return nullptr;
-            if (!ecs->HasComponent<CompT>(e)) return nullptr;
-            return &ecs->GetComponent<CompT>(e);
+            auto component = ecs->TryGetComponent<CompT>(e);
+            return component ? &component->get() : nullptr;
         });
     s_registered[compName] = true;
 }
@@ -68,29 +132,10 @@ static AnimationComponent* Lua_FindAnimatorByName(const std::string& name)
     if (!g_ecsManager) return nullptr;
     ECSManager& ecs = *g_ecsManager;
 
-    // Get all active entities (same pattern as InspectorPanel)
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (!ecs.HasComponent<NameComponent>(e))
-            continue;
-
-        auto& nc = ecs.GetComponent<NameComponent>(e);
-        if (nc.name == name)
-        {
-            // Found the entity with matching name, now ensure it has a Transform
-            if (ecs.HasComponent<AnimationComponent>(e))
-            {
-                return &ecs.GetComponent<AnimationComponent>(e);
-            }
-
-            // Name matched but no Transform; stop searching if names are unique
-            break;
-        }
-    }
-
-    return nullptr;
+    const Entity entity = FindActiveEntityByName(ecs, name);
+    if (entity == INVALID_ENTITY) return nullptr;
+    auto animation = ecs.TryGetComponent<AnimationComponent>(entity);
+    return animation ? &animation->get() : nullptr;
 }
 
 static Transform* Lua_FindTransformByName(const std::string& name)
@@ -98,29 +143,10 @@ static Transform* Lua_FindTransformByName(const std::string& name)
     if (!g_ecsManager) return nullptr;
     ECSManager& ecs = *g_ecsManager;
 
-    // Get all active entities (same pattern as InspectorPanel)
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (!ecs.HasComponent<NameComponent>(e))
-            continue;
-
-        auto& nc = ecs.GetComponent<NameComponent>(e);
-        if (nc.name == name)
-        {
-            // Found the entity with matching name, now ensure it has a Transform
-            if (ecs.HasComponent<Transform>(e))
-            {
-                return &ecs.GetComponent<Transform>(e);
-            }
-
-            // Name matched but no Transform; stop searching if names are unique
-            break;
-        }
-    }
-
-    return nullptr;
+    const Entity entity = FindActiveEntityByName(ecs, name);
+    if (entity == INVALID_ENTITY) return nullptr;
+    auto transform = ecs.TryGetComponent<Transform>(entity);
+    return transform ? &transform->get() : nullptr;
 }
 
 static Transform* Lua_FindTransformByID(const Entity& id)
@@ -128,25 +154,9 @@ static Transform* Lua_FindTransformByID(const Entity& id)
     if (!g_ecsManager) return nullptr;
     ECSManager& ecs = *g_ecsManager;
 
-    // Get all active entities (same pattern as InspectorPanel)
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (e == id)
-        {
-            // Found the entity with matching name, now ensure it has a Transform
-            if (ecs.HasComponent<Transform>(e))
-            {
-                return &ecs.GetComponent<Transform>(e);
-            }
-
-            // Name matched but no Transform; stop searching if names are unique
-            break;
-        }
-    }
-
-    return nullptr;
+    if (!ecs.IsEntityAlive(id)) return nullptr;
+    auto transform = ecs.TryGetComponent<Transform>(id);
+    return transform ? &transform->get() : nullptr;
 }
 
 static AudioComponent* Lua_FindAudioCompByName(const std::string& name)
@@ -154,54 +164,19 @@ static AudioComponent* Lua_FindAudioCompByName(const std::string& name)
     if (!g_ecsManager) return nullptr;
     ECSManager& ecs = *g_ecsManager;
 
-    // Get all active entities (same pattern as InspectorPanel)
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (!ecs.HasComponent<NameComponent>(e))
-            continue;
-
-        auto& nc = ecs.GetComponent<NameComponent>(e);
-        if (nc.name == name)
-        {
-            // Found the entity with matching name, now ensure it has a AudioComponent
-            if (ecs.HasComponent<AudioComponent>(e))
-            {
-                return &ecs.GetComponent<AudioComponent>(e);
-            }
-
-            // Name matched but no AudioComponent; stop searching if names are unique
-            break;
-        }
-    }
-
-    return nullptr;
+    const Entity entity = FindActiveEntityByName(ecs, name);
+    if (entity == INVALID_ENTITY) return nullptr;
+    auto audio = ecs.TryGetComponent<AudioComponent>(entity);
+    return audio ? &audio->get() : nullptr;
 }
 static AudioComponent* Lua_FindAudioCompByID(const Entity& id)
 {
     if (!g_ecsManager) return nullptr;
     ECSManager& ecs = *g_ecsManager;
 
-    // Get all active entities (same pattern as InspectorPanel)
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (e == id)
-        {
-            // Found the entity with matching name, now ensure it has a AudioComponent
-            if (ecs.HasComponent<AudioComponent>(e))
-            {
-                return &ecs.GetComponent<AudioComponent>(e);
-            }
-
-            // Name matched but no AudioComponent; stop searching if names are unique
-            break;
-        }
-    }
-
-    return nullptr;
+    if (!ecs.IsEntityAlive(id)) return nullptr;
+    auto audio = ecs.TryGetComponent<AudioComponent>(id);
+    return audio ? &audio->get() : nullptr;
 }
 
 static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
@@ -228,6 +203,87 @@ static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* 
     return std::make_tuple(p.x, p.y, p.z);
 }
 
+static int Lua_GetTransformPositionXYZ(lua_State* state)
+{
+    const auto result = luabridge::get<Transform*>(state, 1);
+    const Transform* transform = result ? *result : nullptr;
+    const Vector3D position = transform
+        ? transform->localPosition
+        : Vector3D(0.0f, 0.0f, 0.0f);
+
+    lua_pushnumber(state, position.x);
+    lua_pushnumber(state, position.y);
+    lua_pushnumber(state, position.z);
+    return 3;
+}
+
+static int Lua_GetTransformWorldPositionXYZ(lua_State* state)
+{
+    const auto result = luabridge::get<Transform*>(state, 1);
+    const Transform* transform = result ? *result : nullptr;
+    const Vector3D position = transform
+        ? transform->worldPosition
+        : Vector3D(0.0f, 0.0f, 0.0f);
+
+    lua_pushnumber(state, position.x);
+    lua_pushnumber(state, position.y);
+    lua_pushnumber(state, position.z);
+    return 3;
+}
+
+static int Lua_GetCharacterControllerPositionXYZ(lua_State* state)
+{
+    const auto result = luabridge::get<CharacterController*>(state, 1);
+    CharacterController* controller = result ? *result : nullptr;
+    const Vector3D position = controller
+        ? controller->GetPosition()
+        : Vector3D(0.0f, 0.0f, 0.0f);
+
+    lua_pushnumber(state, position.x);
+    lua_pushnumber(state, position.y);
+    lua_pushnumber(state, position.z);
+    return 3;
+}
+
+static int Lua_GetCharacterControllerVelocityXYZ(lua_State* state)
+{
+    const auto result = luabridge::get<CharacterController*>(state, 1);
+    CharacterController* controller = result ? *result : nullptr;
+    const Vector3D velocity = controller
+        ? controller->GetVelocity()
+        : Vector3D(0.0f, 0.0f, 0.0f);
+
+    lua_pushnumber(state, velocity.x);
+    lua_pushnumber(state, velocity.y);
+    lua_pushnumber(state, velocity.z);
+    return 3;
+}
+
+static int Lua_GetInputAxisXY(lua_State* state)
+{
+    const char* axisName = luaL_checkstring(state, 1);
+    const glm::vec2 axis = g_inputManager
+        ? g_inputManager->GetAxis(axisName)
+        : glm::vec2(0.0f);
+
+    lua_pushnumber(state, axis.x);
+    lua_pushnumber(state, axis.y);
+    return 2;
+}
+
+static int Lua_GetInputActionState(lua_State* state)
+{
+    const std::string action = luaL_checkstring(state, 1);
+    const bool held = g_inputManager && g_inputManager->IsActionHeld(action);
+    const bool pressed = g_inputManager && g_inputManager->IsActionPressed(action);
+    const bool released = g_inputManager && g_inputManager->IsActionJustReleased(action);
+
+    lua_pushboolean(state, held);
+    lua_pushboolean(state, pressed);
+    lua_pushboolean(state, released);
+    return 3;
+}
+
 
 static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 {
@@ -239,6 +295,100 @@ static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 
     const auto& p = t->localRotation; // or global/world position if you have it
     return std::make_tuple(p.x, p.y, p.z);
+}
+
+static Transform* Lua_GetTransformFromArray(lua_State* state, int transformsIndex, int index)
+{
+    lua_rawgeti(state, transformsIndex, index);
+    const auto result = luabridge::get<Transform*>(state, -1);
+    Transform* transform = result ? *result : nullptr;
+    lua_pop(state, 1);
+    return transform;
+}
+
+static int Lua_ApplyChainPositions(lua_State* state)
+{
+    if (!lua_istable(state, 1) || !lua_istable(state, 2) || !lua_isnumber(state, 3)) {
+        lua_pushboolean(state, 0);
+        return 1;
+    }
+
+    const int transformsIndex = lua_absindex(state, 1);
+    const int positionsIndex = lua_absindex(state, 2);
+    const int requestedCount = std::max(0, static_cast<int>(lua_tointeger(state, 3)));
+    const int count = std::min({
+        requestedCount,
+        static_cast<int>(lua_rawlen(state, transformsIndex)),
+        static_cast<int>(lua_rawlen(state, positionsIndex))});
+    bool complete = count == requestedCount;
+
+    for (int index = 1; index <= count; ++index) {
+        Transform* transform = Lua_GetTransformFromArray(state, transformsIndex, index);
+        ChainPhysicsWrappers::Detail::Point position;
+        if (!transform || !ChainPhysicsWrappers::Detail::ReadPointAt(
+                state, positionsIndex, index, position)) {
+            complete = false;
+            continue;
+        }
+
+        transform->localPosition.x = static_cast<float>(position.x);
+        transform->localPosition.y = static_cast<float>(position.y);
+        transform->localPosition.z = static_cast<float>(position.z);
+        transform->isDirty = true;
+    }
+
+    lua_pushboolean(state, complete);
+    return 1;
+}
+
+static int Lua_ApplyChainRotations(lua_State* state)
+{
+    if (!lua_istable(state, 1) || !lua_istable(state, 2) || !lua_isnumber(state, 3)) {
+        lua_pushboolean(state, 0);
+        return 1;
+    }
+
+    const int transformsIndex = lua_absindex(state, 1);
+    const int rotationsIndex = lua_absindex(state, 2);
+    const int requestedCount = std::max(0, static_cast<int>(lua_tointeger(state, 3)));
+    const int count = std::min({
+        requestedCount,
+        static_cast<int>(lua_rawlen(state, transformsIndex)),
+        static_cast<int>(lua_rawlen(state, rotationsIndex))});
+    bool complete = count == requestedCount;
+
+    for (int index = 1; index <= count; ++index) {
+        Transform* transform = Lua_GetTransformFromArray(state, transformsIndex, index);
+        lua_rawgeti(state, rotationsIndex, index);
+        if (!transform || !lua_istable(state, -1)) {
+            complete = false;
+            lua_pop(state, 1);
+            continue;
+        }
+
+        float values[4]{};
+        bool valid = true;
+        for (int component = 1; component <= 4; ++component) {
+            lua_rawgeti(state, -1, component);
+            if (!lua_isnumber(state, -1)) valid = false;
+            values[component - 1] = static_cast<float>(lua_tonumber(state, -1));
+            lua_pop(state, 1);
+        }
+        lua_pop(state, 1);
+        if (!valid) {
+            complete = false;
+            continue;
+        }
+
+        transform->localRotation.w = values[0];
+        transform->localRotation.x = values[1];
+        transform->localRotation.y = values[2];
+        transform->localRotation.z = values[3];
+        transform->isDirty = true;
+    }
+
+    lua_pushboolean(state, complete);
+    return 1;
 }
 
 
@@ -253,7 +403,7 @@ static void Lua_CreateEntityDup(const std::string& source_name, const std::strin
 
     // Find source entity by name
     Entity sourceEntity = static_cast<Entity>(-1);
-    for (const auto& entity : ecs.GetActiveEntities()) {
+    for (const auto& entity : ecs.GetActiveEntitiesView()) {
         if (ecs.HasComponent<NameComponent>(entity)) {
             if (ecs.GetComponent<NameComponent>(entity).name == source_name) {
                 sourceEntity = entity;
@@ -282,7 +432,7 @@ static void Lua_CreateEntityDup(const std::string& source_name, const std::strin
                 nameExists = false;
 
                 // Check if name already exists
-                for (const auto& entity : ecs.GetActiveEntities()) {
+                for (const auto& entity : ecs.GetActiveEntitiesView()) {
                     if (ecs.HasComponent<NameComponent>(entity)) {
                         if (ecs.GetComponent<NameComponent>(entity).name == newName) {
                             nameExists = true;
@@ -420,7 +570,7 @@ static void Lua_DestroyEntityDup(const std::string& base_name, int numToDestroy)
     std::vector<Entity> entitiesToDestroy;
 
     // Find all entities matching the pattern
-    for (const auto& entity : ecs.GetActiveEntities()) {
+    for (const auto& entity : ecs.GetActiveEntitiesView()) {
         if (ecs.HasComponent<NameComponent>(entity)) {
             std::string entityName = ecs.GetComponent<NameComponent>(entity).name;
 
@@ -465,24 +615,8 @@ static void Lua_DestroyEntityDup(const std::string& base_name, int numToDestroy)
 
 static Entity Lua_FindEntityByName(const std::string& name)
 {
-    if (!g_ecsManager) return -1; 
-    ECSManager& ecs = *g_ecsManager;
-
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (!ecs.HasComponent<NameComponent>(e))
-            continue;
-
-        auto& nc = ecs.GetComponent<NameComponent>(e);
-        if (nc.name == name)
-        {
-            return e;
-        }
-    }
-
-    return -1; // Not found
+    if (!g_ecsManager) return INVALID_ENTITY;
+    return FindActiveEntityByName(*g_ecsManager, name);
 }
 
 // stack args: 1 = tag (string), 2 = maxResults (optional number)
@@ -497,28 +631,21 @@ static int Lua_GetEntitiesByTag(lua_State* L)
     }
 
     ECSManager& ecs = *g_ecsManager;
-    const auto& entities = ecs.GetActiveEntities();
+    const auto& entities = ecs.GetActiveEntitiesView();
 
-    std::vector<Entity> results;
-    results.reserve(maxResults);
+    maxResults = std::max(maxResults, 0);
+    lua_createtable(L, maxResults, 0);
+    int resultCount = 0;
 
     for (Entity e : entities)
     {
-        if (results.size() >= static_cast<size_t>(maxResults)) break;
-        if (!ecs.HasComponent<TagComponent>(e)) continue;
-        auto& tc = ecs.GetComponent<TagComponent>(e);
-        if (tc.HasTag(tag))
+        if (resultCount >= maxResults) break;
+        auto tagComponent = ecs.TryGetComponent<TagComponent>(e);
+        if (tagComponent && tagComponent->get().HasTag(tag))
         {
-            results.push_back(e);
+            lua_pushinteger(L, static_cast<lua_Integer>(e));
+            lua_rawseti(L, -2, ++resultCount);
         }
-    }
-
-    // Create and populate a Lua table
-    lua_createtable(L, results.size(), 0);  // Pre-allocate array part
-    for (size_t i = 0; i < results.size(); ++i)
-    {
-        lua_pushinteger(L, static_cast<lua_Integer>(results[i]));
-        lua_rawseti(L, -2, i + 1);  // Lua arrays are 1-indexed
     }
 
     return 1;  // Return the table
@@ -548,30 +675,12 @@ static size_t Lua_FindCurrentClipByName(const std::string& name)
     if (!g_ecsManager) return -1;
     ECSManager& ecs = *g_ecsManager;
 
-    // Get all active entities (same pattern as InspectorPanel)
-    const auto& entities = ecs.GetActiveEntities();
-
-    for (Entity e : entities)
-    {
-        if (!ecs.HasComponent<NameComponent>(e))
-            continue;
-
-        auto& nc = ecs.GetComponent<NameComponent>(e);
-        if (nc.name == name)
-        {
-            // Found the entity with matching name, now ensure it has a Transform
-            if (ecs.HasComponent<AnimationComponent>(e))
-            {
-                auto& animation = ecs.GetComponent<AnimationComponent>(e);
-                return animation.GetActiveClipIndex();
-            }
-
-            // Name matched but no AnimationComponent; stop searching if names are unique
-            break;
-        }
-    }
-
-    return -1;
+    const Entity entity = FindActiveEntityByName(ecs, name);
+    if (entity == INVALID_ENTITY) return static_cast<size_t>(-1);
+    auto animation = ecs.TryGetComponent<AnimationComponent>(entity);
+    return animation
+        ? animation->get().GetActiveClipIndex()
+        : static_cast<size_t>(-1);
 }
 
 
@@ -588,6 +697,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 
     m_ecs = &ecsManager;
 	g_ecsManager = &ecsManager;
+    g_entityByNameCache.clear();
 
     Scripting::Init();
 
@@ -732,33 +842,45 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         }
 
         // install host get-component handler that uses ComponentRegistry
-        Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
+        Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, std::string_view compName) -> bool {
             //ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] HostGetComponentHandler asked for comp=", compName, " entity=", entityId);
 
-            // Check if component type is registered
-            if (!ComponentRegistry::Instance().Has(compName))
+            // Resolve metadata and the getter in one registry lookup.
+            ComponentRegistry::ComponentInfo componentInfo;
+            if (!ComponentRegistry::Instance().Get(compName, componentInfo))
             {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not registered in ComponentRegistry");
+                ENGINE_PRINT(
+                    EngineLogging::LogLevel::Warn,
+                    "[ScriptSystem] Component '",
+                    std::string(compName),
+                    "' not registered in ComponentRegistry");
                 lua_pushnil(L);
                 return true;
             }
 
-            // Get the getter function
-            auto getter = ComponentRegistry::Instance().GetGetter(compName);
-            if (!getter)
+            if (!componentInfo.getter)
             {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] No getter function for '", compName, "'");
+                ENGINE_PRINT(
+                    EngineLogging::LogLevel::Warn,
+                    "[ScriptSystem] No getter function for '",
+                    std::string(compName),
+                    "'");
                 lua_pushnil(L);
                 return true;
             }
 
             // Call the getter
-            void* compPtr = getter(m_ecs, static_cast<Entity>(entityId));
+            void* compPtr = componentInfo.getter(m_ecs, static_cast<Entity>(entityId));
             //ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Getter returned ptr=", compPtr, " for comp=", compName, " entity=", entityId);
 
             if (!compPtr)
             {
-                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Component '", compName, "' not found on entity ", entityId, " (getter returned null)");
+                // Optional component queries legitimately return nil. Keeping
+                // this at warning level can flood Android logcat from hot Lua
+                // paths and turn a cheap miss into formatting + I/O.
+                ENGINE_LOG_DEBUG(
+                    "[ScriptSystem] Component '" + std::string(compName) +
+                    "' not found on entity " + std::to_string(entityId));
                 lua_pushnil(L);
                 return true;
             }
@@ -782,8 +904,9 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             }
 
             // fallback: push proxy userdata
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Pushing component proxy for ", compName);
-            PushComponentProxy(L, m_ecs, static_cast<Entity>(entityId), compName);
+            const std::string componentName(compName);
+            ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Pushing component proxy for ", componentName);
+            PushComponentProxy(L, m_ecs, static_cast<Entity>(entityId), componentName);
             return true;
         });
 
@@ -841,50 +964,49 @@ void ScriptSystem::Update()
         ReloadAllInstances();
     }
 
-    // advance coroutines & runtime tick if runtime initialized
+    // Advance coroutines and capture the resulting VM once for all script
+    // updates. ScriptingRuntime::GetLuaState takes a mutex, so querying it per
+    // script is needlessly expensive on script-heavy scenes.
     // Use scaled delta time so coroutines respect pause state
-    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
+    Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
+    lua_State* const luaState = Scripting::GetLuaState();
 
     // Single lock for entire Update — m_runtimeMap is only accessed from main thread
     // (SequentialSystemOrchestrator::Update is single-threaded)
     std::lock_guard<std::recursive_mutex> lk(m_mutex);
 
     // Phase 1: Create instances for all entities that need them (no Awake/Start yet)
-    std::vector<Entity> newlyCreatedEntities;
+    m_newlyCreatedEntitiesScratch.clear();
+    m_newlyCreatedEntitiesScratch.reserve(entities.size());
     for (Entity e : entities)
     {
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+        // ScriptSystem membership guarantees ScriptComponentData.
+        ScriptComponentData& comp =
+            m_ecs->GetComponent<ScriptComponentData>(e);
+
+        // Runtime flags are kept in sync when instances are created, destroyed,
+        // reloaded, and shut down. Use them for the common all-created case so
+        // every script entity does not probe the runtime hash map each frame.
+        bool needsCreation = false;
+        for (const ScriptData& script : comp.scripts) {
+            if (script.enabled && !script.scriptPath.empty() &&
+                !script.instanceCreated) {
+                needsCreation = true;
+                break;
+            }
+        }
+
+        if (!needsCreation || !m_ecs->IsEntityActiveInHierarchy(e)) {
             continue;
         }
 
-        ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
-        if (!comp) continue;
-
-        // Check if this entity needs new instances created
-        bool needsCreation = false;
-        auto it = m_runtimeMap.find(e);
-        if (it == m_runtimeMap.end()) {
-            needsCreation = true;
-        } else {
-            for (size_t i = 0; i < comp->scripts.size(); ++i) {
-                if (comp->scripts[i].enabled && !comp->scripts[i].scriptPath.empty()) {
-                    if (i >= it->second.size() || !it->second[i]) {
-                        needsCreation = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (needsCreation) {
-            if (EnsureInstanceForEntityNoLifecycle(e, *m_ecs)) {
-                newlyCreatedEntities.push_back(e);
-            }
+        if (EnsureInstanceForEntityNoLifecycle(e, *m_ecs)) {
+            m_newlyCreatedEntitiesScratch.push_back(e);
         }
     }
 
     // Phase 2: Call Awake on all newly created instances
-    for (Entity e : newlyCreatedEntities)
+    for (Entity e : m_newlyCreatedEntitiesScratch)
     {
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
@@ -900,7 +1022,7 @@ void ScriptSystem::Update()
     }
 
     // Phase 3: Call Start on all newly created instances
-    for (Entity e : newlyCreatedEntities)
+    for (Entity e : m_newlyCreatedEntitiesScratch)
     {
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
@@ -924,76 +1046,80 @@ void ScriptSystem::Update()
     float dt = static_cast<float>(TimeManager::GetDeltaTime());
 
     // Pass 4a: detect inactive→active transitions, set justActivated flags
+    EntityQueryWrappers::UpdateCacheTiming(dt);
+    m_justActivatedEntitiesScratch.clear();
+    m_justActivatedEntitiesScratch.reserve(entities.size());
+    m_activeUpdateInstancesScratch.clear();
     for (Entity e : entities)
     {
         bool isActive = m_ecs->IsEntityActiveInHierarchy(e);
 
         if (!isActive) {
-            m_prevActiveEntities.erase(e);
+            m_prevActiveEntities.reset(e);
             continue;
         }
 
-        bool wasActive = m_prevActiveEntities.count(e) > 0;
-        if (!wasActive) {
-            m_prevActiveEntities.insert(e);
-            if (m_ecs->HasComponent<ActiveComponent>(e)) {
-                m_ecs->GetComponent<ActiveComponent>(e).justActivated = true;
+        if (!m_prevActiveEntities.test(e)) {
+            m_prevActiveEntities.set(e);
+            auto activeComponent = m_ecs->TryGetComponent<ActiveComponent>(e);
+            if (activeComponent) {
+                activeComponent->get().justActivated = true;
+                m_justActivatedEntitiesScratch.push_back(e);
+            }
+        }
+
+        auto runtimeIt = m_runtimeMap.find(e);
+        if (runtimeIt == m_runtimeMap.end()) {
+            continue;
+        }
+        for (auto& scriptInst : runtimeIt->second) {
+            if (scriptInst && scriptInst->HasUpdate()) {
+                m_activeUpdateInstancesScratch.push_back(scriptInst.get());
             }
         }
     }
 
     // Pass 4b: run script Updates (all justActivated flags are visible)
-    for (Entity e : entities)
-    {
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;
-
-        ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
-        if (!comp) continue;
-
-        auto it = m_runtimeMap.find(e);
-        if (it != m_runtimeMap.end())
-        {
-            for (auto& scriptInst : it->second)
-            {
-                if (scriptInst)
-                {
 #if defined(TRACY_ENABLE)
-                    {
-                        PROFILE_FUNCTION();
-                        const auto& path = scriptInst->GetScriptPath();
-                        ZoneName(path.c_str(), path.size());
-                        scriptInst->Update(dt);
-                    }
+    for (Scripting::ScriptComponent* scriptInst : m_activeUpdateInstancesScratch)
+    {
+        {
+            PROFILE_FUNCTION();
+            const auto& path = scriptInst->GetScriptPath();
+            ZoneName(path.c_str(), path.size());
+            scriptInst->Update(dt, luaState);
+        }
+    }
 #else
-                    scriptInst->Update(dt);
+    Scripting::ScriptComponent::UpdateBatch(
+        dt, luaState, m_activeUpdateInstancesScratch.data(), m_activeUpdateInstancesScratch.size());
 #endif
-                }
-            }
+
+    // Pass 4c: clear only flags raised above rather than scanning every script entity.
+    for (Entity e : m_justActivatedEntitiesScratch)
+    {
+        auto activeComponent = m_ecs->TryGetComponent<ActiveComponent>(e);
+        if (activeComponent) {
+            activeComponent->get().justActivated = false;
         }
     }
 
-    // Pass 4c: clear all justActivated flags now that every script has run
-    for (Entity e : entities)
+    // Membership changes are rare. Avoid scanning the runtime hash map and
+    // probing the system's tree for every script entity on unchanged frames.
+    const std::uint64_t membershipVersion = entities.Version();
+    if (m_lastMembershipVersion != membershipVersion)
     {
-        if (m_ecs->HasComponent<ActiveComponent>(e)) {
-            auto& ac = m_ecs->GetComponent<ActiveComponent>(e);
-            if (ac.justActivated) ac.justActivated = false;
-        }
-    }
-
-    // cleanup runtime instances for entities that no longer belong to this system
-    {
-        std::vector<Entity> toRemove;
-        toRemove.reserve(8);
+        m_runtimeRemovalScratch.clear();
         for (auto& p : m_runtimeMap)
         {
             Entity e = p.first;
-            if (entities.find(e) == entities.end()) toRemove.push_back(e);
+            if (!entities.contains(e)) m_runtimeRemovalScratch.push_back(e);
         }
-        for (Entity e : toRemove)
+        for (Entity e : m_runtimeRemovalScratch)
         {
             DestroyInstanceForEntity(e);
         }
+        m_lastMembershipVersion = membershipVersion;
     }
 }
 
@@ -1012,9 +1138,17 @@ void ScriptSystem::Shutdown()
         }
     }
     m_runtimeMap.clear();
-    m_prevActiveEntities.clear();
+    for (auto& eventMask : m_intEventMasks) {
+        eventMask.store(0, std::memory_order_relaxed);
+    }
+    m_prevActiveEntities.reset();
+    m_justActivatedEntitiesScratch.clear();
+    m_activeUpdateInstancesScratch.clear();
+    m_lastMembershipVersion = 0;
 
     g_ecsManager = nullptr;
+    g_entityByNameCache.clear();
+    EntityQueryWrappers::ClearEnemyCaches();
     // Clean up standalone instances (used by ButtonComponent)
     for (auto& p : m_standaloneInstances) {
         if (p.second && Scripting::GetLuaState()) {
@@ -1156,6 +1290,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
             scriptVec[scriptIdx] = std::move(runtimeComp);
             script.instanceId = scPtr ? scPtr->GetInstanceRef() : LUA_NOREF;
             script.instanceCreated = (scPtr != nullptr);
+            RefreshEntityIntEventMask(e);
             // Notify listeners that instances for 'e' have been created/changed.
             NotifyInstancesChanged(e);
         }
@@ -1172,6 +1307,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
         }
     }
 
+    RefreshEntityIntEventMask(e);
     return true;
 }
 
@@ -1287,6 +1423,7 @@ bool ScriptSystem::EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsM
             scriptVec[scriptIdx] = std::move(runtimeComp);
             script.instanceId = scPtr ? scPtr->GetInstanceRef() : LUA_NOREF;
             script.instanceCreated = (scPtr != nullptr);
+            RefreshEntityIntEventMask(e);
             // Notify listeners that instances for 'e' have been created/changed.
             NotifyInstancesChanged(e);
         }
@@ -1295,11 +1432,17 @@ bool ScriptSystem::EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsM
         // NOTE: Awake/Start are NOT called here - caller is responsible for calling them
     }
 
+    RefreshEntityIntEventMask(e);
     return anyCreated;
 }
 
 void ScriptSystem::DestroyInstanceForEntity(Entity e)
 {
+    if (e < MAX_ENTITIES) {
+        m_prevActiveEntities.reset(e);
+        m_intEventMasks[e].store(0, std::memory_order_relaxed);
+    }
+
     std::vector<std::unique_ptr<Scripting::ScriptComponent>> runtimePtrs;
     {
         std::lock_guard<std::recursive_mutex> lk(m_mutex);
@@ -1370,6 +1513,7 @@ void ScriptSystem::ReloadScriptForEntity(Entity e, ECSManager& ecsManager)
                 }
             }
             m_runtimeMap.erase(it);
+            m_intEventMasks[e].store(0, std::memory_order_relaxed);
         }
     }
 
@@ -1441,12 +1585,25 @@ bool ScriptSystem::CallEntityFunction(Entity e, const std::string& funcName, ECS
 
 bool ScriptSystem::CallEntityFunctionWithInt(Entity e, const std::string& funcName, int intArg, ECSManager& ecsManager)
 {
+    if (!CanEntityHandleIntEvent(e, funcName)) return false;
+
     ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
     if (!comp) return false;
 
-    if (!EnsureInstanceForEntity(e, ecsManager)) return false;
-
     if (!Scripting::GetLuaState()) return false;
+
+    // Collision events are dispatched frequently, especially Stay. Avoid the
+    // full reconciliation path when every enabled script already has a runtime.
+    bool needsReconciliation = false;
+    for (const ScriptData& script : comp->scripts) {
+        if (script.enabled && !script.scriptPath.empty() &&
+            !script.instanceCreated) {
+            needsReconciliation = true;
+            break;
+        }
+    }
+
+    if (needsReconciliation && !EnsureInstanceForEntity(e, ecsManager)) return false;
 
     bool anySuccess = false;
     {
@@ -1456,7 +1613,7 @@ bool ScriptSystem::CallEntityFunctionWithInt(Entity e, const std::string& funcNa
         {
             for (auto& scriptInst : it->second)
             {
-                if (scriptInst)
+                if (scriptInst && scriptInst->CanHandleIntEvent(funcName))
                 {
                     int instRef = scriptInst->GetInstanceRef();
                     if (Scripting::CallInstanceFunctionWithInt(instRef, funcName, intArg))
@@ -1471,6 +1628,43 @@ bool ScriptSystem::CallEntityFunctionWithInt(Entity e, const std::string& funcNa
     return anySuccess;
 }
 
+bool ScriptSystem::CanEntityHandleIntEvent(Entity e, std::string_view funcName) const noexcept
+{
+    const std::uint8_t eventBit = GetTrackedIntEventBit(funcName);
+    if (eventBit == 0) {
+        return true;
+    }
+    if (e >= MAX_ENTITIES) {
+        return false;
+    }
+    const std::uint8_t eventState =
+        m_intEventMasks[e].load(std::memory_order_relaxed);
+    if ((eventState & kIntEventMaskKnown) == 0) {
+        // The runtime has not reconciled this entity yet. Preserve the old
+        // behavior and let the call path create its instance on demand.
+        return true;
+    }
+    return (eventState & eventBit) != 0;
+}
+
+void ScriptSystem::RefreshEntityIntEventMask(Entity e)
+{
+    if (e >= MAX_ENTITIES) return;
+
+    std::uint8_t aggregateMask = 0;
+    auto runtimeIt = m_runtimeMap.find(e);
+    if (runtimeIt != m_runtimeMap.end()) {
+        for (const auto& script : runtimeIt->second) {
+            if (script) {
+                aggregateMask |= script->GetIntEventMask();
+            }
+        }
+    }
+    m_intEventMasks[e].store(
+        static_cast<std::uint8_t>(aggregateMask | kIntEventMaskKnown),
+        std::memory_order_relaxed);
+}
+
 void ScriptSystem::ReloadSystem()
 {
     Shutdown();
@@ -1483,7 +1677,8 @@ void ScriptSystem::ReloadAllInstances()
     std::vector<Entity> entitySnapshot;
     {
         std::lock_guard<std::recursive_mutex> lk(m_mutex);
-        entitySnapshot.assign(entities.begin(), entities.end());
+        const auto& denseEntities = entities.DenseView();
+        entitySnapshot.assign(denseEntities.begin(), denseEntities.end());
     }
 
     if (!m_ecs) return;
@@ -1535,6 +1730,7 @@ void ScriptSystem::ReloadAllInstances()
                     }
                 }
                 m_runtimeMap.erase(it);
+                m_intEventMasks[e].store(0, std::memory_order_relaxed);
             }
         }
 
@@ -1617,15 +1813,8 @@ void ScriptSystem::ReloadAllInstances()
 
 ScriptComponentData* ScriptSystem::GetScriptComponent(Entity e, ECSManager& ecsManager)
 {
-    try
-    {
-        if (!ecsManager.HasComponent<ScriptComponentData>(e)) return nullptr;
-        return &ecsManager.GetComponent<ScriptComponentData>(e);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
+    auto component = ecsManager.TryGetComponent<ScriptComponentData>(e);
+    return component ? &component->get() : nullptr;
 }
 
 const ScriptComponentData* ScriptSystem::GetScriptComponentConst(Entity e, const ECSManager& ecsManager) const

@@ -63,7 +63,11 @@ public:
 	const AnimParamSet& GetParams() const	{ return mParam; }
 
 	// State management
-	void AddState(const AnimStateID& id, const AnimStateConfig& config) { mStates[id] = config; }
+	void AddState(const AnimStateID& id, const AnimStateConfig& config)
+	{
+		mStates[id] = config;
+		InvalidateTransitionCache();
+	}
 	void RemoveState(const AnimStateID& id);
 	void RenameState(const AnimStateID& oldId, const AnimStateID& newId);
 	bool HasState(const AnimStateID& id) const { return mStates.find(id) != mStates.end(); }
@@ -71,7 +75,11 @@ public:
 	const AnimStateConfig* GetState(const AnimStateID& id) const;
 
 	// Transition management
-	void AddTransition(const AnimTransition& transition) { mTransitions.push_back(transition); }
+	void AddTransition(const AnimTransition& transition)
+	{
+		mTransitions.push_back(transition);
+		InvalidateTransitionCache();
+	}
 	void RemoveTransition(size_t index);
 	AnimTransition* GetTransition(size_t index);
 	const AnimTransition* GetTransition(size_t index) const;
@@ -85,6 +93,7 @@ public:
 	{
 		mEntryState = id;
 		mCurrentState = id;
+		InvalidateTransitionCache();
 		EnterState(id, entity);
 	}
 	const AnimStateID& GetEntryState() const { return mEntryState; }
@@ -95,9 +104,17 @@ public:
 
 	// Editor access to internal data
 	const std::unordered_map<AnimStateID, AnimStateConfig>& GetAllStates() const { return mStates; }
-	std::unordered_map<AnimStateID, AnimStateConfig>& GetAllStates() { return mStates; }
+	std::unordered_map<AnimStateID, AnimStateConfig>& GetAllStates()
+	{
+		InvalidateTransitionCache();
+		return mStates;
+	}
 	const std::vector<AnimTransition>& GetAllTransitions() const { return mTransitions; }
-	std::vector<AnimTransition>& GetAllTransitions() { return mTransitions; }
+	std::vector<AnimTransition>& GetAllTransitions()
+	{
+		InvalidateTransitionCache();
+		return mTransitions;
+	}
 
 	// Runtime
 	void Update(float dt, Entity entity);
@@ -110,6 +127,9 @@ private:
 	void EnterState(const AnimStateID& id, Entity entity, float transitionCrossfade = 0.0f);
 	bool EvaluateTransitionConditions(const AnimTransition& transition) const;
 	void ConsumeTriggers(const AnimTransition& transition);
+	const std::vector<std::size_t>& GetTransitionCandidates() const;
+	void RebuildTransitionCache() const;
+	void InvalidateTransitionCache() { mTransitionCacheDirty = true; }
 
 private:
 	AnimationComponent* mOwner = nullptr;
@@ -121,4 +141,11 @@ private:
 	AnimParamSet mParam;
 	std::unordered_map<AnimStateID, AnimStateConfig> mStates;
 	std::vector<AnimTransition> mTransitions;
+
+	// Controllers can contain hundreds of transitions, while only a handful can
+	// leave the current state. Keep those indices in original priority order.
+	mutable std::unordered_map<AnimStateID, std::vector<std::size_t>> mTransitionCandidates;
+	mutable const AnimTransition* mCachedTransitionData = nullptr;
+	mutable std::size_t mCachedTransitionCount = 0;
+	mutable bool mTransitionCacheDirty = true;
 };

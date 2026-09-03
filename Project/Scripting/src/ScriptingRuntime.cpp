@@ -38,10 +38,15 @@ namespace Scripting {
         // global fallback host log handler used by the C binding
         static std::function<void(const std::string&)> s_globalHostLogHandler;
         // host-provided component resolver callback.
-        static std::function<bool(lua_State*, uint32_t, const std::string&)> s_globalGetComponentHandler;
+        static HostGetComponentFn s_globalGetComponentHandler;
 
         // Lua C binding for cpp_log - forwards to s_globalHostLogHandler if present, otherwise to ENGINE_PRINT
         static int l_cpp_log(lua_State* L) {
+            if constexpr (!EngineLogging::ShouldLog(
+                              EngineLogging::LogLevel::Info)) {
+                return 0;
+            }
+
             const char* msg = luaL_optstring(L, 1, "");
             std::string s = msg ? msg : "";
             if (s_globalHostLogHandler) {
@@ -65,11 +70,15 @@ namespace Scripting {
             // Arg 1: entity id (number)
             // Arg 2: component name (string)
             uint32_t entityId = (uint32_t)luaL_checkinteger(L, 1);
-            const char* name = luaL_checkstring(L, 2);
+            std::size_t nameLength = 0;
+            const char* name = luaL_checklstring(L, 2, &nameLength);
 
             if (s_globalGetComponentHandler) {
                 try {
-                    bool ok = s_globalGetComponentHandler(L, entityId, std::string(name));
+                    bool ok = s_globalGetComponentHandler(
+                        L,
+                        entityId,
+                        std::string_view(name, nameLength));
                     if (ok) {
                         // callback must have pushed a value; return 1
                         return 1;
@@ -580,7 +589,7 @@ namespace Scripting {
         }
     }
 
-    void ScriptingRuntime::SetHostGetComponentHandler(std::function<bool(lua_State*, uint32_t, const std::string&)> handler) {
+    void ScriptingRuntime::SetHostGetComponentHandler(HostGetComponentFn handler) {
         std::lock_guard<std::mutex> lock(m_mutex);
         s_globalGetComponentHandler = std::move(handler);
         // The GetComponent C function is already installed in any live lua state by register_core_bindings
@@ -626,6 +635,12 @@ namespace Scripting {
         lua_State* L = luaL_newstate();
         if (!L) return false;
         if (m_config.openLibs) luaL_openlibs(L);
+        // Gameplay scripts create many short-lived tables and closures every
+        // frame. Lua 5.4's generational collector reclaims those in cheap minor
+        // collections instead of periodically sweeping the whole heap, which
+        // keeps frame times steadier on mobile CPUs. Parameters stay at Lua's
+        // defaults (0 keeps the current value).
+        lua_gc(L, LUA_GCGEN, 0, 0);
         register_core_bindings(L);
         out = L;
         return true;

@@ -30,9 +30,44 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/BloomComponent.hpp"
 #include "Graphics/Particle/ParticleRenderItem.hpp"
-
 namespace {
-std::unique_ptr<ParticleRenderItem> BuildRenderItem(
+constexpr float kPi = 3.14159265358979323846f;
+
+#ifdef ANDROID
+std::uint16_t PackParticleUnorm(float value)
+{
+    return static_cast<std::uint16_t>(
+        glm::clamp(value, 0.0f, 1.0f) * 65535.0f + 0.5f);
+}
+
+std::int16_t PackParticleSnorm(float value)
+{
+    return static_cast<std::int16_t>(std::lround(
+        glm::clamp(value, -1.0f, 1.0f) * 32767.0f));
+}
+#endif
+
+void LinkParticleInstanceAttributes(VAO& vao, VBO& instanceVBO)
+{
+    vao.LinkAttrib(instanceVBO, 2, 3, GL_FLOAT, sizeof(ParticleInstanceData),
+        reinterpret_cast<void*>(offsetof(ParticleInstanceData, position)), 1);
+#ifdef ANDROID
+    vao.LinkAttribNormalized(instanceVBO, 3, 1, GL_UNSIGNED_SHORT, sizeof(ParticleInstanceData),
+        reinterpret_cast<void*>(offsetof(ParticleInstanceData, lifeUnorm)), 1);
+    vao.LinkAttribNormalized(instanceVBO, 4, 2, GL_SHORT, sizeof(ParticleInstanceData),
+        reinterpret_cast<void*>(offsetof(ParticleInstanceData, rotationSinCos)), 1);
+#else
+    vao.LinkAttrib(instanceVBO, 3, 4, GL_FLOAT, sizeof(ParticleInstanceData),
+        reinterpret_cast<void*>(offsetof(ParticleInstanceData, color)), 1);
+    vao.LinkAttrib(instanceVBO, 4, 1, GL_FLOAT, sizeof(ParticleInstanceData),
+        reinterpret_cast<void*>(offsetof(ParticleInstanceData, size)), 1);
+    vao.LinkAttrib(instanceVBO, 5, 2, GL_FLOAT, sizeof(ParticleInstanceData),
+        reinterpret_cast<void*>(offsetof(ParticleInstanceData, rotationSinCos)), 1);
+#endif
+}
+
+bool BuildRenderItem(
+    ParticleRenderItem& renderItem,
     const ParticleComponent& particleComp,
     Entity entity,
     ECSManager& ecsManager,
@@ -40,42 +75,59 @@ std::unique_ptr<ParticleRenderItem> BuildRenderItem(
     uint32_t excludedLayerMask)
 {
     if (particleComp.particles.empty() || !particleComp.particleShader || !particleComp.particleVAO) {
-        return nullptr;
+        return false;
     }
 
-    auto renderItem = std::make_unique<ParticleRenderItem>();
-    renderItem->isVisible = particleComp.isVisible;
-    renderItem->renderOrder = particleComp.renderOrder;
-    renderItem->excludeFromPostProcess = particleComp.excludeFromPostProcess;
-    renderItem->bloomColor = particleComp.bloomColor;
-    renderItem->bloomIntensity = particleComp.bloomIntensity;
-    renderItem->brightnessBoost = particleComp.brightnessBoost;
-    renderItem->particleTexture = particleComp.particleTexture;
-    renderItem->particleShader = particleComp.particleShader;
-    renderItem->particleVAO = particleComp.particleVAO;
-    renderItem->quadEBO = particleComp.quadEBO;
-    renderItem->particleCount = particleComp.particles.size();
-    renderItem->additiveBlending = particleComp.additiveBlending;
+#ifdef __ANDROID__
+	if (particleComp.hasParticleBounds &&
+		graphicsManager.IsFrustumCullingEnabled() &&
+		!graphicsManager.GetFrustum().IsBoxVisible(AABB(
+			particleComp.particleBoundsMin,
+			particleComp.particleBoundsMax))) {
+		return false;
+	}
+#endif
 
-    if (ecsManager.HasComponent<BloomComponent>(entity)) {
-        auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+    renderItem.isVisible = particleComp.isVisible;
+    renderItem.renderOrder = particleComp.renderOrder;
+    renderItem.excludeFromPostProcess = particleComp.excludeFromPostProcess;
+    renderItem.bloomColor = particleComp.bloomColor;
+    renderItem.bloomIntensity = particleComp.bloomIntensity;
+    renderItem.brightnessBoost = particleComp.brightnessBoost;
+    renderItem.particleTexture = particleComp.particleTexture;
+    renderItem.particleShader = particleComp.particleShader;
+    renderItem.particleVAO = particleComp.particleVAO;
+    renderItem.quadEBO = particleComp.quadEBO;
+    renderItem.particleCount = particleComp.particles.size();
+    renderItem.additiveBlending = particleComp.additiveBlending;
+    renderItem.startColor = glm::vec4(
+        particleComp.startColor.ConvertToGLM(), particleComp.startColorAlpha);
+    renderItem.endColor = glm::vec4(
+        particleComp.endColor.ConvertToGLM(), particleComp.endColorAlpha);
+    renderItem.startSize = particleComp.startSize;
+    renderItem.endSize = particleComp.endSize;
+
+    if (auto bloomComponent = ecsManager.TryGetComponent<BloomComponent>(entity)) {
+        const auto& bloom = bloomComponent->get();
         if (bloom.enabled) {
-            renderItem->bloomColor = bloom.bloomColor;
-            renderItem->bloomIntensity = bloom.bloomIntensity;
-            if (bloom.bloomIntensity > 0.01f) {
-                graphicsManager.NotifyBloomUsedThisFrame();
-            }
+            renderItem.bloomColor = bloom.bloomColor;
+            renderItem.bloomIntensity = bloom.bloomIntensity;
         }
     }
 
     if (excludedLayerMask != 0) {
         const int layerIndex = GetEffectiveLayerIndex(entity, ecsManager);
         if (layerIndex >= 0 && layerIndex < 32 && (excludedLayerMask & (1u << layerIndex))) {
-            renderItem->excludeFromPostProcess = true;
+            renderItem.excludeFromPostProcess = true;
         }
     }
 
-    return renderItem;
+    if (!renderItem.excludeFromPostProcess &&
+        renderItem.bloomIntensity > 0.01f) {
+        graphicsManager.NotifyBloomUsedThisFrame();
+    }
+
+    return true;
 }
 }
 
@@ -86,7 +138,8 @@ std::unique_ptr<ParticleRenderItem> BuildRenderItem(
 
 \details    Sets up OpenGL buffers (VAO, VBO, EBO) for instanced rendering of particles.
             Creates quad geometry and configures vertex attributes for both per-vertex
-            (position, UV) and per-instance (position, color, size, rotation) data.
+            (position, UV) and per-instance (position, color, size, rotation
+            sine/cosine) data.
             Reserves memory for particle pools based on maxParticles setting.
 
 \return     bool - Returns true if initialization is successful
@@ -170,18 +223,8 @@ bool ParticleSystem::InitialiseParticles(bool forceInit)
         particleComp.instanceVBO = new VBO(particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
         particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
 
-        // Setup instance attributes (divisor = 1 means advance per instance)
-        // Position (location 2)
-        particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 2, 3, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, position), 1);
-
-        // Color (location 3)
-        particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 3, 4, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, color), 1);
-
-        // Size (location 4)
-        particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 4, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, size), 1);
-
-        // Rotation (location 5)
-        particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 5, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, rotation), 1);
+        // Divisor 1 advances these attributes once per particle instance.
+        LinkParticleInstanceAttributes(*particleComp.particleVAO, *particleComp.instanceVBO);
 
         particleComp.quadVBO->Unbind();
         particleComp.particleVAO->Unbind();
@@ -255,10 +298,7 @@ void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp
     particleComp.instanceVBO = new VBO( particleComp.maxParticles * sizeof(ParticleInstanceData), GL_DYNAMIC_DRAW);
     particleComp.instanceVBO->Bind();  // Must bind before LinkAttrib
 
-    particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 2, 3, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, position), 1);
-    particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 3, 4, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, color), 1);
-    particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 4, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, size), 1);
-    particleComp.particleVAO->LinkAttrib(*particleComp.instanceVBO, 5, 1, GL_FLOAT, sizeof(ParticleInstanceData), (void*)offsetof(ParticleInstanceData, rotation), 1);
+    LinkParticleInstanceAttributes(*particleComp.particleVAO, *particleComp.instanceVBO);
 
     particleComp.quadVBO->Unbind();
     particleComp.particleVAO->Unbind();
@@ -314,10 +354,12 @@ void ParticleSystem::Update()
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-    float dt = static_cast<float>(TimeManager::GetDeltaTime());
+    const float dt = static_cast<float>(TimeManager::GetDeltaTime());
+    const bool shouldRunGameLogic = Engine::ShouldRunGameLogic();
+    Camera* const currentCamera = gfxManager.GetCurrentCamera();
     const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
-    renderItems.reserve(entities.size());
+    renderSnapshots.reserve(entities.size());
+    std::size_t renderSnapshotCount = 0;
 
     for (const auto& entity : entities)
     {
@@ -336,20 +378,19 @@ void ParticleSystem::Update()
 
         if (!particleComp.isVisible) continue;
 
+        Transform* transform = nullptr;
+        if (auto transformComponent = ecsManager.TryGetComponent<Transform>(entity)) {
+            transform = &transformComponent->get();
+        }
+
 #ifdef __ANDROID__
         // Distance culling: skip simulation + rendering for emitters far from camera
-        if (ecsManager.HasComponent<Transform>(entity))
+        if (transform && currentCamera)
         {
-            auto& transform = ecsManager.GetComponent<Transform>(entity);
-            Camera* cam = gfxManager.GetCurrentCamera();
-            if (cam)
-            {
-                glm::vec3 pos(transform.worldMatrix.m.m03, transform.worldMatrix.m.m13, transform.worldMatrix.m.m23);
-                glm::vec3 diff = pos - cam->Position;
-                float distSq = glm::dot(diff, diff);
-                if (distSq > 900.0f) // 30 units
-                    continue;
-            }
+            const glm::vec3 diff =
+                transform->worldPosition.ConvertToGLM() - currentCamera->Position;
+            if (glm::dot(diff, diff) > 900.0f) // 30 units
+                continue;
         }
 
 #endif
@@ -357,7 +398,7 @@ void ParticleSystem::Update()
         // Only update particle physics if:
         // 1. Game is running (NOT paused), OR
         // 2. Playing in editor AND not paused in editor
-        bool shouldUpdateParticles = Engine::ShouldRunGameLogic() ||
+        const bool shouldUpdateParticles = shouldRunGameLogic ||
                                     (particleComp.isPlayingInEditor && !particleComp.isPausedInEditor);
 
         if (shouldUpdateParticles) {
@@ -366,27 +407,18 @@ void ParticleSystem::Update()
 
             // Calculate world emission position (transform + local offset)
             glm::vec3 emitterWorldPos = particleComp.emitterPosition.ConvertToGLM();
-            if (ecsManager.HasComponent<Transform>(entity))
-            {
-                auto& transform = ecsManager.GetComponent<Transform>(entity);
-                emitterWorldPos += glm::vec3(
-                    transform.worldMatrix.m.m03,
-                    transform.worldMatrix.m.m13,
-                    transform.worldMatrix.m.m23
-                );
+            if (transform) {
+                emitterWorldPos += transform->worldPosition.ConvertToGLM();
             }
 
             // Emit new particles
             if (particleComp.isEmitting)
             {
+                float effectiveEmissionRate = particleComp.emissionRate;
 #ifdef __ANDROID__
-                float originalRate = particleComp.emissionRate;
-                particleComp.emissionRate *= 0.5f;
+                effectiveEmissionRate *= 0.5f;
 #endif
-                EmitParticles(particleComp, dt, emitterWorldPos);
-#ifdef __ANDROID__
-                particleComp.emissionRate = originalRate;
-#endif
+                EmitParticles(particleComp, dt, emitterWorldPos, effectiveEmissionRate);
             }
 
             // UpdateParticles compacts expired particles in the same pass.
@@ -395,12 +427,20 @@ void ParticleSystem::Update()
 
         // The GPU instance buffer contains all per-particle data. Queue only a
         // lightweight draw snapshot, including while simulation is paused.
-        if (auto renderItem = BuildRenderItem(
-                particleComp, entity, ecsManager, gfxManager, excludedLayerMask)) {
-            renderItems.push_back(std::move(renderItem));
+        if (renderSnapshotCount == renderSnapshots.size()) {
+            renderSnapshots.emplace_back();
+        }
+        if (BuildRenderItem(
+                renderSnapshots[renderSnapshotCount],
+                particleComp,
+                entity,
+                ecsManager,
+                gfxManager,
+                excludedLayerMask)) {
+            ++renderSnapshotCount;
         }
     }
-    gfxManager.SubmitBatch(std::move(renderItems));
+    gfxManager.SubmitBatch(renderSnapshots, renderSnapshotCount);
 }
 
 /******************************************************************************/
@@ -465,38 +505,43 @@ void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
 {
     const glm::vec3 gravityStep = comp.gravity.ConvertToGLM() * dt;
     const float lifeStep = dt / comp.particleLifetime;
+#ifndef ANDROID
+    const float sizeDelta = comp.endSize - comp.startSize;
     const glm::vec4 startColor{
         comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha
     };
     const glm::vec4 endColor{
         comp.endColor.x, comp.endColor.y, comp.endColor.z, comp.endColorAlpha
     };
+    const glm::vec4 colorDelta = endColor - startColor;
+#endif
 
     std::size_t aliveCount = 0;
     for (std::size_t index = 0; index < comp.particles.size(); ++index)
     {
         Particle& particle = comp.particles[index];
 
+        particle.life -= lifeStep;
+        if (particle.life <= 0.0f) {
+            continue;
+        }
+
         // Update physics
         particle.velocity += gravityStep;
         particle.position += particle.velocity * dt;
 
-        // Update life
-        particle.life -= lifeStep;
-
         // Interpolate properties based on life
-        float t = 1.0f - particle.life;
-        particle.size = glm::mix(comp.startSize, comp.endSize, t);
-        particle.color = glm::mix(startColor, endColor, t);
+#ifndef ANDROID
+        const float t = 1.0f - particle.life;
+        particle.size = comp.startSize + sizeDelta * t;
+        particle.color = startColor + colorDelta * t;
+#endif
 
-        if (particle.life > 0.0f)
+        if (aliveCount != index)
         {
-            if (aliveCount != index)
-            {
-                comp.particles[aliveCount] = std::move(particle);
-            }
-            ++aliveCount;
+            comp.particles[aliveCount] = std::move(particle);
         }
+        ++aliveCount;
     }
 
     comp.particles.resize(aliveCount);
@@ -516,14 +561,22 @@ void ParticleSystem::UpdateParticles(ParticleComponent& comp, float dt)
 \param      dt - Delta time in seconds since last frame
 */
 /******************************************************************************/
-void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm::vec3& worldPos)
+void ParticleSystem::EmitParticles(
+    ParticleComponent& comp,
+    float dt,
+    const glm::vec3& worldPos,
+    float emissionRate)
 {
+    if (emissionRate <= 0.0f || comp.maxParticles == 0) return;
+
     comp.timeSinceEmission += dt;
-    float emissionInterval = 1.0f / comp.emissionRate;
+    const float emissionInterval = 1.0f / emissionRate;
     const glm::vec3 initialVelocity = comp.initialVelocity.ConvertToGLM();
+#ifndef ANDROID
     const glm::vec4 startColor{
         comp.startColor.x, comp.startColor.y, comp.startColor.z, comp.startColorAlpha
     };
+#endif
 
     while (comp.timeSinceEmission >= emissionInterval) 
     {
@@ -534,9 +587,12 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm:
         Particle p;
         p.position = worldPos;
         p.life = 1.0f;
+#ifndef ANDROID
         p.size = comp.startSize;
         p.color = startColor;
-        p.rotation = dist(rng) * 360.0f;
+#endif
+        const float rotation = dist(rng) * kPi;
+        p.rotationSinCos = { std::sin(rotation), std::cos(rotation) };
 
         // Add velocity randomness
         glm::vec3 randomVel(
@@ -556,14 +612,16 @@ void ParticleSystem::EmitParticles(ParticleComponent& comp, float dt, const glm:
 \brief      Uploads current particle data to GPU instance buffer
 
 \details    Builds an array of ParticleInstanceData from active particles containing
-            position, color, size, and rotation for each particle, then updates the
-            instance VBO for use in instanced rendering. Early exits if no particles exist.
+            position, color, size, and precomputed rotation sine/cosine for each
+            particle, then updates the instance VBO for use in instanced rendering.
+            Early exits if no particles exist.
 
 \param      comp - Reference to the particle component whose buffer needs updating
 */
 /******************************************************************************/
 void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
 {
+	comp.hasParticleBounds = false;
     if (comp.particles.empty()) return;
 
     // Reuse static buffer to avoid per-frame heap allocation per emitter
@@ -571,18 +629,73 @@ void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
     instanceData.clear();
     instanceData.reserve(comp.particles.size());
 
+	glm::vec3 boundsMin(std::numeric_limits<float>::max());
+	glm::vec3 boundsMax(std::numeric_limits<float>::lowest());
+	bool boundsAreFinite = true;
+#ifdef ANDROID
+	const float sizeDelta = comp.endSize - comp.startSize;
+#endif
+
     for (const auto& particle : comp.particles)
     {
         ParticleInstanceData data;
+#ifdef ANDROID
+        data.position[0] = particle.position.x;
+        data.position[1] = particle.position.y;
+        data.position[2] = particle.position.z;
+        data.lifeUnorm = PackParticleUnorm(particle.life);
+        data.padding = 0;
+        data.rotationSinCos[0] = PackParticleSnorm(particle.rotationSinCos.x);
+        data.rotationSinCos[1] = PackParticleSnorm(particle.rotationSinCos.y);
+#else
         data.position = particle.position;
         data.color = particle.color;
         data.size = particle.size;
-        data.rotation = particle.rotation;
+        data.rotationSinCos = particle.rotationSinCos;
+#endif
         instanceData.push_back(data);
+
+		// A rotated unit quad has a half-diagonal of sqrt(0.5). Expanding
+		// equally on every axis remains conservative for any camera billboard.
+#ifdef ANDROID
+		const float particleSize =
+			comp.startSize + sizeDelta * (1.0f - particle.life);
+#else
+		const float particleSize = particle.size;
+#endif
+		const float radius = glm::abs(particleSize) * 0.70710678118f;
+		const glm::vec3 extent(radius);
+		boundsMin = glm::min(boundsMin, particle.position - extent);
+		boundsMax = glm::max(boundsMax, particle.position + extent);
+		boundsAreFinite = boundsAreFinite &&
+			std::isfinite(particle.position.x) &&
+			std::isfinite(particle.position.y) &&
+			std::isfinite(particle.position.z) &&
+			std::isfinite(radius);
     }
 
-    // Update the instance VBO
-    comp.instanceVBO->Bind();
+	if (boundsAreFinite) {
+		comp.particleBoundsMin = boundsMin;
+		comp.particleBoundsMax = boundsMax;
+		comp.hasParticleBounds = true;
+	}
+
+#ifdef __ANDROID__
+	// The current positions are already packed and bounded. If the entire
+	// emitter is outside the camera frustum, BuildRenderItem will reject it too;
+	// avoid entering the GLES driver to upload data that cannot be drawn.
+	if (comp.hasParticleBounds) {
+		auto& graphics = GraphicsManager::GetInstance();
+		if (graphics.IsFrustumCullingEnabled() &&
+			!graphics.GetFrustum().IsBoxVisible(AABB(
+				comp.particleBoundsMin,
+				comp.particleBoundsMax))) {
+			return;
+		}
+	}
+#endif
+
+    // UpdateData binds the VBO itself; an extra bind/unbind pair here only
+    // adds driver traffic and is not required for later VAO-based drawing.
     comp.instanceVBO->UpdateData(instanceData.data(), instanceData.size() * sizeof(ParticleInstanceData));
-    comp.instanceVBO->Unbind();
 }

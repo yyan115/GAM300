@@ -75,13 +75,14 @@ return Component {
         self._hookedOffsetY   = 0
         self._hookedOffsetZ   = 0
         self._hookedIsThrowable = false   -- true when the hooked entity is a Throwable
+        self._hookedPositionPayload = {x=0, y=0, z=0, entityId=nil}
 
         self:_setModelVisible(false)
 
         if _G.event_bus and _G.event_bus.subscribe then
             self._subMoved = _G.event_bus.subscribe("chain.endpoint_moved", function(payload)
                 if not payload then return end
-                pcall(function() self:_onEndpointMoved(payload) end)
+                pcall(self._onEndpointMoved, self, payload)
             end)
             self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function(payload)
                 if not payload then return end
@@ -221,28 +222,20 @@ return Component {
         if self._hookedEntityId and self._isParented then
             local wx, wy, wz = nil, nil, nil
 
-            if self._endpointTransform and Engine and Engine.GetTransformWorldPosition then
-                local ok, a, b, c = pcall(function()
-                    return Engine.GetTransformWorldPosition(self._endpointTransform)
-                end)
-                if ok and a ~= nil then
-                    if type(a) == "table" then
-                        wx = a[1] or a.x or 0
-                        wy = a[2] or a.y or 0
-                        wz = a[3] or a.z or 0
-                    elseif type(a) == "number" then
-                        wx, wy, wz = a, b, c
-                    end
-                end
+            if self._endpointTransform and Engine and Engine.GetTransformWorldPositionXYZ then
+                wx, wy, wz =
+                    Engine.GetTransformWorldPositionXYZ(self._endpointTransform)
             end
 
             if wx then
-                self:_dbg(string.format("[ChainEndpointController] HOOKED world pos=(%.3f,%.3f,%.3f)", wx, wy, wz))
+                if self.DebugLogs or _G.CHAIN_DEBUG then
+                    self:_dbg(string.format("[ChainEndpointController] HOOKED world pos=(%.3f,%.3f,%.3f)", wx, wy, wz))
+                end
                 if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("chain.endpoint_hooked_position", {
-                        x = wx, y = wy, z = wz,
-                        entityId = self._hookedEntityId,
-                    })
+                    local payload = self._hookedPositionPayload
+                    payload.x, payload.y, payload.z = wx, wy, wz
+                    payload.entityId = self._hookedEntityId
+                    _G.event_bus.publish("chain.endpoint_hooked_position", payload)
                 end
             else
                 self:_dbg("[ChainEndpointController] WARNING: could not read own world position while hooked")

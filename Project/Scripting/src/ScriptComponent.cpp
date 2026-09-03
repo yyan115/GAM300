@@ -6,6 +6,7 @@
 #include "Platform/IPlatform.h"
 #include "WindowManager.hpp"
 #include <cassert>
+#include <array>
 
 extern "C" {
 #include "lauxlib.h"
@@ -13,6 +14,78 @@ extern "C" {
 }
 
 namespace Scripting {
+    namespace {
+        constexpr std::uint8_t kOnTriggerEnterBit = 1u << 0;
+        constexpr std::uint8_t kOnCollisionEnterBit = 1u << 1;
+        constexpr std::uint8_t kOnTriggerExitBit = 1u << 2;
+        constexpr std::uint8_t kOnCollisionExitBit = 1u << 3;
+        constexpr std::uint8_t kOnTriggerStayBit = 1u << 4;
+        constexpr std::uint8_t kOnCollisionStayBit = 1u << 5;
+
+        struct IntEventDescriptor {
+            std::string_view name;
+            std::uint8_t bit;
+        };
+
+        constexpr std::array<IntEventDescriptor, 6> kIntEvents{{
+            { "OnTriggerEnter", kOnTriggerEnterBit },
+            { "OnCollisionEnter", kOnCollisionEnterBit },
+            { "OnTriggerExit", kOnTriggerExitBit },
+            { "OnCollisionExit", kOnCollisionExitBit },
+            { "OnTriggerStay", kOnTriggerStayBit },
+            { "OnCollisionStay", kOnCollisionStayBit },
+        }};
+
+        constexpr std::uint8_t GetIntEventBit(std::string_view functionName) noexcept {
+            for (const auto& event : kIntEvents) {
+                if (event.name == functionName) {
+                    return event.bit;
+                }
+            }
+            return 0;
+        }
+
+        bool HasIntEventFunction(lua_State* L, int instanceIndex, const char* functionName) {
+            const int baseTop = lua_gettop(L);
+            const int absoluteInstanceIndex = lua_absindex(L, instanceIndex);
+
+            lua_getfield(L, absoluteInstanceIndex, functionName);
+            if (lua_isfunction(L, -1)) {
+                lua_settop(L, baseTop);
+                return true;
+            }
+
+            // CallInstanceFunctionWithInt only checks the wrapper when the direct
+            // field is nil, so mirror that behavior exactly.
+            const bool tryReturnedWrapper = lua_isnil(L, -1);
+            lua_pop(L, 1);
+            if (!tryReturnedWrapper || !lua_istable(L, absoluteInstanceIndex)) {
+                return false;
+            }
+
+            lua_getfield(L, absoluteInstanceIndex, "_returned");
+            if (lua_istable(L, -1) || lua_isuserdata(L, -1)) {
+                lua_getfield(L, -1, functionName);
+                const bool found = lua_isfunction(L, -1);
+                lua_settop(L, baseTop);
+                return found;
+            }
+
+            lua_settop(L, baseTop);
+            return false;
+        }
+
+        std::uint8_t CaptureIntEventMask(lua_State* L, int instanceIndex) {
+            std::uint8_t mask = 0;
+            for (const auto& event : kIntEvents) {
+                if (HasIntEventFunction(L, instanceIndex, event.name.data())) {
+                    mask |= event.bit;
+                }
+            }
+            return mask;
+        }
+    }
+
     // RAII guard to ensure the message handler is removed from the stack
     struct MessageHandlerGuard {
         lua_State* L;
@@ -24,11 +97,9 @@ namespace Scripting {
         MessageHandlerGuard& operator=(const MessageHandlerGuard&) = delete;
         ~MessageHandlerGuard() {
             if (!L || !active) return;
-            // After pcall, msgh should be at the bottom of the current stack
-            // Remove the element at position 1 (or the stored absolute index if still valid)
-            int top = lua_gettop(L);
-            if (top >= 1) {
-                lua_remove(L, 1);  // Remove the bottommost element (the msgh)
+            const int top = lua_gettop(L);
+            if (msgh_abs_index > 0 && msgh_abs_index <= top) {
+                lua_remove(L, msgh_abs_index);
             }
         }
         void dismiss() { active = false; }
@@ -66,6 +137,7 @@ namespace Scripting {
             m_fnStartRef = LUA_NOREF;
             m_fnUpdateRef = LUA_NOREF;
             m_fnOnDisableRef = LUA_NOREF;
+            m_intEventMask = 0;
         }
     }
 
@@ -80,6 +152,7 @@ namespace Scripting {
         if (m_fnStartRef != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, m_fnStartRef); m_fnStartRef = LUA_NOREF; }
         if (m_fnUpdateRef != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, m_fnUpdateRef); m_fnUpdateRef = LUA_NOREF; }
         if (m_fnOnDisableRef != LUA_NOREF) { luaL_unref(L, LUA_REGISTRYINDEX, m_fnOnDisableRef); m_fnOnDisableRef = LUA_NOREF; }
+        m_intEventMask = 0;
     }
 
     // ScriptComponent.cpp  (replace existing CaptureFunctionRef)
@@ -372,6 +445,7 @@ namespace Scripting {
         m_fnStartRef = CaptureFunctionRef(L, tableIndex, "Start");
         m_fnUpdateRef = CaptureFunctionRef(L, tableIndex, "Update");
         m_fnOnDisableRef = CaptureFunctionRef(L, tableIndex, "OnDisable");
+        m_intEventMask = CaptureIntEventMask(L, tableIndex);
 
         // pop the instance table
         lua_pop(L, 1);
@@ -392,10 +466,16 @@ namespace Scripting {
             m_fnStartRef = LUA_NOREF;
             m_fnUpdateRef = LUA_NOREF;
             m_fnOnDisableRef = LUA_NOREF;
+            m_intEventMask = 0;
         }
         m_scriptPath.clear();
         m_awakeCalled = false;
         m_startCalled = false;
+    }
+
+    bool ScriptComponent::CanHandleIntEvent(std::string_view functionName) const noexcept {
+        const std::uint8_t eventBit = GetIntEventBit(functionName);
+        return eventBit == 0 || (m_intEventMask & eventBit) != 0;
     }
 
     void ScriptComponent::Awake() {
@@ -477,12 +557,34 @@ namespace Scripting {
 
 
     void ScriptComponent::Update(float dt) {
-        lua_State* L = GetMainState();
-        if (!L || m_instanceRef == LUA_NOREF) return;
-        if (m_fnUpdateRef == LUA_NOREF) return;
+        if (m_instanceRef == LUA_NOREF || m_fnUpdateRef == LUA_NOREF) return;
+        Update(dt, GetMainState());
+    }
+
+    void ScriptComponent::Update(float dt, lua_State* L) {
+        if (!L || m_instanceRef == LUA_NOREF || m_fnUpdateRef == LUA_NOREF) return;
 
         int msgh = PushMessageHandler(L);
         MessageHandlerGuard guard(L, msgh);
+
+        UpdateWithMessageHandler(dt, L, msgh);
+    }
+
+    void ScriptComponent::UpdateBatch(float dt, lua_State* L,
+                                      ScriptComponent* const* components, std::size_t count) {
+        if (!L || !components || count == 0) return;
+
+        const int msgh = PushMessageHandler(L);
+        MessageHandlerGuard guard(L, msgh);
+        for (std::size_t i = 0; i < count; ++i) {
+            ScriptComponent* component = components[i];
+            if (component && component->m_instanceRef != LUA_NOREF && component->m_fnUpdateRef != LUA_NOREF) {
+                component->UpdateWithMessageHandler(dt, L, msgh);
+            }
+        }
+    }
+
+    void ScriptComponent::UpdateWithMessageHandler(float dt, lua_State* L, int msgh) {
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, m_fnUpdateRef); // push callableOrFunc
 
@@ -511,7 +613,6 @@ namespace Scripting {
             SC_LOG(EngineLogging::LogLevel::Warn, "ScriptComponent::Update error: ", msg ? msg : "(no msg)", " (script=", m_scriptPath.c_str(),")");
             lua_pop(L, 1);
         }
-        // guard removes message handler on scope exit
     }
 
     void ScriptComponent::OnDisable() {

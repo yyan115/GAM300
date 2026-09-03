@@ -1,8 +1,12 @@
 #pragma once
+#include "Script/ChainPhysicsLua.hpp"
 #include "Math/Vector3D.hpp"
 #include "Math/Matrix4x4.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <tuple>
 // ============================================================================
 // VECTOR2D (for 2D values like axis input, pointer position)
@@ -504,8 +508,14 @@ namespace CharacterControllerWrappers {
     }
 
     inline void SetPosition(CharacterController* controller, Transform* transform) {
-        if (controller) {
+        if (controller && transform) {
             controller->SetPosition(*transform);
+        }
+    }
+
+    inline void SetPositionXYZ(CharacterController* controller, float x, float y, float z) {
+        if (controller) {
+            controller->SetPosition(x, y, z);
         }
     }
 
@@ -1294,13 +1304,11 @@ namespace EntityQueryWrappers {
         //printf("[C++ DEBUG] Target filename (extracted): '%s'\n", targetFilename.c_str());
 
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-        std::vector<Entity> allEntities = ecsManager.GetAllEntities();
+        const std::vector<Entity>& allEntities = ecsManager.GetAllEntitiesView();
+        auto& cache = s_scriptQueryCache[scriptName];
+        cache.entities.clear();
 
         //printf("[C++ DEBUG] Total entities in scene: %zu\n", allEntities.size());
-
-        std::vector<Entity> results;
-        int entitiesWithScript = 0;
-        int entitiesWithScriptAndTransform = 0;
 
         for (Entity entity : allEntities) {
             auto scriptCompOpt = ecsManager.TryGetComponent<ScriptComponentData>(entity);
@@ -1314,7 +1322,6 @@ namespace EntityQueryWrappers {
                 std::string scriptFilename = GetFilenameWithoutExtension(script.scriptPath);
 
                 if (scriptFilename == targetFilename) {
-                    entitiesWithScript++;
                     //printf("[C++ DEBUG] Entity %u has script: '%s' (full path: '%s')\n",
                     //    entity, scriptFilename.c_str(), script.scriptPath.c_str());
                     //printf("[C++ DEBUG]   *** MATCH! Script filename matches target ***\n");
@@ -1322,14 +1329,7 @@ namespace EntityQueryWrappers {
                     // Check for Transform
                     auto transformOpt = ecsManager.TryGetComponent<Transform>(entity);
                     if (transformOpt.has_value()) {
-                        entitiesWithScriptAndTransform++;
-                        auto& transform = transformOpt.value().get();
-                        Vector3D pos = transform.worldPosition;
-
-                        //printf("[C++ DEBUG]  Entity has Transform at position: (%.2f, %.2f, %.2f)\n",
-                        //    pos.x, pos.y, pos.z);
-
-                        results.push_back(entity);
+                        cache.entities.push_back(entity);
                     }
                     else {
                         //printf("[C++ DEBUG]  Entity has NO Transform - SKIPPING\n");
@@ -1339,8 +1339,6 @@ namespace EntityQueryWrappers {
             }
         }
 
-        auto& cache = s_scriptQueryCache[scriptName];
-        cache.entities = results;
         cache.scriptFilename = targetFilename;
         cache.timeSinceUpdate = 0.0f;
 
@@ -1364,91 +1362,152 @@ namespace EntityQueryWrappers {
     // PUBLIC API
     // ============================================================================
 
+    inline ScriptQueryCache& GetFreshScriptQueryCache(const std::string& scriptName) {
+        auto it = s_scriptQueryCache.find(scriptName);
+        if (it == s_scriptQueryCache.end() ||
+            it->second.timeSinceUpdate >= it->second.updateInterval) {
+            UpdateCacheForScript(scriptName);
+        }
+        return s_scriptQueryCache[scriptName];
+    }
+
     // Find entities with script - returns Lua table
     inline int FindEntitiesWithScript(lua_State* L) {
-        //printf("\n========== C++ FindEntitiesWithScript CALLED ==========\n");
-
         const char* scriptPath = luaL_checkstring(L, 1);
         if (!scriptPath) {
-            //printf("[C++ DEBUG] ERROR: luaL_checkstring returned NULL!\n");
             lua_newtable(L);
             return 1;
         }
 
-        std::string scriptName(scriptPath);
-        //printf("[C++ DEBUG] Received from Lua: '%s'\n", scriptName.c_str());
-        //printf("[C++ DEBUG] String length: %zu\n", scriptName.length());
-
-        // Check cache
-        auto it = s_scriptQueryCache.find(scriptName);
-        if (it != s_scriptQueryCache.end()) {
-            ScriptQueryCache& cache = it->second;
-
-            //printf("[C++ DEBUG] Cache exists for '%s'\n", scriptName.c_str());
-            //printf("[C++ DEBUG] Cache age: %.2f seconds (interval: %.2f)\n",
-            //    cache.timeSinceUpdate, cache.updateInterval);
-
-            if (cache.timeSinceUpdate < cache.updateInterval) {
-                //printf("[C++ DEBUG] Cache still valid - using cached results\n");
-                //printf("[C++ DEBUG] Cached entity count: %zu\n", cache.entities.size());
-
-                // Build Lua table from cached results
-                lua_newtable(L);
-                int index = 1;
-                for (Entity entity : cache.entities) {
-                    //printf("[C++ DEBUG]   Pushing entity %u to Lua table at index %d\n", entity, index);
-                    lua_pushinteger(L, static_cast<lua_Integer>(entity));
-                    lua_rawseti(L, -2, index++);
-                }
-
-                //printf("[C++ DEBUG] Returning table with %d entries\n", index - 1);
-                //printf("========== C++ FindEntitiesWithScript END (cached) ==========\n\n");
-                return 1;
-            }
-            else {
-                //printf("[C++ DEBUG] Cache expired - updating\n");
-            }
-        }
-        else {
-            //printf("[C++ DEBUG] No cache exists - creating new cache\n");
-        }
-
-        // Cache expired or doesn't exist - update it
-        UpdateCacheForScript(scriptName);
-
-        // Build Lua table from updated cache
+        const auto& cache = GetFreshScriptQueryCache(scriptPath);
         lua_newtable(L);
         int index = 1;
-
-        //printf("[C++ DEBUG] Building Lua table from updated cache:\n");
-        for (Entity entity : s_scriptQueryCache[scriptName].entities) {
-            //printf("[C++ DEBUG]   Pushing entity %u to Lua table at index %d\n", entity, index);
+        for (Entity entity : cache.entities) {
             lua_pushinteger(L, static_cast<lua_Integer>(entity));
             lua_rawseti(L, -2, index++);
         }
+        return 1;
+    }
 
-        //printf("[C++ DEBUG] Returning table with %d entries\n", index - 1);
-        //printf("========== C++ FindEntitiesWithScript END (updated) ==========\n\n");
+    inline bool EntityHasScript(Entity entity, const std::string& scriptName) {
+        const auto& entities = GetFreshScriptQueryCache(scriptName).entities;
+        return std::find(entities.begin(), entities.end(), entity) != entities.end();
+    }
 
+    // Returns the closest active entity and its XZ distance as two scalars.
+    // This avoids constructing a Lua entity table and crossing the binding once
+    // per candidate for camera/gameplay proximity checks.
+    inline int FindClosestEntityWithScriptXZ(lua_State* L) {
+        const std::string scriptName = luaL_checkstring(L, 1);
+        const float x = static_cast<float>(luaL_checknumber(L, 2));
+        const float z = static_cast<float>(luaL_checknumber(L, 3));
+        const float maxDistance = static_cast<float>(luaL_optnumber(
+            L, 4, std::numeric_limits<float>::infinity()));
+        float closestDistanceSq = maxDistance >= 0.0f
+            ? maxDistance * maxDistance
+            : std::numeric_limits<float>::infinity();
+        Entity closestEntity = std::numeric_limits<Entity>::max();
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        const auto& cache = GetFreshScriptQueryCache(scriptName);
+        for (Entity entity : cache.entities) {
+            if (!ecsManager.IsEntityAlive(entity) ||
+                !ecsManager.IsEntityActiveInHierarchy(entity)) {
+                continue;
+            }
+
+            auto transform = ecsManager.TryGetComponent<Transform>(entity);
+            if (!transform) continue;
+            const Vector3D& position = transform->get().worldPosition;
+            const float dx = position.x - x;
+            const float dz = position.z - z;
+            const float distanceSq = dx * dx + dz * dz;
+            if (distanceSq <= closestDistanceSq) {
+                closestDistanceSq = distanceSq;
+                closestEntity = entity;
+            }
+        }
+
+        if (closestEntity == std::numeric_limits<Entity>::max()) {
+            lua_pushnil(L);
+            lua_pushnumber(L, std::numeric_limits<lua_Number>::infinity());
+            return 2;
+        }
+
+        lua_pushinteger(L, static_cast<lua_Integer>(closestEntity));
+        lua_pushnumber(L, std::sqrt(closestDistanceSq));
+        return 2;
+    }
+
+    // Allocation-free proximity query for gameplay systems that only need a yes/no answer.
+    inline int AnyEntityWithScriptInRadiusXZ(lua_State* L) {
+        const std::string scriptName = luaL_checkstring(L, 1);
+        const float x = static_cast<float>(luaL_checknumber(L, 2));
+        const float z = static_cast<float>(luaL_checknumber(L, 3));
+        const float radius = static_cast<float>(luaL_checknumber(L, 4));
+        const float radiusSq = radius * radius;
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        const auto& cache = GetFreshScriptQueryCache(scriptName);
+        for (Entity entity : cache.entities) {
+            if (!ecsManager.IsEntityAlive(entity) ||
+                !ecsManager.IsEntityActiveInHierarchy(entity)) {
+                continue;
+            }
+
+            auto transform = ecsManager.TryGetComponent<Transform>(entity);
+            if (!transform) continue;
+            const Vector3D& position = transform->get().worldPosition;
+            const float dx = position.x - x;
+            const float dz = position.z - z;
+            if (dx * dx + dz * dz <= radiusSq) {
+                lua_pushboolean(L, 1);
+                return 1;
+            }
+        }
+
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    // Spatial query used by area effects without requiring every target to publish
+    // a position event every frame.
+    inline int FindEntitiesWithScriptInAABB(lua_State* L) {
+        const std::string scriptName = luaL_checkstring(L, 1);
+        const float centerX = static_cast<float>(luaL_checknumber(L, 2));
+        const float centerY = static_cast<float>(luaL_checknumber(L, 3));
+        const float centerZ = static_cast<float>(luaL_checknumber(L, 4));
+        const float halfX = static_cast<float>(luaL_checknumber(L, 5));
+        const float halfY = static_cast<float>(luaL_checknumber(L, 6));
+        const float halfZ = static_cast<float>(luaL_checknumber(L, 7));
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        const auto& cache = GetFreshScriptQueryCache(scriptName);
+        lua_newtable(L);
+        int index = 1;
+        for (Entity entity : cache.entities) {
+            if (!ecsManager.IsEntityAlive(entity) ||
+                !ecsManager.IsEntityActiveInHierarchy(entity)) {
+                continue;
+            }
+
+            auto transform = ecsManager.TryGetComponent<Transform>(entity);
+            if (!transform) continue;
+            const Vector3D& position = transform->get().worldPosition;
+            if (std::abs(position.x - centerX) > halfX ||
+                std::abs(position.y - centerY) > halfY ||
+                std::abs(position.z - centerZ) > halfZ) {
+                continue;
+            }
+
+            lua_pushinteger(L, static_cast<lua_Integer>(entity));
+            lua_rawseti(L, -2, index++);
+        }
         return 1;
     }
 
     // Update timing for all caches
     inline void UpdateCacheTiming(float deltaTime) {
-        // Only log every 60 calls (~1 second at 60fps) to avoid spam
-        static int callCount = 0;
-        callCount++;
-
-        //if (callCount % 60 == 0) {
-        //    printf("[C++ DEBUG] UpdateCacheTiming called (deltaTime: %.4f)\n", deltaTime);
-        //    printf("[C++ DEBUG] Current cache count: %zu\n", s_scriptQueryCache.size());
-
-        //    for (auto& pair : s_scriptQueryCache) {
-        //        printf("[C++ DEBUG]   Cache '%s': age=%.2fs, entities=%zu\n",
-        //            pair.first.c_str(), pair.second.timeSinceUpdate, pair.second.entities.size());
-        //    }
-        //}
-
         for (auto& pair : s_scriptQueryCache) {
             pair.second.timeSinceUpdate += deltaTime;
         }
@@ -1649,7 +1708,7 @@ namespace EntityQueryWrappers {
                 Transform& ct = ecsManager.GetComponent<Transform>(child);
                 ct.localPosition = Matrix4x4::ExtractTranslation(childWorld);
                 ct.localScale = Matrix4x4::ExtractScale(childWorld);
-                ct.localRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(childWorld));
+                ct.localRotation = Quaternion::FromMatrix(Matrix4x4::RemoveScale(childWorld));
                 ct.isDirty = true;
             }
 
@@ -1758,7 +1817,7 @@ namespace EntityQueryWrappers {
             Transform& ct = ecsManager.GetComponent<Transform>(child);
             ct.localPosition = Matrix4x4::ExtractTranslation(childLocalMat);
             ct.localScale = Matrix4x4::ExtractScale(childLocalMat);
-            ct.localRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(childLocalMat));
+            ct.localRotation = Quaternion::FromMatrix(Matrix4x4::RemoveScale(childLocalMat));
             ct.isDirty = true;
         }
 

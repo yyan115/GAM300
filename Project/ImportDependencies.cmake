@@ -23,10 +23,16 @@ function(import_jolt)
         # Disable certain Jolt features for both platforms
         set(ENABLE_OBJECT_STREAM OFF CACHE BOOL "Disable object stream" FORCE)
         set(FLOATING_POINT_EXCEPTIONS_ENABLED OFF CACHE BOOL "Disable FP exceptions" FORCE)
-        set(PROFILE_ENABLED OFF CACHE BOOL "Disable profiling (Android)" FORCE)
 
         # Android-specific: Disable IPO which causes toolchain issues
         if(ANDROID)
+            # These are Jolt 5.4's actual profiling/debug-renderer switches.
+            # Keeping the obsolete PROFILE_ENABLED option off did not prevent
+            # JPH_PROFILE_ENABLED and JPH_DEBUG_RENDERER in Android Release.
+            set(PROFILER_IN_DEBUG_AND_RELEASE OFF CACHE BOOL "Disable Jolt profiler on Android" FORCE)
+            set(PROFILER_IN_DISTRIBUTION OFF CACHE BOOL "Disable Jolt profiler in distribution" FORCE)
+            set(DEBUG_RENDERER_IN_DEBUG_AND_RELEASE OFF CACHE BOOL "Disable Jolt debug renderer on Android" FORCE)
+            set(DEBUG_RENDERER_IN_DISTRIBUTION OFF CACHE BOOL "Disable Jolt debug renderer in distribution" FORCE)
             set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "Disable IPO for Android" FORCE)
             set(CROSS_PLATFORM_DETERMINISTIC OFF CACHE BOOL "Disable cross-platform determinism for Android" FORCE)
             set(USE_STD_VECTOR ON CACHE BOOL "Use std::vector for Android" FORCE)

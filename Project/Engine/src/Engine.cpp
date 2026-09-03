@@ -762,6 +762,9 @@ void Engine::Update() {
 }
 
 void Engine::StartDraw() {
+	// Everything before this point is game-thread CPU work with no GPU waits.
+	TimeManager::MarkLogicPhaseEnd();
+
 #ifdef ANDROID
 	androidGraphicsFrameReady = false;
 	IPlatform* platform = WindowManager::GetPlatform();
@@ -769,26 +772,22 @@ void Engine::StartDraw() {
 		return;
 	}
 	androidGraphicsFrameReady = true;
-#endif
 
-    //glClearColor(1.0f, 0.0f, 0.0f, 1.0f); // Bright red - should be very obvious
-
-#if defined(ANDROID) && !defined(NDEBUG)
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR) {
-		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClearColor: %d", error);
+	// A loaded scene renders into HDR and its fullscreen tone-map pass fully
+	// overwrites the surface. Clearing the native framebuffer first would open
+	// an otherwise unnecessary render pass on tile-based mobile GPUs.
+	if (!SceneManager::GetInstance().GetCurrentScene()) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
-#endif
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Actually clear the screen!
-
-#if defined(ANDROID) && !defined(NDEBUG)
-	error = glGetError();
+#if defined(GAM300_GL_VALIDATION)
+	const GLenum error = glGetError();
 	if (error != GL_NO_ERROR) {
 		//__android_log_print(ANDROID_LOG_ERROR, "GAM300", "OpenGL error after glClear: %d", error);
-	} else {
-        // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Engine::StartDraw() - Successfully cleared screen with RED");
-    }
+	}
+#endif
+#else
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
 }
 

@@ -60,6 +60,7 @@ return Component {
         -- ===============================
         self._cameraYaw = 180.0
         self._cameraYawSub = nil
+        self._positionPayload = { x = 0, y = 0, z = 0 }
 
         if event_bus and event_bus.subscribe then
             self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
@@ -200,13 +201,13 @@ return Component {
         -- ===============================
         -- POSITION SYNC + CAMERA BROADCAST
         -- ===============================
-        local position = CharacterController.GetPosition(self._controller)
-        if position then
-            self:SetPosition(position.x, position.y, position.z)
+        local px, py, pz = CharacterController.GetPositionXYZ(self._controller)
+        self:SetPosition(px, py, pz)
 
-            if event_bus and event_bus.publish then
-                event_bus.publish("player_position", position)
-            end
+        if event_bus and event_bus.publish then
+            local payload = self._positionPayload
+            payload.x, payload.y, payload.z = px, py, pz
+            event_bus.publish("player_position", payload)
         end
     end,
 

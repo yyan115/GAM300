@@ -10,6 +10,7 @@
 #include <thread>
 #include <chrono>
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
 #include "Asset Manager/Asset.hpp"
 #include "../../Engine.h"
@@ -109,6 +110,9 @@ public:
     void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
 
     AABB GetBoundingBox() const { return modelBoundingBox; }
+    bool TryGetSkinnedBoundingBox(
+        const std::vector<glm::mat4>& boneMatrices,
+        AABB& outBounds) const;
 
     // Force material re-extraction on next compile (used by reimport)
     static bool forceReimportMaterials;
@@ -154,9 +158,17 @@ private:
 
 	void WriteModelNode(std::ofstream& meshFile, const ModelNode& node);
 	void ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, ModelNode& node);
+    void BuildSkinningBounds();
 
     void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, Material::TextureType targetType = Material::TextureType::NONE);
     AABB modelBoundingBox;
+    std::vector<AABB> mBoneInfluenceBounds;
+    std::vector<std::uint8_t> mBoneInfluenceBoundsValid;
+    AABB mRigidVertexBounds;
+    float mMinEffectiveWeightSum = 1.0f;
+    float mMaxEffectiveWeightSum = 1.0f;
+    bool mHasRigidVertices = false;
+    bool mSkinningBoundsValid = false;
 
     // Whenever CompileToResource is called, store a set of processed textures to prevent duplicate texture compilation.
     std::unordered_set<std::string> m_ProcessedTextures;

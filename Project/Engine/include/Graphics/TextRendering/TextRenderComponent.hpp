@@ -35,6 +35,16 @@ public:
     // Cached wrapped lines (runtime only, not serialized)
     // These are populated by TextRenderingSystem before submission
     std::vector<std::string> wrappedLines;
+    std::string wrappedTextCache;
+    const Font* wrappedFontCache = nullptr;
+    float wrappedMaxWidthCache = 0.0f;
+    float wrappedScaleXCache = 0.0f;
+    bool wrappedLayoutCacheValid = false;
+
+    void InvalidateWrappedLayout() {
+        wrappedLayoutCacheValid = false;
+        wrappedLines.clear();
+    }
 
     std::shared_ptr<Font> font;
     std::shared_ptr<Shader> shader;

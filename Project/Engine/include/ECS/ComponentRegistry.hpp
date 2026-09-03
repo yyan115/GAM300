@@ -1,6 +1,7 @@
 // Reflection/ComponentRegistry.hpp
 #pragma once
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <functional>
 #include <mutex>
@@ -54,13 +55,13 @@ public:
         m_map[name] = std::move(ci);
     }
 
-    bool Has(const std::string& name) const {
+    bool Has(std::string_view name) const {
         std::lock_guard<std::mutex> lk(m_mutex);
         return m_map.find(name) != m_map.end();
     }
 
     // Return the GetterFn (or empty std::function if not found)
-    GetterFn GetGetter(const std::string& name) const {
+    GetterFn GetGetter(std::string_view name) const {
         std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_map.find(name);
         if (it == m_map.end()) return GetterFn{};
@@ -69,7 +70,7 @@ public:
 
     // Fill out a ComponentInfo struct for callers that need the TypeDescriptor too.
     // Returns true if found.
-    bool Get(const std::string& name, ComponentInfo& out) const {
+    bool Get(std::string_view name, ComponentInfo& out) const {
         std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_map.find(name);
         if (it == m_map.end()) return false;
@@ -78,11 +79,23 @@ public:
     }
 
 private:
+    struct TransparentStringHash {
+        using is_transparent = void;
+
+        std::size_t operator()(std::string_view value) const noexcept {
+            return std::hash<std::string_view>{}(value);
+        }
+    };
+
     ComponentRegistry() = default;
     ~ComponentRegistry() = default;
     ComponentRegistry(const ComponentRegistry&) = delete;
     ComponentRegistry& operator=(const ComponentRegistry&) = delete;
 
     mutable std::mutex m_mutex;
-    std::unordered_map<std::string, ComponentInfo> m_map;
+    std::unordered_map<
+        std::string,
+        ComponentInfo,
+        TransparentStringHash,
+        std::equal_to<>> m_map;
 };

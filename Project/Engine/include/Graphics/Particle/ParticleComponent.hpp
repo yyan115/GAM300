@@ -33,18 +33,28 @@ class EBO;
 
 \details    Stores all properties needed to simulate and render an individual
             particle including position, velocity, color with alpha, remaining
-            lifetime (0.0 = dead, 1.0 = newly spawned), size, and rotation.
+            lifetime (0.0 = dead, 1.0 = newly spawned), size, and precomputed
+            rotation sine/cosine.
 */
 /******************************************************************************/
 struct Particle {
 	glm::vec3 position;
 	glm::vec3 velocity;
+#ifndef ANDROID
 	glm::vec4 color;
+#endif
 
 	float life;
+#ifndef ANDROID
 	float size;
-	float rotation;
+#endif
+	glm::vec2 rotationSinCos;
 };
+
+#ifdef ANDROID
+static_assert(sizeof(Particle) == 36,
+    "Android particle simulation state must stay compact");
+#endif
 
 /******************************************************************************/
 /*!
@@ -87,6 +97,11 @@ public:
 
     // Runtime data (don't serialize)
     std::vector<Particle> particles;
+	// Conservative world-space bounds for the current GPU instance data.
+	// Updated alongside the instance buffer and used for mobile frustum culling.
+	glm::vec3 particleBoundsMin{0.0f};
+	glm::vec3 particleBoundsMax{0.0f};
+	bool hasParticleBounds = false;
     std::shared_ptr<Texture> particleTexture;
     std::shared_ptr<Shader> particleShader;
     std::string texturePath;  // For inspector display

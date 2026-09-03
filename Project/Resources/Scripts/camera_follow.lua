@@ -25,6 +25,7 @@ local clamp = utils.clamp
 
 local event_bus          = _G.event_bus
 local POST_HOLD_MULTIPLIER = 3.0
+local atan2 = math.atan
 
 -- ─────────────────────────────────────────────────────────────────────────────
 
@@ -121,9 +122,17 @@ return Component {
         self._pitch = 15.0
 
         self._targetPos  = { x = 0.0, y = 0.0, z = 0.0 }
+        self._cameraTarget = { x = 0.0, y = 0.0, z = 0.0 }
+        self._motionBlurPayload = { intensity = 0.0, angle = 0.0 }
+        self._chainAimForward = { x = 0.0, y = 0.0, z = 1.0 }
+        self._chainAimBasisPayload = { forward = self._chainAimForward }
+        self._chainAimWorldTargetPayload = { x = 0.0, y = 0.0, z = 0.0 }
+        self._chainCrosshairPayload = { active = false }
+        self._lastCrosshairOnEnemy = nil
         self._hasTarget  = false
         self._firstMouse = true
         self._currentCollisionDist = nil
+        self._isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid() or false
 
         -- Action mode
         self._actionModeActive        = false
@@ -325,7 +334,7 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
-        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local isAndroid = self._isAndroid
 
         -- Teleport to respawn point without lerp
         if self._teleportToPlayer then
@@ -342,10 +351,6 @@ return Component {
         end
 
         -- Tick C++ entity cache
-        if Engine and Engine.UpdateCacheTiming then
-            Engine.UpdateCacheTiming(dt)
-        end
-
         -- ── Enemy detection / action mode ───────────────────────────────────
         EnemyDet.updateEnemyProximity(self, dt)
 
@@ -450,24 +455,18 @@ return Component {
         -- heightOffset is applied here so the pivot rises with the camera,
         -- keeping the pitch angle stable regardless of how high the offset is.
         local lookAtHeight = 0.5 + zoomFactor * 0.2
-        local cameraTarget = {
-            x = self._targetPos.x,
-            y = self._targetPos.y + lookAtHeight + (self.heightOffset or 1.0),
-            z = self._targetPos.z,
-        }
-
-        -- Publish horizontal forward for player movement
-        if event_bus and event_bus.publish then
-            event_bus.publish("camera_basis", {
-                forward = { x = math.sin(yawRad), y = 0.0, z = math.cos(yawRad) },
-            })
-        end
+        local cameraTarget = self._cameraTarget
+        cameraTarget.x = self._targetPos.x
+        cameraTarget.y = self._targetPos.y + lookAtHeight + (self.heightOffset or 1.0)
+        cameraTarget.z = self._targetPos.z
 
         -- Ideal camera position (spherical offset from pivot)
-        local horizRadius     = radius * math.cos(pitchRad)
-        local desiredX = cameraTarget.x + horizRadius * math.sin(yawRad)
-        local desiredY = cameraTarget.y + radius * math.sin(pitchRad)
-        local desiredZ = cameraTarget.z + horizRadius * math.cos(yawRad)
+        local sinYaw, cosYaw = math.sin(yawRad), math.cos(yawRad)
+        local sinPitch, cosPitch = math.sin(pitchRad), math.cos(pitchRad)
+        local horizRadius = radius * cosPitch
+        local desiredX = cameraTarget.x + horizRadius * sinYaw
+        local desiredY = cameraTarget.y + radius * sinPitch
+        local desiredZ = cameraTarget.z + horizRadius * cosYaw
 
         -- Hard Y cap: prevents the camera from rising above indoor ceilings even
         -- when the ceiling geometry has no physics collider. Set
@@ -557,7 +556,7 @@ return Component {
         -- ── Motion blur ──────────────────────────────────────────────────────
         -- Measure how far the camera actually moved this frame; publish normalised
         -- intensity and screen-space angle so camera_effects can drive dirBlur correctly.
-        if self.MotionBlurEnabled and self._lastCamX then
+        if self.MotionBlurEnabled and not isAndroid and self._lastCamX then
             local dx    = newX - self._lastCamX
             local dy    = newY - self._lastCamY
             local dz    = newZ - self._lastCamZ
@@ -586,12 +585,14 @@ return Component {
                 local sX = dx * rX + dz * rZ            -- dot(delta, screen-right)
                 local sY = dx * uX + dy * uY + dz * uZ  -- dot(delta, screen-up)
                 if math.abs(sX) > 0.0001 or math.abs(sY) > 0.0001 then
-                    angle = math.deg(math.atan2 and math.atan2(sY, sX) or math.atan(sY, sX))
+                    angle = math.deg(atan2(sY, sX))
                 end
             end
 
             if event_bus and event_bus.publish then
-                event_bus.publish("fx_motion_blur", { intensity = intensity, angle = angle })
+                local payload = self._motionBlurPayload
+                payload.intensity, payload.angle = intensity, angle
+                event_bus.publish("fx_motion_blur", payload)
             end
         end
         self._lastCamX = newX
@@ -612,8 +613,7 @@ return Component {
         end
 
         -- ── Rotation ─────────────────────────────────────────────────────────
-        local utils_eu = require("Camera.camera_utils")
-        local shakeQ = utils_eu.eulerToQuat(
+        local sw, sx, sy, sz = utils.eulerToQuatValues(
             self._shakePitchOffset,
             self._shakeYawOffset,
             0.0
@@ -622,7 +622,6 @@ return Component {
         -- Multiply shake onto the rotation after base rotation is set
         local rw, rx, ry, rz = self:GetRotation()
         if type(rw) == "table" then rw, rx, ry, rz = rw.w, rw.x, rw.y, rw.z end
-        local sw, sx, sy, sz = shakeQ.w, shakeQ.x, shakeQ.y, shakeQ.z
         self:SetRotation(
             rw*sw - rx*sx - ry*sy - rz*sz,
             rw*sx + rx*sw + ry*sz - rz*sy,

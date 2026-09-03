@@ -5,6 +5,71 @@
 #include "Graphics/ShaderClass.h"
 #include "ECS/ECSRegistry.hpp"
 #include "Logging.hpp"
+#include <cmath>
+#include <cstring>
+#ifdef ANDROID
+#include <glm/gtc/packing.hpp>
+#endif
+
+namespace {
+#ifdef ANDROID
+std::uint16_t PackInstanceHalf(float value)
+{
+    return glm::packHalf1x16(glm::clamp(value, -65504.0f, 65504.0f));
+}
+
+void PackInstanceSource(
+    InstanceData& destination,
+    const glm::mat4& modelMatrix,
+    const glm::vec4& bloomData,
+    std::uint32_t lightMask)
+{
+    for (int column = 0; column < 3; ++column) {
+        destination.modelColumns[column * 4 + 0] = modelMatrix[column][0];
+        destination.modelColumns[column * 4 + 1] = modelMatrix[column][1];
+        destination.modelColumns[column * 4 + 2] = modelMatrix[column][2];
+        destination.modelColumns[column * 4 + 3] = modelMatrix[3][column];
+    }
+    for (int component = 0; component < 4; ++component) {
+        destination.bloomData[component] = PackInstanceHalf(bloomData[component]);
+    }
+    destination.lightMask = lightMask;
+}
+
+bool HasSameInstanceSource(const InstanceData& previous, const InstanceData& candidate)
+{
+    return std::memcmp(
+               previous.modelColumns,
+               candidate.modelColumns,
+               sizeof(candidate.modelColumns)) == 0 &&
+           std::memcmp(
+               previous.bloomData,
+               candidate.bloomData,
+               sizeof(candidate.bloomData)) == 0 &&
+           previous.lightMask == candidate.lightMask;
+}
+
+void StoreNormalMatrix(InstanceData& destination, const glm::mat3& normalMatrix)
+{
+    for (int column = 0; column < 3; ++column) {
+        for (int row = 0; row < 3; ++row) {
+            destination.normalMatrixColumns[column * 3 + row] =
+                PackInstanceHalf(normalMatrix[column][row]);
+        }
+    }
+}
+#else
+void StoreNormalMatrix(InstanceData& destination, const glm::mat3& normalMatrix)
+{
+    for (int column = 0; column < 3; ++column) {
+        for (int row = 0; row < 3; ++row) {
+            destination.normalMatrixColumns[column * 3 + row] =
+                normalMatrix[column][row];
+        }
+    }
+}
+#endif
+}
 
 InstanceBatch::InstanceBatch() {
 	m_instances.reserve(INITIAL_CAPACITY);
@@ -19,13 +84,19 @@ InstanceBatch::InstanceBatch(InstanceBatch&& other) noexcept
     , m_material(std::move(other.m_material))
     , m_shader(std::move(other.m_shader))
     , m_instances(std::move(other.m_instances))
+    , m_instanceCount(other.m_instanceCount)
     , m_instanceVBO(std::move(other.m_instanceVBO))
     , m_bufferCapacity(other.m_bufferCapacity)
     , m_bufferDirty(other.m_bufferDirty)
     , m_initialized(other.m_initialized)
+    , m_depthBucket(other.m_depthBucket)
+    , m_minCameraDistanceSq(other.m_minCameraDistanceSq)
+    , m_hasBloomEmission(other.m_hasBloomEmission)
 {
+    other.m_instanceCount = 0;
     other.m_bufferCapacity = 0;
     other.m_initialized = false;
+    other.m_hasBloomEmission = false;
 }
 
 InstanceBatch& InstanceBatch::operator=(InstanceBatch&& other) noexcept {
@@ -37,43 +108,88 @@ InstanceBatch& InstanceBatch::operator=(InstanceBatch&& other) noexcept {
         m_material = std::move(other.m_material);
         m_shader = std::move(other.m_shader);
         m_instances = std::move(other.m_instances);
+        m_instanceCount = other.m_instanceCount;
         m_instanceVBO = std::move(other.m_instanceVBO);
         m_bufferCapacity = other.m_bufferCapacity;
         m_bufferDirty = other.m_bufferDirty;
         m_initialized = other.m_initialized;
+        m_depthBucket = other.m_depthBucket;
+        m_minCameraDistanceSq = other.m_minCameraDistanceSq;
+        m_hasBloomEmission = other.m_hasBloomEmission;
 
+        other.m_instanceCount = 0;
         other.m_bufferCapacity = 0;
         other.m_initialized = false;
+        other.m_hasBloomEmission = false;
     }
     return *this;
 }
 
-void InstanceBatch::Initialize(std::shared_ptr<Model> model, std::shared_ptr<Material> material, std::shared_ptr<Shader> shader)
+void InstanceBatch::Initialize(
+    const std::shared_ptr<Model>& model,
+    const std::shared_ptr<Material>& material,
+    const std::shared_ptr<Shader>& shader)
 {
     m_model = model;
     m_material = material;
     m_shader = shader;
 
-    CreateInstanceBuffer();
     m_initialized = true;
-}
-
-void InstanceBatch::CreateInstanceBuffer()
-{
-    m_instanceVBO.InitializeBuffer(INITIAL_CAPACITY * sizeof(InstanceData), GL_DYNAMIC_DRAW);
-    m_bufferCapacity = INITIAL_CAPACITY;
 }
 
 void InstanceBatch::Clear()
 {   
-    m_instances.clear();
+    // Retain last frame's CPU data so unchanged static batches avoid a GPU
+    // upload. AddInstance overwrites only slots whose values changed.
+    m_instanceCount = 0;
     m_bufferDirty = false;
+    m_depthBucket = std::numeric_limits<int>::max();
+    m_minCameraDistanceSq = std::numeric_limits<float>::infinity();
+    m_hasBloomEmission = false;
 }
 
-void InstanceBatch::AddInstance(const glm::mat4& modelMatrix, const glm::vec3& bloomColor, float bloomIntensity)
+void InstanceBatch::AddInstance(
+    const glm::mat4& modelMatrix,
+    const glm::vec3& bloomColor,
+    float bloomIntensity,
+    std::uint32_t lightMask,
+    float cameraDistanceSq)
 {
-    InstanceData data;
+    m_hasBloomEmission =
+        m_hasBloomEmission || bloomIntensity > 0.01f;
+
+    m_minCameraDistanceSq = std::min(
+        m_minCameraDistanceSq, glm::max(cameraDistanceSq, 0.0f));
+
+    const glm::vec4 bloomData(bloomColor, bloomIntensity);
+#ifdef ANDROID
+    InstanceData data{};
+    PackInstanceSource(data, modelMatrix, bloomData, lightMask);
+    if (m_instanceCount < m_instances.size() &&
+        HasSameInstanceSource(m_instances[m_instanceCount], data))
+    {
+        ++m_instanceCount;
+        return;
+    }
+#else
+    if (m_instanceCount < m_instances.size())
+    {
+        InstanceData& previous = m_instances[m_instanceCount];
+        if (std::memcmp(&previous.modelMatrix, &modelMatrix, sizeof(modelMatrix)) == 0 &&
+            std::memcmp(&previous.bloomData, &bloomData, sizeof(bloomData)) == 0)
+        {
+            if (previous.lightMask != lightMask) {
+                previous.lightMask = lightMask;
+                m_bufferDirty = true;
+            }
+            ++m_instanceCount;
+            return;
+        }
+    }
+
+    InstanceData data{};
     data.modelMatrix = modelMatrix;
+#endif
 
     // Normal matrix = transpose(inverse(mat3(model))).
     // glm::inverse is expensive (determinant + adjugate). For the common case of
@@ -84,48 +200,77 @@ void InstanceBatch::AddInstance(const glm::mat4& modelMatrix, const glm::vec3& b
     float sx2 = glm::dot(m3[0], m3[0]);
     float sy2 = glm::dot(m3[1], m3[1]);
     float sz2 = glm::dot(m3[2], m3[2]);
-    if (glm::abs(sx2 - sy2) < 1e-4f && glm::abs(sx2 - sz2) < 1e-4f && sx2 > 1e-8f)
+    const float tolerance = glm::max(1e-6f, sx2 * 1e-4f);
+    if (glm::abs(sx2 - sy2) < tolerance &&
+        glm::abs(sx2 - sz2) < tolerance &&
+        glm::abs(glm::dot(m3[0], m3[1])) < tolerance &&
+        glm::abs(glm::dot(m3[0], m3[2])) < tolerance &&
+        glm::abs(glm::dot(m3[1], m3[2])) < tolerance &&
+        sx2 > 1e-8f)
     {
         // Uniform scale: normal matrix = rotation matrix (normalised columns)
         float invScale = 1.0f / glm::sqrt(sx2);
-        data.normalMatrix = glm::mat4(m3 * invScale);
+        const glm::mat3 normalMatrix = m3 * invScale;
+        StoreNormalMatrix(data, normalMatrix);
     }
     else
     {
-        data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(m3)));
+        const glm::mat3 normalMatrix = glm::transpose(glm::inverse(m3));
+        StoreNormalMatrix(data, normalMatrix);
     }
 
-    data.bloomData = glm::vec4(bloomColor, bloomIntensity);
+#ifndef ANDROID
+    data.bloomData = bloomData;
+    data.lightMask = lightMask;
+#endif
 
-    m_instances.push_back(data);
-    m_bufferDirty = true;
+    if (m_instanceCount == m_instances.size())
+    {
+        m_instances.push_back(data);
+        m_bufferDirty = true;
+    }
+    else if (std::memcmp(&m_instances[m_instanceCount], &data, sizeof(InstanceData)) != 0)
+    {
+        m_instances[m_instanceCount] = data;
+        m_bufferDirty = true;
+    }
+    ++m_instanceCount;
 }
 
-void InstanceBatch::Render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos)
+void InstanceBatch::FinalizeDepthBucket()
 {
-    if (m_instances.empty() || !m_model || !m_shader)
+    if (m_instanceCount == 0 || !std::isfinite(m_minCameraDistanceSq)) {
+        m_depthBucket = std::numeric_limits<int>::max();
+        return;
+    }
+
+    constexpr float kInverseDepthBucketSize = 1.0f / 5.0f;
+    m_depthBucket = static_cast<int>(
+        glm::sqrt(m_minCameraDistanceSq) * kInverseDepthBucketSize);
+}
+
+void InstanceBatch::Render()
+{
+    if (m_instanceCount == 0 || !m_model || !m_shader)
     {
         return;
     }
 
     UpdateInstanceBuffer();
-    m_shader->Activate();
-    m_shader->setBool("useInstancing", true);
-
-    if (m_material)
-    {
-        m_material->ApplyToShader(*m_shader);
-    }
 
     for (auto& mesh : m_model->meshes)
     {
-        mesh.DrawInstanced(*m_shader, m_instanceVBO, static_cast<GLsizei>(m_instances.size()));
+        mesh.DrawInstanced(
+            *m_shader,
+            m_instanceVBO,
+            static_cast<GLsizei>(m_instanceCount),
+            m_material == nullptr);
     }
 }
 
 void InstanceBatch::RenderDepthOnly(const glm::mat4& lightSpaceMatrix)
 {
-    if (m_instances.empty() || !m_model) 
+    if (m_instanceCount == 0 || !m_model)
     {
         return;
     }
@@ -135,7 +280,7 @@ void InstanceBatch::RenderDepthOnly(const glm::mat4& lightSpaceMatrix)
     // Draw each mesh with instancing (depth only)
     for (auto& mesh : m_model->meshes) 
     {
-        mesh.DrawInstancedDepthOnly(m_instanceVBO, static_cast<GLsizei>(m_instances.size()));
+        mesh.DrawInstancedDepthOnly(m_instanceVBO, static_cast<GLsizei>(m_instanceCount));
     }
 }
 
@@ -152,24 +297,25 @@ size_t InstanceBatch::GetSortKey() const
 
 void InstanceBatch::UpdateInstanceBuffer()
 {
-    // Force a default capacity so we aren't allocating tiny memory chunks
-    if (m_bufferCapacity < 100) m_bufferCapacity = 100;
+    if (m_bufferCapacity == 0) {
+        m_bufferCapacity = INITIAL_CAPACITY;
+    }
 
     if (m_instanceVBO.ID == 0)
     {
         m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
     }
 
-    if (!m_bufferDirty || m_instances.empty())
+    if (!m_bufferDirty || m_instanceCount == 0)
     {
         return;
     }
 
     // Check if we need to grow the buffer (Buffer Orphaning)
-    if (m_instances.size() > m_bufferCapacity)
+    if (m_instanceCount > m_bufferCapacity)
     {
         size_t newCapacity = m_bufferCapacity;
-        while (newCapacity < m_instances.size())
+        while (newCapacity < m_instanceCount)
         {
             newCapacity *= 2; // Assuming your GROWTH_FACTOR is 2
         }
@@ -178,13 +324,28 @@ void InstanceBatch::UpdateInstanceBuffer()
     }
 
     // Upload instance data
-    m_instanceVBO.UpdateData(m_instances.data(), m_instances.size() * sizeof(InstanceData), 0);
+    m_instanceVBO.UpdateData(m_instances.data(), m_instanceCount * sizeof(InstanceData), 0);
     m_bufferDirty = false;
 }
 
-void InstanceBatch::Prewarm() {
-    if (m_instanceVBO.ID == 0) {
-        if (m_bufferCapacity < 100) m_bufferCapacity = 100;
-        m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
+void InstanceBatch::Prewarm(size_t expectedInstanceCount) {
+    size_t requiredCapacity = std::max(
+        expectedInstanceCount, INITIAL_CAPACITY);
+    size_t targetCapacity = INITIAL_CAPACITY;
+    while (targetCapacity < requiredCapacity) {
+        targetCapacity *= GROWTH_FACTOR;
+    }
+
+    if (m_instances.capacity() < targetCapacity) {
+        m_instances.reserve(targetCapacity);
+    }
+
+    if (m_instanceVBO.ID == 0 || m_bufferCapacity < targetCapacity) {
+        m_instanceVBO.InitializeBuffer(
+            targetCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
+        m_bufferCapacity = targetCapacity;
+        // The GPU store was re-specified, so retained CPU instance data no
+        // longer matches it. Force a full upload on the next render.
+        m_bufferDirty = true;
     }
 }

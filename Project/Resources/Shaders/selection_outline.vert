@@ -9,6 +9,7 @@ layout(std140) uniform CameraBlock {
     mat4 projection;
     vec3 cameraPos;
     float _pad;
+    mat4 viewProjection;
 };
 
 uniform mat4 model;
@@ -48,5 +49,5 @@ void main()
     // Extrude along normal in object space
     pos.xyz += normalize(nrm) * outlineThickness;
 
-    gl_Position = projection * view * model * pos;
+    gl_Position = viewProjection * model * pos;
 }

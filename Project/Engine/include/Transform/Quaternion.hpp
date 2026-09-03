@@ -25,7 +25,15 @@ struct Quaternion
 
     // Normalize
     void Normalize() {
-        float mag = std::sqrt(w * w + x * x + y * y + z * z);
+        const float magSq = w * w + x * x + y * y + z * z;
+        // Animation and transform composition overwhelmingly operate on unit
+        // quaternions. Avoid a square root and four divides when accumulated
+        // floating-point error is already below a meaningful threshold.
+        if (std::fabs(magSq - 1.0f) <= 1.0e-6f) {
+            return;
+        }
+
+        float mag = std::sqrt(magSq);
         if (mag > 0.0f) {
             w /= mag; x /= mag; y /= mag; z /= mag;
         }
@@ -51,7 +59,7 @@ struct Quaternion
         float xy = x * y, xz = x * z, yz = y * z;
         float wx = w * x, wy = w * y, wz = w * z;
 
-        Matrix4x4 m = Matrix4x4::Identity();
+        Matrix4x4 m;
         m.m.m00 = 1 - 2 * (yy + zz);
         m.m.m01 = 2 * (xy - wz);
         m.m.m02 = 2 * (xz + wy);

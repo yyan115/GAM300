@@ -7,6 +7,7 @@
 
 void TimeManager::UpdateDeltaTime() {
     double currentTime = WindowManager::GetPlatform() ? WindowManager::GetPlatform()->GetTime() : 0.0;
+    frameStartTime = currentTime;
 
     // Update deltaTime
     RunTimeVar::deltaTime = currentTime - RunTimeVar::lastFrameTime;
@@ -51,6 +52,12 @@ void TimeManager::UpdateDeltaTime() {
     {
         RunTimeVar::deltaTime *= timeScale;
     }
+}
+
+void TimeManager::MarkLogicPhaseEnd() {
+    IPlatform* platform = WindowManager::GetPlatform();
+    const double now = platform ? platform->GetTime() : frameStartTime;
+    logicFrameSeconds = now >= frameStartTime ? now - frameStartTime : 0.0;
 }
 
 double TimeManager::GetDeltaTime() {

@@ -17,6 +17,7 @@
 #include "Graphics/Camera/Camera.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Camera/CameraSystem.hpp"
+#include "Graphics/Lights/LightingSystem.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -24,15 +25,50 @@
 #include <Graphics/Model/ModelFactory.hpp>
 #include <Graphics/Instancing/InstancingManager.hpp>
 
+namespace {
+	constexpr std::size_t kMaxShaderBones = 100;
+
+	void InitialiseBindPoseMatrices(ModelRenderComponent& modelComponent)
+	{
+		if (!modelComponent.model || modelComponent.model->mBoneInfoMap.empty()) {
+			modelComponent.mFinalBoneMatrices.clear();
+			return;
+		}
+
+		std::size_t matrixCount = 0;
+		for (const auto& [name, boneInfo] : modelComponent.model->mBoneInfoMap) {
+			(void)name;
+			if (boneInfo.id >= 0) {
+				matrixCount = std::max(
+					matrixCount,
+					static_cast<std::size_t>(boneInfo.id) + 1);
+			}
+		}
+
+		matrixCount = std::min(matrixCount, kMaxShaderBones);
+		modelComponent.mFinalBoneMatrices.assign(matrixCount, glm::mat4(1.0f));
+	}
+}
+
 bool ModelSystem::Initialise() 
 {
     // DISABLE COLOR AND DEPTH WRITES BEFORE DUMMY DRAWING!
     // This stops exploding vertices from rendering to the editor viewport.
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
+	glDepthMask(GL_FALSE);
 
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-    for (const auto& entity : entities) {
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+#ifdef ANDROID
+	const std::string defaultShaderPath =
+		ResourceManager::GetPlatformShaderPath("default");
+	const std::shared_ptr<Shader> defaultShader =
+		ResourceManager::GetInstance().GetResource<Shader>(defaultShaderPath);
+	const std::string opaqueShaderPath =
+		ResourceManager::GetPlatformShaderPath("defaultopaque");
+	const std::shared_ptr<Shader> opaqueShader =
+		ResourceManager::GetInstance().GetResource<Shader>(opaqueShaderPath);
+#endif
+	for (const auto& entity : entities) {
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
         ENGINE_LOG_DEBUG("Loading model");
         std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
@@ -43,10 +79,8 @@ bool ModelSystem::Initialise()
         if (!shaderPath.empty())
             modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
 #else
-        ENGINE_LOG_DEBUG("Loading shader");
-        std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
-        if (!shaderPath.empty())
-            modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+		ENGINE_LOG_DEBUG("Loading shader");
+		modelComp.shader = defaultShader;
 #endif
         ENGINE_LOG_DEBUG("Loading material");
         std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
@@ -55,6 +89,9 @@ bool ModelSystem::Initialise()
         }
 
         if (modelComp.model) {
+			// Static models need no skeletal storage. Allocate only the matrices
+			// required by models that actually contain bones.
+			InitialiseBindPoseMatrices(modelComp);
             ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             modelComp.childBonesSaved = true;
 
@@ -62,11 +99,39 @@ bool ModelSystem::Initialise()
             modelComp.shader->Activate();
 
             // Force textures to page into VRAM
-            if (modelComp.material) {
-                modelComp.material->ApplyToShader(*modelComp.shader);
-            }
+			if (modelComp.material) {
+				modelComp.material->ApplyToShader(*modelComp.shader);
+			}
 
-            for (auto& mesh : modelComp.model->meshes)
+#ifdef ANDROID
+			// A shader containing discard can inhibit opaque early-depth writes even
+			// when sampled alpha is always one. Most mobile diffuse KTX files are
+			// ETC2 RGB, so render them with a compile-time no-discard permutation.
+			bool requiresDiffuseAlphaTest = false;
+			if (modelComp.material) {
+				requiresDiffuseAlphaTest =
+					modelComp.material->RequiresDiffuseAlphaTest();
+			}
+			else {
+				for (const Mesh& mesh : modelComp.model->meshes) {
+					if (mesh.material &&
+						mesh.material->RequiresDiffuseAlphaTest()) {
+						requiresDiffuseAlphaTest = true;
+						break;
+					}
+				}
+			}
+
+			if (!requiresDiffuseAlphaTest && opaqueShader) {
+				modelComp.shader = opaqueShader;
+				modelComp.shader->Activate();
+				if (modelComp.material) {
+					modelComp.material->ApplyToShader(*modelComp.shader);
+				}
+			}
+#endif
+
+			for (auto& mesh : modelComp.model->meshes)
             {
                 // This calls your setupMesh() and sets vaoSetup = true
                 // while the loading screen is still up!
@@ -74,9 +139,11 @@ bool ModelSystem::Initialise()
 
                 // THE DUMMY DRAW: Force the driver to execute the pipeline!
                 // We only draw 3 indices (1 triangle) to make it lightning fast.
-                mesh.vao.Bind();
-                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+                mesh.DrawPrewarmTriangle();
                 mesh.vao.Unbind();
+#ifdef ANDROID
+				mesh.ReleaseCPUVertexData();
+#endif
             }
         }
     }
@@ -101,14 +168,25 @@ void ModelSystem::Update()
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
     InstancingManager& instancing = InstancingManager::GetInstance();
 
-    // Reset bloom dirty flag at the start of the update phase. This runs BEFORE
-    // any system sets it (Model, Sprite, Particle, Text) and BEFORE Render()
-    // checks it for the bloom post-process early-out.
-    gfxManager.ResetBloomFlag();
-
     // Get current view mode and check if rendering for editor
     bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
     bool is3DMode = gfxManager.Is3DMode();
+    Camera* currentCamera = gfxManager.GetCurrentCamera();
+
+    float cameraFadeNear = 3.0f;
+    float cameraFadeFar = 5.0f;
+    if (!isRenderingForEditor && currentCamera && ecsManager.cameraSystem) {
+        const Entity activeCameraEntity = ecsManager.cameraSystem->GetActiveCameraEntity();
+        if (auto cameraComponent = ecsManager.TryGetComponent<CameraComponent>(activeCameraEntity)) {
+            cameraFadeNear = cameraComponent->get().fadeNear;
+            cameraFadeFar = cameraComponent->get().fadeFar;
+        }
+    }
+
+    static const int tagPlayer = TagManager::GetInstance().GetTagIndex("Player");
+    static const int tagNPC = TagManager::GetInstance().GetTagIndex("NPC");
+    static const int tagCollectible = TagManager::GetInstance().GetTagIndex("Collectible");
+    static const int tagNoCameraCollision = TagManager::GetInstance().GetTagIndex("NoCameraCollision");
 
     // Get frustum for culling
     const Frustum& frustum = gfxManager.GetFrustum();
@@ -116,8 +194,8 @@ void ModelSystem::Update()
     // Reset stats each frame
     cullingStats.Reset();
     const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
-    renderItems.reserve(entities.size());
+    renderSnapshots.reserve(entities.size());
+    std::size_t renderSnapshotCount = 0;
 
 
     // Submit all visible models to the graphics manager
@@ -141,9 +219,39 @@ void ModelSystem::Update()
             continue;
         }
 
-        // Get world transform
-        Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
-        glm::mat4 glmWorldMatrix = worldMatrix.ConvertToGLM();
+        const Transform& entityTransform = ecsManager.GetComponent<Transform>(entity);
+        const glm::mat4 glmWorldMatrix = entityTransform.worldMatrix.ConvertToGLM();
+        auto bloomComponent = ecsManager.TryGetComponent<BloomComponent>(entity);
+
+		if (modelComponent.cachedBoundsModel != modelComponent.model.get() ||
+			modelComponent.cachedBoundsWorldRevision != entityTransform.worldRevision) {
+			modelComponent.cachedWorldBounds =
+				modelComponent.model->GetBoundingBox().Transform(glmWorldMatrix);
+			modelComponent.cachedBoundsModel = modelComponent.model.get();
+			modelComponent.cachedBoundsWorldRevision = entityTransform.worldRevision;
+		}
+		const AABB& staticWorldBounds = modelComponent.cachedWorldBounds;
+
+#ifdef __ANDROID__
+		auto getStaticLightMask = [&]() -> std::uint32_t {
+			if (!ecsManager.lightingSystem) {
+				return 0xFFFFFFFFu;
+			}
+
+			const std::uint64_t lightingRevision =
+				ecsManager.lightingSystem->GetLightingRevision();
+			if (modelComponent.cachedLightMaskModel != modelComponent.model.get() ||
+				modelComponent.cachedLightMaskWorldRevision != entityTransform.worldRevision ||
+				modelComponent.cachedLightingRevision != lightingRevision) {
+				modelComponent.cachedLightMask =
+					ecsManager.lightingSystem->GetLightMask(staticWorldBounds);
+				modelComponent.cachedLightMaskModel = modelComponent.model.get();
+				modelComponent.cachedLightMaskWorldRevision = entityTransform.worldRevision;
+				modelComponent.cachedLightingRevision = lightingRevision;
+			}
+			return modelComponent.cachedLightMask;
+		};
+#endif
 
        
         if (instancing.IsEnabled())
@@ -151,24 +259,44 @@ void ModelSystem::Update()
             // Gather per-entity bloom data for instancing
             glm::vec3 entityBloomColor(0.0f);
             float entityBloomIntensity = 0.0f;
-            if (ecsManager.HasComponent<BloomComponent>(entity)) {
-                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+            if (bloomComponent) {
+                const auto& bloom = bloomComponent->get();
                 if (bloom.enabled) {
                     entityBloomColor = bloom.bloomColor;
                     entityBloomIntensity = bloom.bloomIntensity;
-                    // Flag the frame as having bloom so post-process doesn't early-out
-                    if (entityBloomIntensity > 0.01f) {
-                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
-                    }
                 }
             }
 
-            bool wasInstanced = instancing.TryAddInstance(modelComponent, glmWorldMatrix, entityBloomColor, entityBloomIntensity);
+			std::uint32_t instanceLightMask = 0xFFFFFFFFu;
+#ifdef __ANDROID__
+			if (!modelComponent.HasAnimation() &&
+				modelComponent.model->mBoneInfoMap.empty()) {
+				instanceLightMask = getStaticLightMask();
+			}
+#endif
 
-            if (wasInstanced)
+            const InstanceSubmissionResult instanceResult =
+                instancing.TryAddInstance(
+                    modelComponent,
+                    glmWorldMatrix,
+					staticWorldBounds,
+                    entityBloomColor,
+					entityBloomIntensity,
+					instanceLightMask);
+
+            if (instanceResult != InstanceSubmissionResult::NotInstanced)
             {
-                // Instance was added to a batch (or culled), skip individual submission
-                cullingStats.renderedObjects++;  // Count as handled
+                if (instanceResult == InstanceSubmissionResult::Added)
+                {
+                    cullingStats.renderedObjects++;
+                    if (entityBloomIntensity > 0.01f) {
+                        gfxManager.NotifyBloomUsedThisFrame();
+                    }
+                }
+                else
+                {
+                    cullingStats.culledObjects++;
+                }
                 continue;
             }
         }
@@ -177,22 +305,73 @@ void ModelSystem::Update()
         // Fallback: Not instanceable, render individually
         // =====================================================================
 
-        // Frustum culling for non-instanced objects
-        if (enableCulling && modelComponent.model)
+        // Tags only affect the non-instanced player/fade path. Avoid probing
+        // component storage for the hundreds of static instances above.
+        auto tagComponent = ecsManager.TryGetComponent<TagComponent>(entity);
+
+        // Frustum culling for non-instanced objects. Android also reuses this
+        // transformed bound for finite point-light masking below.
+#ifdef __ANDROID__
+        AABB localBounds = modelComponent.model->GetBoundingBox();
+        bool hasConservativeSkinnedBounds = false;
+        if (modelComponent.HasAnimation() &&
+            !modelComponent.model->mBoneInfoMap.empty()) {
+			if (modelComponent.cachedSkinnedBoundsModel !=
+					modelComponent.model.get() ||
+				modelComponent.cachedSkinnedBoundsPoseRevision !=
+					modelComponent.bonePoseRevision) {
+				modelComponent.cachedSkinnedBoundsValid =
+					modelComponent.model->TryGetSkinnedBoundingBox(
+						modelComponent.mFinalBoneMatrices,
+						modelComponent.cachedSkinnedLocalBounds);
+				modelComponent.cachedSkinnedBoundsModel =
+					modelComponent.model.get();
+				modelComponent.cachedSkinnedBoundsPoseRevision =
+					modelComponent.bonePoseRevision;
+			}
+			hasConservativeSkinnedBounds =
+				modelComponent.cachedSkinnedBoundsValid;
+			if (hasConservativeSkinnedBounds) {
+				localBounds = modelComponent.cachedSkinnedLocalBounds;
+			}
+        }
+		const AABB worldBounds = hasConservativeSkinnedBounds
+			? localBounds.Transform(glmWorldMatrix)
+			: staticWorldBounds;
+        if (enableCulling && !frustum.IsBoxVisible(worldBounds))
+#else
+        if (enableCulling &&
+			!frustum.IsBoxVisible(staticWorldBounds))
+#endif
         {
-            AABB worldBounds = modelComponent.model->GetBoundingBox().Transform(glmWorldMatrix);
-            if (!frustum.IsBoxVisible(worldBounds))
-            {
-                cullingStats.culledObjects++;
-                continue;
-            }
+            cullingStats.culledObjects++;
+            continue;
         }
 
         // Passed culling test, create and submit render item
-        auto modelRenderItem = std::make_unique<ModelRenderComponent>(
-            modelComponent, ModelRenderComponent::RenderSnapshotTag{});
-        auto& entityTransform = ecsManager.GetComponent<Transform>(entity);
+        ModelRenderComponent* modelRenderItem = nullptr;
+        if (renderSnapshotCount == renderSnapshots.size()) {
+            renderSnapshots.emplace_back(modelComponent, ModelRenderComponent::RenderSnapshotTag{});
+        }
+        else {
+            renderSnapshots[renderSnapshotCount].UpdateRenderSnapshot(modelComponent);
+        }
+        modelRenderItem = &renderSnapshots[renderSnapshotCount++];
         modelRenderItem->transform = entityTransform.worldMatrix;
+
+#ifdef __ANDROID__
+        // Animated bounds are conservatively reconstructed from current bone
+        // matrices. Manual bone editing still falls back to all packed lights
+        // because those matrices are updated later in this system.
+        modelRenderItem->lightMask = 0xFFFFFFFFu;
+        if ((modelRenderItem->model->mBoneInfoMap.empty() ||
+            hasConservativeSkinnedBounds) &&
+            ecsManager.lightingSystem) {
+			modelRenderItem->lightMask = hasConservativeSkinnedBounds
+				? ecsManager.lightingSystem->GetLightMask(worldBounds)
+				: getStaticLightMask();
+        }
+#endif
 
         // If model doesn't have an animation controller, allow manual manipulation of bone entities.
         if (!modelRenderItem->HasAnimation() && !modelRenderItem->model->mBoneInfoMap.empty()) {
@@ -209,12 +388,13 @@ void ModelSystem::Update()
 			        continue;
 			    }
 			    Entity boneEntity = boneEntityIt->second;
-			    if (!ecsManager.HasComponent<Transform>(boneEntity)) {
+                auto boneTransform = ecsManager.TryGetComponent<Transform>(boneEntity);
+			    if (!boneTransform) {
 			        continue;
 			    }
 
 			    // Get the transform of the bone entity.
-                glm::mat4 currentWorld = ecsManager.GetComponent<Transform>(boneEntity).worldMatrix.ConvertToGLM();
+                glm::mat4 currentWorld = boneTransform->get().worldMatrix.ConvertToGLM();
 
 			    // Write to the final bone matrices.
                 modelRenderItem->mFinalBoneMatrices[boneInfo.id] =
@@ -223,23 +403,17 @@ void ModelSystem::Update()
         }
 
         // Per-entity bloom emission
-        if (ecsManager.HasComponent<BloomComponent>(entity)) {
-            auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+        if (bloomComponent) {
+            const auto& bloom = bloomComponent->get();
             if (bloom.enabled) {
                 modelRenderItem->bloomColor = bloom.bloomColor;
                 modelRenderItem->bloomIntensity = bloom.bloomIntensity;
-                // Flag the frame as having bloom so post-process doesn't early-out
-                if (bloom.bloomIntensity > 0.01f) {
-                    GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
-                }
             }
         }
 
         // Brighten the player model so it pops against the environment
-        if (ecsManager.HasComponent<TagComponent>(entity)) {
-            static int tagPlayer = TagManager::GetInstance().GetTagIndex("Player");
-            if (ecsManager.GetComponent<TagComponent>(entity).tagIndex == tagPlayer)
-                modelRenderItem->brightnessBoost = 1.35f;
+        if (tagComponent && tagComponent->get().tagIndex == tagPlayer) {
+            modelRenderItem->brightnessBoost = 1.35f;
         }
 
         // Tag items on excluded layers for deferred rendering
@@ -248,54 +422,35 @@ void ModelSystem::Update()
             if (layerIdx >= 0 && layerIdx < 32 && (excludedLayerMask & (1u << layerIdx)))
                 modelRenderItem->excludeFromPostProcess = true;
         }
+        if (!modelRenderItem->excludeFromPostProcess &&
+            modelRenderItem->bloomIntensity > 0.01f) {
+            gfxManager.NotifyBloomUsedThisFrame();
+        }
 
         // Distance-based camera fade: only fade entities with specific tags
-        if (!isRenderingForEditor) {
-            Camera* cam = gfxManager.GetCurrentCamera();
-            if (cam) {
-                bool shouldFade = false;
-                if (ecsManager.HasComponent<TagComponent>(entity)) {
-                    static int tagEnemy    = TagManager::GetInstance().GetTagIndex("Enemy");
-                    static int tagNPC      = TagManager::GetInstance().GetTagIndex("NPC");
-                    static int tagCollect  = TagManager::GetInstance().GetTagIndex("Collectible");
-                    static int tagNoCamCol = TagManager::GetInstance().GetTagIndex("NoCameraCollision");
+        if (!isRenderingForEditor && currentCamera && tagComponent) {
+            const int tagIndex = tagComponent->get().tagIndex;
+            const bool shouldFade =
+                tagIndex == tagNPC ||
+                tagIndex == tagCollectible ||
+                tagIndex == tagNoCameraCollision;
 
-                    int tagIdx = ecsManager.GetComponent<TagComponent>(entity).tagIndex;
-                    shouldFade = (/*tagIdx == tagEnemy ||*/ tagIdx == tagNPC ||
-                                  tagIdx == tagCollect || tagIdx == tagNoCamCol);
+            if (shouldFade) {
+                const glm::vec3 entityPosition = glm::vec3(glmWorldMatrix[3]);
+                const float distance = glm::length(entityPosition - currentCamera->Position);
+
+                float fade = 0.0f;
+                if (cameraFadeFar > cameraFadeNear) {
+                    fade = glm::clamp(
+                        (distance - cameraFadeNear) / (cameraFadeFar - cameraFadeNear),
+                        0.0f, 1.0f);
                 }
-
-                if (shouldFade) {
-                    glm::vec3 entityPos = glm::vec3(glmWorldMatrix[3]);
-                    glm::vec3 camPos = cam->Position;
-                    float dist = glm::length(entityPos - camPos);
-
-                    float fadeNear = 3.0f;
-                    float fadeFar  = 5.0f;
-
-                    // Use active camera component's fade settings if available
-                    Entity activeCamEntity = ecsManager.cameraSystem ? ecsManager.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
-                    if (activeCamEntity != UINT32_MAX && ecsManager.HasComponent<CameraComponent>(activeCamEntity)) {
-                        auto& camComp = ecsManager.GetComponent<CameraComponent>(activeCamEntity);
-                        fadeNear = camComp.fadeNear;
-                        fadeFar  = camComp.fadeFar;
-                    }
-
-                    constexpr float fadeMin  = 0.0f;
-
-                    float t = 0.0f;
-                    if (fadeFar > fadeNear) {
-                        t = (dist - fadeNear) / (fadeFar - fadeNear);
-                        t = glm::clamp(t, 0.0f, 1.0f);
-                    }
-                    modelRenderItem->distanceFadeOpacity = fadeMin + t * (1.0f - fadeMin);
-                }
+                modelRenderItem->distanceFadeOpacity = fade;
             }
         }
 
-        renderItems.push_back(std::move(modelRenderItem));
     }
-    gfxManager.SubmitBatch(std::move(renderItems));
+    gfxManager.SubmitBatch(renderSnapshots, renderSnapshotCount);
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() completed");
 #endif

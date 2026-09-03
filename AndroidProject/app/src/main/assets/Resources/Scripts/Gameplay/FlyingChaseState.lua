@@ -11,10 +11,37 @@ function FlyingChase:Enter(ai)
 end
 
 function FlyingChase:Update(ai, dt)
-    ai:MaintainHover(dt)
+    local hoverX, hoverY, hoverZ = ai:MaintainHover(dt)
+
+    local distanceSq, px, pz, ex, ez, ey =
+        ai:GetPlayerDistanceSq(hoverX, hoverZ, hoverY)
+
+    -- Leash check: if too far from spawn, deaggro and fly home
+    local maxDist = ai.MaxChaseDistance or 10.0
+    if ai._spawnX and ai._spawnZ then
+        if ex == nil then
+            ex, ey, ez = ai:GetPosition()
+        end
+        if ex then
+            local dx = ex - ai._spawnX
+            local dz = ez - ai._spawnZ
+            if (dx*dx + dz*dz) > (maxDist * maxDist) then
+                ai.aggressive = false
+                -- Point patrol target at spawn so the enemy flies home
+                ai._patrolTarget = { x = ai._spawnX, z = ai._spawnZ }
+                ai._isPatrolWait = false
+                if ai.EnablePatrol then
+                    ai.fsm:Change("Patrol", ai.states.Patrol)
+                else
+                    ai.fsm:Change("Idle", ai.states.Idle)
+                end
+                return
+            end
+        end
+    end
 
     local detR = ai.DetectionRange or 4.0
-    if not ai:IsPlayerInRange(detR) and not ai.aggressive then
+    if distanceSq > (detR * detR) and not ai.aggressive then
         if ai.EnablePatrol then
             ai.fsm:Change("Patrol", ai.states.Patrol)
         else
@@ -24,14 +51,14 @@ function FlyingChase:Update(ai, dt)
     end
 
     local attackR = ai.AttackRange or 3.0
-    if ai:IsPlayerInRange(attackR) then
+    if distanceSq <= (attackR * attackR) then
         ai.fsm:Change("Attack", ai.states.Attack)
         return
     end
 
     -- chase
     local spd = ai.FlyingChaseSpeed or 1.2
-    ai:MoveTowardPlayerXZ_Flying(dt, spd)
+    ai:MoveTowardPlayerXZ_Flying(dt, spd, px, pz, ex, ez, ey)
 end
 
 return FlyingChase

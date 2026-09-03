@@ -12,6 +12,12 @@ std::vector<DebugDrawData> DebugDrawSystem::debugQueue;
 
 bool DebugDrawSystem::Initialise() 
 {
+#ifdef ANDROID
+	// Android's renderer does not support the wireframe debug pass, so its
+	// shader and primitive buffers would be dead resources.
+	return true;
+#endif
+
     // Create debug shader (you'll need to create this shader file)
     debugShader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("debug"));
 
@@ -23,37 +29,42 @@ bool DebugDrawSystem::Initialise()
 void DebugDrawSystem::Update()
 {
     PROFILE_FUNCTION();
+#ifdef ANDROID
+	debugQueue.clear();
+	return;
+#endif
     if (debugQueue.empty()) return;
 
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
 
-    // Create component and check all pointers are valid
-    auto debugComponent = std::make_unique<DebugDrawComponent>();
-    auto shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("debug"));
-
-    if (!shader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
+    if (!debugShader || !cubeGeometry.vao || !sphereGeometry.vao || !lineGeometry.vao) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Error: Required debug resources are null!\n");
         debugQueue.clear();
         return;
     }
 
-    debugComponent->shader = shader;
-    debugComponent->cubeVAO = cubeGeometry.vao.get();
-    debugComponent->sphereVAO = sphereGeometry.vao.get();
-    debugComponent->lineVAO = lineGeometry.vao.get();
-    debugComponent->cubeIndexCount = cubeGeometry.indexCount;
-    debugComponent->sphereIndexCount = sphereGeometry.indexCount;
+    renderSnapshot.shader = debugShader;
+    renderSnapshot.cubeVAO = cubeGeometry.vao.get();
+    renderSnapshot.sphereVAO = sphereGeometry.vao.get();
+    renderSnapshot.lineVAO = lineGeometry.vao.get();
+    renderSnapshot.cubeIndexCount = cubeGeometry.indexCount;
+    renderSnapshot.sphereIndexCount = sphereGeometry.indexCount;
 
-    // Copy instead of move to avoid potential issues
-    debugComponent->drawCommands = debugQueue;
+    renderSnapshot.drawCommands = debugQueue;
 
-    gfxManager.Submit(std::move(debugComponent));
+    gfxManager.Submit(&renderSnapshot);
 
     debugQueue.clear();
 }
 
 void DebugDrawSystem::Shutdown()
 {
+	debugQueue.clear();
+	renderSnapshot.drawCommands.clear();
+	cubeGeometry = {};
+	sphereGeometry = {};
+	lineGeometry = {};
+	debugShader.reset();
     ENGINE_PRINT("[DebugDrawSystem] Shutdown\n");
 }
 

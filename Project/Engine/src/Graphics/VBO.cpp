@@ -12,7 +12,17 @@
 #pragma endregion
 
 // Constructor for static mesh data
-VBO::VBO(std::vector<Vertex>& vertices)
+VBO::VBO(std::vector<Vertex>& vertices) :
+	VBO(vertices.data(), vertices.size() * sizeof(Vertex), GL_STATIC_DRAW)
+{
+}
+
+VBO::~VBO()
+{
+	Delete();
+}
+
+VBO::VBO(const void* data, size_t size, GLenum usage)
 {
 	glGenBuffers(1, &ID);
 	if (ID == 0) {
@@ -20,10 +30,7 @@ VBO::VBO(std::vector<Vertex>& vertices)
 		return;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, ID);
-	// glBufferData is a function specifically targeted to copy user-defined data into the currently bound buffer.
-	// Its first argument is the type of the buffer we want to copy data into: the vertex buffer object currently bound to the GL_ARRAY_BUFFER target.
-	// The second argument specifies the size of the data (in bytes) we want to pass to the buffer; a simple sizeof of the vertex data suffices.
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, size, data, usage);
 	initialized = true;
 }
 
@@ -73,6 +80,12 @@ void VBO::UpdateData(const void* data, size_t size, size_t offset)
 		initialized = true;
 	}
 	Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+}
+
+void VBO::UpdateBoundData(const void* data, size_t size, size_t offset)
+{
+	if (ID == 0 || data == nullptr || size == 0) return;
 	glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
 }
 

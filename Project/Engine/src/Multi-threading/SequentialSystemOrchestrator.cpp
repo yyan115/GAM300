@@ -3,6 +3,7 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/Kinematics/CharacterControllerSystem.hpp>
+#include "Graphics/GraphicsManager.hpp"
 #include <TimeManager.hpp>
 #include "Logging.hpp"
 
@@ -23,7 +24,6 @@ void SequentialSystemOrchestrator::Update() {
 	{
 		PROFILE_SCOPED("HierarchyCache::PostScriptRefresh");
 		mainECS.ClearActiveHierarchyCache();
-		mainECS.PreWarmActiveHierarchyCache();
 	}
 
 	PROFILE_PLOT_TIMED("Physics",             mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS));
@@ -32,21 +32,26 @@ void SequentialSystemOrchestrator::Update() {
 	PROFILE_PLOT_TIMED("Transform",           mainECS.transformSystem->Update());
 	PROFILE_PLOT_TIMED("Animation",           mainECS.animationSystem->Update());
 	PROFILE_PLOT_TIMED("Camera",              mainECS.cameraSystem->Update());
-	PROFILE_PLOT_TIMED("Lighting",            mainECS.lightingSystem->Update());
-
-	// Simulation and camera updates may have changed active states. Refresh once
-	// so the remaining update and draw systems use direct cache hits.
+	if (auto* activeCamera = mainECS.cameraSystem->GetActiveCamera())
 	{
-		PROFILE_SCOPED("HierarchyCache::DrawRefresh");
-		mainECS.ClearActiveHierarchyCache();
-		mainECS.PreWarmActiveHierarchyCache();
+		auto& graphics = GraphicsManager::GetInstance();
+		graphics.SetCamera(activeCamera);
+		graphics.UpdateFrustum();
 	}
+	PROFILE_PLOT_TIMED("Lighting",            mainECS.lightingSystem->Update());
 
 	PROFILE_PLOT_TIMED("Button",          mainECS.buttonSystem->Update());
 	PROFILE_PLOT_TIMED("Slider",          mainECS.sliderSystem->Update());
 	PROFILE_PLOT_TIMED("Video",           mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime()));
 	PROFILE_PLOT_TIMED("Dialogue",        mainECS.dialogueSystem->Update((float)TimeManager::GetDeltaTime()));
 	PROFILE_PLOT_TIMED("SpriteAnimation", mainECS.spriteAnimationSystem->Update());
+
+	// UI callbacks and dialogue may toggle entities. Refresh after all of them so
+	// audio and draw systems observe those changes during this frame.
+	{
+		PROFILE_SCOPED("HierarchyCache::DrawRefresh");
+		mainECS.ClearActiveHierarchyCache();
+	}
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
 	if (mainECS.audioSystem)
@@ -66,8 +71,10 @@ void SequentialSystemOrchestrator::Draw() {
 		PROFILE_PLOT_TIMED("Sprite", mainECS.spriteSystem->Update());
 	if (mainECS.particleSystem)
 		PROFILE_PLOT_TIMED("Particle", mainECS.particleSystem->Update());
+#ifndef ANDROID
 	if (mainECS.debugDrawSystem)
 		PROFILE_PLOT_TIMED("DebugDraw", mainECS.debugDrawSystem->Update());
 	if (mainECS.fogSystem)
 		PROFILE_PLOT_TIMED("Fog", mainECS.fogSystem->Update());
+#endif
 }

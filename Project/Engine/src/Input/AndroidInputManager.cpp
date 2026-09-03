@@ -10,6 +10,7 @@
 #include <WindowManager.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
+#include <algorithm>
 #include <iostream>
 #include <cmath>
 
@@ -25,23 +26,28 @@
 // ========== Constructor ==========
 
 AndroidInputManager::AndroidInputManager() {
+    m_touchEventQueue.reserve(32);
+    m_touchEventQueueSwap.reserve(32);
     //LOGI("[AndroidInputManager] Initialized (entity-based with full touch tracking)");
 }
 
 // ========== IInputSystem Interface Implementation ==========
 
 bool AndroidInputManager::IsActionHeld(const std::string& action) {
-    return m_currentActions.count(action) > 0;
+    const auto it = m_actionStates.find(action);
+    return it != m_actionStates.end() && it->second.current;
 }
 
 bool AndroidInputManager::IsActionPressed(const std::string& action) {
-    return m_currentActions.count(action) > 0 &&
-           m_previousActions.count(action) == 0;
+    const auto it = m_actionStates.find(action);
+    return it != m_actionStates.end() &&
+           it->second.current && !it->second.previous;
 }
 
 bool AndroidInputManager::IsActionJustReleased(const std::string& action) {
-    return m_currentActions.count(action) == 0 &&
-           m_previousActions.count(action) > 0;
+    const auto it = m_actionStates.find(action);
+    return it != m_actionStates.end() &&
+           !it->second.current && it->second.previous;
 }
 
 glm::vec2 AndroidInputManager::GetActionTouchPosition(const std::string& action) {
@@ -91,13 +97,8 @@ glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
     // also delivered (OnTouchUp clears m_isDragging before Update snapshots the delta).
     if (axisName == "Look") {
         if (m_committedDragDelta.x != 0.0f || m_committedDragDelta.y != 0.0f) {
-            float viewportWidth  = static_cast<float>(WindowManager::GetViewportWidth());
-            float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
-            if (viewportWidth  <= 0) viewportWidth  = 1920.0f;
-            if (viewportHeight <= 0) viewportHeight = 1080.0f;
-
-            float normDeltaX = m_committedDragDelta.x / viewportWidth;
-            float normDeltaY = m_committedDragDelta.y / viewportHeight;
+            float normDeltaX = m_committedDragDelta.x / m_viewportSize.x;
+            float normDeltaY = m_committedDragDelta.y / m_viewportSize.y;
 
             //static int lookLogCount = 0;
             //if (++lookLogCount % 30 == 1) {
@@ -205,6 +206,7 @@ glm::vec2 AndroidInputManager::GetTouchPosition(int index) {
 
 std::vector<InputManager::Touch> AndroidInputManager::GetTouches() {
     std::vector<Touch> result;
+    result.reserve(m_activeTouches.size() + m_endedTouches.size());
 
     // Add active touches
     for (const auto& [id, tp] : m_activeTouches) {
@@ -275,11 +277,44 @@ void AndroidInputManager::Update(float deltaTime) {
     // Clear ended touches from last frame
     m_endedTouches.clear();
 
+    const int viewportWidth = WindowManager::GetViewportWidth();
+    const int viewportHeight = WindowManager::GetViewportHeight();
+    m_viewportSize.x = viewportWidth > 0
+        ? static_cast<float>(viewportWidth)
+        : 1920.0f;
+    m_viewportSize.y = viewportHeight > 0
+        ? static_cast<float>(viewportHeight)
+        : 1080.0f;
+
+    int gameWidth = 0;
+    int gameHeight = 0;
+    GraphicsManager::GetInstance().GetTargetGameResolution(gameWidth, gameHeight);
+    m_gameResolution.x = static_cast<float>(std::max(gameWidth, 1));
+    m_gameResolution.y = static_cast<float>(std::max(gameHeight, 1));
+
     // Drain touch events from the UI thread (swap under lock, process outside lock)
     {
         std::lock_guard<std::mutex> lock(m_touchEventMutex);
         m_touchEventQueueSwap.swap(m_touchEventQueue);
     }
+
+    const bool hasTouchDown = std::any_of(
+        m_touchEventQueueSwap.begin(), m_touchEventQueueSwap.end(),
+        [](const TouchEvent& event) { return event.type == TouchEvent::Type::Down; });
+
+    // UI hitboxes rarely move. Refresh all of them periodically and before a
+    // new touch. While dragging, only the pressed control needs live bounds.
+    m_entityTransformRefreshTimer -= deltaTime;
+    const bool refreshAll = !m_entityTransformsInitialized ||
+        m_entityTransformRefreshTimer <= 0.0f || hasTouchDown;
+    if (refreshAll) {
+        UpdateEntityTransforms(false);
+        m_entityTransformsInitialized = true;
+        m_entityTransformRefreshTimer = 0.25f;
+    } else if (!m_touchEventQueueSwap.empty() || !m_activeTouches.empty()) {
+        UpdateEntityTransforms(true);
+    }
+
     for (const auto& ev : m_touchEventQueueSwap) {
         switch (ev.type) {
             case TouchEvent::Type::Down: ProcessTouchDown(ev.pointerId, ev.x, ev.y); break;
@@ -289,18 +324,18 @@ void AndroidInputManager::Update(float deltaTime) {
     }
     m_touchEventQueueSwap.clear();
 
-    // Save previous state
-    m_previousActions = m_currentActions;
-    m_currentActions.clear();
+    // Keep stable action nodes and only flip flags; held input must not allocate
+    // and free unordered-set nodes every frame.
+    for (auto& [name, state] : m_actionStates) {
+        state.previous = state.current;
+        state.current = false;
+    }
 
     // Commit whatever OnTouchMove accumulated since last frame, then reset for next frame.
     // Touch events on Android fire before Update() runs, so reading m_dragDelta directly
     // after the reset would always return 0. GetAxis("Look") reads m_committedDragDelta.
     m_committedDragDelta = m_dragDelta;
     m_dragDelta = glm::vec2(0.0f);
-
-    // Update entity transforms (look up from ECS)
-    UpdateEntityTransforms();
 
     // Update touch phases and durations
     for (auto& [id, touch] : m_activeTouches) {
@@ -311,7 +346,7 @@ void AndroidInputManager::Update(float deltaTime) {
         if (touch.phase == TouchPhase::Began) {
             if (touch.beganConsumed) {
                 // Second Update call - now transition
-                if (glm::length(touch.delta) > 0.001f) {
+                if (glm::dot(touch.delta, touch.delta) > 0.000001f) {
                     touch.phase = TouchPhase::Moved;
                 } else {
                     touch.phase = TouchPhase::Stationary;
@@ -327,13 +362,13 @@ void AndroidInputManager::Update(float deltaTime) {
     // Update action states based on current touches
     for (auto& entityAction : m_entityActions) {
         if (entityAction.isPressed) {
-            m_currentActions.insert(entityAction.actionName);
+            m_actionStates[entityAction.actionName].current = true;
         }
     }
 
     // Merge pending actions (quick taps where OnTouchDown+OnTouchUp both fired before this Update)
     for (const auto& action : m_pendingActions) {
-        m_currentActions.insert(action);
+        m_actionStates[action].current = true;
     }
     m_pendingActions.clear();
 
@@ -394,6 +429,7 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
             }
 
             const auto& androidBinding = actionData["android"];
+            m_actionStates.try_emplace(actionName);
 
             // Load entity binding (buttons, joysticks)
             if (androidBinding.HasMember("entity") && androidBinding["entity"].IsString()) {
@@ -460,8 +496,10 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
 std::unordered_map<std::string, bool> AndroidInputManager::GetAllActionStates() {
     std::unordered_map<std::string, bool> states;
 
-    for (const auto& action : m_currentActions) {
-        states[action] = true;
+    for (const auto& [action, state] : m_actionStates) {
+        if (state.current) {
+            states[action] = true;
+        }
     }
 
     return states;
@@ -484,6 +522,20 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
 
 void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
     std::lock_guard<std::mutex> lock(m_touchEventMutex);
+
+    // MotionEvent can deliver several samples before the game thread drains
+    // the queue. Only the latest position per pointer is needed: processing
+    // intermediate points produces the same accumulated drag displacement.
+    for (auto event = m_touchEventQueue.rbegin(); event != m_touchEventQueue.rend(); ++event) {
+        if (event->pointerId != pointerId) continue;
+        if (event->type == TouchEvent::Type::Move) {
+            event->x = x;
+            event->y = y;
+            return;
+        }
+        break;
+    }
+
     m_touchEventQueue.push_back({TouchEvent::Type::Move, pointerId, x, y});
 }
 
@@ -497,14 +549,7 @@ void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
 void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
     // x, y are NORMALIZED (0-1) from AndroidPlatform::HandleTouchEvent
     // Convert to viewport pixel coords for consistency with desktop (ButtonSystem expects pixels)
-    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
-    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
-
-    // Fallback if viewport not ready
-    if (viewportWidth <= 0) viewportWidth = 1920.0f;
-    if (viewportHeight <= 0) viewportHeight = 1080.0f;
-
-    glm::vec2 pixelPos(x * viewportWidth, y * viewportHeight);
+    glm::vec2 pixelPos(x * m_viewportSize.x, y * m_viewportSize.y);
 
     TouchPoint touch;
     touch.id = pointerId;
@@ -519,13 +564,10 @@ void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
     touch.isHandled = false;
 
     // Convert pixel coordinates to game coordinates for entity hit testing
-    int gameResWidth, gameResHeight;
-    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
-
-    // pixel -> game coordinates, with Y flipped (screen Y=0 is top, game Y=0 is bottom)
-    float gameX = (pixelPos.x / viewportWidth) * static_cast<float>(gameResWidth);
-    float gameY = static_cast<float>(gameResHeight) - (pixelPos.y / viewportHeight) * static_cast<float>(gameResHeight);
-    glm::vec2 gamePos(gameX, gameY);
+    // Normalized touch -> game coordinates, with Y flipped.
+    glm::vec2 gamePos(
+        x * m_gameResolution.x,
+        (1.0f - y) * m_gameResolution.y);
 
     //LOGI("[AndroidInput] TouchDown id=%d norm=(%.3f,%.3f) pixel=(%.1f,%.1f) game=(%.1f,%.1f) viewport=(%.0f,%.0f) gameRes=(%d,%d)",
     //     pointerId, x, y, pixelPos.x, pixelPos.y, gameX, gameY, viewportWidth, viewportHeight, gameResWidth, gameResHeight);
@@ -603,13 +645,7 @@ void AndroidInputManager::ProcessTouchMove(int pointerId, float x, float y) {
     if (it == m_activeTouches.end()) return;
 
     // x, y are NORMALIZED (0-1) - convert to pixel coords
-    float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
-    float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
-
-    if (viewportWidth <= 0) viewportWidth = 1920.0f;
-    if (viewportHeight <= 0) viewportHeight = 1080.0f;
-
-    glm::vec2 pixelPos(x * viewportWidth, y * viewportHeight);
+    glm::vec2 pixelPos(x * m_viewportSize.x, y * m_viewportSize.y);
     glm::vec2 previousPos = it->second.position;
 
     it->second.delta = pixelPos - previousPos;
@@ -618,12 +654,9 @@ void AndroidInputManager::ProcessTouchMove(int pointerId, float x, float y) {
     it->second.phase = TouchPhase::Moved;
 
     // Convert pixel to game coordinates
-    int gameResWidth, gameResHeight;
-    GraphicsManager::GetInstance().GetTargetGameResolution(gameResWidth, gameResHeight);
-
-    float gameX = (pixelPos.x / viewportWidth) * static_cast<float>(gameResWidth);
-    float gameY = static_cast<float>(gameResHeight) - (pixelPos.y / viewportHeight) * static_cast<float>(gameResHeight);
-    glm::vec2 gamePos(gameX, gameY);
+    glm::vec2 gamePos(
+        x * m_gameResolution.x,
+        (1.0f - y) * m_gameResolution.y);
 
     // Update entity action touch positions
     for (auto& entityAction : m_entityActions) {
@@ -675,7 +708,7 @@ void AndroidInputManager::ProcessTouchUp(int pointerId, float x, float y) {
 
 // ========== Private Helper Methods ==========
 
-void AndroidInputManager::UpdateEntityTransforms() {
+void AndroidInputManager::UpdateEntityTransforms(bool pressedOnly) {
     ECSManager* ecs = nullptr;
     try {
         ecs = &ECSRegistry::GetInstance().GetActiveECSManager();
@@ -685,38 +718,51 @@ void AndroidInputManager::UpdateEntityTransforms() {
 
     if (!ecs) return;
 
-    const auto& entities = ecs->GetActiveEntities();
+    const auto& entities = ecs->GetActiveEntitiesView();
 
     // Debug: log entity search periodically
     //static int entityLogCount = 0;
     //bool shouldLog = (++entityLogCount % 300 == 1);  // Log every ~5 seconds at 60fps
 
     for (auto& entityAction : m_entityActions) {
-        bool wasFound = entityAction.entityFound;
-        entityAction.entityFound = false;
+        if (pressedOnly && !entityAction.isPressed) {
+            continue;
+        }
 
-        for (Entity e : entities) {
-            if (!ecs->HasComponent<NameComponent>(e)) continue;
+        const auto updateFromEntity = [&](Entity entity) {
+            if (entity == INVALID_ENTITY || !ecs->IsEntityAlive(entity)) {
+                return false;
+            }
 
-            auto& nameComp = ecs->GetComponent<NameComponent>(e);
-            if (nameComp.name != entityAction.entityName) continue;
+            auto nameComponent = ecs->TryGetComponent<NameComponent>(entity);
+            auto transformComponent = ecs->TryGetComponent<Transform>(entity);
+            if (!nameComponent || !transformComponent) {
+                return false;
+            }
 
-            if (!ecs->HasComponent<Transform>(e)) continue;
+            const auto& nameComp = nameComponent->get();
+            if (nameComp.name != entityAction.entityName) {
+                return false;
+            }
 
-            auto& transform = ecs->GetComponent<Transform>(e);
-
+            const auto& transform = transformComponent->get();
             entityAction.entityCenter = glm::vec2(transform.localPosition.x, transform.localPosition.y);
             entityAction.entitySize = glm::vec2(transform.localScale.x, transform.localScale.y);
             entityAction.entityFound = true;
+            return true;
+        };
 
-            // Log when entity is first found or periodically
-            //if (!wasFound || shouldLog) {
-            //    LOGI("[AndroidInput] Entity '%s' for action '%s': center=(%.1f,%.1f) size=(%.1f,%.1f)",
-            //         entityAction.entityName.c_str(), entityAction.actionName.c_str(),
-            //         entityAction.entityCenter.x, entityAction.entityCenter.y,
-            //         entityAction.entitySize.x, entityAction.entitySize.y);
-            //}
-            break;
+        entityAction.entityFound = false;
+        if (updateFromEntity(entityAction.cachedEntity)) {
+            continue;
+        }
+
+        entityAction.cachedEntity = INVALID_ENTITY;
+        for (Entity entity : entities) {
+            if (updateFromEntity(entity)) {
+                entityAction.cachedEntity = entity;
+                break;
+            }
         }
 
         // Log if entity not found
@@ -769,7 +815,7 @@ void AndroidInputManager::DetectDoubleTap() {
                 float timeSinceLastTap = m_currentTime - m_lastTapTime;
 
                 if (timeSinceLastTap < gesture.maxTimeBetweenTaps) {
-                    m_currentActions.insert(gesture.action);
+                    m_actionStates[gesture.action].current = true;
                     m_tapCount = 0;
                 } else {
                     m_tapCount = 1;

@@ -62,7 +62,7 @@ public:
 	template <typename T>
 	void AddComponent(Entity entity, T component) {
 		// Add the component to the entity via the ComponentManager.
-		componentManager->AddComponent<T>(entity, component);
+		componentManager->AddComponent<T>(entity, std::move(component));
 
 		// Update the entity's signature via the EntityManager.
 		auto signature = entityManager->GetEntitySignature(entity);
@@ -127,6 +127,18 @@ public:
 		return entityManager->GetAllEntities();
 	}
 
+	const std::vector<Entity>& GetActiveEntitiesView() const noexcept {
+		return entityManager->GetActiveEntitiesView();
+	}
+
+	const std::vector<Entity>& GetAllEntitiesView() const noexcept {
+		return entityManager->GetAllEntitiesView();
+	}
+
+	bool IsEntityAlive(Entity entity) const noexcept {
+		return entityManager && entityManager->Exists(entity);
+	}
+
 	std::vector<Entity> GetAllRootEntities();
 
 	/**
@@ -143,11 +155,15 @@ public:
 	void ClearActiveHierarchyCache() {
 		// Epochs are always even; the low bit in each cache entry stores the
 		// active state. Advancing the epoch invalidates every entry in O(1).
-		m_activeHierarchyEpoch.fetch_add(2, std::memory_order_acq_rel);
+		// The packed cache value has no associated payload, so ordering stronger
+		// than atomicity only adds barriers to every hierarchy check on ARM.
+		m_activeHierarchyEpoch.fetch_add(2, std::memory_order_relaxed);
 	}
 
 	/** Pre-warm the cache for ALL active entities so parallel systems only do reads (thread-safe). */
 	void ENGINE_API PreWarmActiveHierarchyCache();
+	/** Pre-warm only entities consumed by an upcoming parallel phase. */
+	void ENGINE_API PreWarmActiveHierarchyCache(const std::vector<Entity>& entitiesToWarm);
 
 	// Get system manager for profiling access
 	const SystemManager* GetSystemManager() const {

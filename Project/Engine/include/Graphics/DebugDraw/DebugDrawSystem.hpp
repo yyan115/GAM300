@@ -53,5 +53,6 @@ private:
     GeometryData cubeGeometry;
     GeometryData sphereGeometry;
     GeometryData lineGeometry;
+    DebugDrawComponent renderSnapshot;
 
 };

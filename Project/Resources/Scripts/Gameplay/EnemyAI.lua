@@ -23,17 +23,9 @@ local KnifePool     = require("Gameplay.KnifePool")
 local Input = _G.Input
 local Time  = _G.Time
 local Physics = _G.Physics
+local ENABLE_DEBUG_INPUT = _G.ENEMY_DEBUG_INPUT == true
 
-local function atan2(y, x)
-    local ok, v = pcall(math.atan, y, x)
-    if ok and type(v) == "number" then return v end
-    if x > 0 then return math.atan(y / x) end
-    if x < 0 and y >= 0 then return math.atan(y / x) + math.pi end
-    if x < 0 and y < 0 then return math.atan(y / x) - math.pi end
-    if x == 0 and y > 0 then return math.pi / 2 end
-    if x == 0 and y < 0 then return -math.pi / 2 end
-    return 0
-end
+local atan2 = math.atan
 
 local function yawQuatFromDir(dx, dz)
     -- Guard: if direction is ~zero, do not produce a new rotation
@@ -41,10 +33,6 @@ local function yawQuatFromDir(dx, dz)
     if lenSq < 1e-10 then
         return nil
     end
-
-    -- Normalize helps keep yaw stable when very small values appear
-    local invLen = 1.0 / math.sqrt(lenSq)
-    dx, dz = dx * invLen, dz * invLen
 
     local yaw = atan2(dx, dz)       -- radians (your convention)
     local half = yaw * 0.5
@@ -482,19 +470,17 @@ return Component {
                 local tr = self._playerTr
                 if not tr then tr = Engine.FindTransformByName(self.PlayerName) end
                 if tr then
-                    local pp = Engine.GetTransformPosition(tr)
-                    if pp then
-                        local ex, ez = self:GetEnemyPosXZ()
-                        if ex and ez then
-                            local dx = ex - pp[1]
-                            local dz = ez - pp[3]
-                            local len = math.sqrt(dx * dx + dz * dz)
-                            if len >= 0.001 then
-                                self._kbVX = (dx / len) * kbStr
-                                self._kbVZ = (dz / len) * kbStr
-                                self._kbT  = kbDur
-                                self.fsm:ForceChange("Hurt", self.states.Hurt)
-                            end
+                    local px, _, pz = Engine.GetTransformPositionXYZ(tr)
+                    local ex, ez = self:GetEnemyPosXZ()
+                    if ex and ez then
+                        local dx = ex - px
+                        local dz = ez - pz
+                        local len = math.sqrt(dx * dx + dz * dz)
+                        if len >= 0.001 then
+                            self._kbVX = (dx / len) * kbStr
+                            self._kbVZ = (dz / len) * kbStr
+                            self._kbT  = kbDur
+                            self.fsm:ForceChange("Hurt", self.states.Hurt)
                         end
                     end
                 end
@@ -550,11 +536,9 @@ return Component {
         self:BuildStateProfile()
         self.fsm:Change("Idle", self.states.Idle)
 
-        if self._controller and CharacterController.SetPosition then
+        if self._controller then
             local x, y, z = self:GetPosition()
-            pcall(function()
-                CharacterController.SetPosition(self._controller, x, y, z)
-            end)
+            CharacterController.SetPositionXYZ(self._controller, x, y, z)
         end
 
         -- Save the initial spawn position so the enemy can teleport back here when player respawns.
@@ -562,8 +546,6 @@ return Component {
     end,
 
     Update = function(self, dt)
-        _G.__CC_UPDATED_THIS_FRAME = nil
-
         if self.health <= 0 and not self.dead then
             self.dead = true
         end
@@ -580,10 +562,8 @@ return Component {
         -- When player respawns, teleport the enemy back to its initial position.
         if self._playerRespawned and self._initialPos then
             self:SetPosition(self._initialPos.x, self._initialPos.y + 1.0, self._initialPos.z)
-            if self._controller and CharacterController.SetPosition then
-                pcall(function()
-                    CharacterController.SetPosition(self._controller, self._transform)
-                end)
+            if self._controller then
+                CharacterController.SetPosition(self._controller, self._transform)
             end
             --print(string.format("[EnemyAI] Teleported enemy %d to %f %f %f", self.entityId, self._initialPos.x, self._initialPos.y, self._initialPos.z))
             self.fsm:ForceChange("Idle", self.states.Idle)
@@ -593,24 +573,16 @@ return Component {
             return
         end
 
-        self._motionID = self._rb and self._rb.motionID or nil
-
-        if Input.IsActionPressed("Interact") then
-            self:ApplyHook(self.HookedDuration)
-        end
-
-        if Keyboard.IsDigitPressed(1) then
-            self:ApplyHook(self.HookedDuration)
-        end
-        if Keyboard.IsDigitPressed(3) then
-            self:ApplyHit(10)
-        end
-        if Keyboard.IsDigitPressed(7) then
-            self.IsPassive = not self.IsPassive
-        end
-
-        if Keyboard.IsDigitPressed(9) and not self:IsFlying() then
-            self:ApplyHit(1, "KNOCKUP", 0)
+        if ENABLE_DEBUG_INPUT then
+            if Input.IsActionPressed("Interact") then
+                self:ApplyHook(self.HookedDuration)
+            end
+            if Keyboard.IsDigitPressed(1) then self:ApplyHook(self.HookedDuration) end
+            if Keyboard.IsDigitPressed(3) then self:ApplyHit(10) end
+            if Keyboard.IsDigitPressed(7) then self.IsPassive = not self.IsPassive end
+            if Keyboard.IsDigitPressed(9) and not self:IsFlying() then
+                self:ApplyHit(1, "KNOCKUP", 0)
+            end
         end
 
         local dtSec = toDtSec(dt)
@@ -875,10 +847,8 @@ return Component {
                 local x, y, z = self:GetPosition()
                 local nx, nz = x + mx, z + mz
                 self:SetPosition(nx, y, nz)
-                if self._controller and CharacterController.SetPosition then
-                    pcall(function()
-                        CharacterController.SetPosition(self._controller, nx, y, nz)
-                    end)
+                if self._controller then
+                    CharacterController.SetPositionXYZ(self._controller, nx, y, nz)
                 end
             else
                 -- FIX: CC.Move stores mVelocity; CharacterController::Update then calls
@@ -890,41 +860,19 @@ return Component {
             end
         end
 
-        if not _G.__CC_UPDATED_THIS_FRAME then
-            _G.__CC_UPDATED_THIS_FRAME = true
-            --CharacterController.UpdateAll(dtSec)
-        end
-
-        -- ── Sync Transform from CC [v3] ──────────────────────────────────────
-        -- During juggle CC is nil (destroyed in ApplyJuggleLift, recreated on
-        -- landing). Position is already written above by the juggle block.
-        if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then
-                if self._isJuggled then
-                    -- Should not reach here (CC is nil while juggling) but safe fallback.
-                    self:SetPosition(pos.x, self._juggleY or pos.y, pos.z)
-                elseif not self:IsFlying() then
-                    -- Use CC's physics Y directly. CharacterControllerSystem::Update
-                    -- overwrites Transform with CC position anyway, so the old
-                    -- Nav.GetGroundY override was dead code.  Letting the CC own Y
-                    -- avoids the discrete cell-boundary jump that groundY causes.
-                    self:SetPosition(pos.x, pos.y, pos.z)
-                else
-                    local x, y, z = self:GetPosition()
-                    if x ~= nil then self:SetPosition(pos.x, y, pos.z) end
-                end
+        -- Ground controllers are synchronized by CharacterControllerSystem after
+        -- scripts run. Only preserve the exceptional flying-controller Y path.
+        if self._controller and self:IsFlying() then
+            local cx, cy, cz = CharacterController.GetPositionXYZ(self._controller)
+            if self._isJuggled then
+                -- Should not reach here (CC is nil while juggling) but safe fallback.
+                self:SetPosition(cx, self._juggleY or cy, cz)
+            else
+                local x, y = self:GetPosition()
+                if x ~= nil then self:SetPosition(cx, y, cz) end
             end
         end
 
-        -- broadcast enemy position (for DamageZone / melee test)
-        if _G.event_bus and _G.event_bus.publish then
-            local x, y, z = self:GetPosition()
-            _G.event_bus.publish("enemy_position", {
-                entityId = self.entityId,
-                x = x, y = y, z = z
-            })
-        end
     end,
 
     SetCharacterControllerEnabled = function(self, enabled)
@@ -958,10 +906,8 @@ return Component {
 
             -- IMPORTANT: sync using explicit coordinates, not transform object
             local x, y, z = self:GetPosition()
-            if x ~= nil and CharacterController.SetPosition then
-                pcall(function()
-                    CharacterController.SetPosition(self._controller, x, y, z)
-                end)
+            if x ~= nil then
+                CharacterController.SetPositionXYZ(self._controller, x, y, z)
             end
 
             return ctrl
@@ -1073,10 +1019,22 @@ return Component {
         return attackR, meleeR, diseng
     end,
 
-    GetPlayerDistanceSq = function(self)
+    GetPlayerDistanceSq = function(self, sampledX, sampledZ, sampledY)
+        -- Sample the enemy first so patrol/return-home movement can still reuse
+        -- its coordinates when the player is unavailable or dead.
+        local ex, ez, ey = sampledX, sampledZ, sampledY
+        if ex == nil or ez == nil or self._controller then
+            if self.GetEnemyPosXZ then
+                ex, ez, ey = self:GetEnemyPosXZ()
+            else
+                local x, y, z = self:GetPosition()
+                ex, ez, ey = x, z, y
+            end
+        end
+
         -- If the player is dead, this function always returns a huge value so the enemy exits the chase/attack state.
         if self._playerDead then
-            return math.huge
+            return math.huge, nil, nil, ex, ez, ey
         end
 
         local tr = self._playerTr
@@ -1084,26 +1042,17 @@ return Component {
             tr = Engine.FindTransformByName(self.PlayerName)
             self._playerTr = tr
         end
-        if not tr then return math.huge end
+        if not tr then return math.huge, nil, nil, ex, ez, ey end
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return math.huge end
-        local px, pz = pp[1], pp[3]
-
-        -- enemy position MUST be current (controller-based if available)
-        local ex, ez
-        if self.GetEnemyPosXZ then
-            ex, ez = self:GetEnemyPosXZ()
-        else
-            local x, _, z = self:GetPosition()
-            ex, ez = x, z
-        end
+        local px, _, pz = Engine.GetTransformPositionXYZ(tr)
 
         -- Safety check: if position is nil, return huge distance
-        if ex == nil or ez == nil then return math.huge end
+        if ex == nil or ez == nil then return math.huge, px, pz, ex, ez, ey end
 
         local dx, dz = px - ex, pz - ez
-        return dx*dx + dz*dz
+        -- Return the sampled coordinates as well so states that also need to
+        -- face or move toward the player do not cross the Lua/C++ bridge again.
+        return dx*dx + dz*dz, px, pz, ex, ez, ey
     end,
 
     MoveCC = function(self, vx, vz, dt)
@@ -1120,10 +1069,8 @@ return Component {
             self:SetPosition(nx, y, nz)
 
             -- keep CC synced, but never Move() it
-            if self._controller and CharacterController.SetPosition then
-                pcall(function()
-                    CharacterController.SetPosition(self._controller, nx, y, nz)
-                end)
+            if self._controller then
+                CharacterController.SetPositionXYZ(self._controller, nx, y, nz)
             end
             return
         end
@@ -1156,19 +1103,7 @@ return Component {
             if not self._isApplyingKnockback then return end
         end
 
-        self._dbgMoveT = (self._dbgMoveT or 0) + (dt or 0)
-        if self._dbgMoveT > 1.0 then
-            self._dbgMoveT = 0
-            local p = CharacterController.GetPosition(self._controller)
-            -- print(string.format("[EnemyAI] MoveCC vx=%.3f vz=%.3f pos=(%.3f,%.3f,%.3f)",
-            --     vx or 0, vz or 0, p.x, p.y, p.z))
-        end
-
-        local pos = CharacterController.GetPosition(self._controller)
-        --print(string.format("[EnemyAI] Before MoveCC Position: %f %f %f", pos.x, pos.y, pos.z))
         CharacterController.Move(self._controller, vx or 0, 0, vz or 0)
-        pos = CharacterController.GetPosition(self._controller)
-        --print(string.format("[EnemyAI] After MoveCC Position: %f %f %f", pos.x, pos.y, pos.z))
     end,
 
     StopCC = function(self)
@@ -1176,18 +1111,8 @@ return Component {
         -- During juggle: skipping CC.Move prevents the CC's internal gravity from
         -- snapping the enemy back to the floor on the same frame juggle sets Y.
         if self._isJuggled then return end
-        local pos = CharacterController.GetPosition(self._controller)
-        --print(string.format("[EnemyAI] Before StopCC Position: %f %f %f", pos.x, pos.y, pos.z))
         -- Sending 0s is a safe "do nothing" step.
         CharacterController.Move(self._controller, 0, 0, 0)
-        pos = CharacterController.GetPosition(self._controller)
-        --print(string.format("[EnemyAI] After StopCC Position: %f %f %f", pos.x, pos.y, pos.z))
-
-        -- Also kill RB velocity if anything is leaking into motion.
-        if self._rb then
-            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
-            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
-        end
     end,
 
     ClearPath = function(self)
@@ -1200,17 +1125,19 @@ return Component {
         --print("[EnemyAI] ClearPath called. Path is nil")
     end,
 
-    SetPath = function(self, waypoints, goalX, goalZ)
+    SetPath = function(self, waypoints, goalX, goalZ, ex, ez)
         self._path = waypoints
         self._pathIndex = 1
         self._pathGoalX, self._pathGoalZ = goalX, goalZ
         self._pathRepathT = 0
         self._pathStuckT = 0
-        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then
+            ex, ez = self:GetEnemyPosXZ()
+        end
         self._pathLastX, self._pathLastZ = ex, ez
     end,
 
-    RequestPathToXZ = function(self, goalX, goalZ)
+    RequestPathToXZ = function(self, goalX, goalZ, sx, sz)
         if not Nav then
             --print("[Nav] ERROR: Nav is NIL! Nav system not bound to Lua!")
             self:ClearPath()
@@ -1225,7 +1152,9 @@ return Component {
         
         --print("[Nav] Nav binding OK, calling RequestPathXZ...")
         
-        local sx, sz = self:GetEnemyPosXZ()
+        if sx == nil or sz == nil then
+            sx, sz = self:GetEnemyPosXZ()
+        end
         local path = Nav.RequestPathXZ(sx, sz, goalX, goalZ, self.entityId)
         
         _dumpPath(self, "RECEIVED")
@@ -1234,7 +1163,7 @@ return Component {
 
         if path and #path >= 1 then
             --print(string.format("[Nav] PATH OK len=%d", #path))
-            self:SetPath(path, goalX, goalZ)
+            self:SetPath(path, goalX, goalZ, sx, sz)
             return true
         end
 
@@ -1275,7 +1204,7 @@ return Component {
     end,
 
     -- Returns: true if reached end-of-path (arrived), false otherwise
-    FollowPath = function(self, dtSec, speed)
+    FollowPath = function(self, dtSec, speed, ex, ez)
         if not self._path or #self._path == 0 then
             -- NO FALLBACK - if there's no path, STOP
             --print("[FollowPath] NO PATH, STOPPING CC")
@@ -1297,7 +1226,9 @@ return Component {
             return true
         end
 
-        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then
+            ex, ez = self:GetEnemyPosXZ()
+        end
         local dx = (wp.x or 0) - ex
         local dz = (wp.z or 0) - ez
         local d2 = dx*dx + dz*dz
@@ -1323,8 +1254,8 @@ return Component {
                 self:StopCC()
                 return true
             end
-            -- recompute to new waypoint
-            ex, ez = self:GetEnemyPosXZ()
+            -- The controller moves later in the physics phase, so the current
+            -- XZ sample is still valid after advancing the waypoint.
             dx = (wp.x or 0) - ex
             dz = (wp.z or 0) - ez
             d2 = dx*dx + dz*dz
@@ -1379,24 +1310,25 @@ return Component {
         return false
     end,
 
-    PullTowardPlayer = function(self, dtSec)
+    PullTowardPlayer = function(self, dtSec, px, pz, ex, ez)
         if not self._controller then return end
         if (self._kbT or 0) > 0 then
             return
         end
 
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
+        if px == nil or pz == nil then
+            local tr = self._playerTr
+            if not tr then
+                tr = Engine.FindTransformByName(self.PlayerName)
+                self._playerTr = tr
+            end
+            if not tr then return end
+            px, _, pz = Engine.GetTransformPositionXYZ(tr)
         end
-        if not tr then return end
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return end
-        local px, pz = pp[1], pp[3]
-
-        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then
+            ex, ez = self:GetEnemyPosXZ()
+        end
         if ex == nil or ez == nil then return end
 
         local dx, dz = px - ex, pz - ez
@@ -1432,9 +1364,13 @@ return Component {
     end,
 
     IsFlying = function(self)
+        if self._isFlyingCached ~= nil then
+            return self._isFlyingCached
+        end
         local t = tostring(self.EnemyType or "")
         t = string.lower(string.gsub(t, '[\"%s]+', ""))
-        return t == "flying"
+        self._isFlyingCached = t == "flying"
+        return self._isFlyingCached
     end,
 
     BuildStateProfile = function(self)
@@ -1495,26 +1431,32 @@ return Component {
         if dy >  maxStep then dy =  maxStep end
         if dy < -maxStep then dy = -maxStep end
 
-        self:SetPosition(x, y + dy, z)
+        local newY = y + dy
+        self:SetPosition(x, newY, z)
+        return x, newY, z
     end,
 
-    MoveTowardPlayerXZ_Flying = function(self, dtSec, speed)
+    MoveTowardPlayerXZ_Flying = function(self, dtSec, speed, px, pz, ex, ez, ey)
         dtSec = toDtSec(dtSec)
         if dtSec <= 0 then return end
 
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
+        if px == nil or pz == nil then
+            local tr = self._playerTr
+            if not tr then
+                tr = Engine.FindTransformByName(self.PlayerName)
+                self._playerTr = tr
+            end
+            if not tr then return end
+            px, _, pz = Engine.GetTransformPositionXYZ(tr)
         end
-        if not tr then return end
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return end
-        local px, pz = pp[1], pp[3]
-
-        local ex, _, ez = self:GetPosition()
-        if ex == nil then return end
+        if ex == nil or ez == nil or ey == nil then
+            local currentX, currentY, currentZ = self:GetPosition()
+            if currentX == nil then return end
+            ex = ex or currentX
+            ez = ez or currentZ
+            ey = ey or currentY
+        end
 
         local dx, dz = px - ex, pz - ez
         local d2 = dx*dx + dz*dz
@@ -1531,8 +1473,7 @@ return Component {
         if step > maxStep then step = maxStep end
 
         -- Keep current Y (hover handled separately)
-        local _, y, _ = self:GetPosition()
-        self:SetPosition(ex + dirX * step, y, ez + dirZ * step)
+        self:SetPosition(ex + dirX * step, ey, ez + dirZ * step)
         self:FaceDirection(dirX, dirZ)
     end,
 
@@ -1542,6 +1483,7 @@ return Component {
 
         -- flip profile first
         self.EnemyType = "Ground"
+        self._isFlyingCached = false
 
         -- animator (wings close)
         if self._animator then
@@ -1657,45 +1599,40 @@ return Component {
 
     ApplyRotation = function(self, w, x, y, z)
         --print(string.format("[ApplyRotation] w=%f, x=%f, y=%f, z=%f", w, x, y, z))
-        self._lastFacingRot = { w = w, x = x, y = y, z = z }
+        local lastRotation = self._lastFacingRot
+        if not lastRotation then
+            lastRotation = {}
+            self._lastFacingRot = lastRotation
+        end
+        lastRotation.w, lastRotation.x, lastRotation.y, lastRotation.z = w, x, y, z
         self:SetRotation(w, x, y, z)
     end,
 
     FaceDirection = function(self, dx, dz)
         --print(string.format("[FaceDirection] dx=%f, dz=%f", dx, dz))
-        local q = { yawQuatFromDir(dx, dz) }
+        local w, x, y, z = yawQuatFromDir(dx, dz)
         -- If direction is too small, DO NOT change rotation (prevents "flip/lie down")
-        if #q == 0 then
-            return
-        end
-        local w, x, y, z = q[1], q[2], q[3], q[4]
+        if not w then return end
         self:ApplyRotation(w, x, y, z)
     end,
 
-    FacePlayer = function(self)
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
+    FacePlayer = function(self, px, pz, ex, ez)
+        if px == nil or pz == nil then
+            local tr = self._playerTr
+            if not tr then
+                tr = Engine.FindTransformByName(self.PlayerName)
+                self._playerTr = tr
+            end
+            if not tr then return end
+            px, _, pz = Engine.GetTransformPositionXYZ(tr)
         end
-        if not tr then return end
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return end
-        local px, pz = pp[1], pp[3]
-
-        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then
+            ex, ez = self:GetEnemyPosXZ()
+        end
         -- Safety check: if position is nil, skip facing
         if ex == nil or ez == nil then return end
-        local dx, dz = px - ex, pz - ez
-
-        local q = { yawQuatFromDir(dx, dz) }
-        if #q == 0 then
-            return -- don't rotate if player is basically on top of enemy
-        end
-
-        local w, x, y, z = q[1], q[2], q[3], q[4]
-        self:ApplyRotation(w, x, y, z)
+        self:FaceDirection(px - ex, pz - ez)
     end,
 
     PlayClip = function(self, clipIndex, loop)
@@ -1712,44 +1649,17 @@ return Component {
     end,
 
     IsPlayerInRange = function(self, range)
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
-        end
-        if not tr then return false end
-
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return false end
-        local px, pz = pp[1], pp[3]
-
-        local ex, ez
-        if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then
-                ex, ez = pos.x, pos.z
-            end
-        end
-        if not ex then
-            local x, _, z = self:GetPosition()
-            ex, ez = x, z
-        end
-
-        -- Safety check: if position is nil, return false (not in range)
-        if ex == nil or ez == nil then return false end
-
-        local dx, dz = (px - ex), (pz - ez)
-        return (dx*dx + dz*dz) <= (range * range)
+        return self:GetPlayerDistanceSq() <= (range * range)
     end,
 
     GetEnemyPosXZ = function(self)
         if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then return pos.x, pos.z end
+            local x, y, z = CharacterController.GetPositionXYZ(self._controller)
+            return x, z, y
         end
-        local x, _, z = self:GetPosition()
+        local x, y, z = self:GetPosition()
         -- Return nil if position is not available (caller should handle)
-        return x, z
+        return x, z, y
     end,
 
     SpawnKnife = function(self)
@@ -1784,16 +1694,14 @@ return Component {
 
         local ex, ey, ez
         if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then ex, ey, ez = pos.x, pos.y, pos.z end
+            ex, ey, ez = CharacterController.GetPositionXYZ(self._controller)
         end
         if not ex then
             ex, ey, ez = self:GetPosition()
         end
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return end
-        local px, py, pz = pp[1], pp[2] + 0.5, pp[3]
+        local px, py, pz = Engine.GetTransformPositionXYZ(tr)
+        py = py + 0.5
 
         local spawnX, spawnY, spawnZ = ex, ey + 1.0, ez
 
@@ -1924,18 +1832,16 @@ return Component {
             local tr = self._playerTr
             if not tr then tr = Engine.FindTransformByName(self.PlayerName) end
             if tr then
-                local pp = Engine.GetTransformPosition(tr)
-                if pp then
-                    local ex, ez = self:GetEnemyPosXZ()
-                    if ex and ez then
-                        local dx = ex - pp[1]
-                        local dz = ez - pp[3]
-                        local len = math.sqrt(dx*dx + dz*dz)
-                        if len >= 0.001 then
-                            self._kbVX = (dx / len) * kbStr
-                            self._kbVZ = (dz / len) * kbStr
-                            self._kbT  = kbDur
-                        end
+                local px, _, pz = Engine.GetTransformPositionXYZ(tr)
+                local ex, ez = self:GetEnemyPosXZ()
+                if ex and ez then
+                    local dx = ex - px
+                    local dz = ez - pz
+                    local len = math.sqrt(dx*dx + dz*dz)
+                    if len >= 0.001 then
+                        self._kbVX = (dx / len) * kbStr
+                        self._kbVZ = (dz / len) * kbStr
+                        self._kbT  = kbDur
                     end
                 end
             end
@@ -1977,18 +1883,16 @@ return Component {
             local tr = self._playerTr
             if not tr then tr = Engine.FindTransformByName(self.PlayerName) end
             if tr then
-                local pp = Engine.GetTransformPosition(tr)
-                if pp then
-                    local ex, ez = self:GetEnemyPosXZ()
-                    if ex and ez then
-                        local dx = ex - pp[1]
-                        local dz = ez - pp[3]
-                        local len = math.sqrt(dx * dx + dz * dz)
-                        if len >= 0.001 then
-                            self._kbVX = (dx / len) * kbStr
-                            self._kbVZ = (dz / len) * kbStr
-                            self._kbT  = kbDur
-                        end
+                local px, _, pz = Engine.GetTransformPositionXYZ(tr)
+                local ex, ez = self:GetEnemyPosXZ()
+                if ex and ez then
+                    local dx = ex - px
+                    local dz = ez - pz
+                    local len = math.sqrt(dx * dx + dz * dz)
+                    if len >= 0.001 then
+                        self._kbVX = (dx / len) * kbStr
+                        self._kbVZ = (dz / len) * kbStr
+                        self._kbT  = kbDur
                     end
                 end
             end
@@ -2217,9 +2121,7 @@ return Component {
         end
         if not tr then return end
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return end
-        local px, pz = pp[1], pp[3]
+        local px, _, pz = Engine.GetTransformPositionXYZ(tr)
 
         -- Enemy position (prefer controller)
         local ex, ez = self:GetEnemyPosXZ()
@@ -2356,9 +2258,7 @@ return Component {
         end
         if not tr then return 0, 0, 1 end -- Default forward if player missing
 
-        local pp = Engine.GetTransformPosition(tr)
-        if not pp then return 0, 0, 1 end
-        local px, py, pz = pp[1], pp[2], pp[3]
+        local px, py, pz = Engine.GetTransformPositionXYZ(tr)
 
         -- 2. Get Enemy Position (Target of the hit)
         local ex, ey, ez = self:GetPosition()

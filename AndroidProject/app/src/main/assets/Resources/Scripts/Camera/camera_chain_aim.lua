@@ -4,7 +4,7 @@
 
 local utils     = require("Camera.camera_utils")
 local atan2     = utils.atan2
-local eulerToQuat = utils.eulerToQuat
+local eulerToQuatValues = utils.eulerToQuatValues
 
 local event_bus = _G.event_bus
 
@@ -138,6 +138,7 @@ function M.updateChainAim(self, dt)
         -- ChainBootstrap computes the actual fire direction from the chain's
         -- start position (hand bone) toward this world target.
         local wx, wy, wz
+        local crosshairHitId = -1
         if self._assistTargetX then
             wx = self._assistTargetX
             wy = self._assistTargetY
@@ -145,8 +146,27 @@ function M.updateChainAim(self, dt)
         else
             local crosshairMaxDist = 100.0
             local hitDist = crosshairMaxDist
-            if Physics and Physics.Raycast then
-                local d = Physics.Raycast(camX, camY, camZ, fx, fy, fz, crosshairMaxDist)
+            if Physics and Physics.RaycastGetEntity then
+                -- This supplies both values needed below. The old path cast the
+                -- exact same ray again just to identify the hit entity.
+                local ok, r1, r2 = pcall(
+                    Physics.RaycastGetEntity,
+                    camX, camY, camZ, fx, fy, fz, crosshairMaxDist)
+                if ok then
+                    if type(r1) == "table" or type(r1) == "userdata" then
+                        local candidateDistance = r1.distance or r1[1]
+                        if candidateDistance and candidateDistance > 0 then
+                            hitDist = candidateDistance
+                        end
+                        crosshairHitId = r1.entityId or r1[2] or -1
+                    else
+                        if r1 and r1 > 0 then hitDist = r1 end
+                        crosshairHitId = r2 or -1
+                    end
+                end
+            elseif Physics and Physics.Raycast then
+                local d = Physics.Raycast(
+                    camX, camY, camZ, fx, fy, fz, crosshairMaxDist)
                 if d and d > 0 then hitDist = d end
             end
             -- Use camera position as origin so the world target matches exactly
@@ -160,40 +180,41 @@ function M.updateChainAim(self, dt)
         -- Determine if crosshair is over an enemy: aim assist locked OR raycast hit
         local crosshairOnEnemy = self._assistTargetX ~= nil
         if not crosshairOnEnemy
-           and Physics and Physics.RaycastGetEntity
+           and crosshairHitId >= 0
            and Engine and Engine.GetEntityTag and Engine.GetParentEntity then
-            local ok, r1, r2 = pcall(Physics.RaycastGetEntity, camX, camY, camZ, fx, fy, fz, 100.0)
-            if ok then
-                local hitId = r2 or -1
-                if type(r1) == "table" or type(r1) == "userdata" then
-                    hitId = r1.entityId or r1[2] or -1
+            local rootId = crosshairHitId
+            local safety = 20
+            while safety > 0 do
+                local pOk, parentId = pcall(Engine.GetParentEntity, rootId)
+                if pOk and parentId and parentId >= 0 then
+                    rootId = parentId
+                else
+                    break
                 end
-                if hitId and hitId >= 0 then
-                    local rootId = hitId
-                    local safety = 20
-                    while safety > 0 do
-                        local pOk, parentId = pcall(Engine.GetParentEntity, rootId)
-                        if pOk and parentId and parentId >= 0 then
-                            rootId = parentId
-                        else
-                            break
-                        end
-                        safety = safety - 1
-                    end
-                    local tOk, tag = pcall(Engine.GetEntityTag, rootId)
-                    if tOk and (tag == "Enemy" or tag == "Boss") then
-                        if not (self._deadEnemies and self._deadEnemies[rootId]) then
-                            crosshairOnEnemy = true
-                        end
-                    end
+                safety = safety - 1
+            end
+            local tOk, tag = pcall(Engine.GetEntityTag, rootId)
+            if tOk and (tag == "Enemy" or tag == "Boss") then
+                if not (self._deadEnemies and self._deadEnemies[rootId]) then
+                    crosshairOnEnemy = true
                 end
             end
         end
 
         if event_bus and event_bus.publish then
-            event_bus.publish("ChainAim_basis", { forward = { x = fx, y = fy, z = fz } })
-            event_bus.publish("ChainAim_worldTarget", { x = wx, y = wy, z = wz })
-            event_bus.publish("chain.crosshair_on_enemy", { active = crosshairOnEnemy })
+            local forward = self._chainAimForward
+            forward.x, forward.y, forward.z = fx, fy, fz
+            event_bus.publish("ChainAim_basis", self._chainAimBasisPayload)
+
+            local worldTarget = self._chainAimWorldTargetPayload
+            worldTarget.x, worldTarget.y, worldTarget.z = wx, wy, wz
+            event_bus.publish("ChainAim_worldTarget", worldTarget)
+
+            if self._lastCrosshairOnEnemy ~= crosshairOnEnemy then
+                self._lastCrosshairOnEnemy = crosshairOnEnemy
+                self._chainCrosshairPayload.active = crosshairOnEnemy
+                event_bus.publish("chain.crosshair_on_enemy", self._chainCrosshairPayload)
+            end
         end
     end
 
@@ -227,7 +248,8 @@ end
 --      gap. Weak enough that normal mouse input overrides it easily.
 -- Direction is computed from the player's world position (self._targetPos).
 function M.updateAimAssist(self, dt, camX, camY, camZ)
-    if not (Engine and Engine.FindEntitiesWithScript and Engine.GetEntityPosition) then return end
+    if not (Engine and Engine.FindEntitiesWithScriptInAABB
+        and Engine.GetEntityPosition) then return end
 
     local assistAngle    = self.chainAimAssistAngle         or 30.0
     local assistStrength = self.chainAimAssistStrength     or 15.0   -- corrective pull deg/s
@@ -246,7 +268,11 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
     local bestEX, bestEY, bestEZ = nil, nil, nil
 
     for _, scriptName in ipairs(enemyNames) do
-        local entities = Engine.FindEntitiesWithScript(scriptName)
+        -- Native coarse culling keeps distant level enemies out of the Lua/C
+        -- bridge. The exact spherical range and LOS checks below are unchanged.
+        local entities = Engine.FindEntitiesWithScriptInAABB(
+            scriptName, camX, camY, camZ,
+            assistRange, assistRange + math.abs(heightOffset), assistRange)
         if entities then
             for i = 1, #entities do
                 local entityId = entities[i]
@@ -353,8 +379,7 @@ function M.applyRotation(self, newX, newY, newZ, cameraTarget, chainAimActive, b
         -- Blend toward chain-aim rotation (shortest path to avoid 360° spin)
         local blendedYaw   = orbitYaw   + shortestDelta(orbitYaw, self._chainAimYaw) * blend
         local blendedPitch = orbitPitch + (self._chainAimPitch - orbitPitch) * blend
-        local q = eulerToQuat(blendedPitch, blendedYaw, 0.0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+        self:SetRotation(eulerToQuatValues(blendedPitch, blendedYaw, 0.0))
     else
         -- Pure orbit: look directly at the target
         local fx = cameraTarget.x - newX
@@ -363,8 +388,8 @@ function M.applyRotation(self, newX, newY, newZ, cameraTarget, chainAimActive, b
         local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
         if flen > 0.0001 then
             fx, fy, fz = fx/flen, fy/flen, fz/flen
-            local q = eulerToQuat(-math.deg(math.asin(fy)), math.deg(atan2(fx, fz)), 0.0)
-            self:SetRotation(q.w, q.x, q.y, q.z)
+            self:SetRotation(eulerToQuatValues(
+                -math.deg(math.asin(fy)), math.deg(atan2(fx, fz)), 0.0))
         end
     end
 end

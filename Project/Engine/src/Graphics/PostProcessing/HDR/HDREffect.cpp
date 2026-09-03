@@ -61,20 +61,38 @@ void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wid
     glBindFramebuffer(GL_FRAMEBUFFER, outputFBO);
     glViewport(0, 0, width, height);
 
-    // Disable depth testing for post-processing
-    glDisable(GL_DEPTH_TEST);
+#ifdef ANDROID
+    // This pass overwrites every pixel. Declaring the old contents dead lets
+    // tile-based GPUs skip loading the previous window surface into tiles.
+    const GLenum discardedAttachment =
+        outputFBO == 0 ? GL_COLOR : GL_COLOR_ATTACHMENT0;
+    glInvalidateFramebuffer(GL_FRAMEBUFFER, 1, &discardedAttachment);
+#endif
 
-    // Clear the output
-    glClear(GL_COLOR_BUFFER_BIT);
+    // The fullscreen pass fully overwrites the output. Explicitly disable
+    // blending so prior framebuffer contents cannot affect the result.
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 
     // Activate shader and set uniforms
     shader->Activate();
     shader->setFloat("exposure", exposure);
+#ifdef ANDROID
+    // Gamma runs at native output resolution. Supply the reciprocal once from
+    // the CPU so mobile fragment lanes only perform the required pow.
+    shader->setFloat("inverseGamma", 1.0f / gamma);
+    shader->setInt("bloomTexture", 1);
+    shader->setFloat("bloomIntensity", bloomIntensity);
+#else
     shader->setFloat("gamma", gamma);
+#endif
     shader->setInt("hdrBuffer", 0);
     shader->setInt("toneMappingMode", static_cast<int>(toneMappingMode));
     shader->setBool("enableTonemapping", enabled);  // Pass enabled state to shader
 
+    // Android uses a deliberately compact tone-mapping shader. These desktop
+    // effects are absent there, so avoid uniform lookups and texture-unit work.
+#ifndef ANDROID
     // Vignette uniforms
     shader->setBool("vignetteEnabled", vignetteEnabled);
     shader->setFloat("vignetteIntensity", vignetteIntensity);
@@ -96,20 +114,36 @@ void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wid
     // SSAO uniforms
     shader->setBool("ssaoEnabled", ssaoEnabled);
     shader->setInt("ssaoTexture", 1);
+#endif
 
     // Bind input HDR texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);
 
+#ifdef ANDROID
+    if (bloomIntensity > 0.0f) {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, bloomTexture);
+        glActiveTexture(GL_TEXTURE0);
+    }
+#else
     // Bind SSAO texture
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, ssaoEnabled ? ssaoTexture : 0);
     glActiveTexture(GL_TEXTURE0);
+#endif
 
     // Render fullscreen quad (provided by PostProcessingManager)
     PostProcessingManager::GetInstance().RenderScreenQuad();
 
     // Cleanup
+#ifdef ANDROID
+    if (bloomIntensity > 0.0f) {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE0);
+    }
+#endif
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Re-enable depth testing

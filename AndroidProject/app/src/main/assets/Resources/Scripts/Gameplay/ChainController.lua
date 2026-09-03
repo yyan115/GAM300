@@ -6,6 +6,19 @@ local M = {}
 
 local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0)+(y or 0)*(y or 0)+(z or 0)*(z or 0)) end
 local function normalize(x,y,z) local L=vec_len(x,y,z) if L<1e-9 then return 0,0,0 end return x/L,y/L,z/L end
+local function set3(v, x, y, z)
+    v[1], v[2], v[3] = x or 0, y or 0, z or 0
+    return v
+end
+
+local function reset_constraint(result)
+    result.ratio, result.exceeded, result.drag = 0, false, false
+    result.endX, result.endY, result.endZ = nil, nil, nil
+    result.targetX, result.targetY, result.targetZ = nil, nil, nil
+    result.pullTargetX, result.pullTargetY, result.pullTargetZ = nil, nil, nil
+    result.effectiveDist, result.chainLength = nil, nil
+    return result
+end
 
 function M.New(params)
     local self = setmetatable({}, {__index=M})
@@ -34,12 +47,20 @@ function M.New(params)
     self._justEnteredRaycastSnap  = false
     self.losAnchors       = {}
     self.worldTarget      = nil   -- {x,y,z} aim point; when set, lastForward is recomputed each frame
+    self.constraintResult = {ratio=0, exceeded=false, drag=false}
+    self._throwableTension = {}
+    self._verletParams = {startPos={0,0,0}, endPos={0,0,0}}
+    self._returnStart = {0,0,0}
+    self._returnEnd = {0,0,0}
+    self._publicState = {}
+    self._publicLockedEnd = {0,0,0}
+    self._fullyInactive = false
     self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
     return self
 end
 
-function M:SetStartPos(x,y,z) self.startPos = {x or 0,y or 0,z or 0} end
-function M:SetEndPos(x,y,z)   self.endPos   = {x or 0,y or 0,z or 0} end
+function M:SetStartPos(x,y,z) set3(self.startPos, x,y,z) end
+function M:SetEndPos(x,y,z)   set3(self.endPos, x,y,z) end
 
 function M:StartExtension(forward, maxLength, linkMaxDistance, worldTarget)
     self.isExtending, self.isRetracting = true, false
@@ -48,7 +69,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance, worldTarget)
     self._justEnteredFlopFromExt = false
     self._justEnteredRaycastSnap = false
     self.endPointLocked = false
-    self.lockedEndPoint = {0,0,0}
+    set3(self.lockedEndPoint, 0,0,0)
     self.hookedTag      = ""
     self.losAnchors     = {}
     self.worldTarget    = worldTarget  -- {x,y,z} or nil
@@ -59,9 +80,15 @@ function M:StartExtension(forward, maxLength, linkMaxDistance, worldTarget)
     else
         self.activeN = self.n
     end
+    -- Idle mode only tracks link 1. Re-seed the pool when a throw starts so
+    -- every Verlet particle begins at the current hand position.
+    for i = 1, self.activeN do
+        set3(self.positions[i], self.startPos[1],self.startPos[2],self.startPos[3])
+        set3(self.prev[i], self.startPos[1],self.startPos[2],self.startPos[3])
+    end
     if forward and type(forward)=="table" and #forward>=3 then
         local nx,ny,nz = normalize(forward[1],forward[2],forward[3])
-        if nx~=0 or ny~=0 or nz~=0 then self.lastForward={nx,ny,nz} end
+        if nx~=0 or ny~=0 or nz~=0 then set3(self.lastForward, nx,ny,nz) end
     end
 end
 
@@ -99,7 +126,7 @@ function M:ContinueExtension(forward, maxLength, linkMaxDistance)
     end
     if forward and type(forward) == "table" and #forward >= 3 then
         local nx,ny,nz = normalize(forward[1], forward[2], forward[3])
-        if nx ~= 0 or ny ~= 0 or nz ~= 0 then self.lastForward = {nx,ny,nz} end
+        if nx ~= 0 or ny ~= 0 or nz ~= 0 then set3(self.lastForward, nx,ny,nz) end
     end
     self.isExtending  = true
     self.isRetracting = false
@@ -338,15 +365,18 @@ function M:DistributeLinksAlongPath(sx,sy,sz,ex,ey,ez,activeN)
             if targetDist <= segEnd+1e-9 then
                 local localT = (segLens[seg]>1e-9) and ((targetDist-cumLen)/segLens[seg]) or 0
                 local from,to = path[seg],path[seg+1]
-                self.positions[i] = {from[1]+(to[1]-from[1])*localT, from[2]+(to[2]-from[2])*localT, from[3]+(to[3]-from[3])*localT}
-                self.prev[i] = {self.positions[i][1],self.positions[i][2],self.positions[i][3]}
+                set3(self.positions[i],
+                    from[1]+(to[1]-from[1])*localT,
+                    from[2]+(to[2]-from[2])*localT,
+                    from[3]+(to[3]-from[3])*localT)
+                set3(self.prev[i], self.positions[i][1],self.positions[i][2],self.positions[i][3])
                 placed=true; break
             end
             cumLen=segEnd
         end
-        if not placed then self.positions[i]={ex,ey,ez}; self.prev[i]={ex,ey,ez} end
+        if not placed then set3(self.positions[i], ex,ey,ez); set3(self.prev[i], ex,ey,ez) end
     end
-    for i = activeN+1, self.n do self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz} end
+    for i = activeN+1, self.n do set3(self.positions[i], sx,sy,sz); set3(self.prev[i], sx,sy,sz) end
 end
 
 -- ---------------------------------------------------------------------------
@@ -391,7 +421,41 @@ function M:Update(dt, settings)
     end
     self.startPos[1],self.startPos[2],self.startPos[3] = sx,sy,sz
 
+    local fullyInactive = not self.isExtending and not self.isRetracting
+        and not self.endPointLocked and not self._raycastSnapped and not self._flopping
+        and (self.chainLen or 0) <= 1e-4 and not settings.SpinActive
+    if fullyInactive then
+        if not self._fullyInactive then
+            for i = 1, self.n do
+                set3(self.positions[i], sx,sy,sz)
+                set3(self.prev[i], sx,sy,sz)
+                self.invMass[i] = 0
+            end
+            self.VerletState.accumulator = 0
+        else
+            set3(self.positions[1], sx,sy,sz)
+            set3(self.prev[1], sx,sy,sz)
+        end
+        self._fullyInactive = true
+        self.invMass[1] = 0
+        set3(self.endPos, sx,sy,sz)
+        reset_constraint(self.constraintResult)
+        self.throwableTension = nil
+        self._groundY, self._isTaut, self._arcLen = nil, false, 0
+        return self.positions, set3(self._returnStart, sx,sy,sz), set3(self._returnEnd, sx,sy,sz)
+    end
+
+    if self._fullyInactive then
+        -- Spin/other visible modes may begin without StartExtension.
+        for i = 1, self.activeN do
+            set3(self.positions[i], sx,sy,sz)
+            set3(self.prev[i], sx,sy,sz)
+        end
+    end
+    self._fullyInactive = false
+
     -- Movement constraint
+    local constraintResult = reset_constraint(self.constraintResult)
     local constraintActive = (self.endPointLocked or self._raycastSnapped) and not self.isRetracting and not self._flopping
     if constraintActive then
         local slack       = math.max(0.5, tonumber(settings.ChainSlackDistance) or 0.5)
@@ -408,8 +472,10 @@ function M:Update(dt, settings)
         else
             tensionX,tensionY,tensionZ = ex0,ey0,ez0
         end
-        dbg(string.format("[CONSTRAINT] effectiveDist=%.3f arcLen=%s chainLen=%.3f hardLimit=%.3f usingArcLen=%s",
-            effectiveDist,tostring(self._arcLen),chainLength,hardLimit,tostring(usingArcLen)))
+        if _G.CHAIN_DEBUG then
+            dbg(string.format("[CONSTRAINT] effectiveDist=%.3f arcLen=%s chainLen=%.3f hardLimit=%.3f usingArcLen=%s",
+                effectiveDist,tostring(self._arcLen),chainLength,hardLimit,tostring(usingArcLen)))
+        end
         -- Pull target for throwable: the nearest chain point on the player side of the endpoint.
         -- = last LOS anchor (closest to the hooked obj so it follows the chain path around corners),
         -- or player/startPos if no anchors (straight line pull).
@@ -426,16 +492,20 @@ function M:Update(dt, settings)
                 local dx,dy,dz = sx-ex0,sy-ey0,sz-ez0
                 local dist = vec_len(dx,dy,dz)
                 if dist>1e-6 then
-                    self.constraintResult = {ratio=0,exceeded=false,drag=true,
-                        targetX=ex0+(dx/dist)*chainLength,
-                        targetY=ey0+(dy/dist)*chainLength,
-                        targetZ=ez0+(dz/dist)*chainLength,
-                        pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
+                    constraintResult.drag = true
+                    constraintResult.targetX = ex0+(dx/dist)*chainLength
+                    constraintResult.targetY = ey0+(dy/dist)*chainLength
+                    constraintResult.targetZ = ez0+(dz/dist)*chainLength
+                    constraintResult.pullTargetX = pullTX
+                    constraintResult.pullTargetY = pullTY
+                    constraintResult.pullTargetZ = pullTZ
                 end
             else
-                self.constraintResult = {ratio=0,exceeded=false,drag=false,
-                    effectiveDist=effectiveDist,chainLength=chainLength,
-                    pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
+                constraintResult.effectiveDist = effectiveDist
+                constraintResult.chainLength = chainLength
+                constraintResult.pullTargetX = pullTX
+                constraintResult.pullTargetY = pullTY
+                constraintResult.pullTargetZ = pullTZ
             end
         else
             local ratio = (effectiveDist>chainLength)
@@ -444,17 +514,21 @@ function M:Update(dt, settings)
                 dbg("[CONSTRAINT] TAUT + EXCEEDED -> flopping")
                 self.endPointLocked,self._raycastSnapped,self._flopping = false,false,true
                 self.hookedTag=""
-                self.constraintResult = {ratio=0,exceeded=true,drag=false,
-                    effectiveDist=effectiveDist,chainLength=chainLength}
+                constraintResult.exceeded = true
+                constraintResult.effectiveDist = effectiveDist
+                constraintResult.chainLength = chainLength
             else
-                self.constraintResult = {ratio=ratio,exceeded=false,drag=false,
-                    endX=tensionX,endY=tensionY,endZ=tensionZ,
-                    effectiveDist=effectiveDist,chainLength=chainLength,
-                    pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
+                constraintResult.ratio = ratio
+                constraintResult.endX = tensionX
+                constraintResult.endY = tensionY
+                constraintResult.endZ = tensionZ
+                constraintResult.effectiveDist = effectiveDist
+                constraintResult.chainLength = chainLength
+                constraintResult.pullTargetX = pullTX
+                constraintResult.pullTargetY = pullTY
+                constraintResult.pullTargetZ = pullTZ
             end
         end
-    else
-        self.constraintResult = {ratio=0,exceeded=false,drag=false}
     end
 
     -- Throwable tension: computed separately so it fires during retraction too.
@@ -475,13 +549,13 @@ function M:Update(dt, settings)
         else
             tPullTX, tPullTY, tPullTZ = sx, sy, sz
         end
-        self.throwableTension = {
-            effectiveDist = tEffDist,
-            chainLength   = tChainLen,
-            pullTargetX   = tPullTX,
-            pullTargetY   = tPullTY,
-            pullTargetZ   = tPullTZ,
-        }
+        local tension = self._throwableTension
+        tension.effectiveDist = tEffDist
+        tension.chainLength = tChainLen
+        tension.pullTargetX = tPullTX
+        tension.pullTargetY = tPullTY
+        tension.pullTargetZ = tPullTZ
+        self.throwableTension = tension
     else
         self.throwableTension = nil
     end
@@ -504,7 +578,7 @@ function M:Update(dt, settings)
         local dz = wt.z - sz
         local len = vec_len(dx, dy, dz)
         if len > 0.001 then
-            self.lastForward = {dx/len, dy/len, dz/len}
+            set3(self.lastForward, dx/len, dy/len, dz/len)
         end
     end
 
@@ -561,8 +635,8 @@ function M:Update(dt, settings)
         self._justEnteredRaycastSnap = false
         for i = 1, aN do
             local t = (aN > 1) and ((i-1)/(aN-1)) or 0
-            self.positions[i] = {sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t}
-            self.prev[i]      = {self.positions[i][1], self.positions[i][2], self.positions[i][3]}
+            set3(self.positions[i], sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t)
+            set3(self.prev[i], self.positions[i][1], self.positions[i][2], self.positions[i][3])
         end
     end
     -- =========================================================================
@@ -581,7 +655,7 @@ function M:Update(dt, settings)
             cumLens[i] = totalPathLen
         end
 
-        for i = aN+1,self.n do self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0 end
+        for i = aN+1,self.n do set3(self.positions[i], sx,sy,sz); set3(self.prev[i], sx,sy,sz); self.invMass[i]=0 end
         for i = 1,aN do self.invMass[i]=(self.anchors[i]) and 0 or 1 end
         self.invMass[1]=0; self.invMass[aN]=0
 
@@ -590,18 +664,30 @@ function M:Update(dt, settings)
         local segmentLen = (aN>1) and (totalLen/(aN-1)) or 0
         if linkMax and linkMax>0 and segmentLen>linkMax then segmentLen=linkMax end
 
-        VerletAdapter.Step(self.VerletState, dt, {
-            n=aN, VerletGravity=settings.VerletGravity or self.params.VerletGravity,
-            VerletDamping=settings.VerletDamping or self.params.VerletDamping,
-            ConstraintIterations=settings.ConstraintIterations or self.params.ConstraintIterations,
-            IsElastic=isElastic, LinkMaxDistance=linkMax,
-            totalLen=totalLen, segmentLen=segmentLen, ClampSegment=linkMax,
-            GroundClamp=settings.GroundClamp, groundY=self._groundY,
-            pinnedLast=true, endPos={ex,ey,ez}, startPos={sx,sy,sz},
-            FixedDt=settings.FixedDt or self.params.FixedDt,
-            SubSteps=settings.SubSteps or self.params.SubSteps,
-            MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
-        })
+        local vparams = self._verletParams
+        vparams.n = aN
+        vparams.VerletGravity = settings.VerletGravity or self.params.VerletGravity
+        vparams.VerletDamping = settings.VerletDamping or self.params.VerletDamping
+        vparams.ConstraintIterations = settings.ConstraintIterations or self.params.ConstraintIterations
+        vparams.IsElastic = isElastic
+        vparams.LinkMaxDistance = linkMax
+        vparams.totalLen = totalLen
+        vparams.segmentLen = segmentLen
+        vparams.ClampSegment = linkMax
+        vparams.endPointLocked = nil
+        vparams.GroundClamp = settings.GroundClamp
+        vparams.GroundClampOffset = nil
+        vparams.groundY = self._groundY
+        vparams.pinnedLast = true
+        set3(vparams.endPos, ex,ey,ez)
+        set3(vparams.startPos, sx,sy,sz)
+        vparams.FixedDt = settings.FixedDt or self.params.FixedDt
+        vparams.SubSteps = settings.SubSteps or self.params.SubSteps
+        vparams.MaxSubSteps = settings.MaxSubSteps or self.params.MaxSubSteps
+        vparams.WallClamp = false
+        vparams.WallClampInterval = nil
+        vparams.WallClampRadius = nil
+        VerletAdapter.Step(self.VerletState, dt, vparams)
 
         local isTautForProjection = (totalPathLen >= (self.chainLen or 0) * 0.97)
 
@@ -623,8 +709,8 @@ function M:Update(dt, settings)
             end
         end
 
-        self.positions[1]={sx,sy,sz}; self.prev[1]={sx,sy,sz}
-        self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}
+        set3(self.positions[1], sx,sy,sz); set3(self.prev[1], sx,sy,sz)
+        set3(self.positions[aN], ex,ey,ez); set3(self.prev[aN], ex,ey,ez)
 
         local arcLen = 0
         for i = 2,aN do
@@ -633,7 +719,7 @@ function M:Update(dt, settings)
                                   self.positions[i][3]-self.positions[i-1][3])
         end
         self._isTaut=(arcLen>=(self.chainLen or 0)*0.98); self._arcLen=arcLen
-        return self.positions, {sx,sy,sz}, {ex,ey,ez}
+        return self.positions, set3(self._returnStart, sx,sy,sz), set3(self._returnEnd, ex,ey,ez)
     end
     -- =========================================================================
 
@@ -656,17 +742,17 @@ function M:Update(dt, settings)
         self._justEnteredFlopFromExt = false
         for i = 1, aN do
             local t = (aN > 1) and ((i-1)/(aN-1)) or 0
-            self.positions[i] = {sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t}
-            self.prev[i]      = {self.positions[i][1], self.positions[i][2], self.positions[i][3]}
+            set3(self.positions[i], sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t)
+            set3(self.prev[i], self.positions[i][1], self.positions[i][2], self.positions[i][3])
         end
     end
     for i = 1,self.n do
         if i > aN then
-            self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0
+            set3(self.positions[i], sx,sy,sz); set3(self.prev[i], sx,sy,sz); self.invMass[i]=0
         else
             local reqDist = (i-1)*segmentLen
             if not self._flopping and (self.chainLen+1e-9)<reqDist then
-                self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0
+                set3(self.positions[i], sx,sy,sz); set3(self.prev[i], sx,sy,sz); self.invMass[i]=0
             else
                 self.invMass[i] = self.anchors[i] and 0 or 1
             end
@@ -674,28 +760,36 @@ function M:Update(dt, settings)
     end
     self.invMass[1]=0
     if (self.isExtending or self._raycastSnapped or self.endPointLocked) and not self._flopping then
-        self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}; self.invMass[aN]=0
+        set3(self.positions[aN], ex,ey,ez); set3(self.prev[aN], ex,ey,ez); self.invMass[aN]=0
     end
     for idx,_ in pairs(self.anchors) do if idx>=1 and idx<=aN then self.invMass[idx]=0 end end
 
     -- 6) Verlet physics step
-    local vparams = {
-        n=aN, VerletGravity=settings.VerletGravity or self.params.VerletGravity,
-        VerletDamping=settings.VerletDamping or self.params.VerletDamping,
-        ConstraintIterations=settings.ConstraintIterations or self.params.ConstraintIterations,
-        IsElastic=isElastic, LinkMaxDistance=linkMax,
-        totalLen=totalLen, segmentLen=segmentLen, ClampSegment=(not self._flopping) and linkMax or nil,
-        endPointLocked=self.endPointLocked or self._raycastSnapped,
-        GroundClamp=settings.GroundClamp, GroundClampOffset=settings.GroundClampOffset,
-        groundY=self._groundY,
-        pinnedLast=(not self._flopping) and (self.endPointLocked or self._raycastSnapped or
-            ((not self.isExtending) and ((self.chainLen or 0)+1e-9>=(aN-1)*segmentLen) and
-             (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
-        endPos={ex,ey,ez}, startPos={sx,sy,sz},
-        FixedDt=settings.FixedDt or self.params.FixedDt,
-        SubSteps=settings.SubSteps or self.params.SubSteps,
-        MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
-    }
+    local vparams = self._verletParams
+    vparams.n = aN
+    vparams.VerletGravity = settings.VerletGravity or self.params.VerletGravity
+    vparams.VerletDamping = settings.VerletDamping or self.params.VerletDamping
+    vparams.ConstraintIterations = settings.ConstraintIterations or self.params.ConstraintIterations
+    vparams.IsElastic = isElastic
+    vparams.LinkMaxDistance = linkMax
+    vparams.totalLen = totalLen
+    vparams.segmentLen = segmentLen
+    vparams.ClampSegment = (not self._flopping) and linkMax or nil
+    vparams.endPointLocked = self.endPointLocked or self._raycastSnapped
+    vparams.GroundClamp = settings.GroundClamp
+    vparams.GroundClampOffset = settings.GroundClampOffset
+    vparams.groundY = self._groundY
+    vparams.pinnedLast = (not self._flopping) and (self.endPointLocked or self._raycastSnapped or
+        ((not self.isExtending) and ((self.chainLen or 0)+1e-9>=(aN-1)*segmentLen) and
+         (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)))
+    set3(vparams.endPos, ex,ey,ez)
+    set3(vparams.startPos, sx,sy,sz)
+    vparams.FixedDt = settings.FixedDt or self.params.FixedDt
+    vparams.SubSteps = settings.SubSteps or self.params.SubSteps
+    vparams.MaxSubSteps = settings.MaxSubSteps or self.params.MaxSubSteps
+    vparams.WallClamp = false
+    vparams.WallClampInterval = nil
+    vparams.WallClampRadius = nil
     VerletAdapter.Step(self.VerletState, dt, vparams)
     if settings.WallClamp then
         vparams.WallClamp=true
@@ -706,10 +800,10 @@ function M:Update(dt, settings)
 
     -- 7) Post-physics: enforce endpoints
     if (self.endPointLocked or self._raycastSnapped) and not self._flopping then
-        self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}; self.invMass[aN]=0
+        set3(self.positions[aN], ex,ey,ez); set3(self.prev[aN], ex,ey,ez); self.invMass[aN]=0
     elseif vparams.pinnedLast and vparams.endPos then
-        self.positions[aN]={vparams.endPos[1],vparams.endPos[2],vparams.endPos[3]}
-        self.prev[aN]={vparams.endPos[1],vparams.endPos[2],vparams.endPos[3]}
+        set3(self.positions[aN], vparams.endPos[1],vparams.endPos[2],vparams.endPos[3])
+        set3(self.prev[aN], vparams.endPos[1],vparams.endPos[2],vparams.endPos[3])
         self.invMass[aN]=0
     end
     for idx,_ in pairs(self.anchors) do if idx>=1 and idx<=aN then self.invMass[idx]=0 end end
@@ -722,25 +816,31 @@ function M:Update(dt, settings)
     end
     self._isTaut=(arcLen>=(self.chainLen or 0)*0.98); self._arcLen=arcLen
 
-    return self.positions, {self.startPos[1],self.startPos[2],self.startPos[3]}, {self.endPos[1],self.endPos[2],self.endPos[3]}
+    return self.positions,
+        set3(self._returnStart, self.startPos[1],self.startPos[2],self.startPos[3]),
+        set3(self._returnEnd, self.endPos[1],self.endPos[2],self.endPos[3])
 end
 
 function M:GetPublicState()
-    return {
-        ChainLength     = self.chainLen,
-        IsExtending     = self.isExtending,
-        IsRetracting    = self.isRetracting,
-        LinkCount       = self.n,
-        ActiveLinkCount = self.activeN,
-        Anchors         = self.anchors,
-        EndPointLocked  = self.endPointLocked,
-        RaycastSnapped  = self._raycastSnapped,
-        Flopping        = self._flopping,
-        IsTaut          = self._isTaut,
-        LOSAnchorCount  = #self.losAnchors,
-        LockedEndPoint  = (self.endPointLocked or self._raycastSnapped) and
-                          {self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]} or nil
-    }
+    local state = self._publicState
+    state.ChainLength = self.chainLen
+    state.IsExtending = self.isExtending
+    state.IsRetracting = self.isRetracting
+    state.LinkCount = self.n
+    state.ActiveLinkCount = self.activeN
+    state.Anchors = self.anchors
+    state.EndPointLocked = self.endPointLocked
+    state.RaycastSnapped = self._raycastSnapped
+    state.Flopping = self._flopping
+    state.IsTaut = self._isTaut
+    state.LOSAnchorCount = #self.losAnchors
+    if self.endPointLocked or self._raycastSnapped then
+        state.LockedEndPoint = set3(self._publicLockedEnd,
+            self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3])
+    else
+        state.LockedEndPoint = nil
+    end
+    return state
 end
 
 return M

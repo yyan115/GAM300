@@ -27,14 +27,23 @@ public:
 	void SetActive(Entity entity, bool isActive);
 
 	bool IsActive(Entity entity) const;
+	bool Exists(Entity entity) const noexcept {
+		return entity < MAX_ENTITIES && activeEntities[entity];
+	}
 
 	std::vector<Entity> ENGINE_API GetActiveEntities() const;
 
 	std::vector<Entity> ENGINE_API GetAllEntities() const;
 
+	// Allocation-free views; invalidated by entity creation, destruction, or activation changes.
+	const std::vector<Entity>& ENGINE_API GetActiveEntitiesView() const noexcept;
+
+	const std::vector<Entity>& ENGINE_API GetAllEntitiesView() const noexcept;
+
 private:
 	std::queue<Entity> availableEntities{}; // Queue of available entity IDs.
 	std::bitset<MAX_ENTITIES> activeEntities; // Bitset to track active entities.
+	std::vector<Entity> activeEntityList; // Sorted dense view for allocation-free frame iteration.
 
 	std::array<Signature, MAX_ENTITIES> entitySignatures{}; // Signatures for each entity.
 

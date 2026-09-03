@@ -7,194 +7,252 @@
 #include "ECS/ECSManager.hpp"
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Hierarchy/EntityGUIDRegistry.hpp"
-#include <Math/Matrix3x3.hpp>
-#include <ECS/NameComponent.hpp>
 
-// --- HELPER: recursive update without repeated lookups ---
-static void UpdateTransformRecursive(
-	ECSManager& ecs,
-	Entity entity,
-	const Matrix4x4* parentMatrix, // Pointer to allow nullptr for roots
-	bool parentChanged)
+namespace {
+bool QuaternionEquals(const Quaternion& lhs, const Quaternion& rhs)
 {
-	// 1. Get Transform (Direct Array Access ideally, but GetComponent is okay)
-	auto& transform = ecs.GetComponent<Transform>(entity);
+	return lhs.w == rhs.w && lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+}
 
-	// 2. Determine if we need to recalculate
-	// We update if WE are dirty OR if our PARENT moved
-	bool needsUpdate = transform.isDirty || parentChanged;
+const Matrix4x4& GetLocalMatrix(Transform& transform)
+{
+	const bool cacheMatches = transform.cachedLocalMatrixValid &&
+		transform.cachedLocalPosition == transform.localPosition &&
+		transform.cachedLocalScale == transform.localScale &&
+		QuaternionEquals(
+			transform.cachedLocalRotation, transform.localRotation);
 
-	if (needsUpdate) {
-		// Calculate Local Matrix (TRS)
-		Matrix4x4 localMatrix = TransformSystem::CalculateModelMatrix(
+	if (!cacheMatches) {
+		transform.cachedLocalMatrix = TransformSystem::CalculateModelMatrix(
 			transform.localPosition,
 			transform.localScale,
-			transform.localRotation
-		);
+			transform.localRotation);
+		transform.cachedLocalPosition = transform.localPosition;
+		transform.cachedLocalScale = transform.localScale;
+		transform.cachedLocalRotation = transform.localRotation;
+		transform.cachedLocalMatrixValid = true;
+	}
 
-		// Calculate World Matrix
-		if (parentMatrix) {
-			transform.worldMatrix = (*parentMatrix) * localMatrix;
-		}
-		else {
-			transform.worldMatrix = localMatrix;
-		}
+	return transform.cachedLocalMatrix;
+}
 
-		// Decompose ONLY if necessary (Optimization: consider removing this if not used by Physics/Audio)
+void UpdateWorldTransform(Transform& transform, const Transform* parentTransform)
+{
+	const Matrix4x4& localMatrix = GetLocalMatrix(transform);
+
+	if (parentTransform) {
+		transform.worldMatrix = Matrix4x4::MultiplyAffine(
+			parentTransform->worldMatrix, localMatrix);
 		transform.worldPosition = Matrix4x4::ExtractTranslation(transform.worldMatrix);
-		transform.worldRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(transform.worldMatrix));
 		transform.worldScale = Matrix4x4::ExtractScale(transform.worldMatrix);
+		transform.worldRotation = parentTransform->worldRotation * transform.localRotation;
+		transform.worldRotation.Normalize();
+		++transform.worldRevision;
+		return;
+	}
 
-		// Reset dirty flag immediately
+	transform.worldMatrix = localMatrix;
+	transform.worldPosition = transform.localPosition;
+	transform.worldScale = {
+		std::abs(transform.localScale.x),
+		std::abs(transform.localScale.y),
+		std::abs(transform.localScale.z)
+	};
+	transform.worldRotation = transform.localRotation;
+	transform.worldRotation.Normalize();
+	++transform.worldRevision;
+}
+
+void UpdateTransformRecursive(
+	ECSManager& ecs,
+	EntityGUIDRegistry& guidRegistry,
+	Entity entity,
+	const Transform* parentTransform,
+	bool parentChanged)
+{
+	auto& transform = ecs.GetComponent<Transform>(entity);
+	const bool needsUpdate = transform.isDirty || parentChanged;
+
+	if (needsUpdate) {
+		UpdateWorldTransform(transform, parentTransform);
 		transform.isDirty = false;
 	}
 
-	// 3. Recurse to Children
-	// We pass 'needsUpdate' as 'parentChanged' to the children.
-	// If we updated, children MUST update.
-	if (ecs.HasComponent<ChildrenComponent>(entity)) {
-		const auto& childrenComp = ecs.GetComponent<ChildrenComponent>(entity);
-		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-
-		// Pass OUR new world matrix to children
-		const Matrix4x4& myWorldMatrix = transform.worldMatrix;
-
-		for (const auto& childGUID : childrenComp.children) {
-			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+	if (auto children = ecs.TryGetComponent<ChildrenComponent>(entity)) {
+		for (const Entity child : children->get().ResolveEntities()) {
 			if (child != static_cast<Entity>(-1)) {
-				UpdateTransformRecursive(ecs, child, &myWorldMatrix, needsUpdate);
+				UpdateTransformRecursive(
+					ecs, guidRegistry, child, &transform, needsUpdate);
 			}
 		}
 	}
 }
 
-void TransformSystem::Initialise() {
-	isInitialised = false;
+const Transform* GetParentTransform(
+	ECSManager& ecs,
+	EntityGUIDRegistry& guidRegistry,
+	Entity entity)
+{
+	auto parentComponent = ecs.TryGetComponent<ParentComponent>(entity);
+	if (!parentComponent) {
+		return nullptr;
+	}
 
+	const Entity parent =
+		guidRegistry.GetEntityByGUID(parentComponent->get().parent);
+	if (parent == static_cast<Entity>(-1) || parent >= MAX_ENTITIES) {
+		return nullptr;
+	}
+	auto parentTransform = ecs.TryGetComponent<Transform>(parent);
+	return parentTransform ? &parentTransform->get() : nullptr;
+}
+
+bool HasDirtyTransformAncestor(
+	ECSManager& ecs,
+	EntityGUIDRegistry& guidRegistry,
+	Entity entity,
+	std::vector<std::int8_t>& cache,
+	std::vector<Entity>& pathScratch,
+	std::vector<Entity>& touchedScratch)
+{
+	constexpr std::int8_t Visiting = -2;
+
+	pathScratch.clear();
+	Entity current = entity;
+	bool hasDirtyAncestor = true;
+	for (Entity depth = 0; depth < MAX_ENTITIES; ++depth) {
+		if (current >= MAX_ENTITIES) {
+			hasDirtyAncestor = false;
+			break;
+		}
+
+		const std::int8_t cachedResult = cache[current];
+		if (cachedResult >= 0) {
+			hasDirtyAncestor = cachedResult != 0;
+			break;
+		}
+		if (cachedResult == Visiting) {
+			// A valid hierarchy is acyclic. Conservatively suppress duplicate
+			// traversal if malformed parent data loops back into this path.
+			hasDirtyAncestor = true;
+			break;
+		}
+
+		cache[current] = Visiting;
+		touchedScratch.push_back(current);
+		pathScratch.push_back(current);
+
+		auto parentComponent = ecs.TryGetComponent<ParentComponent>(current);
+		if (!parentComponent) {
+			hasDirtyAncestor = false;
+			break;
+		}
+
+		const Entity parent =
+			guidRegistry.GetEntityByGUID(parentComponent->get().parent);
+		if (parent == static_cast<Entity>(-1) || parent >= MAX_ENTITIES) {
+			hasDirtyAncestor = false;
+			break;
+		}
+
+		auto parentTransform = ecs.TryGetComponent<Transform>(parent);
+		if (parentTransform && parentTransform->get().isDirty) {
+			hasDirtyAncestor = true;
+			break;
+		}
+		current = parent;
+	}
+
+	const std::int8_t result = hasDirtyAncestor ? 1 : 0;
+	for (const Entity pathEntity : pathScratch) {
+		cache[pathEntity] = result;
+	}
+	return hasDirtyAncestor;
+}
+}
+
+void TransformSystem::Initialise() {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	// Update entities' transform starting from root entities, in a depth-first manner.
+	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+	rootEntitiesScratch.clear();
+	rootEntitiesScratch.reserve(entities.size() / 4);
+	dirtyAncestorCache.assign(MAX_ENTITIES, -1);
+	dirtyAncestorPathScratch.clear();
+	dirtyAncestorPathScratch.reserve(32);
+	dirtyAncestorTouchedScratch.clear();
+	dirtyAncestorTouchedScratch.reserve(entities.size());
+
 	for (const auto& entity : entities) {
 		if (!ecsManager.HasComponent<ParentComponent>(entity)) {
-			TraverseHierarchy(entity, [this](Entity _entity) {
-				UpdateTransform(_entity);
-			});
+			rootEntitiesScratch.push_back(entity);
 		}
 	}
 
-	isInitialised = true;
-
-	// Clear isDirty after initialization so that systems running immediately after
-	// (e.g. PhysicsSystem::Initialise) use worldMatrix and not the local-only fallback.
-	// In editor play mode TransformSystem runs every frame clearing this automatically,
-	// but on a fresh game-build scene load it was left true, causing child entity physics
-	// bodies to spawn at their local position instead of their world position.
-	for (const auto& entity : entities) {
-		ecsManager.GetComponent<Transform>(entity).isDirty = false;
+	// Force every hierarchy to initialize even if a serialized dirty flag was
+	// cleared. Physics initialization immediately consumes these world values.
+	for (const Entity root : rootEntitiesScratch) {
+		UpdateTransformRecursive(ecsManager, guidRegistry, root, nullptr, true);
 	}
 
-	//for (const auto& entity : entities) {
-	//	auto& transform = ecsManager.GetComponent<Transform>(entity);
-	//	// Update model matrix
-	//	transform.model = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
-
-	//	// Update the last known values
-	//	transform.lastPosition = transform.localPosition;
-	//	transform.lastRotation = transform.localRotation;
-	//	transform.lastScale = transform.localScale;
-	//}
+	isInitialised = true;
 }
 
 void TransformSystem::Update() {
 	PROFILE_FUNCTION(); // Will automatically show as "Transform" in profiler UI
-	
-	//for (auto& [entities, transform] : transformSystem.forEach()) {
-	//ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	//for (const auto& entity : entities) {
-	//	auto& transform = ecsManager.GetComponent<Transform>(entity);
-
-	//	// Update model matrix only if there is a change
-	//	if (transform.localPosition != transform.lastPosition || transform.localScale != transform.lastScale || transform.localRotation != transform.lastRotation) {
-	//		auto parentCompOpt = ecsManager.TryGetComponent<ParentComponent>(entity);
-	//		// If the entity has a parent
-	//		if (parentCompOpt.has_value()) {
-	//			auto& parentTransform = ecsManager.GetComponent<Transform>(parentCompOpt->get().parent);
-	//			transform.model = parentTransform.model * CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
-	//		}
-	//		else {
-	//			transform.model = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
-	//		}
-	//	}
-
-	//	// Update the last known values
-	//	transform.lastPosition = transform.localPosition;
-	//	transform.lastRotation = transform.localRotation;
-	//	transform.lastScale = transform.localScale;
-	//}
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
-	// 1. Collect Roots
-	// We only iterate the top-level entities. The recursion handles the rest.
-	rootEntitiesScratch.clear();
+	dirtyRootsScratch.clear();
 	{
-		PROFILE_SCOPED("TS::CollectRoots");
-		rootEntitiesScratch.reserve(entities.size() / 4); // Heuristic reservation
+		PROFILE_SCOPED("TS::CollectDirtyRoots");
+		dirtyRootsScratch.reserve(entities.size() / 8);
+		if (dirtyAncestorCache.size() != MAX_ENTITIES) {
+			dirtyAncestorCache.assign(MAX_ENTITIES, -1);
+			dirtyAncestorTouchedScratch.clear();
+		}
+		else {
+			// Reset only entries reached by last frame's dirty transforms. A
+			// blanket 50k-entry fill polluted caches even in mostly static scenes.
+			for (const Entity cachedEntity : dirtyAncestorTouchedScratch) {
+				dirtyAncestorCache[cachedEntity] = -1;
+			}
+			dirtyAncestorTouchedScratch.clear();
+		}
 
 		for (const auto& entity : entities) {
-			// If no parent, it's a root
-			if (!ecsManager.HasComponent<ParentComponent>(entity)) {
-				rootEntitiesScratch.push_back(entity);
+			// TransformSystem membership already guarantees this component.
+			// Avoid constructing an optional for every scene transform each frame.
+			const auto& transform = ecsManager.GetComponent<Transform>(entity);
+			if (!transform.isDirty) {
+				continue;
+			}
+
+			// A dirty ancestor will propagate its change through this entire
+			// subtree, so processing the descendant separately would duplicate
+			// matrix work.
+			if (!HasDirtyTransformAncestor(
+				ecsManager,
+				guidRegistry,
+				entity,
+				dirtyAncestorCache,
+				dirtyAncestorPathScratch,
+				dirtyAncestorTouchedScratch)) {
+				dirtyRootsScratch.push_back(entity);
 			}
 		}
 	}
 
-	// 2. Process Roots in Parallel
-	// Since hierarchy trees don't touch each other, this is thread-safe!
-
-	// Assuming you have access to your scheduler here (e.g., via singleton or passing it in)
-	// If not, use std::for_each with std::execution::par, or simple sequential loop if roots are few.
-
-	// Example using your existing xscheduler syntax:
-	/*
-	xscheduler::task_group transformGroup{ xscheduler::str_v<"TransformGroup">, scheduler };
-
-	size_t batchSize = 10; // Group small roots together
-	for (size_t i = 0; i < rootEntities.size(); i += batchSize) {
-		transformGroup.Submit([&, i]() {
-			for (size_t j = i; j < std::min(i + batchSize, rootEntities.size()); j++) {
-				UpdateTransformRecursive(ecsManager, rootEntities[j], nullptr, false);
-			}
-		});
-	}
-	transformGroup.join();
-	*/
-
-	// SEQUENTIAL FALLBACK (Still much faster than your original code):
 	{
 		PROFILE_SCOPED("TS::RecursiveUpdate");
-		for (const auto& root : rootEntitiesScratch) {
-			// Pass nullptr for parent matrix, false for parentChanged (unless root is dirty)
-			UpdateTransformRecursive(ecsManager, root, nullptr, false);
+		for (const auto& root : dirtyRootsScratch) {
+			UpdateTransformRecursive(
+				ecsManager,
+				guidRegistry,
+				root,
+				GetParentTransform(ecsManager, guidRegistry, root),
+				false);
 		}
-	}
-
-	//// Update entities' transform starting from root entities, in a depth-first manner.
-	//for (const auto& entity : entities) {
-	//	if (!ecsManager.HasComponent<ParentComponent>(entity)) {
-	//		TraverseHierarchy(entity, [this](Entity _entity) {
-	//			UpdateTransform(_entity);
-	//		});
-	//	}
-	//}
-}
-
-void TransformSystem::PostUpdate() {
-	PROFILE_FUNCTION();
-	// Clear all isDirty flags after all systems have had their turn this frame.
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	for (const auto& entity : entities) {
-		auto& transform = ecsManager.GetComponent<Transform>(entity);
-		transform.isDirty = false;
 	}
 }
 
@@ -202,54 +260,26 @@ void TransformSystem::UpdateTransform(Entity entity) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	auto& transform = ecsManager.GetComponent<Transform>(entity);
 
-	// Update model matrix only if there is a change
-	if (!isInitialised || transform.isDirty) {
-		// Automatically set the child transforms as dirty, as the parent transform has been modified.
-		if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
-			SetDirtyRecursive(entity);
-		}
+	if (isInitialised && !transform.isDirty) return;
 
-		auto parentCompOpt = ecsManager.TryGetComponent<ParentComponent>(entity);
-		// If the entity has a parent
-		if (parentCompOpt.has_value()) {
-			auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-			GUID_128 parentGUID = parentCompOpt->get().parent;
-			Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
-			if (parentEntity == static_cast<Entity>(-1)) {
-				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TransformSystem] Entity ", entity, " has invalid parent GUID\n");
-			}
-			auto& parentTransform = ecsManager.GetComponent<Transform>(parentEntity);
-			//auto& rootParentTransform = GetRootParentTransform(entity);
-			//transform.worldMatrix = parentTransform.worldMatrix * CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
-			
-			//Matrix4x4 parentNoScale = RemoveScale(parentTransform.worldMatrix);
-			//Vector3D effectiveScale = parentTransform.localScale * transform.localScale;
-			Matrix4x4 localMatrix = CalculateModelMatrix(
-				transform.localPosition,   // unaffected by parent scale
-				transform.localScale,
-				transform.localRotation
-			);
-
-			transform.worldMatrix = parentTransform.worldMatrix * localMatrix;
+	const Transform* parentTransform = nullptr;
+	if (auto parentComp = ecsManager.TryGetComponent<ParentComponent>(entity)) {
+		const Entity parentEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(
+			parentComp->get().parent);
+		if (parentEntity == static_cast<Entity>(-1)) {
+			ENGINE_PRINT(
+				EngineLogging::LogLevel::Error,
+				"[TransformSystem] Entity ", entity, " has invalid parent GUID\n");
 		}
 		else {
-			transform.worldMatrix = CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
+			parentTransform = &ecsManager.GetComponent<Transform>(parentEntity);
 		}
-
-		transform.worldPosition = Matrix4x4::ExtractTranslation(transform.worldMatrix);
-		transform.worldRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(transform.worldMatrix));
-		transform.worldScale = Matrix4x4::ExtractScale(transform.worldMatrix);
-
-		// Note: We DO NOT clear transform.isDirty here. 
-		// The TransformSystem should clear it at the end of the frame 
-		// after all systems (Rendering, Physics, etc.) have had their turn.
-		//transform.isDirty = false;
 	}
 
-	//// Update the last known values
-	//transform.lastPosition = transform.localPosition;
-	//transform.lastRotation = transform.localRotation;
-	//transform.lastScale = transform.localScale;
+	UpdateWorldTransform(transform, parentTransform);
+
+	// Keep this dirty until the root-first update propagates the change to
+	// descendants. Direct updates are used by editor and slider code.
 }
 
 // Internal helper for TraverseHierarchy with cycle detection
@@ -265,11 +295,9 @@ static void TraverseHierarchyInternal(Entity entity, std::function<void(Entity)>
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
-		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(entity);
 
-		for (const auto& childGUID : childrenComp.children) {
-			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+		for (const Entity child : childrenComp.ResolveEntities()) {
 			if (child == static_cast<Entity>(-1)) {
 				continue; // Skip this invalid child
 			}
@@ -305,6 +333,7 @@ Matrix4x4 TransformSystem::CalculateModelMatrix(
 void TransformSystem::SetWorldPosition(Entity entity, Vector3D position) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+	Vector3D localPosition = position;
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
 		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
@@ -312,107 +341,105 @@ void TransformSystem::SetWorldPosition(Entity entity, Vector3D position) {
 		
 		// Convert world to local.
 		Matrix4x4 invParent = parentTransform.worldMatrix.Inversed();
-		transform.localPosition = invParent.TransformPoint(position);
-	}
-	else {
-		transform.localPosition = position;
+		localPosition = invParent.TransformPoint(position);
 	}
 
-	SetDirtyRecursive(entity);
+	if (transform.localPosition == localPosition) return;
+	transform.localPosition = localPosition;
+	transform.isDirty = true;
 }
 
 void TransformSystem::SetLocalPosition(Entity entity, Vector3D position) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+	if (transform.localPosition == position) return;
 	transform.localPosition = position;
-
-	SetDirtyRecursive(entity);
+	transform.isDirty = true;
 }
 
 void TransformSystem::SetWorldRotation(Entity entity, Vector3D rotation) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+	Quaternion localRotation;
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
 		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
-		Matrix4x4 parentNoScale = Matrix4x4::RemoveScale(parentTransform.worldMatrix);
-		Quaternion parentWorldRot = Quaternion::FromMatrix(parentNoScale);
 		Quaternion desiredWorldRot = Quaternion::FromEulerDegrees(rotation);
 
-		transform.localRotation = parentWorldRot.Inverse() * desiredWorldRot;
+		localRotation = parentTransform.worldRotation.Inverse() * desiredWorldRot;
 	}
 	else {
-		transform.localRotation = Quaternion::FromEulerDegrees(rotation);
+		localRotation = Quaternion::FromEulerDegrees(rotation);
 	}
 
-	SetDirtyRecursive(entity);
+	if (QuaternionEquals(transform.localRotation, localRotation)) return;
+	transform.localRotation = localRotation;
+	transform.isDirty = true;
 }
 
 void ENGINE_API TransformSystem::SetWorldRotation(Entity entity, Quaternion rotation) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+	Quaternion localRotation = rotation;
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
 		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
-		Matrix4x4 parentNoScale = Matrix4x4::RemoveScale(parentTransform.worldMatrix);
-		Quaternion parentWorldRot = Quaternion::FromMatrix(parentNoScale);
-
-		transform.localRotation = parentWorldRot.Inverse() * rotation;
-	}
-	else {
-		transform.localRotation = rotation;
+		localRotation = parentTransform.worldRotation.Inverse() * rotation;
 	}
 
-	SetDirtyRecursive(entity);
+	if (QuaternionEquals(transform.localRotation, localRotation)) return;
+	transform.localRotation = localRotation;
+	transform.isDirty = true;
 }
 
 void TransformSystem::SetLocalRotation(Entity entity, Vector3D rotation) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
-	transform.localRotation = Quaternion::FromEulerDegrees(rotation);
-
-	SetDirtyRecursive(entity);
+	const Quaternion localRotation = Quaternion::FromEulerDegrees(rotation);
+	if (QuaternionEquals(transform.localRotation, localRotation)) return;
+	transform.localRotation = localRotation;
+	transform.isDirty = true;
 }
 
 void TransformSystem::SetLocalRotation(Entity entity, Quaternion rotation) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
 
-	transform.localRotation = rotation; // Direct assignment
-	SetDirtyRecursive(entity);
+	if (QuaternionEquals(transform.localRotation, rotation)) return;
+	transform.localRotation = rotation;
+	transform.isDirty = true;
 }
 
 void TransformSystem::SetWorldScale(Entity entity, Vector3D scale) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+	Vector3D localScale = scale;
 
 	if (ecsManager.HasComponent<ParentComponent>(entity)) {
 		Entity parent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(ecsManager.GetComponent<ParentComponent>(entity).parent);
 		Transform& parentTransform = ecsManager.GetComponent<Transform>(parent);
 
 		// Convert world to local.
-		Vector3D parentScale = Matrix4x4::ExtractScale(parentTransform.worldMatrix);
-		transform.localScale = scale / parentScale;
-	}
-	else {
-		transform.localScale = scale;
+		localScale = scale / parentTransform.worldScale;
 	}
 
-	SetDirtyRecursive(entity);
+	if (transform.localScale == localScale) return;
+	transform.localScale = localScale;
+	transform.isDirty = true;
 }
 
 void TransformSystem::SetLocalScale(Entity entity, Vector3D scale) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	Transform& transform = ecsManager.GetComponent<Transform>(entity);
+	if (transform.localScale == scale) return;
 	transform.localScale = scale;
-
-	SetDirtyRecursive(entity);
+	transform.isDirty = true;
 }
 
 Vector3D& TransformSystem::GetWorldPosition(Entity entity) {
@@ -432,15 +459,52 @@ Vector3D& TransformSystem::GetWorldScale(Entity entity) {
 
 void TransformSystem::SetLocalTransform(Entity entity, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale) {
 	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-	auto& tr = ecs.GetComponent<Transform>(entity);
+	SetLocalTransform(ecs.GetComponent<Transform>(entity), pos, rot, scale);
+}
 
-	// Set all values directly
+void TransformSystem::SetLocalTransform(
+	Transform& tr,
+	const Vector3D& pos,
+	const Quaternion& rot,
+	const Vector3D& scale) {
+
+	if (tr.localPosition == pos &&
+		QuaternionEquals(tr.localRotation, rot) &&
+		tr.localScale == scale) {
+		return;
+	}
+
 	tr.localPosition = pos;
 	tr.localRotation = rot;
 	tr.localScale = scale;
+	// The root-first transform traversal propagates parent changes to descendants.
+	// Marking every descendant here made animation updates quadratic in bone count.
+	tr.isDirty = true;
+}
 
-	// Trigger dirty flag only ONCE
-	SetDirtyRecursive(entity);
+void TransformSystem::SetLocalTransform(
+	Transform& tr,
+	const Vector3D& pos,
+	const Quaternion& rot,
+	const Vector3D& scale,
+	const Matrix4x4& localMatrix) {
+
+	const bool changed = tr.localPosition != pos ||
+		!QuaternionEquals(tr.localRotation, rot) ||
+		tr.localScale != scale;
+
+	tr.localPosition = pos;
+	tr.localRotation = rot;
+	tr.localScale = scale;
+	tr.cachedLocalMatrix = localMatrix;
+	tr.cachedLocalPosition = pos;
+	tr.cachedLocalRotation = rot;
+	tr.cachedLocalScale = scale;
+	tr.cachedLocalMatrixValid = true;
+
+	if (changed) {
+		tr.isDirty = true;
+	}
 }
 
 // Internal helper for SetDirtyRecursive with cycle detection
@@ -463,9 +527,8 @@ static void SetDirtyRecursiveInternal(Entity entity, std::set<Entity>& visited) 
 	transform.isDirty = true;
 
 	if (ecsManager.HasComponent<ChildrenComponent>(entity)) {
-		auto& children = ecsManager.GetComponent<ChildrenComponent>(entity).children;
-		for (const auto& childGUID : children) {
-			Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+		auto& children = ecsManager.GetComponent<ChildrenComponent>(entity);
+		for (const Entity child : children.ResolveEntities()) {
 			if (child == static_cast<Entity>(-1)) {
 				continue; // Skip invalid children
 			}
@@ -519,10 +582,8 @@ static void GetAllChildEntitiesVectorInternal(Entity parentEntity, std::vector<E
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
-		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
-		for (const auto& childGUID : childrenComp.children) {
-			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+		for (const Entity child : childrenComp.ResolveEntities()) {
 			if (child == static_cast<Entity>(-1)) {
 				continue; // Skip invalid children
 			}
@@ -551,10 +612,8 @@ static void GetAllChildEntitiesSetInternal(Entity parentEntity, std::set<Entity>
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
-		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 		auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentEntity);
-		for (const auto& childGUID : childrenComp.children) {
-			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+		for (const Entity child : childrenComp.ResolveEntities()) {
 			if (child == static_cast<Entity>(-1)) {
 				continue; // Skip invalid children
 			}

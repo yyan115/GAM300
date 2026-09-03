@@ -10,6 +10,7 @@ layout(std140) uniform CameraBlock {
     mat4 projection;
     vec3 cameraPos;
     float _pad;
+    mat4 viewProjection;
 };
 
 uniform mat4 model;
@@ -22,5 +23,5 @@ void main()
     // Convert from [-0.5, 0.5] to [0, 1] for clean sampling in frag shader
     LocalPos = aPos + 0.5;
 
-    gl_Position = projection * view * worldPos;
+    gl_Position = viewProjection * worldPos;
 }

@@ -2,6 +2,7 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
+#include <cstring>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -30,6 +31,45 @@
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 namespace {
+	glm::mat3 ComputeNormalMatrix(const glm::mat4& modelMatrix)
+	{
+		const glm::mat3 model3(modelMatrix);
+		const float scaleX2 = glm::dot(model3[0], model3[0]);
+		const float scaleY2 = glm::dot(model3[1], model3[1]);
+		const float scaleZ2 = glm::dot(model3[2], model3[2]);
+		const float tolerance = glm::max(1e-6f, scaleX2 * 1e-4f);
+
+		if (glm::abs(scaleX2 - scaleY2) < tolerance &&
+			glm::abs(scaleX2 - scaleZ2) < tolerance &&
+			glm::abs(glm::dot(model3[0], model3[1])) < tolerance &&
+			glm::abs(glm::dot(model3[0], model3[2])) < tolerance &&
+			glm::abs(glm::dot(model3[1], model3[2])) < tolerance &&
+			scaleX2 > 1e-8f) {
+			// Shader outputs are normalized, so uniform scale magnitude is irrelevant.
+			return model3 * glm::inversesqrt(scaleX2);
+		}
+
+		return glm::transpose(glm::inverse(model3));
+	}
+
+	bool NeedsBlending(const ModelRenderComponent& model)
+	{
+		if (model.distanceFadeOpacity < 1.0f) {
+			return true;
+		}
+		if (model.material) {
+			return model.material->GetOpacity() < 1.0f;
+		}
+		if (model.model) {
+			for (const auto& mesh : model.model->meshes) {
+				if (mesh.material && mesh.material->GetOpacity() < 1.0f) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	#if !defined(_WIN32) && !defined(ANDROID)
 	bool ShaderResourceExists(const std::string& shaderPath)
 	{
@@ -124,6 +164,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	}
 
 	InitCameraUBO();
+#ifdef ANDROID
+	InitBonePaletteUBO();
+#endif
 
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
@@ -143,6 +186,17 @@ void GraphicsManager::Shutdown()
 		glDeleteBuffers(1, &m_cameraUBO);
 		m_cameraUBO = 0;
 	}
+	m_hasLastCameraUBOData = false;
+
+#ifdef ANDROID
+	if (m_bonePaletteUBO != 0) {
+		glDeleteBuffers(1, &m_bonePaletteUBO);
+		m_bonePaletteUBO = 0;
+	}
+	m_bonePaletteScratch.clear();
+	m_bonePaletteUploadSize = 0;
+	m_boundBonePaletteOffset = std::numeric_limits<std::size_t>::max();
+#endif
 
 	if (skyboxVAO != 0) {
 		glDeleteVertexArrays(1, &skyboxVAO);
@@ -161,21 +215,25 @@ void GraphicsManager::BeginFrame()
 {
 	renderQueue.clear();
 	deferredQueue.clear();
+	Shader::ResetActiveProgramCache();
+	VAO::ResetBindingCache();
+	ResetBloomFlag();
 
 	// Reset state tracking
 	m_currentShader = nullptr;
 	m_currentMaterial = nullptr;
 	m_sortingStats.Reset();
+	m_bloomTargetPrepared = false;
+	m_bloomOutputEnabled = false;
+#ifdef ANDROID
+	m_boundBonePaletteOffset = std::numeric_limits<std::size_t>::max();
+#endif
 
 	if (InstancingManager::GetInstance().IsEnabled())
 	{
 		InstancingManager::GetInstance().BeginFrame();
-
-		// Update frustum NOW so TryAddInstance (called during Update) uses the
-		// current-frame frustum rather than the previous frame's frustum.
-		// Without this, frustum-culled instanceable models silently disappear:
-		// they are neither added to a batch nor submitted to the render queue.
-		UpdateFrustum();
+		// Both game and editor draw paths update this same Frustum object after
+		// selecting their camera and before systems submit instances.
 		InstancingManager::GetInstance().SetFrustum(
 			frustumCullingEnabled ? &viewFrustum : nullptr);
 	}
@@ -220,31 +278,109 @@ void GraphicsManager::GetViewportSize(int& width, int& height) const
 	height = viewportHeight;
 }
 
-void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
+void GraphicsManager::Submit(IRenderComponent* renderItem)
 {
 	std::lock_guard<std::mutex> lock(renderQueueMutex);
 	if (renderItem && renderItem->isVisible)
 	{
-		renderQueue.push_back(std::move(renderItem));
+		renderQueue.push_back(renderItem);
 	}
 }
 
-void GraphicsManager::SubmitBatch(std::vector<std::unique_ptr<IRenderComponent>>&& renderItems)
+void GraphicsManager::InvalidateRenderStateCache() noexcept
 {
-	if (renderItems.empty())
-	{
+	m_cachedRenderState = {};
+	m_texture2DUnit0Known = false;
+}
+
+void GraphicsManager::SetDepthTestCached(bool enabled)
+{
+	const std::int8_t desired = enabled ? 1 : 0;
+	if (m_cachedRenderState.depthTest == desired) return;
+
+	if (enabled) glEnable(GL_DEPTH_TEST);
+	else glDisable(GL_DEPTH_TEST);
+	m_cachedRenderState.depthTest = desired;
+}
+
+void GraphicsManager::SetDepthWriteCached(bool enabled)
+{
+	const std::int8_t desired = enabled ? 1 : 0;
+	if (m_cachedRenderState.depthWrite == desired) return;
+
+	glDepthMask(enabled ? GL_TRUE : GL_FALSE);
+	m_cachedRenderState.depthWrite = desired;
+}
+
+void GraphicsManager::SetBlendCached(bool enabled)
+{
+	const std::int8_t desired = enabled ? 1 : 0;
+	if (m_cachedRenderState.blend == desired) return;
+
+	if (enabled) glEnable(GL_BLEND);
+	else glDisable(GL_BLEND);
+	m_cachedRenderState.blend = desired;
+}
+
+void GraphicsManager::SetCullFaceCached(bool enabled)
+{
+	const std::int8_t desired = enabled ? 1 : 0;
+	if (m_cachedRenderState.cullFace == desired) return;
+
+	if (enabled) glEnable(GL_CULL_FACE);
+	else glDisable(GL_CULL_FACE);
+	m_cachedRenderState.cullFace = desired;
+}
+
+void GraphicsManager::SetBlendFunctionCached(GLenum source, GLenum destination)
+{
+	if (m_cachedRenderState.blendFunctionKnown &&
+		m_cachedRenderState.blendSource == source &&
+		m_cachedRenderState.blendDestination == destination) {
 		return;
 	}
 
-	std::lock_guard<std::mutex> lock(renderQueueMutex);
-	renderQueue.reserve(renderQueue.size() + renderItems.size());
-	for (auto& renderItem : renderItems)
-	{
-		if (renderItem && renderItem->isVisible)
-		{
-			renderQueue.push_back(std::move(renderItem));
-		}
+	glBlendFunc(source, destination);
+	m_cachedRenderState.blendSource = source;
+	m_cachedRenderState.blendDestination = destination;
+	m_cachedRenderState.blendFunctionKnown = true;
+}
+
+void GraphicsManager::BindTexture2DUnit0Cached(GLuint texture)
+{
+	if (m_texture2DUnit0Known && m_cachedTexture2DUnit0 == texture) {
+		return;
 	}
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	m_cachedTexture2DUnit0 = texture;
+	m_texture2DUnit0Known = true;
+}
+
+void GraphicsManager::SetBloomOutputEnabled(bool enabled)
+{
+	const bool desired = m_bloomTargetPrepared && enabled;
+	if (m_bloomOutputEnabled == desired) {
+		return;
+	}
+
+	auto& postProcessing = PostProcessingManager::GetInstance();
+	if (desired) {
+		postProcessing.EnableBloomMRT();
+	}
+	else {
+		postProcessing.DisableBloomMRT();
+	}
+	m_bloomOutputEnabled = desired;
+}
+
+void GraphicsManager::RestoreDefaultRenderState()
+{
+	SetDepthTestCached(true);
+	SetDepthWriteCached(true);
+	SetBlendCached(false);
+	SetCullFaceCached(faceCullingEnabled);
 }
 
 void GraphicsManager::UpdateFrustum()
@@ -312,22 +448,28 @@ void GraphicsManager::Render()
 		cullingStats.Reset();
 	}
 
-	// NOTE: m_hasBloomEmissionThisFrame is NOT reset here — it was already set
-	// during the system update phase (ModelSystem, SpriteSystem, ParticleSystem,
-	// TextRenderingSystem) which runs BEFORE Render(). Resetting here would
-	// clear the flag before the post-process pass reads it.
-	// The flag is reset at the start of ModelSystem::Update() instead.
+	// BeginFrame reset the bloom flag before the parallel render-preparation
+	// systems populated it. Do not clear it here before the post-process check.
 
 	currentFrameViewport = GetCurrentViewport();
 
 	// Compute view/projection once for the whole frame and upload to Camera UBO.
 	// All shaders that declare CameraBlock automatically receive these values.
-	glm::mat4 frameView = currentCamera->GetViewMatrix();
-	glm::mat4 frameProjection = glm::perspective(
+	m_frameView = currentCamera->GetViewMatrix();
+	m_frameProjection = glm::perspective(
 		glm::radians(currentCamera->Zoom),
 		currentFrameViewport.aspectRatio,
 		0.1f, m_farPlane
 	);
+	const glm::vec3 cameraRight = glm::cross(currentCamera->Front, currentCamera->Up);
+	const float cameraRightLengthSq = glm::dot(cameraRight, cameraRight);
+	m_frameCameraRight = cameraRightLengthSq > 1e-8f
+		? cameraRight * glm::inversesqrt(cameraRightLengthSq)
+		: glm::vec3(1.0f, 0.0f, 0.0f);
+	m_frameCameraUp = currentCamera->Up;
+
+	const glm::mat4& frameView = m_frameView;
+	const glm::mat4& frameProjection = m_frameProjection;
 	if (m_cameraUBO != 0)
 		UploadCameraUBO(frameView, frameProjection, currentCamera->Position);
 
@@ -349,11 +491,12 @@ void GraphicsManager::Render()
 		}
 	}
 
-	// Render skybox first (before other objects)
+#ifdef ANDROID
 	{
-		PROFILE_SCOPED("GM::Skybox");
-		RenderSkybox();
+		PROFILE_SCOPED("GM::BonePalettes");
+		PrepareBonePalettes();
 	}
+#endif
 
 	// Separate models from other render items, moving excluded items to deferred queue
 	m_modelRenderItems.clear();
@@ -373,23 +516,39 @@ void GraphicsManager::Render()
 
 			if (item->excludeFromPostProcess)
 			{
-				deferredQueue.push_back(std::move(item));
+				deferredQueue.push_back(item);
+				item = nullptr;
 				continue;
 			}
 			if (item->GetRenderKind() == RenderComponentKind::Model)
 			{
-				m_modelRenderItems.push_back(item.get());
+				m_modelRenderItems.push_back(item);
 			}
 			else
 			{
-				m_otherRenderItems.push_back(item.get());
+				m_otherRenderItems.push_back(item);
 			}
 		}
 	}
 	// Enable MRT so bloom-capable shaders can write to the bloom emission texture
 	{
 		PROFILE_SCOPED("GM::EnableBloomMRT");
-		PostProcessingManager::GetInstance().EnableBloomMRT();
+		auto& postProcessing = PostProcessingManager::GetInstance();
+		BloomEffect* bloom = postProcessing.GetBloomEffect();
+		const bool needsBloomMRT =
+			bloom &&
+			bloom->IsEnabled() &&
+			bloom->GetIntensity() > 0.01f &&
+			HasBloomEmissionThisFrame();
+
+		m_bloomTargetPrepared = needsBloomMRT;
+		m_bloomOutputEnabled = false;
+		if (needsBloomMRT) {
+			postProcessing.PrepareBloomMRT();
+		}
+		else {
+			postProcessing.DisableBloomMRT();
+		}
 	}
 
 	// Bind skybox texture for environment reflections (high texture unit to avoid conflicts)
@@ -472,7 +631,7 @@ void GraphicsManager::Render()
 			auto* model = static_cast<ModelRenderComponent*>(item);
 			ModelSortEntry entry;
 			entry.item = item;
-			entry.layer = model->material && model->material->GetOpacity() < 1.0f
+			entry.layer = NeedsBlending(*model)
 				? RenderLayer::Type::LAYER_TRANSPARENT
 				: RenderLayer::Type::LAYER_OPAQUE;
 
@@ -484,9 +643,18 @@ void GraphicsManager::Render()
 
 			if (entry.layer == RenderLayer::Type::LAYER_OPAQUE)
 			{
+				entry.bloomOutput = m_bloomTargetPrepared &&
+					model->bloomIntensity > 0.01f;
 				// Front-to-back: group into ~5-unit buckets so objects at similar
 				// depths still batch by state (reduces shader/material switches).
-				entry.depthBucket = static_cast<int>(entry.distanceSq / 25.0f);
+#ifdef ANDROID
+				entry.depthBucket = static_cast<int>(
+					glm::sqrt(entry.distanceSq) * 0.2f);
+#else
+				// Desktop already has a depth prepass, so state grouping is more
+				// useful than front-to-back ordering for the color pass.
+				entry.depthBucket = 0;
+#endif
 				entry.stateKey = RenderSortKey(entry.layer,
 					m_idCache.GetShaderId(model->shader.get()),
 					m_idCache.GetMaterialId(model->material.get()),
@@ -506,6 +674,16 @@ void GraphicsManager::Render()
 				{
 					if (a.depthBucket != b.depthBucket)
 						return a.depthBucket < b.depthBucket;
+#ifdef ANDROID
+					const uint64_t shaderA =
+						a.stateKey.key & RenderSortKey::SHADER_MASK;
+					const uint64_t shaderB =
+						b.stateKey.key & RenderSortKey::SHADER_MASK;
+					if (shaderA != shaderB)
+						return shaderA < shaderB;
+					if (a.bloomOutput != b.bloomOutput)
+						return !a.bloomOutput;
+#endif
 					// Same depth bucket — sort by state to minimise GPU state switches.
 					return a.stateKey < b.stateKey;
 				}
@@ -533,32 +711,29 @@ void GraphicsManager::Render()
 	{
 		PROFILE_SCOPED("GM::ModelRenderLoop");
 		bool blendingOn = false;
+		bool skyboxRendered = false;
 		for (IRenderComponent* item : m_modelRenderItems)
 		{
 			ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
-			// Skip if it was handled by instancing — but only for fully opaque, non-fading objects.
-			// Transparent and fading objects must go through the individual render path for correct blending.
-			bool isTransparent = (modelItem->distanceFadeOpacity < 1.0f) ||
-				(modelItem->material && modelItem->material->GetOpacity() < 1.0f);
-			if (!isTransparent &&
-				instancing.IsEnabled() &&
-				!modelItem->HasAnimation() &&
-				modelItem->model &&
-				modelItem->model->mBoneInfoMap.empty())
+			// ModelSystem submits only the non-instanced fallback path here.
+			const bool isTransparent = NeedsBlending(*modelItem);
+
+			// Draw the skybox after opaque geometry has populated depth, but
+			// before the first blended object. Its expensive spherical texture
+			// lookup then runs only for uncovered background pixels.
+			if (isTransparent && !skyboxRendered)
 			{
-				continue;  // Already rendered via instancing
+				PROFILE_SCOPED("GM::Skybox");
+				SetBloomOutputEnabled(false);
+				RenderSkybox();
+				InvalidateRenderStateCache();
+				skyboxRendered = true;
 			}
 
+			SetBloomOutputEnabled(modelItem->bloomIntensity > 0.01f);
+
 			// Enable alpha blending when material opacity or distance fade opacity < 1.
-			bool needsBlend = (modelItem->distanceFadeOpacity < 1.0f);
-			if (!needsBlend) {
-				if (modelItem->material) {
-					needsBlend = modelItem->material->GetOpacity() < 1.0f;
-				} else if (modelItem->model && !modelItem->model->meshes.empty()
-					&& modelItem->model->meshes[0].material) {
-					needsBlend = modelItem->model->meshes[0].material->GetOpacity() < 1.0f;
-				}
-			}
+			const bool needsBlend = isTransparent;
 			if (needsBlend && !blendingOn) {
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -576,6 +751,14 @@ void GraphicsManager::Render()
 			glDisable(GL_BLEND);
 			glDepthMask(GL_TRUE);
 		}
+
+		if (!skyboxRendered)
+		{
+			PROFILE_SCOPED("GM::Skybox");
+			SetBloomOutputEnabled(false);
+			RenderSkybox();
+			InvalidateRenderStateCache();
+		}
 	}
 
 	// =========================================================================
@@ -583,33 +766,53 @@ void GraphicsManager::Render()
 	// =========================================================================
 	{
 		PROFILE_SCOPED("GM::OtherItemsRender");
+		InvalidateRenderStateCache();
 		for (IRenderComponent* item : m_otherRenderItems) {
 			switch (item->GetRenderKind())
 			{
 			case RenderComponentKind::Text:
+				SetBloomOutputEnabled(item->bloomIntensity > 0.01f);
 				RenderText(*static_cast<TextRenderComponent*>(item));
 				break;
+			case RenderComponentKind::TextRenderItem:
+				SetBloomOutputEnabled(item->bloomIntensity > 0.01f);
+				RenderText(*static_cast<TextRenderItem*>(item));
+				break;
 			case RenderComponentKind::Sprite:
+				SetBloomOutputEnabled(item->bloomIntensity > 0.01f);
 				RenderSprite(*static_cast<SpriteRenderComponent*>(item));
 				break;
+			case RenderComponentKind::SpriteRenderItem:
+				SetBloomOutputEnabled(item->bloomIntensity > 0.01f);
+				RenderSprite(*static_cast<SpriteRenderItem*>(item));
+				break;
 			case RenderComponentKind::DebugDraw:
+				SetBloomOutputEnabled(false);
+				RestoreDefaultRenderState();
 				RenderDebugDraw(*static_cast<DebugDrawComponent*>(item));
+				InvalidateRenderStateCache();
 				break;
 			case RenderComponentKind::Particle:
+				SetBloomOutputEnabled(item->bloomIntensity > 0.01f);
 				RenderParticles(*static_cast<ParticleComponent*>(item));
 				break;
 			case RenderComponentKind::ParticleRenderItem:
+				SetBloomOutputEnabled(item->bloomIntensity > 0.01f);
 				RenderParticles(*static_cast<ParticleRenderItem*>(item));
 				break;
 			case RenderComponentKind::Fog:
+				SetBloomOutputEnabled(false);
 #ifndef ANDROID
+				RestoreDefaultRenderState();
 				RenderFogVolume(*static_cast<FogVolumeComponent*>(item));
+				InvalidateRenderStateCache();
 #endif
 				break;
 			default:
 				break;
 			}
 		}
+		RestoreDefaultRenderState();
 	}
 
 	// Restore depth state changed by the prepass (transparents may have already
@@ -623,7 +826,8 @@ void GraphicsManager::Render()
 	// Disable bloom MRT — done writing bloom emission
 	{
 		PROFILE_SCOPED("GM::DisableBloomMRT");
-		PostProcessingManager::GetInstance().DisableBloomMRT();
+		SetBloomOutputEnabled(false);
+		m_bloomTargetPrepared = false;
 	}
 
 	// Per-frame render stats plots
@@ -662,9 +866,9 @@ void GraphicsManager::RenderDeferred()
 	{
 		if (!item) continue;
 		if (item->GetRenderKind() == RenderComponentKind::Model)
-			m_deferredModelRenderItems.push_back(item.get());
+			m_deferredModelRenderItems.push_back(item);
 		else
-			m_deferredOtherRenderItems.push_back(item.get());
+			m_deferredOtherRenderItems.push_back(item);
 	}
 
 	// Sort others by render order
@@ -683,6 +887,7 @@ void GraphicsManager::RenderDeferred()
 		RenderModel(*static_cast<ModelRenderComponent*>(item));
 	}
 
+	InvalidateRenderStateCache();
 	for (IRenderComponent* item : m_deferredOtherRenderItems)
 	{
 		switch (item->GetRenderKind())
@@ -690,8 +895,14 @@ void GraphicsManager::RenderDeferred()
 		case RenderComponentKind::Text:
 			RenderText(*static_cast<TextRenderComponent*>(item));
 			break;
+		case RenderComponentKind::TextRenderItem:
+			RenderText(*static_cast<TextRenderItem*>(item));
+			break;
 		case RenderComponentKind::Sprite:
 			RenderSprite(*static_cast<SpriteRenderComponent*>(item));
+			break;
+		case RenderComponentKind::SpriteRenderItem:
+			RenderSprite(*static_cast<SpriteRenderItem*>(item));
 			break;
 		case RenderComponentKind::Particle:
 			RenderParticles(*static_cast<ParticleComponent*>(item));
@@ -705,7 +916,7 @@ void GraphicsManager::RenderDeferred()
 	}
 
 	// Restore state
-	glEnable(GL_DEPTH_TEST);
+	RestoreDefaultRenderState();
 
 	deferredQueue.clear();
 }
@@ -743,7 +954,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	item.shader->Activate();
 
 	// Set up all matrices and uniforms
-	SetupMatrices(*item.shader,item.transform.ConvertToGLM(), true);
+	SetupMatrices(*item.shader, modelMatrix, true);
 
 	// Per-entity bloom emission
 	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
@@ -756,6 +967,11 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 	// Per-entity fade opacity
 	item.shader->setFloat("u_distanceFadeOpacity", item.distanceFadeOpacity);
+
+#ifdef __ANDROID__
+	item.shader->setInt(
+		"u_lightMask", static_cast<int>(item.lightMask));
+#endif
 
 	// Apply lighting
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -782,9 +998,22 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	//}
 
 	if (item.HasAnimation())
+	{
+#ifdef ANDROID
+		BindBonePalette(item);
+#endif
 		item.model->Draw(*item.shader, *currentCamera, item.material, item, item.animator);
+	}
 	else
+	{
+#ifdef ANDROID
+		if (!item.model->mBoneInfoMap.empty() &&
+			!item.GetRenderBoneMatrices().empty()) {
+			BindBonePalette(item);
+		}
+#endif
 		item.model->Draw(*item.shader, *currentCamera, item.material, item);
+	}
 
 	//if (item.depthOffset)
 	//{
@@ -801,24 +1030,18 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 	// Only calculate and send normal matrix if needed (for lit objects)
 	if (includeNormalMatrix)
 	{
-		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader.setMat3("normalMatrixCPU", normalMatrix);
+		shader.setMat3("normalMatrixCPU", ComputeNormalMatrix(modelMatrix));
 	}
 
 	if (currentCamera && !shader.UsesCameraBlock())
 	{
-		int renderWidth = currentFrameViewport.width;
-		int renderHeight = currentFrameViewport.height;
-		float aspectRatio = currentFrameViewport.aspectRatio;
-
-		glm::mat4 view;
-		glm::mat4 projection;
-
 		// In 2D editor mode, use orthographic projection with screen-space coordinates
 		if (IsRenderingForEditor() && Is2DMode()) {
-			// Use identity view matrix for 2D (camera doesn't rotate)
-			view = glm::mat4(1.0f);
+			const int renderWidth = currentFrameViewport.width;
+			const int renderHeight = currentFrameViewport.height;
+			const glm::mat4 view(1.0f);
 
+			// Use identity view matrix for 2D (camera doesn't rotate)
 			// Use target game resolution for consistent 2D rendering between Scene and Game panels
 			float gameWidth = (float)targetGameWidth;
 			float gameHeight = (float)targetGameHeight;
@@ -846,30 +1069,35 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 			float bottom = currentCamera->Position.y - halfHeight;
 			float top = currentCamera->Position.y + halfHeight;
 
-			projection = glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
-
-		} else {
-			// 3D mode or game mode: use perspective projection
-			view = currentCamera->GetViewMatrix();
-			projection = glm::perspective(
-				glm::radians(currentCamera->Zoom),
-				aspectRatio,
-				0.1f, m_farPlane
-			);
+			const glm::mat4 projection =
+				glm::ortho(left, right, bottom, top, -1000.0f, 1000.0f);
+			shader.setMat4("view", view);
+			shader.setMat4("projection", projection);
+		}
+		else {
+			shader.setMat4("view", m_frameView);
+			shader.setMat4("projection", m_frameProjection);
 		}
 
-		shader.setMat4("view", view);
-		shader.setMat4("projection", projection);
 		shader.setVec3("cameraPos", currentCamera->Position);
 	}
 }
 
 void GraphicsManager::RenderText(const TextRenderComponent& item)
 {
-	if (!item.isVisible || !item.font || !item.shader || item.text.empty())
+	const TextRenderItem snapshot(item);
+	RenderText(snapshot);
+}
+
+void GraphicsManager::RenderText(const TextRenderItem& item)
+{
+	if (!item.isVisible || !item.font || !item.shader || !item.text ||
+		!item.wrappedLines || item.text->empty())
 	{
 		return;
 	}
+	const std::string& text = *item.text;
+	const std::vector<std::string>& wrappedLines = *item.wrappedLines;
 
 	if (!item.is3D && IsRenderingForEditor() && !Is2DMode())
 	{
@@ -878,16 +1106,18 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Configure depth testing based on 2D/3D mode
 	if (item.is3D) {
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
+		SetDepthTestCached(true);
+		SetDepthWriteCached(false);
 	}
 	else {
-		glDisable(GL_DEPTH_TEST);
+		SetDepthTestCached(false);
+		SetDepthWriteCached(true);
 	}
 
 	// Enable blending for text transparency
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	SetBlendCached(true);
+	SetBlendFunctionCached(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	SetCullFaceCached(faceCullingEnabled);
 
 	// Activate shader and set uniforms
 	item.shader->Activate();
@@ -895,10 +1125,12 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	item.shader->setVec4("textColor", textColorWithAlpha);
 
 	// Per-entity bloom emission
+#ifndef ANDROID
 	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
 	if (item.bloomIntensity > 0.0f) {
 		item.shader->setVec3("bloomColor", item.bloomColor);
 	}
+#endif
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
@@ -919,18 +1151,19 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	}
 
 	// Bind VAO and render
-	glActiveTexture(GL_TEXTURE0);
+	item.shader->setInt("text", 0);
 	VAO* fontVAO = item.font->GetVAO();
 	VBO* fontVBO = item.font->GetVBO();
 
 	if (!fontVAO || !fontVBO)
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GraphicsManager] Font VAO/VBO not initialized!\n");
-		glDisable(GL_BLEND);
 		return;
 	}
 
 	fontVAO->Bind();
+	m_textVertexScratch.clear();
+	m_textVertexScratch.reserve(text.size() * 6);
 
 	// Calculate scale factors
 	float worldScaleFactor = item.is3D ? 0.01f : 1.0f;
@@ -940,31 +1173,30 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	// Get line height for multi-line rendering
 	float lineHeight = item.font->GetTextHeight(scaleY) * item.lineSpacing;
 
-	// Use pre-computed wrapped lines from TextRenderingSystem
-	// If empty (shouldn't happen), fall back to single line
-	const std::vector<std::string>& lines = item.wrappedLines.empty()
-		? std::vector<std::string>{item.text}
-	: item.wrappedLines;
+	// Use pre-computed wrapped lines without allocating a temporary vector for
+	// the normal single-line fallback.
+	const bool useSingleLineFallback = wrappedLines.empty();
+	const std::size_t lineCount =
+		useSingleLineFallback ? 1 : wrappedLines.size();
 
 	// Starting Y position (top of text block)
 	float startY = 0.0f;
 
 	// Render each line
-	for (size_t lineIndex = 0; lineIndex < lines.size(); ++lineIndex)
+	for (size_t lineIndex = 0; lineIndex < lineCount; ++lineIndex)
 	{
-		const std::string& line = lines[lineIndex];
+		const std::string& line =
+			useSingleLineFallback ? text : wrappedLines[lineIndex];
 
 		// Calculate X starting position based on alignment for this line
 		float x = 0.0f;
-		float lineWidth = item.font->GetTextWidth(line, scaleX);
-
 		if (item.alignment == TextRenderComponent::Alignment::CENTER)
 		{
-			x = -lineWidth / 2.0f;
+			x = -item.font->GetTextWidth(line, scaleX) / 2.0f;
 		}
 		else if (item.alignment == TextRenderComponent::Alignment::RIGHT)
 		{
-			x = -lineWidth;
+			x = -item.font->GetTextWidth(line, scaleX);
 		}
 
 		// Calculate Y position for this line (line 0 at top, goes down)
@@ -984,50 +1216,51 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 			float w = ch.size.x * scaleX;
 			float h = ch.size.y * scaleY;
 
-			float vertices[6][4] = {
-				{ xpos,     ypos + h,   0.0f, 0.0f },
-				{ xpos,     ypos,       0.0f, 1.0f },
-				{ xpos + w, ypos,       1.0f, 1.0f },
+			if (w > 0.0f && h > 0.0f) {
+				const float u0 = ch.uvMin.x;
+				const float v0 = ch.uvMin.y;
+				const float u1 = ch.uvMax.x;
+				const float v1 = ch.uvMax.y;
 
-				{ xpos,     ypos + h,   0.0f, 0.0f },
-				{ xpos + w, ypos,       1.0f, 1.0f },
-				{ xpos + w, ypos + h,   1.0f, 0.0f }
-			};
-
-			glBindTexture(GL_TEXTURE_2D, ch.textureID);
-			fontVBO->UpdateData(vertices, sizeof(vertices));
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+				m_textVertexScratch.emplace_back(xpos,     ypos + h, u0, v0);
+				m_textVertexScratch.emplace_back(xpos,     ypos,     u0, v1);
+				m_textVertexScratch.emplace_back(xpos + w, ypos,     u1, v1);
+				m_textVertexScratch.emplace_back(xpos,     ypos + h, u0, v0);
+				m_textVertexScratch.emplace_back(xpos + w, ypos,     u1, v1);
+				m_textVertexScratch.emplace_back(xpos + w, ypos + h, u1, v0);
+			}
 
 			x += (ch.advance >> 6) * scaleX;
 		}
 	}
 
-	fontVAO->Unbind();
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
+	if (!m_textVertexScratch.empty()) {
+		item.font->EnsureTextVertexCapacity(m_textVertexScratch.size());
+		fontVBO->Bind();
+		BindTexture2DUnit0Cached(item.font->GetAtlasTexture());
+		fontVBO->UpdateBoundData(
+			m_textVertexScratch.data(),
+			m_textVertexScratch.size() * sizeof(glm::vec4));
+		glDrawArrays(
+			GL_TRIANGLES,
+			0,
+			static_cast<GLsizei>(m_textVertexScratch.size()));
+	}
+
 }
 
 void GraphicsManager::Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY)
 {
 	// Use target game resolution for 2D projection
 	// This ensures Scene Panel and Game Panel show text at consistent positions
-	int gameWidth = targetGameWidth;
-	int gameHeight = targetGameHeight;
-
-	// Use screen-space projection where (0,0) is at bottom-left corner
-	// This matches traditional 2D game coordinate systems and is consistent with sprites
-	glm::mat4 projection = glm::ortho(0.0f, (float)gameWidth, 0.0f, (float)gameHeight);
-
-	glm::mat4 view = glm::mat4(1.0f); // Identity matrix for 2D
+	static const glm::mat4 identity(1.0f);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);  // Use position as-is
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.0f));
 
-	shader.setMat4("projection", projection);
-	shader.setMat4("view", view);
+	shader.setMat4("projection", GetScreenProjection());
+	shader.setMat4("view", identity);
 	shader.setMat4("model", model);
 }
 
@@ -1121,9 +1354,12 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item)
 		item.particleTexture,
 		item.particleShader,
 		item.particleVAO,
-		item.quadEBO,
 		item.particles.size(),
-		item.additiveBlending);
+		item.additiveBlending,
+		glm::vec4(item.startColor.ConvertToGLM(), item.startColorAlpha),
+		glm::vec4(item.endColor.ConvertToGLM(), item.endColorAlpha),
+		item.startSize,
+		item.endSize);
 }
 
 void GraphicsManager::RenderParticles(const ParticleRenderItem& item)
@@ -1133,9 +1369,12 @@ void GraphicsManager::RenderParticles(const ParticleRenderItem& item)
 		item.particleTexture,
 		item.particleShader,
 		item.particleVAO,
-		item.quadEBO,
 		item.particleCount,
-		item.additiveBlending);
+		item.additiveBlending,
+		item.startColor,
+		item.endColor,
+		item.startSize,
+		item.endSize);
 }
 
 void GraphicsManager::RenderParticleInstances(
@@ -1143,48 +1382,55 @@ void GraphicsManager::RenderParticleInstances(
 	const std::shared_ptr<Texture>& texture,
 	const std::shared_ptr<Shader>& shader,
 	VAO* vao,
-	EBO* ebo,
 	std::size_t particleCount,
-	bool additiveBlending)
+	bool additiveBlending,
+	const glm::vec4& startColor,
+	const glm::vec4& endColor,
+	float startSize,
+	float endSize)
 {
-#ifdef ANDROID
+#if defined(ANDROID) && defined(GAM300_GL_VALIDATION)
 	assert(eglGetCurrentContext() != EGL_NO_CONTEXT);
 #endif
 	if (!renderState.isVisible || particleCount == 0 || !shader || !vao) return;
-	glDisable(GL_CULL_FACE);
-	glEnable(GL_BLEND);
+	SetDepthTestCached(true);
+	SetCullFaceCached(false);
+	SetBlendCached(true);
 	if (additiveBlending)
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
+		SetBlendFunctionCached(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
 	else
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
-	glDepthMask(GL_FALSE);
+		SetBlendFunctionCached(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
+	SetDepthWriteCached(false);
 
 	shader->Activate();
 
 	// Setup camera matrices ONCE for all particles
 	if (currentCamera) {
 		if (!shader->UsesCameraBlock()) {
-			glm::mat4 view = currentCamera->GetViewMatrix();
-			shader->setMat4("view", view);
-
-			glm::mat4 projection = glm::perspective(
-				glm::radians(currentCamera->Zoom),
-				currentFrameViewport.aspectRatio,
-				0.1f, m_farPlane
-			);
-			shader->setMat4("projection", projection);
+			shader->setMat4("view", m_frameView);
+			shader->setMat4("projection", m_frameProjection);
 		}
 
 		// Send camera vectors for billboard calculations in vertex shader
-		glm::vec3 cameraRight = glm::normalize(glm::cross(currentCamera->Front, currentCamera->Up));
-		shader->setVec3("cameraRight", cameraRight);
-		shader->setVec3("cameraUp", currentCamera->Up);
+		shader->setVec3("cameraRight", m_frameCameraRight);
+		shader->setVec3("cameraUp", m_frameCameraUp);
 	}
+
+#ifdef ANDROID
+	shader->setVec4("particleStartColor", startColor);
+	shader->setVec4("particleEndColor", endColor);
+	shader->setFloat("particleStartSize", startSize);
+	shader->setFloat("particleEndSize", endSize);
+#else
+	(void)startColor;
+	(void)endColor;
+	(void)startSize;
+	(void)endSize;
+#endif
 
 	// Bind texture if available
 	if (texture) {
-		glActiveTexture(GL_TEXTURE0);
-		texture->Bind(0);
+		BindTexture2DUnit0Cached(texture->ID);
 		shader->setInt("particleTexture", 0);
 	}
 
@@ -1196,23 +1442,22 @@ void GraphicsManager::RenderParticleInstances(
 
 	// Draw ALL particles with ONE instanced draw call using indices
 	vao->Bind();
-	if (ebo) ebo->Bind();  // explicitly ensure EBO is bound
-#ifndef NDEBUG
+#if defined(GAM300_GL_VALIDATION) || (!defined(NDEBUG) && !defined(ANDROID))
 	GLint eboBinding = 0;
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eboBinding);
 	assert(eboBinding != 0 && "VAO has no EBO bound after setup");
 #endif
 
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(particleCount));
-	vao->Unbind();
-	//item.quadEBO->Unbind();
-
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
-	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
+{
+	const SpriteRenderItem snapshot(item);
+	RenderSprite(snapshot);
+}
+
+void GraphicsManager::RenderSprite(const SpriteRenderItem& item)
 {
 	if (!item.isVisible || !item.texture || !item.shader || !item.spriteVAO)
 	{
@@ -1222,18 +1467,18 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	// Configure depth testing based on 2D/3D mode
 	if (item.is3D) {
 		// 3D sprite: enable depth testing
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
+		SetDepthTestCached(true);
 	}
 	else {
 		// 2D sprite: disable depth testing so render order determines what's on top
-		glDisable(GL_DEPTH_TEST);
+		SetDepthTestCached(false);
 	}
+	SetDepthWriteCached(true);
 
 	// Enable blending for sprite transparency
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_CULL_FACE);
+	SetBlendCached(true);
+	SetBlendFunctionCached(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	SetCullFaceCached(false);
 	// Activate shader
 	item.shader->Activate();
 
@@ -1254,10 +1499,12 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	}
 
 	// Per-entity bloom emission
+#ifndef ANDROID
 	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
 	if (item.bloomIntensity > 0.0f) {
 		item.shader->setVec3("bloomColor", item.bloomColor);
 	}
+#endif
 
 	// Set up matrices based on rendering mode
 	if (item.is3D)
@@ -1330,14 +1577,13 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	}
 
 	// Bind texture
-	glActiveTexture(GL_TEXTURE0);
-	item.texture->Bind(0);
+	BindTexture2DUnit0Cached(item.texture->ID);
 	item.shader->setInt("spriteTexture", 0);
 
 	item.spriteVAO->Bind();
 	//item.spriteEBO->Bind();
 
-#ifndef NDEBUG
+#if defined(GAM300_GL_VALIDATION) || (!defined(NDEBUG) && !defined(ANDROID))
 	GLint ebo = 0;
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &ebo);
 	if (ebo == 0) {
@@ -1347,31 +1593,10 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 
 	// The SpriteSystem should have already bound the VAO, so just draw
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	item.spriteVAO->Unbind();
-	item.spriteEBO->Unbind();
-	// Unbind texture
-	item.texture->Unbind(0);
-
-	// Disable blending
-	glDisable(GL_BLEND);
-	// Restore depth testing for 3D objects
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }
 
 void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position, const glm::vec3& scale, float rotation)
 {
-	// Use target game resolution for 2D projection
-	// This ensures Scene Panel and Game Panel show sprites at consistent positions
-	int gameWidth = targetGameWidth;
-	int gameHeight = targetGameHeight;
-
-	// Use screen-space projection where (0,0) is at bottom-left corner
-	// This matches traditional 2D game coordinate systems
-	glm::mat4 projection = glm::ortho(0.0f, (float)gameWidth, 0.0f, (float)gameHeight);
-
 	// Create model matrix
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, position);
@@ -1388,9 +1613,27 @@ void GraphicsManager::Setup2DSpriteMatrices(Shader& shader, const glm::vec3& pos
 	// Center the sprite AFTER scaling: the quad is 0,0 to 1,1, so offset by -0.5,-0.5
 	// This makes the position represent the center instead of the corner
 	model = glm::translate(model, glm::vec3(-0.5f, -0.5f, 0.0f));
-	shader.setMat4("projection", projection);
+	static const glm::mat4 identity(1.0f);
+	shader.setMat4("projection", GetScreenProjection());
 	shader.setMat4("model", model);
-	shader.setMat4("view", glm::mat4(1.0f)); // Identity matrix for 2D
+	shader.setMat4("view", identity);
+}
+
+const glm::mat4& GraphicsManager::GetScreenProjection()
+{
+	if (m_screenProjectionWidth != targetGameWidth ||
+		m_screenProjectionHeight != targetGameHeight) {
+		const int width = std::max(targetGameWidth, 1);
+		const int height = std::max(targetGameHeight, 1);
+		m_screenProjection = glm::ortho(
+			0.0f,
+			static_cast<float>(width),
+			0.0f,
+			static_cast<float>(height));
+		m_screenProjectionWidth = targetGameWidth;
+		m_screenProjectionHeight = targetGameHeight;
+	}
+	return m_screenProjection;
 }
 
 void GraphicsManager::Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix)
@@ -1428,27 +1671,145 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 
 void GraphicsManager::InitCameraUBO()
 {
-	glGenBuffers(1, &m_cameraUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBOData), nullptr, GL_DYNAMIC_DRAW);
+	m_hasLastCameraUBOData = false;
+	if (m_cameraUBO == 0) {
+		glGenBuffers(1, &m_cameraUBO);
+		glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBOData), nullptr, GL_DYNAMIC_DRAW);
+	}
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_cameraUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void GraphicsManager::UploadCameraUBO(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& camPos)
 {
-	CameraUBOData data;
+	CameraUBOData data{};
 	data.view = view;
 	data.projection = projection;
 	data.cameraPos = camPos;
+	data.viewProjection = projection * view;
+	if (m_hasLastCameraUBOData &&
+		std::memcmp(&data, &m_lastCameraUBOData, sizeof(data)) == 0) {
+		return;
+	}
+
 	glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBOData), &data);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	m_lastCameraUBOData = data;
+	m_hasLastCameraUBOData = true;
 }
+
+#ifdef ANDROID
+void GraphicsManager::InitBonePaletteUBO()
+{
+	if (m_bonePaletteUBO == 0) {
+		glGenBuffers(1, &m_bonePaletteUBO);
+	}
+
+	GLint alignment = 1;
+	glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
+	const std::size_t safeAlignment =
+		static_cast<std::size_t>(std::max(alignment, 1));
+	m_bonePaletteStride =
+		((kBonePaletteBytes + safeAlignment - 1) / safeAlignment) *
+		safeAlignment;
+}
+
+void GraphicsManager::PrepareBonePalettes()
+{
+	m_bonePaletteScratch.clear();
+	m_bonePaletteUploadSize = 0;
+	m_boundBonePaletteOffset = std::numeric_limits<std::size_t>::max();
+
+	if (m_bonePaletteUBO == 0) {
+		return;
+	}
+
+	for (IRenderComponent* renderItem : renderQueue) {
+		if (!renderItem ||
+			renderItem->GetRenderKind() != RenderComponentKind::Model) {
+			continue;
+		}
+
+		auto& modelItem = static_cast<ModelRenderComponent&>(*renderItem);
+		modelItem.bonePaletteOffset =
+			std::numeric_limits<std::size_t>::max();
+		if (!modelItem.model || !modelItem.shader ||
+			!modelItem.shader->UsesBonesBlock() ||
+			modelItem.model->mBoneInfoMap.empty()) {
+			continue;
+		}
+
+		const auto& matrices = modelItem.GetRenderBoneMatrices();
+		if (matrices.empty()) {
+			continue;
+		}
+
+		const std::size_t offset = m_bonePaletteScratch.size();
+		m_bonePaletteScratch.resize(offset + m_bonePaletteStride);
+		const std::size_t matrixCount = std::min(
+			matrices.size(), kBonePaletteMatrixCount);
+		std::uint8_t* palette =
+			m_bonePaletteScratch.data() + offset;
+		for (std::size_t matrixIndex = 0;
+			 matrixIndex < matrixCount;
+			 ++matrixIndex) {
+			const glm::mat4& matrix = matrices[matrixIndex];
+			const glm::vec4 affineColumns[kBonePaletteColumnsPerMatrix] = {
+				glm::vec4(glm::vec3(matrix[0]), matrix[3][0]),
+				glm::vec4(glm::vec3(matrix[1]), matrix[3][1]),
+				glm::vec4(glm::vec3(matrix[2]), matrix[3][2])
+			};
+			std::memcpy(
+				palette + matrixIndex * sizeof(affineColumns),
+				affineColumns,
+				sizeof(affineColumns));
+		}
+		modelItem.bonePaletteOffset = offset;
+	}
+
+	m_bonePaletteUploadSize = m_bonePaletteScratch.size();
+	if (m_bonePaletteUploadSize == 0) {
+		return;
+	}
+
+	glBindBuffer(GL_UNIFORM_BUFFER, m_bonePaletteUBO);
+	// Re-specifying the streaming store orphans the previous frame without a
+	// synchronization readback, then uploads every visible palette in one call.
+	glBufferData(
+		GL_UNIFORM_BUFFER,
+		static_cast<GLsizeiptr>(m_bonePaletteUploadSize),
+		m_bonePaletteScratch.data(),
+		GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void GraphicsManager::BindBonePalette(const ModelRenderComponent& item)
+{
+	if (!item.shader || !item.shader->UsesBonesBlock() ||
+		item.bonePaletteOffset == std::numeric_limits<std::size_t>::max() ||
+		item.bonePaletteOffset + kBonePaletteBytes >
+			m_bonePaletteUploadSize) {
+		return;
+	}
+	if (m_boundBonePaletteOffset == item.bonePaletteOffset) {
+		return;
+	}
+
+	glBindBufferRange(
+		GL_UNIFORM_BUFFER,
+		2,
+		m_bonePaletteUBO,
+		static_cast<GLintptr>(item.bonePaletteOffset),
+		static_cast<GLsizeiptr>(kBonePaletteBytes));
+	m_boundBonePaletteOffset = item.bonePaletteOffset;
+}
+#endif
 
 void GraphicsManager::InitializeSkybox()
 {
-	float skyboxVertices[] = {
+	static constexpr float skyboxVertices[] = {
 		-1.0f,  1.0f, -1.0f,
 		-1.0f, -1.0f, -1.0f,
 		 1.0f, -1.0f, -1.0f,
@@ -1492,17 +1853,30 @@ void GraphicsManager::InitializeSkybox()
 		 1.0f, -1.0f,  1.0f
 	};
 
-	glGenVertexArrays(1, &skyboxVAO);
-	glGenBuffers(1, &skyboxVBO);
-	glBindVertexArray(skyboxVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glBindVertexArray(0);
+	if (skyboxVAO == 0 || skyboxVBO == 0) {
+		if (skyboxVAO != 0) {
+			glDeleteVertexArrays(1, &skyboxVAO);
+			skyboxVAO = 0;
+		}
+		if (skyboxVBO != 0) {
+			glDeleteBuffers(1, &skyboxVBO);
+			skyboxVBO = 0;
+		}
 
-	std::string skyboxShaderPath = ResourceManager::GetPlatformShaderPath("skybox");
-	skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
+		glGenVertexArrays(1, &skyboxVAO);
+		glGenBuffers(1, &skyboxVBO);
+		VAO::BindID(skyboxVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		VAO::BindID(0);
+	}
+
+	if (!skyboxShader) {
+		std::string skyboxShaderPath = ResourceManager::GetPlatformShaderPath("skybox");
+		skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
+	}
 	if (!skyboxShader) {
 		//std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
 	} else {
@@ -1537,7 +1911,7 @@ void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& pr
 	for (const auto& renderItem : renderQueue)
 	{
 		if (!renderItem || renderItem->GetRenderKind() != RenderComponentKind::Model) continue;
-		const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem.get());
+		const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem);
 		if (!modelItem->isVisible || !modelItem->model) continue;
 
 		// Skip transparent / fading objects — they need correct alpha blending, not prepass depth
@@ -1567,7 +1941,7 @@ void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& pr
 		m_depthPrepassShader->setBool("isAnimated", animated);
 		if (animated && modelItem->animator)
 		{
-			const auto& transforms = modelItem->mFinalBoneMatrices;
+			const auto& transforms = modelItem->GetRenderBoneMatrices();
 			if (!transforms.empty())
 				m_depthPrepassShader->setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 		}
@@ -1624,7 +1998,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 			depthShader.setBool("isAnimated", modelComp.HasAnimation());
 			if (modelComp.HasAnimation() && modelComp.animator)
 			{
-				const auto& transforms = modelComp.mFinalBoneMatrices;
+				const auto& transforms = modelComp.GetRenderBoneMatrices();
 				if (!transforms.empty())
 					depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 			}
@@ -1636,7 +2010,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 			if (!renderItem || renderItem->GetRenderKind() != RenderComponentKind::Model)
 				continue;
 
-			const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem.get());
+			const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem);
 			if (!modelItem->isVisible || !modelItem->model)
 				continue;
 
@@ -1658,7 +2032,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 			depthShader.setBool("isAnimated", modelItem->HasAnimation());
 			if (modelItem->HasAnimation() && modelItem->animator)
 			{
-				const auto& transforms = modelItem->mFinalBoneMatrices;
+				const auto& transforms = modelItem->GetRenderBoneMatrices();
 				if (!transforms.empty())
 					depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 			}
@@ -1679,7 +2053,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 			if (!renderItem || renderItem->GetRenderKind() != RenderComponentKind::Model)
 				continue;
 
-			const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem.get());
+			const ModelRenderComponent* modelItem = static_cast<const ModelRenderComponent*>(renderItem);
 			if (!modelItem->isVisible || !modelItem->model)
 				continue;
 
@@ -1689,7 +2063,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 			depthShader.setBool("isAnimated", modelItem->HasAnimation());
 			if (modelItem->HasAnimation() && modelItem->animator)
 			{
-				const auto& transforms = modelItem->mFinalBoneMatrices;
+				const auto& transforms = modelItem->GetRenderBoneMatrices();
 				if (!transforms.empty())
 					depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 			}
@@ -1780,12 +2154,12 @@ void GraphicsManager::RenderSkybox()
 		skyboxShader->setMat4("projection", projection);
 	}
 
-	glBindVertexArray(skyboxVAO);
+	VAO::BindID(skyboxVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cameraComp.skyboxTexture->ID);
 	skyboxShader->setInt("skyboxTexture", 0);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
+	VAO::BindID(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glDepthMask(GL_TRUE);
@@ -1831,15 +2205,9 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 
 	m_sortingStats.totalObjects++;
 
-	// Frustum culling (your existing code)
 	glm::mat4 modelMatrix = item.transform.ConvertToGLM();
-
-	if (frustumCullingEnabled && currentCamera) {
-		AABB worldBBox = item.model->GetBoundingBox().Transform(modelMatrix);
-		if (!viewFrustum.IsBoxVisible(worldBBox, 0.5f)) {
-			return;
-		}
-	}
+	// ModelSystem already culls before queue submission. Repeating the transformed
+	// AABB test here doubled CPU culling work for every non-instanced model.
 
 	// =========================================================================
 	// OPTIMIZED STATE MANAGEMENT - only switch if different
@@ -1880,8 +2248,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	else {
 		// Same shader - just update model matrix
 		shader->setMat4("model", modelMatrix);
-		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader->setMat3("normalMatrixCPU", normalMatrix);
+		shader->setMat3("normalMatrixCPU", ComputeNormalMatrix(modelMatrix));
 	}
 
 	// Per-entity bloom emission (must set per-model to avoid stale values)
@@ -1907,6 +2274,11 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	// Per-entity brightness boost (e.g. player stands out against environment)
 	shader->setFloat("brightnessBoost", item.brightnessBoost);
 
+#ifdef __ANDROID__
+	shader->setInt(
+		"u_lightMask", static_cast<int>(item.lightMask));
+#endif
+
 	// Draw the model
 	{
 		PROFILE_SCOPED("GM::ModelDraw");
@@ -1916,6 +2288,12 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 			glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
 		}
 
+#ifdef ANDROID
+		if (!item.model->mBoneInfoMap.empty() &&
+			!item.GetRenderBoneMatrices().empty()) {
+			BindBonePalette(item);
+		}
+#endif
 		item.model->DrawFast(*shader, item.material, item, m_currentMaterial, item.animator);
 
 		if (item.depthOffset)

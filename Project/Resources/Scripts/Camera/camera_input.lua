@@ -11,33 +11,20 @@ local M = {}
 -- Read mouse/touch delta and update self._yaw / self._pitch.
 -- Also publishes camera_yaw to event_bus and _G.CAMERA_YAW.
 function M.updateMouseLook(self, dt)
-    if not (Input and Input.GetAxis) then
-        --print("[CameraFollow] ERROR: Input.GetAxis not available")
+    if not (Input and Input.GetAxisXY) then
+        --print("[CameraFollow] ERROR: Input.GetAxisXY not available")
         return
     end
 
-    local lookAxis = Input.GetAxis("Look")
-    if not lookAxis then
-        --print("[CameraFollow] Look axis returned nil")
-        return
-    end
+    local lookX, lookY = Input.GetAxisXY("Look")
 
-    local isAndroid      = Platform and Platform.IsAndroid and Platform.IsAndroid()
+    local isAndroid      = self._isAndroid
     local baseSensitivity = self.mouseSensitivity or 0.15
     -- Android touch coords are normalized (0-1); needs much higher sensitivity than pixel deltas
     local sensitivity    = isAndroid and 550.0 or baseSensitivity
 
-    local xoffset = lookAxis.x * sensitivity
-    local yoffset = lookAxis.y * sensitivity
-
-    -- Periodic debug log (every 30 frames when there is movement)
-    if not self._logCount then self._logCount = 0 end
-    self._logCount = self._logCount + 1
-    if self._logCount % 30 == 1 and (lookAxis.x ~= 0 or lookAxis.y ~= 0) then
-        --print("[CameraFollow] SENS=" .. sensitivity
-        --    .. " offset=(" .. xoffset .. "," .. yoffset .. ")"
-        --    .. " yaw=" .. self._yaw)
-    end
+    local xoffset = lookX * sensitivity
+    local yoffset = lookY * sensitivity
 
     local shouldLock = self.lockCameraRotation
         or (self._actionModeActive and self.actionModeLockRotation)
@@ -56,8 +43,8 @@ function M.updateMouseLook(self, dt)
             )
 
             -- Flag that the player is manually aiming so aim assist backs off
-            local mag = math.sqrt(xoffset * xoffset + yoffset * yoffset)
-            if mag > (self.chainAimManualThreshold or 0.3) then
+            local threshold = self.chainAimManualThreshold or 0.3
+            if xoffset * xoffset + yoffset * yoffset > threshold * threshold then
                 self._chainAimManualTimer = self.chainAimManualCooldown or 0.4
             end
         end

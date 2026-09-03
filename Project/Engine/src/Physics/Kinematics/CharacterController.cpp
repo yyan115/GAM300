@@ -13,6 +13,17 @@
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
 
+namespace {
+JPH::TempAllocator& GetCharacterTempAllocator()
+{
+    // CharacterVirtual releases all scratch allocations before returning.
+    // Reuse one arena per update thread instead of allocating/freeing 10 MB
+    // for every character on every frame.
+    thread_local JPH::TempAllocatorImpl allocator(10 * 1024 * 1024);
+    return allocator;
+}
+}
+
 
 //Separate initialise with ctor -> cannot guaranteed exist before that e.g components like rigidbody + collider
 CharacterController::CharacterController(JPH::PhysicsSystem* physicsSystem)
@@ -76,7 +87,14 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     settings->mMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
     settings->mPenetrationRecoverySpeed = 5.0f;  // Try 2.0-5.0 if still phasing
     settings->mPredictiveContactDistance = 0.2f;
-    settings->mMaxCollisionIterations = 10;  // More iterations = better collision
+#ifdef __ANDROID__
+    // Match Jolt's production default on mobile. The previous doubled limit
+    // made worst-case contact resolution substantially more expensive for every
+    // player/enemy controller without improving the normal single-contact case.
+    settings->mMaxCollisionIterations = 5;
+#else
+    settings->mMaxCollisionIterations = 10;
+#endif
     settings->mMaxConstraintIterations = 15;
     settings->mMinTimeRemaining = 1.0e-4f;
     settings->mCollisionTolerance = 1.0e-3f;
@@ -114,13 +132,12 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     }
 
     // Initialize the character's collision state
-    JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
     mCharacter->RefreshContacts(
         mPhysicsSystem->GetDefaultBroadPhaseLayerFilter(mCharacterLayer),
         mPhysicsSystem->GetDefaultLayerFilter(mCharacterLayer),
         {},
         {},
-        temp_allocator
+        GetCharacterTempAllocator()
     );
 
     //std::cout << "[CharacterController] Initialized with Ground State: "
@@ -155,8 +172,6 @@ void CharacterController::Update(float deltaTime)
 
     if (mJumpGraceTimer > 0.0f)
         mJumpGraceTimer -= deltaTime;
-
-    JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
 
     const JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
     const JPH::Vec3 currentVel = mCharacter->GetLinearVelocity();
@@ -228,7 +243,7 @@ void CharacterController::Update(float deltaTime)
         mPhysicsSystem->GetDefaultLayerFilter(mCharacterLayer),
         {},
         {},
-        temp_allocator
+        GetCharacterTempAllocator()
     );
 
     mVelocity = JPH::Vec3::sZero();
@@ -276,14 +291,26 @@ Vector3D CharacterController::GetPosition() const
     }
     return Vector3D(0, 0, 0);
 }
-void CharacterController::SetPosition(Transform transform)
+void CharacterController::SetPosition(const Transform& transform)
 {
+    SetPosition(
+        transform.localPosition.x,
+        transform.localPosition.y,
+        transform.localPosition.z
+    );
+}
+
+void CharacterController::SetPosition(float x, float y, float z)
+{
+    if (!mCharacter)
+        return;
+
     // Must add collider_offsetY to convert from feet position (Transform convention)
     // to capsule center (Jolt convention), same as Initialise does.
     JPH::RVec3 newPosition(
-        transform.localPosition.x,
-        transform.localPosition.y + collider_offsetY,
-        transform.localPosition.z
+        x,
+        y + collider_offsetY,
+        z
     );
 
     mCharacter->SetPosition(newPosition);

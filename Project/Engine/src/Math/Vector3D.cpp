@@ -34,98 +34,17 @@ const float& Vector3D::operator[](int i) const
 	return *(&x + i);
 }
 
-// Copy Constructor
-Vector3D::Vector3D(const Vector3D& rhs)
-{
-	x = rhs.x;
-	y = rhs.y;
-	z = rhs.z;
-}
-
-Vector3D& Vector3D::operator=(const Vector3D& rhs)
-{
-	x = rhs.x;
-	y = rhs.y;
-	z = rhs.z;
-	return *this;
-}
-
-// Overloading Operators
-Vector3D Vector3D::operator+(const Vector3D& rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
-Vector3D Vector3D::operator-(const Vector3D& rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
-Vector3D Vector3D::operator*(const Vector3D& rhs) const { return { x * rhs.x, y * rhs.y, z * rhs.z }; }
-Vector3D Vector3D::operator/(const Vector3D& rhs) const { return { x / rhs.x, y / rhs.y, z / rhs.z }; }
-
-Vector3D Vector3D::operator*(float scalar) const { return { x * scalar, y * scalar, z * scalar }; }
-Vector3D Vector3D::operator/(float scalar) const { return { x / scalar, y / scalar, z / scalar }; }
-
-Vector3D& Vector3D::operator+=(const Vector3D& rhs)
-{
-	x += rhs.x;	y += rhs.y;	z += rhs.z;	
-	return *this;
-}
-
-Vector3D& Vector3D::operator-=(const Vector3D& rhs)
-{
-	x -= rhs.x;	y -= rhs.y;	z -= rhs.z;
-	return *this;
-}
-
-Vector3D& Vector3D::operator*=(const Vector3D& rhs)
-{
-	x *= rhs.x;	y *= rhs.y;	z *= rhs.z;
-	return *this;
-}
-
-Vector3D& Vector3D::operator/=(const Vector3D& rhs)
-{
-	x /= rhs.x;	y /= rhs.y;	z /= rhs.z;
-	return *this;
-}
-
-Vector3D& Vector3D::operator*=(float scalar)
-{
-	x *= scalar;	y *= scalar;	z *= scalar;
-	return *this;
-}
-
-Vector3D& Vector3D::operator/=(float scalar)
-{
-	x /= scalar;	y /= scalar;	z /= scalar;
-	return *this;
-}
-
-
-// Comparison
-bool Vector3D::operator==(const Vector3D& rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
-bool Vector3D::operator!=(const Vector3D& rhs) const { return !(*this == rhs); }
-
-
-// Math functions
-float Vector3D::Dot(const Vector3D& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z; }
-
-Vector3D Vector3D::Cross(const Vector3D& rhs) const
-{
-	return
-	{
-		y * rhs.z - z * rhs.y,
-		rhs.x * z - x * rhs.z,
-		x * rhs.y - y * rhs.x
-	};
-}
-
-float Vector3D::LengthSq() const { return x * x + y * y + z * z; }
 float Vector3D::Length() const { return std::sqrt(LengthSq()); }
 
 Vector3D Vector3D::Normalized() const 
 {
-	float len = Length();
+	float len = std::sqrt(LengthSq());
 	return (len > 0.0f) ? (*this / len) : Vector3D::Zero();
 }
 
 Vector3D& Vector3D::Normalize() 
 {
-	float len = Length();
+	float len = std::sqrt(LengthSq());
 	if (len > 0.0f) 
 	{ 
 		x /= len; 
@@ -152,9 +71,6 @@ Vector3D Vector3D::Lerp(const Vector3D& a, const Vector3D& b, float t)
 	return a + (b - a) * t;
 }
 
-
-// ---- Scalar left ----
-Vector3D operator*(float scalar, const Vector3D& v) { return v * scalar; }
 
 // ---- Stream output ----
 std::ostream& operator<<(std::ostream& os, const Vector3D& v) {

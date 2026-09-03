@@ -6,11 +6,12 @@ layout(std140) uniform CameraBlock {
     mat4 projection;
     vec3 cameraPos;
     float _pad;
+    mat4 viewProjection;
 };
 
 uniform mat4 model;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = viewProjection * model * vec4(aPos, 1.0);
 }

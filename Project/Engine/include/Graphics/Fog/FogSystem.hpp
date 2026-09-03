@@ -10,5 +10,6 @@ public:
 
 private:
 	void InitializeFogComponent(FogVolumeComponent& fogComp);
+	std::vector<FogVolumeComponent> renderSnapshots;
 	bool fogSystemInitialised = false;
 };

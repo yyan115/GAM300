@@ -83,8 +83,8 @@ return Component {
 
         elseif phase == "show_1" then
             local moved = false
-            local axis = Input.GetAxis("Movement")
-            if axis and (math.abs(axis.x) > 0.1 or math.abs(axis.y) > 0.1) then
+            local axisX, axisY = Input.GetAxisXY("Movement")
+            if math.abs(axisX) > 0.1 or math.abs(axisY) > 0.1 then
                 moved = true
             end
             if Keyboard.IsKeyHeld(Keyboard.Key.Space) then

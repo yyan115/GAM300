@@ -36,13 +36,17 @@ public:
 	// Deletes a texture
 	void Delete();
 
-	std::string GetType();
+	const std::string& GetType() const;
+	bool HasAlphaChannel() const noexcept { return m_hasAlphaChannel; }
 
 	// Asset browser preview thumbnail (for normal maps)
 	void ReconstructBC5Preview(
 		const uint8_t* rgbaTexData, int texWidth, int texHeight);
 
 private:
+	// Conservative until a resource has been decoded. Materials use this to
+	// select an alpha-test shader only when the diffuse texture can contain alpha.
+	bool m_hasAlphaChannel = true;
 	//std::string type;
 	//bool flipUVs;
 	//bool generateMipmaps;

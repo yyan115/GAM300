@@ -44,31 +44,34 @@ void BloomEffect::Shutdown()
 
 void BloomEffect::CreateFBOs(int w, int h)
 {
-    if (extractFBO != 0)
+    if (extractFBO != 0 || activeMipLevels != 0)
         DeleteFBOs();
 
     fboWidth = w;
     fboHeight = h;
 
-    // Brightness extraction FBO (fallback when no MRT emission texture)
-    // Android uses R11F_G11F_B10F (4 bytes/pixel) vs RGBA16F (8 bytes/pixel) to halve bandwidth.
-    glGenFramebuffers(1, &extractFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, extractFBO);
-    glGenTextures(1, &extractTexture);
-    glBindTexture(GL_TEXTURE_2D, extractTexture);
+    // The normal renderer supplies an MRT emission texture, so only allocate
+    // this full-resolution fallback when a caller actually needs extraction.
+    if (bloomEmissionTexture == 0)
+    {
+        glGenFramebuffers(1, &extractFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, extractFBO);
+        glGenTextures(1, &extractTexture);
+        glBindTexture(GL_TEXTURE_2D, extractTexture);
 #ifdef __ANDROID__
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
 #else
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
 #endif
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, extractTexture, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, extractTexture, 0);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[BloomEffect] Extract FBO not complete!\n");
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[BloomEffect] Extract FBO not complete!\n");
+    }
 
     // Create mip chain at progressively halved resolutions.
     // Android starts at w/4 (quarter res) instead of w/2 to save 75% bandwidth on
@@ -133,17 +136,21 @@ void BloomEffect::DeleteFBOs()
         mip.height = 0;
     }
     activeMipLevels = 0;
+    resolvedBloomTexture = 0;
     fboWidth = 0;
     fboHeight = 0;
 }
 
 void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int width, int height)
 {
+    resolvedBloomTexture = 0;
     if (!shader || !enabled || intensity < 0.01f)
         return;
 
-    // Create or resize FBOs if needed
-    if (extractFBO == 0 || fboWidth != width || fboHeight != height)
+    // The extraction FBO is optional when the renderer supplies MRT emission.
+    const bool needsExtractFBO = bloomEmissionTexture == 0;
+    if (activeMipLevels == 0 || fboWidth != width || fboHeight != height ||
+        (needsExtractFBO && extractFBO == 0))
         CreateFBOs(width, height);
 
     if (activeMipLevels == 0)
@@ -152,6 +159,7 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
     glDisable(GL_DEPTH_TEST);
     shader->Activate();
     shader->setInt("inputTexture", 0);
+    glActiveTexture(GL_TEXTURE0);
 
     // Determine bloom source texture
     unsigned int bloomSource;
@@ -165,13 +173,11 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
         // Fallback: threshold extraction from HDR buffer
         glBindFramebuffer(GL_FRAMEBUFFER, extractFBO);
         glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         shader->setInt("passType", 0); // extract
         shader->setFloat("threshold", threshold);
         shader->setFloat("intensity", intensity);
 
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inputTexture);
         PostProcessingManager::GetInstance().RenderScreenQuad();
 
@@ -192,12 +198,10 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
 
         glBindFramebuffer(GL_FRAMEBUFFER, mip.fbo);
         glViewport(0, 0, mip.width, mip.height);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         shader->setInt("passType", 1); // downsample
         shader->setVec2("texelSize", srcTexelW, srcTexelH);
 
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, currentInput);
         PostProcessingManager::GetInstance().RenderScreenQuad();
 
@@ -232,25 +236,30 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
             1.0f / static_cast<float>(sourceMip.width),
             1.0f / static_cast<float>(sourceMip.height));
 
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, sourceMip.texture);
         PostProcessingManager::GetInstance().RenderScreenQuad();
     }
 
     glDisable(GL_BLEND);
 
+#ifdef ANDROID
+    // Tone mapping samples this accumulated mip directly and adds it before
+    // exposure. This avoids a full render-resolution HDR framebuffer load/store
+    // and one fullscreen draw.
+    (void)outputFBO;
+    resolvedBloomTexture = mipChain[0].texture;
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_DEPTH_TEST);
+    return;
+#else
     // === COMPOSITE ===
     // Additively blend the final mip level 0 result onto the HDR framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, outputFBO);
     glViewport(0, 0, width, height);
 
-    // Only write to attachment 0 (main color) during composite
-#ifdef ANDROID
-    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers(1, drawBufs);
-#else
+    // Only write to attachment 0 (main color) during composite.
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-#endif
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE); // Additive blending
@@ -261,7 +270,6 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
         1.0f / static_cast<float>(mipChain[0].width),
         1.0f / static_cast<float>(mipChain[0].height));
 
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mipChain[0].texture);
     PostProcessingManager::GetInstance().RenderScreenQuad();
 
@@ -271,4 +279,5 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_DEPTH_TEST);
+#endif
 }

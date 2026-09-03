@@ -12,16 +12,29 @@ using Entity = unsigned int;
 class CharacterVsCharacterCollisionFiltered : public JPH::CharacterVsCharacterCollision
 {
 public:
-    void Add(JPH::CharacterVirtual* inCharacter) { mCharacters.push_back(inCharacter); }
+    void Add(JPH::CharacterVirtual* inCharacter);
     void Remove(const JPH::CharacterVirtual* inCharacter);
 
     void SetImmovable(const JPH::CharacterVirtual* inCharacter, bool immovable);
     bool IsImmovable(const JPH::CharacterVirtual* inCharacter) const;
+    void RefreshBounds(const JPH::CharacterVirtual* inCharacter);
+    void RefreshAllBounds();
 
     virtual void CollideCharacter(const JPH::CharacterVirtual* inCharacter, JPH::RMat44Arg inCenterOfMassTransform, const JPH::CollideShapeSettings& inCollideShapeSettings, JPH::RVec3Arg inBaseOffset, JPH::CollideShapeCollector& ioCollector) const override;
     virtual void CastCharacter(const JPH::CharacterVirtual* inCharacter, JPH::RMat44Arg inCenterOfMassTransform, JPH::Vec3Arg inDirection, const JPH::ShapeCastSettings& inShapeCastSettings, JPH::RVec3Arg inBaseOffset, JPH::CastShapeCollector& ioCollector) const override;
 
-    JPH::Array<JPH::CharacterVirtual*> mCharacters;
+private:
+    struct CharacterEntry {
+        JPH::CharacterVirtual* character = nullptr;
+        JPH::RVec3 worldBoundsMin = JPH::RVec3::sZero();
+        JPH::RVec3 worldBoundsMax = JPH::RVec3::sZero();
+        bool immovable = false;
+        bool boundsValid = false;
+    };
+
+    static void RefreshBounds(CharacterEntry& entry);
+
+    JPH::Array<CharacterEntry> mCharacters;
     std::unordered_set<const JPH::CharacterVirtual*> mImmovableCharacters;
 };
 

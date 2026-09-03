@@ -56,9 +56,7 @@ function M:Update(dt)
     if not self._innerTransform then return end
 
     -- Get movement axis (returns -1 to 1 on Android when joystick is touched)
-    local axis = Input.GetAxis("Movement")
-    local axisX = axis and axis.x or 0
-    local axisY = axis and axis.y or 0
+    local axisX, axisY = Input.GetAxisXY("Movement")
 
     -- Check if joystick is being used (any non-zero input)
     local isActive = (axisX ~= 0 or axisY ~= 0) or Input.IsActionHeld("Movement")

@@ -66,6 +66,12 @@ struct RigidBodyComponent {
 	uint32_t collider_seen_version = 0; // last applied Collider::version
 	JPH::BodyID id = JPH::BodyID();
 
+	// Runtime mirror of state already applied to Jolt. These fields prevent
+	// lock-heavy body queries and redundant property writes every fixed step.
+	bool physicsWorldAdded = false;
+	float appliedGravityFactor = 1.0f;
+	bool appliedIsTrigger = false;
+
 	RigidBodyComponent() = default;
 	~RigidBodyComponent() = default;
 

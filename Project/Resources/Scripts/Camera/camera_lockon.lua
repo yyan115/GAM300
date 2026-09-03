@@ -44,17 +44,15 @@ local function hasLineOfSight(self, ex, ey, ez)
     -- Prefer RaycastFull (returns bodyId so we can tell if we hit the enemy
     -- itself rather than a wall), fall back to basic Raycast.
     if Physics.RaycastFull then
-        local ok, hit, hitDist = pcall(function()
-            return Physics.RaycastFull(ox, oy, oz, ndx, ndy, ndz, dist)
-        end)
+        local ok, hit, hitDist = pcall(
+            Physics.RaycastFull, ox, oy, oz, ndx, ndy, ndz, dist)
         if ok and hit and hitDist and hitDist > 0 and hitDist < dist - 0.3 then
             return false -- something between player and enemy
         end
         return true
     elseif Physics.Raycast then
-        local ok, hitDist = pcall(function()
-            return Physics.Raycast(ox, oy, oz, ndx, ndy, ndz, dist)
-        end)
+        local ok, hitDist = pcall(
+            Physics.Raycast, ox, oy, oz, ndx, ndy, ndz, dist)
         if ok and hitDist and hitDist > 0 and hitDist < dist - 0.3 then
             return false
         end
@@ -88,18 +86,10 @@ function M.init(self)
             -- Don't activate during chain aim or cinematics
             if self._chainAiming or self._cinematicActive then return end
             -- Verify the hit entity is actually an enemy (not a wall/prop/ground)
-            if Engine and Engine.FindEntitiesWithScript then
+            if Engine and Engine.EntityHasScript then
                 local isEnemy = false
                 for _, scriptName in ipairs(self.enemyComponents or {}) do
-                    local entities = Engine.FindEntitiesWithScript(scriptName)
-                    if entities then
-                        for i = 1, #entities do
-                            if entities[i] == data.entityId then
-                                isEnemy = true
-                                break
-                            end
-                        end
-                    end
+                    isEnemy = Engine.EntityHasScript(data.entityId, scriptName)
                     if isEnemy then break end
                 end
                 if not isEnemy then return end
@@ -110,8 +100,8 @@ function M.init(self)
                 if not ex then return end
                 local dx = ex - self._targetPos.x
                 local dz = ez - self._targetPos.z
-                local dist = math.sqrt(dx * dx + dz * dz)
-                if dist > (self.lockOnBreakDistance or 15.0) then return end
+                local breakDistance = self.lockOnBreakDistance or 15.0
+                if dx * dx + dz * dz > breakDistance * breakDistance then return end
                 if not hasLineOfSight(self, ex, ey, ez) then return end
             end
             self._lockonEntityId     = data.entityId
@@ -137,14 +127,12 @@ function M.update(self, dt)
 
     -- Read the mouse axis — if the player moves the mouse beyond a small
     -- dead-zone, break the lock and let normal mouse look resume next frame.
-    if Input and Input.GetAxis then
-        local lookAxis = Input.GetAxis("Look")
-        if lookAxis then
-            local mag = math.sqrt(lookAxis.x * lookAxis.x + lookAxis.y * lookAxis.y)
-            if mag > (self.lockOnMouseThreshold or 2.0) then
-                M.breakLock(self)
-                return false
-            end
+    if Input and Input.GetAxisXY then
+        local lookX, lookY = Input.GetAxisXY("Look")
+        local threshold = self.lockOnMouseThreshold or 2.0
+        if lookX * lookX + lookY * lookY > threshold * threshold then
+            M.breakLock(self)
+            return false
         end
     end
 
@@ -162,8 +150,8 @@ function M.update(self, dt)
     -- Break if the player is too far from the enemy
     local dx = ex - self._targetPos.x
     local dz = ez - self._targetPos.z
-    local dist = math.sqrt(dx * dx + dz * dz)
-    if dist > (self.lockOnBreakDistance or 15.0) then
+    local breakDistance = self.lockOnBreakDistance or 15.0
+    if dx * dx + dz * dz > breakDistance * breakDistance then
         M.breakLock(self)
         return false
     end

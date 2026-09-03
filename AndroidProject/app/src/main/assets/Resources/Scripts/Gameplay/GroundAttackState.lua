@@ -51,6 +51,7 @@ local function interruptOut(ai)
 end
 
 function AttackState:Enter(ai)
+    stopCC(ai)
     ai._currentAttackToken = ai:BeginAttackWindow()
 
     ai._animator:SetBool("PlayerInAttackRange", true)
@@ -92,14 +93,18 @@ function AttackState:Update(ai, dt)
     if dtSec <= 0 then return end
     if dtSec > 0.05 then dtSec = 0.05 end
 
-    ai:FacePlayer()
-    stopCC(ai)
+    local d2, px, pz, ex, ez = ai:GetPlayerDistanceSq()
+    ai:FacePlayer(px, pz, ex, ez)
 
     -- interrupted by hurt / hook / knockup / invalid token
     if not ai:IsAttackWindowValid(ai._currentAttackToken) then
         interruptOut(ai)
         return
     end
+
+    -- Neither actor changes XZ until the later physics phase, so all attack
+    -- gates in this update can share one bridge query.
+    local attackR, meleeR, diseng = ai:GetRanges()
 
     -- Recovery phase
     if ai._attackRecovering then
@@ -111,9 +116,6 @@ function AttackState:Update(ai, dt)
         if ai._attackRecoveryT >= recoveryDur then
             ai._attackRecovering = false
             ai._attackRecoveryT  = 0
-
-            local attackR, meleeR, diseng = ai:GetRanges()
-            local d2 = ai:GetPlayerDistanceSq()
 
             if ai.IsMelee then
                 if d2 > (diseng * diseng) then
@@ -138,9 +140,6 @@ function AttackState:Update(ai, dt)
     if ai._attackCommitted then
         ai._attackCommitTimer = ai._attackCommitTimer + dtSec
     end
-
-    local attackR, meleeR, diseng = ai:GetRanges()
-    local d2 = ai:GetPlayerDistanceSq()
 
     if ai.IsMelee then
         if (not ai._attackCommitted) and (not ai.meleeAnimTriggered) and d2 > (diseng * diseng) then
@@ -187,11 +186,8 @@ function AttackState:Update(ai, dt)
             end
 
             -- Range check before committing to the swing
-            local d2check1 = ai:GetPlayerDistanceSq()
-            local _, meleeRcheck1, diseng1 = ai:GetRanges()
-            
-            if d2check1 > (meleeRcheck1 * meleeRcheck1) then
-                if d2check1 > (diseng1 * diseng1) then
+            if d2 > (meleeR * meleeR) then
+                if d2 > (diseng * diseng) then
                     ai.fsm:Change("Patrol", ai.states.Patrol)
                 else
                     ai.fsm:Change("Chase", ai.states.Chase)
@@ -220,9 +216,6 @@ function AttackState:Update(ai, dt)
 
             ai._damageDealt = true
             
-            local d2check2 = ai:GetPlayerDistanceSq()
-            local _, meleeRcheck2, _ = ai:GetRanges()
-
             -- Publish attack SFX & Visuals
             ai:_publishSFX("meleeAttack")
             if _G.event_bus then
@@ -238,7 +231,7 @@ function AttackState:Update(ai, dt)
             end
 
             -- Only deal damage if the player didn't dodge out of range during the wind-up
-            if d2check2 <= (meleeRcheck2 * meleeRcheck2) then
+            if d2 <= (meleeR * meleeR) then
                 ai:_publishSFX("meleeHit")
                 if _G.event_bus and _G.event_bus.publish then
                     local ex, _, ez = ai:GetPosition()

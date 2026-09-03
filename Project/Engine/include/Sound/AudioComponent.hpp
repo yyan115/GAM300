@@ -46,6 +46,10 @@ private:
     bool AssetLoaded{ false };
     bool WasPlayingBeforePause{ false };
     bool PlayOnAwakeTriggered{ false };
+    ChannelHandle LastPropertiesChannel{ 0 };
+    ChannelUpdate LastQueuedProperties{};
+    bool LastSpatialized{ false };
+    bool PropertiesCacheValid{ false };
 
 public:
     ENGINE_API AudioComponent();
@@ -85,7 +89,7 @@ public:
     bool HasValidClip() const;
     
     // For ECS AudioSystem integration
-    void ENGINE_API UpdateComponent();
+    void ENGINE_API UpdateComponent(const Vector3D* worldPosition = nullptr);
 
 private:
     // Internal helpers

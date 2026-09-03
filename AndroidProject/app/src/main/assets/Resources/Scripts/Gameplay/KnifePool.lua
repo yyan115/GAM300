@@ -4,10 +4,26 @@ require("extension.engine_bootstrap")
 local KnifePool = {
     knives = {},
     index = 1,
+    playerX = nil,
+    playerY = nil,
+    playerZ = nil,
+    playerPositionSub = nil,
 }
 
 function KnifePool.Register(knifeComponent)
+    if not KnifePool.playerPositionSub and _G.event_bus and _G.event_bus.subscribe then
+        KnifePool.playerPositionSub = _G.event_bus.subscribe("player_position", function(position)
+            if not position then return end
+            KnifePool.playerX = position.x or position[1]
+            KnifePool.playerY = position.y or position[2]
+            KnifePool.playerZ = position.z or position[3]
+        end)
+    end
     table.insert(KnifePool.knives, knifeComponent)
+end
+
+function KnifePool.GetPlayerPosition()
+    return KnifePool.playerX, KnifePool.playerY, KnifePool.playerZ
 end
 
 function KnifePool.Request()

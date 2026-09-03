@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <Logging.hpp>
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -14,6 +15,57 @@
 #include <Asset Manager/AssetManager.hpp>
 #include "Utilities/FileUtilities.hpp"
 
+namespace {
+#if defined(ANDROID) || defined(__ANDROID__)
+constexpr GLuint kMaterialBlockBinding = 3;
+
+enum AndroidMaterialFeature : std::uint32_t {
+	AndroidMaterialDiffuse = 1u << 0,
+	AndroidMaterialNormal = 1u << 1,
+	AndroidMaterialEmissive = 1u << 2,
+	AndroidMaterialAO = 1u << 3,
+	AndroidMaterialMetallic = 1u << 4,
+	AndroidMaterialRoughness = 1u << 5,
+	AndroidMaterialOpacity = 1u << 6,
+	AndroidMaterialPackedORM = 1u << 7,
+	AndroidMaterialDielectric = 1u << 8,
+};
+
+struct alignas(16) AndroidMaterialUBOData {
+	glm::vec4 diffuseOpacity;
+	glm::vec4 emissiveMetallic;
+	glm::vec4 roughnessTermsAO;
+	glm::vec4 uvTransform;
+	glm::uvec4 features;
+};
+static_assert(sizeof(AndroidMaterialUBOData) == 80);
+
+std::shared_ptr<Texture> LoadPackedORMTexture(
+	const std::string& resourcePath,
+	const std::string& metadataAssetPath)
+{
+	// Several materials can intentionally share one packed tuple. Keep one GL
+	// object without forcing generated textures into the GUID/meta-file cache.
+	static std::unordered_map<std::string, std::weak_ptr<Texture>> cache;
+	static std::mutex cacheMutex;
+
+	std::scoped_lock lock(cacheMutex);
+	if (auto it = cache.find(resourcePath); it != cache.end()) {
+		if (auto existing = it->second.lock()) {
+			return existing;
+		}
+	}
+
+	auto texture = std::make_shared<Texture>();
+	if (!texture->LoadResource(resourcePath, metadataAssetPath)) {
+		return nullptr;
+	}
+	cache[resourcePath] = texture;
+	return texture;
+}
+#endif
+} // namespace
+
 Material::Material() : m_name("DefaultMaterial") {
 }
 
@@ -24,6 +76,23 @@ Material::Material(std::shared_ptr<AssetMeta> metaData) {
 	metaData;
 }
 
+Material::~Material()
+{
+#if defined(ANDROID) || defined(__ANDROID__)
+	if (m_androidMaterialUBO != 0) {
+		glDeleteBuffers(1, &m_androidMaterialUBO);
+		m_androidMaterialUBO = 0;
+	}
+#endif
+}
+
+void Material::MarkAndroidMaterialDataDirty() noexcept
+{
+#if defined(ANDROID) || defined(__ANDROID__)
+	m_androidMaterialDataDirty = true;
+#endif
+}
+
 void Material::SetAmbient(const glm::vec3 ambient)
 {
 	m_ambient = ambient;
@@ -32,6 +101,7 @@ void Material::SetAmbient(const glm::vec3 ambient)
 void Material::SetDiffuse(const glm::vec3& diffuse)
 {
 	m_diffuse = diffuse;
+	MarkAndroidMaterialDataDirty();
 }
 
 void Material::SetSpecular(const glm::vec3& specular)
@@ -42,6 +112,7 @@ void Material::SetSpecular(const glm::vec3& specular)
 void Material::SetEmissive(const glm::vec3& emissive)
 {
 	m_emissive = emissive;
+	MarkAndroidMaterialDataDirty();
 }
 
 void Material::SetShininess(float shininess)
@@ -52,21 +123,25 @@ void Material::SetShininess(float shininess)
 void Material::SetOpacity(float opacity)
 {
 	m_opacity = glm::clamp(opacity, 0.f, 1.f);
+	MarkAndroidMaterialDataDirty();
 }
 
 void Material::SetMetallic(float metallic)
 {
 	m_metallic = glm::clamp(metallic, 0.f, 1.f);
+	MarkAndroidMaterialDataDirty();
 }
 
 void Material::SetRoughness(float roughness)
 {
 	m_roughness = glm::clamp(roughness, 0.f, 1.f);
+	MarkAndroidMaterialDataDirty();
 }
 
 void Material::SetAO(float ao)
 {
 	m_ao = glm::clamp(ao, 0.f, 1.f);
+	MarkAndroidMaterialDataDirty();
 }
 
 void Material::SetTexture(TextureType type, std::unique_ptr<TextureInfo> textureInfo)
@@ -74,6 +149,8 @@ void Material::SetTexture(TextureType type, std::unique_ptr<TextureInfo> texture
 	if (textureInfo)
 	{
 		m_textureInfo[type] = std::move(textureInfo);
+		m_textureMask |= TextureTypeMask(type);
+		MarkAndroidMaterialDataDirty();
 	}
 }
 
@@ -96,12 +173,27 @@ const std::unordered_map<Material::TextureType, std::unique_ptr<TextureInfo>>& M
 
 bool Material::HasTexture(TextureType type) const
 {
-	return m_textureInfo.find(type) != m_textureInfo.end();
+	return (m_textureMask & TextureTypeMask(type)) != 0;
+}
+
+bool Material::RequiresDiffuseAlphaTest() const noexcept
+{
+	auto it = m_textureInfo.find(TextureType::DIFFUSE);
+	if (it == m_textureInfo.end() || !it->second) {
+		return false;
+	}
+
+	// An unloaded diffuse record is conservatively alpha-tested. BindTextures
+	// resolves it before ModelSystem chooses the Android shader permutation.
+	return !it->second->texture || it->second->texture->HasAlphaChannel();
 }
 
 void Material::RemoveTexture(TextureType type)
 {
-	m_textureInfo.erase(type);
+	if (m_textureInfo.erase(type) != 0) {
+		m_textureMask &= ~TextureTypeMask(type);
+		MarkAndroidMaterialDataDirty();
+	}
 }
 
 void Material::SetName(const std::string& name)
@@ -120,17 +212,45 @@ void Material::ApplyToShader(Shader& shader) const
 //	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Applying material %s - diffuse:(%.2f,%.2f,%.2f) ambient:(%.2f,%.2f,%.2f)",
 //		m_name.c_str(), m_diffuse.x, m_diffuse.y, m_diffuse.z, m_ambient.x, m_ambient.y, m_ambient.z);
 //#endif
-	// Apply basic material properties
+	// Android's built-in PBR shaders read immutable material state from one UBO.
+	// This replaces the many per-material glUniform calls that otherwise dominate
+	// mobile driver time when the renderer changes materials.
+#if defined(ANDROID) || defined(__ANDROID__)
+	if (shader.UsesMaterialBlock()) {
+		const std::uint32_t featureMask = BindTextures(shader);
+		BindAndroidMaterialBlock(shader, featureMask);
+		return;
+	}
+#endif
+
+	// Apply basic material properties. The mobile fallback path does not consume
+	// legacy ambient/specular/shininess values.
+#if !defined(ANDROID) && !defined(__ANDROID__)
 	shader.setVec3("material.ambient", m_ambient);
+#endif
 	shader.setVec3("material.diffuse", m_diffuse);
+#if !defined(ANDROID) && !defined(__ANDROID__)
 	shader.setVec3("material.specular", m_specular);
+#endif
 	shader.setVec3("material.emissive", m_emissive);
+#if !defined(ANDROID) && !defined(__ANDROID__)
 	shader.setFloat("material.shininess", m_shininess);
+#endif
 	shader.setFloat("material.opacity", m_opacity);
 
 	// PBR properties
 	shader.setFloat("material.metallic", m_metallic);
+#if defined(ANDROID) || defined(__ANDROID__)
+	const float roughness = glm::max(m_roughness, 0.1f);
+	const float roughness2 = roughness * roughness;
+	const float geometryR = roughness + 1.0f;
+	shader.setVec2(
+		"materialRoughnessTerms",
+		roughness2 * roughness2,
+		geometryR * geometryR * 0.125f);
+#else
 	shader.setFloat("material.roughness", m_roughness);
+#endif
 	shader.setFloat("material.ao", m_ao);
 
 	// DEBUG: Print emissive value
@@ -140,49 +260,98 @@ void Material::ApplyToShader(Shader& shader) const
 	//		m_emissive.x, ", ", m_emissive.y, ", ", m_emissive.z, ")\n");
 	//}
 	// Bind textures
-	BindTextures(shader);
+	(void)BindTextures(shader);
 
-	// Set texture wrapping options
+	// Apply the affine UV transform in the mobile vertex shader. Perspective-
+	// correct interpolation commutes with this transform, moving four operations
+	// from every covered fragment to each (far less numerous) vertex.
+#if defined(ANDROID) || defined(__ANDROID__)
+	shader.setVec4(
+		"materialUVTransform",
+		glm::vec4(tiling.x, tiling.y, offset.x, offset.y));
+#else
 	shader.setVec2("material.uTiling", tiling);
 	shader.setVec2("material.uOffset", offset);
+#endif
 }
 
-void Material::BindTextures(Shader& shader) const
+std::uint32_t Material::BindTextures(Shader& shader) const
 {
-	// Reset texture units to be safe
-	glActiveTexture(GL_TEXTURE0);
 	unsigned int textureUnit = 0;
 
 	// Set texture availability flags
 	bool hasDiffuse = HasTexture(TextureType::DIFFUSE);
-	bool hasSpecular = HasTexture(TextureType::SPECULAR);
 	bool hasNormal = HasTexture(TextureType::NORMAL);
 	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
-	bool hasHeight = HasTexture(TextureType::HEIGHT);
 	bool hasAO = HasTexture(TextureType::AMBIENT_OCCLUSION);
 	bool hasMetallic = HasTexture(TextureType::METALLIC);
 	bool hasRoughness = HasTexture(TextureType::ROUGHNESS);
 	bool hasOpacity = HasTexture(TextureType::OPACITY);
 
 #if defined(ANDROID) || defined(__ANDROID__)
-	// Android shader has samplers outside of Material struct (OpenGL ES compatibility)
-	// Use uniform names WITHOUT "material." prefix for samplers and flags
-	static bool loggedOnce = false;
-	if (!loggedOnce) {
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MATERIAL] Setting texture flags: hasDiffuse=%d hasSpecular=%d hasNormal=%d hasEmissive=%d",
-		//	hasDiffuse, hasSpecular, hasNormal, hasEmissive);
-		loggedOnce = true;
+	bool usePackedORM = false;
+	auto packedIt = m_textureInfo.find(TextureType::PACKED_ORM);
+	if (packedIt != m_textureInfo.end() && packedIt->second) {
+		auto& packedInfo = *packedIt->second;
+		if (!packedInfo.texture) {
+			// Reuse a source map's metadata for wrapping/mipmap policy. Packed
+			// maps are generated only when at least two of these records exist.
+			const TextureInfo* metadataSource = nullptr;
+			for (TextureType type : {
+				TextureType::METALLIC,
+				TextureType::ROUGHNESS,
+				TextureType::AMBIENT_OCCLUSION}) {
+				auto sourceIt = m_textureInfo.find(type);
+				if (sourceIt != m_textureInfo.end() && sourceIt->second) {
+					metadataSource = sourceIt->second.get();
+					break;
+				}
+			}
+
+			if (metadataSource) {
+				std::string metadataPath = metadataSource->filePath;
+				const std::size_t resourcesPos =
+					metadataPath.find("Resources");
+				if (resourcesPos != std::string::npos) {
+					metadataPath.erase(0, resourcesPos);
+				}
+				packedInfo.texture = LoadPackedORMTexture(
+					packedInfo.filePath, metadataPath);
+			}
+		}
+		usePackedORM = packedInfo.texture != nullptr;
 	}
-	shader.setBool("hasDiffuseMap", hasDiffuse);
-	shader.setBool("hasSpecularMap", hasSpecular);
-	shader.setBool("hasNormalMap", hasNormal);
-	shader.setBool("hasEmissiveMap", hasEmissive);
-	shader.setBool("hasHeightMap", hasHeight);
-	shader.setBool("hasAOMap", hasAO);
-	shader.setBool("hasMetallicMap", hasMetallic);
-	shader.setBool("hasRoughnessMap", hasRoughness);
-	shader.setBool("hasOpacityMap", hasOpacity);
+
+	std::uint32_t featureMask = 0;
+	if (hasDiffuse) featureMask |= AndroidMaterialDiffuse;
+	if (hasNormal) featureMask |= AndroidMaterialNormal;
+	if (hasEmissive) featureMask |= AndroidMaterialEmissive;
+	if (hasAO) featureMask |= AndroidMaterialAO;
+	if (hasMetallic) featureMask |= AndroidMaterialMetallic;
+	if (hasRoughness) featureMask |= AndroidMaterialRoughness;
+	if (hasOpacity) featureMask |= AndroidMaterialOpacity;
+	if (usePackedORM) featureMask |= AndroidMaterialPackedORM;
+	if (!hasMetallic && m_metallic == 0.0f) {
+		featureMask |= AndroidMaterialDielectric;
+	}
+
+	if (!shader.UsesMaterialBlock()) {
+		// Custom Android shaders can retain the legacy standalone uniforms.
+		shader.setBool("hasDiffuseMap", hasDiffuse);
+		shader.setBool("hasNormalMap", hasNormal);
+		shader.setBool("hasEmissiveMap", hasEmissive);
+		shader.setBool("hasAOMap", hasAO);
+		shader.setBool("hasMetallicMap", hasMetallic);
+		shader.setBool("hasRoughnessMap", hasRoughness);
+		shader.setBool("hasOpacityMap", hasOpacity);
+		shader.setBool("hasPackedORMMap", usePackedORM);
+		shader.setBool(
+			"materialIsDielectric", !hasMetallic && m_metallic == 0.0f);
+	}
 #else
+	std::uint32_t featureMask = 0;
+	bool hasSpecular = HasTexture(TextureType::SPECULAR);
+	bool hasHeight = HasTexture(TextureType::HEIGHT);
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);
 	shader.setBool("material.hasNormalMap", hasNormal);
@@ -200,6 +369,22 @@ void Material::BindTextures(Shader& shader) const
 		const TextureType& type = it->first;
 		const std::unique_ptr<TextureInfo>& textureInfo = it->second;
 
+#if defined(ANDROID) || defined(__ANDROID__)
+		// The mobile PBR shader does not sample legacy specular/height maps.
+		if (type == TextureType::SPECULAR || type == TextureType::HEIGHT) {
+			continue;
+		}
+		if (usePackedORM &&
+			(type == TextureType::AMBIENT_OCCLUSION ||
+			 type == TextureType::METALLIC ||
+			 type == TextureType::ROUGHNESS)) {
+			continue;
+		}
+		if (type == TextureType::PACKED_ORM && !usePackedORM) {
+			continue;
+		}
+#endif
+
 		//std::cout << "[MATERIAL] DEBUG: Processing texture type " << (int)type << ", textureInfo valid: " << (textureInfo != nullptr) << std::endl;
 		if (textureInfo) {
 			// Check if the texture is loaded. If it isn't, load it now.
@@ -214,25 +399,88 @@ void Material::BindTextures(Shader& shader) const
 			}
 		}
 
-		if (textureInfo && textureInfo->texture && textureUnit < 16)
+		if (textureInfo && textureInfo->texture)
 		{
-			glActiveTexture(GL_TEXTURE0 + textureUnit);
+#if defined(ANDROID) || defined(__ANDROID__)
+			// Stable sampler slots prevent unordered_map iteration order from
+			// reshuffling textures between materials. The shader's uniform-value
+			// cache can then discard every redundant sampler update.
+			switch (type) {
+				case TextureType::DIFFUSE:          textureUnit = 0; break;
+				case TextureType::NORMAL:           textureUnit = 1; break;
+				case TextureType::EMISSIVE:         textureUnit = 2; break;
+				case TextureType::AMBIENT_OCCLUSION:
+				case TextureType::PACKED_ORM:       textureUnit = 3; break;
+				case TextureType::METALLIC:         textureUnit = 4; break;
+				case TextureType::ROUGHNESS:        textureUnit = 5; break;
+				case TextureType::OPACITY:          textureUnit = 6; break;
+				default: continue;
+			}
+#else
+			if (textureUnit >= 16) {
+				continue;
+			}
+#endif
 
+			// Texture::Bind selects the active unit as well as binding the object.
 			textureInfo->texture->Bind(textureUnit);
 
 #if defined(ANDROID) || defined(__ANDROID__)
 			// Android shader has samplers outside of Material struct
-			std::string uniformName = TextureTypeToString(type);
+			shader.setInt(TextureTypeToString(type), textureUnit);
 #else
-			std::string uniformName = "material." + TextureTypeToString(type);
-#endif
+			std::string uniformName = std::string("material.") + TextureTypeToString(type);
 			shader.setInt(uniformName.c_str(), textureUnit);
-
-			textureUnit++;
+			++textureUnit;
+#endif
 		}
 	}
 	//std::cout << "[MATERIAL] DEBUG: Finished binding, total units used: " << textureUnit << std::endl;
+	return featureMask;
 }
+
+#if defined(ANDROID) || defined(__ANDROID__)
+void Material::BindAndroidMaterialBlock(
+	Shader& shader, std::uint32_t featureMask) const
+{
+	(void)shader;
+	if (m_androidMaterialUBO == 0) {
+		glGenBuffers(1, &m_androidMaterialUBO);
+		m_androidMaterialDataDirty = true;
+	}
+
+	if (featureMask != m_androidMaterialFeatureMask) {
+		m_androidMaterialFeatureMask = featureMask;
+		m_androidMaterialDataDirty = true;
+	}
+
+	if (m_androidMaterialDataDirty) {
+		const float roughness = glm::max(m_roughness, 0.1f);
+		const float roughness2 = roughness * roughness;
+		const float geometryR = roughness + 1.0f;
+		const AndroidMaterialUBOData data{
+			glm::vec4(m_diffuse, m_opacity),
+			glm::vec4(m_emissive, m_metallic),
+			glm::vec4(
+				roughness2 * roughness2,
+				geometryR * geometryR * 0.125f,
+				m_ao,
+				0.0f),
+			glm::vec4(tiling.x, tiling.y, offset.x, offset.y),
+			glm::uvec4(featureMask, 0u, 0u, 0u),
+		};
+
+		glBindBuffer(GL_UNIFORM_BUFFER, m_androidMaterialUBO);
+		glBufferData(
+			GL_UNIFORM_BUFFER, sizeof(data), &data, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		m_androidMaterialDataDirty = false;
+	}
+
+	glBindBufferBase(
+		GL_UNIFORM_BUFFER, kMaterialBlockBinding, m_androidMaterialUBO);
+}
+#endif
 
 std::shared_ptr<Material> Material::CreateDefault()
 {
@@ -281,7 +529,7 @@ std::shared_ptr<Material> Material::CreateWood()
 	return material;
 }
 
-std::string Material::TextureTypeToString(TextureType type) const
+const char* Material::TextureTypeToString(TextureType type)
 {
 	switch (type) 
 	{
@@ -294,6 +542,7 @@ std::string Material::TextureTypeToString(TextureType type) const
 		case TextureType::METALLIC: return "metallicMap";
 		case TextureType::ROUGHNESS: return "roughnessMap";
 		case TextureType::EMISSIVE: return "emissiveMap";
+		case TextureType::PACKED_ORM: return "packedORMMap";
 		default: return "unknownMap";
 	}
 }
@@ -727,4 +976,3 @@ std::shared_ptr<AssetMeta> Material::ExtendMetaFile(const std::string& assetPath
 	// Materials don't need extended meta data for now
 	return currentMetaData;
 }
-

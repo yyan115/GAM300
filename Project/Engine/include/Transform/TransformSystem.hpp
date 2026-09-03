@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <memory>
 #include "ECS/System.hpp"
 #include "Math/Matrix4x4.hpp"
@@ -17,7 +18,6 @@ public:
 	void Initialise();
 
 	void Update();
-	void PostUpdate();
 	void ENGINE_API UpdateTransform(Entity entity);
 	void TraverseHierarchy(Entity entity, std::function<void(Entity)> updateTransform);
 	static Matrix4x4 CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation);
@@ -35,6 +35,9 @@ public:
 	void ENGINE_API SetLocalScale(Entity entity, Vector3D scale);
 
 	void SetLocalTransform(Entity entity, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale);
+	static void SetLocalTransform(Transform& transform, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale);
+	static void SetLocalTransform(Transform& transform, const Vector3D& pos, const Quaternion& rot,
+		const Vector3D& scale, const Matrix4x4& localMatrix);
 
 	Vector3D& GetWorldPosition(Entity entity);
 	Quaternion& GetWorldRotation(Entity entity);
@@ -49,4 +52,8 @@ public:
 private:
 	bool isInitialised = false;
 	std::vector<Entity> rootEntitiesScratch;
+	std::vector<Entity> dirtyRootsScratch;
+	std::vector<std::int8_t> dirtyAncestorCache;
+	std::vector<Entity> dirtyAncestorPathScratch;
+	std::vector<Entity> dirtyAncestorTouchedScratch;
 };

@@ -213,13 +213,16 @@ return Component {
         --------------------------------------
         -- 1) Read Movement Input (Unified Input System)
         --------------------------------------
-        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        local axisX, axisY = 0, 0
+        if Input and Input.GetAxisXY then
+            axisX, axisY = Input.GetAxisXY("Movement")
+        end
 
         -- Raw input direction (before camera transformation)
-        -- axis.x = horizontal (A/D or left stick X)
-        -- axis.y = vertical (W/S or left stick Y)
-        local rawMoveX = -axis.x  -- Invert X to match old behavior (A=+1, D=-1)
-        local rawMoveZ = axis.y   -- Z is forward/back
+        -- axisX = horizontal (A/D or left stick X)
+        -- axisY = vertical (W/S or left stick Y)
+        local rawMoveX = -axisX  -- Invert X to match old behavior (A=+1, D=-1)
+        local rawMoveZ = axisY   -- Z is forward/back
 
         -- Normalize diagonal movement (if needed - axis is already normalized)
         local len = math.sqrt(rawMoveX * rawMoveX + rawMoveZ * rawMoveZ)

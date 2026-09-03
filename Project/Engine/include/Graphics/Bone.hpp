@@ -39,6 +39,9 @@ private:
     glm::vec3 mLocalTranslation;
     glm::quat mLocalRotation;
     glm::vec3 mLocalScale;
+    int mLastPositionIndex = 0;
+    int mLastRotationIndex = 0;
+    int mLastScaleIndex = 0;
 
 public:
     /*reads keyframes from aiNodeAnim*/
@@ -46,13 +49,13 @@ public:
 
 	void Update(float animationTime);
 
-    glm::mat4 GetLocalTransform() const { return mLocalTransform; }
-    std::string GetBoneName() const { return mName; }
+    const glm::mat4& GetLocalTransform() const { return mLocalTransform; }
+    const std::string& GetBoneName() const { return mName; }
 	int GetBoneID() const { return mID; }
 
-    glm::vec3 GetLocalPosition() const { return mLocalTranslation; }
-    glm::quat GetLocalRotation() const { return mLocalRotation; }
-    glm::vec3 GetLocalScale() const { return mLocalScale; }
+    const glm::vec3& GetLocalPosition() const { return mLocalTranslation; }
+    const glm::quat& GetLocalRotation() const { return mLocalRotation; }
+    const glm::vec3& GetLocalScale() const { return mLocalScale; }
 
     int GetPositionIndex(float animationTime);
     int GetRotationIndex(float animationTime);

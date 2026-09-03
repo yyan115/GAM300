@@ -24,15 +24,7 @@ local function eulerToQuat(x, y, z)
     }
 end
 
--- Helper: atan2 that works in both Lua 5.3 and 5.4
-local function atan2(y, x)
-    if math.atan2 then
-        return math.atan2(y, x)
-    else
-        -- Lua 5.4: math.atan accepts two arguments
-        return math.atan(y, x)
-    end
-end
+local atan2 = math.atan
 
 -- Helper: Quaternion → Euler (deg) for debugging
 local function quatToEuler(qw, qx, qy, qz)
@@ -221,20 +213,11 @@ return Component {
                     end
 
                     -- Get Position
-                    if Engine.GetTransformWorldPosition then
-                        local positionTable = Engine.GetTransformWorldPosition(targetTransform)
-
-                        if positionTable and type(positionTable) == "table" then
-                            local x = positionTable[1] or positionTable.x or positionTable._1
-                            local y = positionTable[2] or positionTable.y or positionTable._2
-                            local z = positionTable[3] or positionTable.z or positionTable._3
-
-                            if x and y and z then
-                                targetPos = {x = x, y = y, z = z}
-                                if self.debugMode then
-                                    --print(string.format("[CinematicCamera] Position: (%.2f, %.2f, %.2f)", x, y, z))
-                                end
-                            end
+                    if Engine.GetTransformWorldPositionXYZ then
+                        local x, y, z = Engine.GetTransformWorldPositionXYZ(targetTransform)
+                        targetPos = {x = x, y = y, z = z}
+                        if self.debugMode then
+                            --print(string.format("[CinematicCamera] Position: (%.2f, %.2f, %.2f)", x, y, z))
                         end
                     end
 

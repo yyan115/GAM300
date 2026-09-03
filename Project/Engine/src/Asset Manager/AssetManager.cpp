@@ -5,6 +5,14 @@
 #include <WindowManager.hpp>
 #include "../../../Editor/include/EditorState.hpp"
 
+namespace {
+bool IsAnimationOnlyModelSource(std::string path)
+{
+	std::replace(path.begin(), path.end(), '\\', '/');
+	return path.find("Resources/Animations/") != std::string::npos;
+}
+}
+
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
     return instance;
@@ -532,6 +540,36 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 	std::vector<std::string> remainingPaths{};
 	std::vector<std::shared_ptr<AssetMeta>> textureTasks{};
 
+	// Animation clips are loaded directly from their stripped FBX data. Older
+	// builds also emitted a full Android model for every clip, even though no
+	// ModelRenderComponent references one. Remove those stale generated meshes
+	// before packaging and do not enqueue them again below.
+	const std::filesystem::path animationOutput =
+		GetAndroidResourcesPath() / "Resources/Animations";
+	std::error_code filesystemError;
+	if (std::filesystem::exists(animationOutput, filesystemError)) {
+		for (std::filesystem::recursive_directory_iterator it(
+				 animationOutput,
+				 std::filesystem::directory_options::skip_permission_denied,
+				 filesystemError),
+			 end;
+			 it != end;
+			 it.increment(filesystemError)) {
+			if (filesystemError) {
+				filesystemError.clear();
+				continue;
+			}
+			if (!it->is_regular_file(filesystemError)) {
+				continue;
+			}
+			const std::string filename = it->path().filename().generic_string();
+			if (filename.ends_with("_android.mesh")) {
+				std::filesystem::remove(it->path(), filesystemError);
+				filesystemError.clear();
+			}
+		}
+	}
+
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
 		std::string assetPath{};
@@ -544,6 +582,10 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		else if (ResourceManager::GetInstance().IsExtensionMesh(p.extension().generic_string())) {
 			// Skip compiling meshes because they must be compiled on the main OpenGL thread.
 			assetPath = pair.second->sourceFilePath;
+			if (IsAnimationOnlyModelSource(assetPath)) {
+				++androidCompilationStatus.numCompiledAssets;
+				continue;
+			}
 			remainingPaths.push_back(assetPath);
 			continue;
 		}
@@ -650,71 +692,54 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		}
 	}
 
-	// Output the asset manifest for Android.
-	std::filesystem::path manifestFileP(GetAndroidResourcesPath() / "asset_manifest.txt");
-	std::ofstream out(manifestFileP.generic_string());
-	if (!out.is_open()) {
-		std::cerr << "[AssetManager] Failed to open manifest file for writing\n";
-		return std::vector<std::string>{};
-	}
-	for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory)) {
-		// Only copy the file if it is one of the recognised asset file extensions.
-		std::string extension = p.path().extension().generic_string();
-		if (std::filesystem::is_regular_file(p) && (IsAssetExtensionSupported(extension) ||
-			ResourceManager::GetInstance().IsResourceExtensionSupported(extension) || IsExtensionMetaFile(extension)))
-		{
-			std::string path = p.path().generic_string();
-			path = path.substr(path.find("Resources"));
-			std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
-			path = newPath.generic_string();
-			out << path << "\n";
-		}
-	}
-
-	// Add config files to manifest
-	if (std::filesystem::exists(rootAssetDirectory + "/Configs")) {
-		for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Configs")) {
-			if (std::filesystem::is_regular_file(p)) {
-				std::string path = p.path().generic_string();
-				path = path.substr(path.find("Resources"));
-				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
-				path = newPath.generic_string();
-				out << path << "\n";
-			}
-		}
-	}
-
-	// Add prefab files to manifest
-	if (std::filesystem::exists(rootAssetDirectory + "/Prefabs")) {
-		for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Prefabs")) {
-			if (std::filesystem::is_regular_file(p)) {
-				std::string path = p.path().generic_string();
-				path = path.substr(path.find("Resources"));
-				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
-				path = newPath.generic_string();
-				out << path << "\n";
-			}
-		}
-	}
-
-	// Add animator controller and animation FBX files to manifest
-	if (std::filesystem::exists(rootAssetDirectory + "/Animations")) {
-		for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Animations")) {
-			std::string ext = p.path().extension().generic_string();
-			if (std::filesystem::is_regular_file(p) && (ext == ".animator" || ext == ".fbx")) {
-				std::string path = p.path().generic_string();
-				path = path.substr(path.find("Resources"));
-				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
-				path = newPath.generic_string();
-				out << path << "\n";
-			}
-		}
-	}
-
-	//ENGINE_PRINT("[AssetManager] Asset manifest written to {}", manifestFileP.generic_string());
 	//ENGINE_PRINT("[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources");
 	androidCompilationStatus.finishedCompiling = true;
 	return remainingPaths;
+}
+
+bool AssetManager::WriteAndroidAssetManifest()
+{
+	const std::filesystem::path assetRoot = GetAndroidResourcesPath();
+	const std::filesystem::path manifestPath = assetRoot / "asset_manifest.txt";
+	std::vector<std::string> assetPaths;
+	std::error_code filesystemError;
+
+	for (std::filesystem::recursive_directory_iterator it(
+			 assetRoot,
+			 std::filesystem::directory_options::skip_permission_denied,
+			 filesystemError),
+		 end;
+		 it != end;
+		 it.increment(filesystemError)) {
+		if (filesystemError) {
+			filesystemError.clear();
+			continue;
+		}
+		if (!it->is_regular_file(filesystemError) || it->path() == manifestPath) {
+			continue;
+		}
+
+		std::filesystem::path relativePath =
+			std::filesystem::relative(it->path(), assetRoot, filesystemError);
+		if (!filesystemError) {
+			assetPaths.push_back(relativePath.generic_string());
+		}
+		filesystemError.clear();
+	}
+
+	std::sort(assetPaths.begin(), assetPaths.end());
+	assetPaths.erase(std::unique(assetPaths.begin(), assetPaths.end()), assetPaths.end());
+
+	std::ofstream manifest(manifestPath, std::ios::trunc);
+	if (!manifest.is_open()) {
+		ENGINE_LOG_ERROR("[AssetManager] Failed to open Android asset manifest: " +
+			manifestPath.generic_string());
+		return false;
+	}
+	for (const std::string& path : assetPaths) {
+		manifest << path << '\n';
+	}
+	return manifest.good();
 }
 
 std::vector<std::string> AssetManager::CompileAllAssetsForDesktop() {

@@ -32,6 +32,7 @@
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 #include <Jolt/Physics/Collision/CollideShape.h>   // <-- gives CollideShapeSettings
 #include <Jolt/Physics/Body/BodyFilter.h>          // BodyFilter
+#include <Jolt/Physics/Body/BodyLockMulti.h>
 #include <Jolt/Physics/Collision/ShapeFilter.h>    // ShapeFilter
 #include "Game AI/NavSystem.hpp"
 #include "ECS/ECSManager.hpp"
@@ -74,6 +75,12 @@ inline bool JoltAssertFailed(const char* expr, const char* msg, const char* file
 
 namespace {
 constexpr float kMinSafePhysicsDt = 1.0e-6f;
+const std::string kOnTriggerEnter = "OnTriggerEnter";
+const std::string kOnCollisionEnter = "OnCollisionEnter";
+const std::string kOnTriggerExit = "OnTriggerExit";
+const std::string kOnCollisionExit = "OnCollisionExit";
+const std::string kOnTriggerStay = "OnTriggerStay";
+const std::string kOnCollisionStay = "OnCollisionStay";
 
 bool IsFiniteVector3D(const Vector3D& value)
 {
@@ -110,6 +117,37 @@ float GetSafePhysicsDt(float fixedDt)
     return 1.0f / 60.0f;
 }
 
+std::pair<Entity, Entity> MakeInteractionKey(Entity a, Entity b)
+{
+    return a < b ? std::pair{a, b} : std::pair{b, a};
+}
+
+void InsertInteraction(
+    std::vector<std::pair<Entity, Entity>>& interactions,
+    Entity a,
+    Entity b)
+{
+    const auto key = MakeInteractionKey(a, b);
+    const auto position =
+        std::lower_bound(interactions.begin(), interactions.end(), key);
+    if (position == interactions.end() || *position != key) {
+        interactions.insert(position, key);
+    }
+}
+
+void EraseInteraction(
+    std::vector<std::pair<Entity, Entity>>& interactions,
+    Entity a,
+    Entity b)
+{
+    const auto key = MakeInteractionKey(a, b);
+    const auto position =
+        std::lower_bound(interactions.begin(), interactions.end(), key);
+    if (position != interactions.end() && *position == key) {
+        interactions.erase(position);
+    }
+}
+
 JPH::Quat NormalizeOrFallback(const JPH::Quat& value, const JPH::Quat& fallback)
 {
     JPH::Quat safeFallback = JPH::Quat::sIdentity();
@@ -117,9 +155,14 @@ JPH::Quat NormalizeOrFallback(const JPH::Quat& value, const JPH::Quat& fallback)
         const float fallbackLenSq = fallback.GetW() * fallback.GetW() + fallback.GetX() * fallback.GetX() +
             fallback.GetY() * fallback.GetY() + fallback.GetZ() * fallback.GetZ();
         if (fallbackLenSq > kMinSafePhysicsDt) {
-            const JPH::Quat normalizedFallback = fallback.Normalized();
-            if (IsFiniteJoltQuat(normalizedFallback)) {
-                safeFallback = normalizedFallback;
+            if (std::abs(fallbackLenSq - 1.0f) <= 1.0e-6f) {
+                safeFallback = fallback;
+            }
+            else {
+                const JPH::Quat normalizedFallback = fallback.Normalized();
+                if (IsFiniteJoltQuat(normalizedFallback)) {
+                    safeFallback = normalizedFallback;
+                }
             }
         }
     }
@@ -131,6 +174,13 @@ JPH::Quat NormalizeOrFallback(const JPH::Quat& value, const JPH::Quat& fallback)
         value.GetY() * value.GetY() + value.GetZ() * value.GetZ();
     if (!(lenSq > kMinSafePhysicsDt)) {
         return safeFallback;
+    }
+
+    // TransformSystem already keeps world rotations normalized. This is the
+    // hot kinematic/hurtbox path, so only pay for Jolt normalization when the
+    // value has actually drifted.
+    if (std::abs(lenSq - 1.0f) <= 1.0e-6f) {
+        return value;
     }
 
     const JPH::Quat normalized = value.Normalized();
@@ -218,9 +268,17 @@ bool PhysicsSystem::InitialiseJolt() {
         //std::cout << "[Physics] InitialiseJolt: Creating physics world for this instance..." << std::endl;
 
         if (!temp) temp = std::make_unique<JPH::TempAllocatorImpl>(16 * 1024 * 1024);
+        unsigned int physicsWorkerCount =
+            std::max(1u, std::thread::hardware_concurrency() ? std::thread::hardware_concurrency() - 1 : 1u);
+#ifdef __ANDROID__
+        // Animation already runs beside physics. Leave cores for engine work
+        // instead of nesting a near-hardware-sized Jolt pool inside that job.
+        const unsigned int hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
+        physicsWorkerCount = std::max(1u, std::min(3u, hardwareThreads > 3u ? hardwareThreads - 3u : 1u));
+#endif
         if (!jobs) jobs = std::make_unique<JPH::JobSystemThreadPool>(
             JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
-            std::max(1u, std::thread::hardware_concurrency() ? std::thread::hardware_concurrency() - 1 : 1u));
+            physicsWorkerCount);
 
         physics.Init(MAX_BODIES, NUM_BODY_MUTEXES, MAX_BODY_PAIRS, MAX_CONTACT_CONSTRAINTS,
             broadphase, objVsBP, objPair);
@@ -267,14 +325,19 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
 
     // Remove previously created bodies
     for (auto& [entity, bodyId] : entityBodyMap) {
-        if (!bodyId.IsInvalid() && bi.IsAdded(bodyId)) {
-            bi.RemoveBody(bodyId);
+        if (!bodyId.IsInvalid()) {
+            if (bi.IsAdded(bodyId)) {
+                bi.RemoveBody(bodyId);
+            }
             bi.DestroyBody(bodyId);
         }
     }
     entityBodyMap.clear();
     bodyToEntityMap.clear();
     m_activeInteractions.clear();
+    if (m_activeInteractions.capacity() < 256) {
+        m_activeInteractions.reserve(256);
+    }
 
     // =========================================================
     // FLUSH STALE PHYSICS EVENTS
@@ -301,8 +364,9 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         };
         contactListener->SetRootResolver(resolveRootEntity);
 
-        std::vector<CollisionEvent> staleEnters, staleExits;
-        contactListener->DrainEvents(staleEnters, staleExits);
+        m_enterEventsScratch.clear();
+        m_exitEventsScratch.clear();
+        contactListener->DrainEvents(m_enterEventsScratch, m_exitEventsScratch);
 
         //  Wipe the activeCollisions memory bank!
         // This prevents recycled Entity IDs from being ignored by the 
@@ -333,27 +397,19 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 //    }
 //#endif
 
-    // =========================================================================================
-    // 0. CLEANUP DESTROYED / ORPHANED ENTITIES (GHOST COLLIDER FIX)
-    //    If an entity was destroyed by a script, it drops out of the ECS 'entities' set.
-    //    We must sweep our internal map and destroy any Jolt bodies that no longer have an ECS entity.
-    // =========================================================================================
-    std::vector<Entity> staleEntities;
-    for (const auto& [e, bodyId] : entityBodyMap) {
-        // If the entity is in our body map but NO LONGER in the ECS entities set
-        if (entities.find(e) == entities.end()) {
-            staleEntities.push_back(e);
-        }
-    }
-
-    // Destroy the orphaned Jolt physics bodies
-    for (Entity e : staleEntities) {
-        RemoveBody(e);
-    }
+    // Most authored bodies are static. Build compact moving-body lists while
+    // activation state is already hot instead of rescanning every body for
+    // each kinematic and dynamic phase. Clear them before any early return so
+    // PhysicsSyncBack never consumes a previous frame's entity list.
+    m_kinematicEntitiesScratch.clear();
+    m_dynamicEntitiesScratch.clear();
+    m_dynamicBodyIdsScratch.clear();
 
     if (entities.empty()) return;
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
+    JPH::BodyInterface& biNoLock = physics.GetBodyInterfaceNoLock();
+    const JPH::BodyLockInterface& bodyLockInterface = physics.GetBodyLockInterface();
 
     // =========================================================================================
     // 1. MANAGE BODY ACTIVATION STATE (Add/Remove from World)
@@ -361,53 +417,66 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     //    it is removed from the physics simulation entirely.
     // =========================================================================================
     for (auto& e : entities) {
-        // --- NEW: CHECK FOR MISSING BODIES (Runtime Creation) ---
-        if (entityBodyMap.find(e) == entityBodyMap.end()) {
+        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+        const bool shouldBeActive = col.enabled && rb.enabled &&
+            ecsManager.IsEntityActiveInHierarchy(e);
+
+        // Disabled/inactive authored bodies can be created lazily when enabled.
+        // This also prevents CharacterController-owned entities (whose regular
+        // rigid body is deliberately removed and disabled) from being recreated.
+        if (rb.id.IsInvalid()) {
+            if (!shouldBeActive) continue;
             CreatePhysicsBody(e, ecsManager);
         }
 
-        auto bodyIt = entityBodyMap.find(e);
-        if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
-        JPH::BodyID bodyId = bodyIt->second;
+        const JPH::BodyID bodyId = rb.id;
+        if (bodyId.IsInvalid()) continue;
 
-        if (!ecsManager.HasComponent<ColliderComponent>(e)) continue;
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-        // Determine if this body SHOULD be in the physics world
-        bool shouldBeActive = ecsManager.IsEntityActiveInHierarchy(e) && col.enabled && rb.enabled;
-        bool isCurrentlyAdded = bi.IsAdded(bodyId);
-
-        if (shouldBeActive && !isCurrentlyAdded) {
+        if (shouldBeActive && !rb.physicsWorldAdded) {
             // Re-add to the world (Wake it up)
             bi.AddBody(bodyId, JPH::EActivation::Activate);
+            rb.physicsWorldAdded = true;
         }
-        else if (!shouldBeActive && isCurrentlyAdded) {
+        else if (!shouldBeActive && rb.physicsWorldAdded) {
             // Remove from the world (Stops all collisions and processing)
             bi.RemoveBody(bodyId);
+            rb.physicsWorldAdded = false;
+        }
+
+        if (!rb.physicsWorldAdded) continue;
+
+        const bool gravityChanged =
+            rb.gravityFactor != rb.appliedGravityFactor;
+        if (gravityChanged) {
+            bi.SetGravityFactor(bodyId, rb.gravityFactor);
+            rb.appliedGravityFactor = rb.gravityFactor;
+        }
+
+        const bool sensorChanged = rb.isTrigger != rb.appliedIsTrigger;
+        if (sensorChanged) {
+            bi.SetIsSensor(bodyId, rb.isTrigger);
+            rb.appliedIsTrigger = rb.isTrigger;
+        }
+
+        if (rb.motion == Motion::Kinematic) {
+            m_kinematicEntitiesScratch.push_back(e);
+        }
+        else if (rb.motion == Motion::Dynamic) {
+            m_dynamicEntitiesScratch.push_back(e);
+            m_dynamicBodyIdsScratch.push_back(bodyId);
         }
     }
 
     // =========================================================================================
     // 2. UPDATE KINEMATIC BODIES BEFORE PHYSICS STEP
     // =========================================================================================
-    for (auto& e : entities) {
-        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
-
-        auto bodyIt = entityBodyMap.find(e);
-        if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
-        JPH::BodyID bodyId = bodyIt->second;
-
-        // Optimization: If we just removed it in Step 1, don't try to move it
-        if (!bi.IsAdded(bodyId)) continue;
-
-        if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
+    for (Entity e : m_kinematicEntitiesScratch) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-        if (!rb.enabled) continue;
+        const JPH::BodyID bodyId = rb.id;
 
         auto& tr = ecsManager.GetComponent<Transform>(e);
-
-        if (rb.motion == Motion::Kinematic) {
-            auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
 
             // FIX: Use World Scale
             Vector3D scaledOffset = {
@@ -419,9 +488,10 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
                 continue;
             }
 
-            // FIX: Use World Rotation
-            JPH::Quat currentRot = NormalizeOrFallback(bi.GetRotation(bodyId), JPH::Quat::sIdentity());
-            JPH::Quat targetRot = MakeSafeJoltQuat(tr.worldRotation, currentRot);
+            // TransformSystem normalizes world rotations before physics runs.
+            // Avoid a body read/lock solely to obtain an invalid-data fallback.
+            JPH::Quat targetRot = MakeSafeJoltQuat(
+                tr.worldRotation, JPH::Quat::sIdentity());
 
             // Rotate offset to world space
             JPH::Vec3 offsetInWorld = targetRot * JPH::Vec3(scaledOffset.x, scaledOffset.y, scaledOffset.z);
@@ -439,53 +509,34 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
                 continue;
             }
 
-            // Get current Jolt position (World Space)
-            JPH::RVec3 currentPos = bi.GetPosition(bodyId);
-            if (!IsFiniteJoltRVec3(currentPos)) {
-                continue;
-            }
-
-            // Calculate velocities required to reach target
-            JPH::Vec3 linearVel = (targetPos - currentPos) / safeFixedDt;
-            if (!IsFiniteJoltVec3(linearVel)) {
-                linearVel = JPH::Vec3::sZero();
-            }
-
-            // Calculate angular velocity
-            JPH::Quat deltaRot = targetRot * currentRot.Conjugated();
-            JPH::Vec3 axis = JPH::Vec3::sZero();
-            float angle = 0.0f;
-            if (IsFiniteJoltQuat(deltaRot)) {
-                deltaRot.GetAxisAngle(axis, angle);
-                if (!IsFiniteJoltVec3(axis) || !std::isfinite(angle)) {
-                    axis = JPH::Vec3::sZero();
-                    angle = 0.0f;
-                }
-            }
-            JPH::Vec3 angularVel = axis * (angle / safeFixedDt);
-            if (!IsFiniteJoltVec3(angularVel)) {
-                angularVel = JPH::Vec3::sZero();
-            }
-
             // [FIX START] Handle Triggers differently from Physical Objects
             if (rb.isTrigger) {
                 // For Triggers/Sensors: Force teleport.
                 // This ensures overlaps are detected even if the body is stationary.
                 // 'MoveKinematic' relies on velocity simulation which can be culled when V=0.
-                bi.SetPositionAndRotation(bodyId, targetPos, targetRot, JPH::EActivation::Activate);
+                // Keep one write lock across both BodyInterface operations. The
+                // no-lock interface performs the same broadphase notification
+                // and activation while the body is protected by this scope.
+                JPH::BodyLockWrite lock(bodyLockInterface, bodyId);
+                if (lock.Succeeded()) {
+                    biNoLock.SetPositionAndRotation(
+                        bodyId, targetPos, targetRot, JPH::EActivation::Activate);
 
-                // Clear velocities so it doesn't have "momentum" if it turns dynamic later
-                // Kinematic bodies with exactly 0 velocity go to sleep immediately.
-                // We apply a microscopic velocity to trick Jolt into keeping this sensor 
-                // awake and actively checking for overlaps against stationary players.
-                bi.SetLinearVelocity(bodyId, JPH::Vec3(0.0f, -0.001f, 0.0f));
-                bi.SetAngularVelocity(bodyId, JPH::Vec3::sZero());
+                    // Clear velocities so it doesn't have "momentum" if it turns dynamic later.
+                    // The microscopic velocity keeps stationary sensors awake for overlap checks.
+                    biNoLock.SetLinearAndAngularVelocity(
+                        bodyId,
+                        JPH::Vec3(0.0f, -0.001f, 0.0f),
+                        JPH::Vec3::sZero());
+                }
             }
             else {
                 // For Solid Objects (Moving Platforms): Use MoveKinematic.
                 // This enables friction/pushing of characters standing on them.
-                bi.SetLinearVelocity(bodyId, linearVel);
-                bi.SetAngularVelocity(bodyId, angularVel);
+                // MoveKinematic computes both velocities from the body's current
+                // pose under one write lock and activates it when movement is
+                // non-zero. Doing that manually first duplicated the same math
+                // and took four additional body locks per collider.
                 bi.MoveKinematic(bodyId, targetPos, targetRot, safeFixedDt);
             }
 
@@ -493,93 +544,114 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
             //bi.SetAngularVelocity(bodyId, angularVel);
             //bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
 
-            bi.ActivateBody(bodyId);
-            rb.transform_dirty = false;
-        }
+			rb.transform_dirty = false;
     }
 
     // =========================================================================================
     // 3. SYNC ECS -> JOLT (for dynamic bodies)
     // =========================================================================================
-    for (auto& e : entities) {
-        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
-
-        auto bodyIt = entityBodyMap.find(e);
-        if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
-        JPH::BodyID bodyId = bodyIt->second;
-
-        // Skip if not currently in physics world
-        if (!bi.IsAdded(bodyId)) continue;
-
-        if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
+    for (Entity e : m_dynamicEntitiesScratch) {
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-        if (!rb.enabled) continue;
+        const JPH::BodyID bodyId = rb.id;
 
-        bi.SetGravityFactor(bodyId, rb.gravityFactor);
-        bi.SetIsSensor(bodyId, rb.isTrigger);
-
-        if (rb.motion == Motion::Dynamic)
+        if (rb.isTeleporting)
         {
-            if (rb.isTeleporting && ecsManager.HasComponent<Transform>(e))
-            {
-                auto& tr = ecsManager.GetComponent<Transform>(e);
-                // 1. Read the Transform you set in Lua
-                JPH::Vec3 newPos;
-                JPH::Quat newRot;
+            auto& tr = ecsManager.GetComponent<Transform>(e);
+            // 1. Read the Transform you set in Lua
+            JPH::Vec3 newPos;
+            const Quaternion* sourceRotation = nullptr;
 
-                if (tr.isDirty) {
-                    // Lua just set this, so World values are STALE. Use LOCAL values.
-                    // (Assuming feather is a root object with no parent)
-                    if (!IsFiniteVector3D(tr.localPosition)) {
-                        continue;
-                    }
-                    newPos = JPH::Vec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-                    newRot = MakeSafeJoltQuat(tr.localRotation, bi.GetRotation(bodyId));
-                }
-                else {
-                    // Safe to use World values
-                    if (!IsFiniteVector3D(tr.worldPosition)) {
-                        continue;
-                    }
-                    newPos = JPH::Vec3(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z);
-                    newRot = MakeSafeJoltQuat(tr.worldRotation, bi.GetRotation(bodyId));
-                }
-
-                if (!IsFiniteJoltVec3(newPos) || !IsFiniteJoltQuat(newRot)) {
+            if (tr.isDirty) {
+                // Lua just set this, so World values are STALE. Use LOCAL values.
+                // (Assuming feather is a root object with no parent)
+                if (!IsFiniteVector3D(tr.localPosition)) {
                     continue;
                 }
-
-                // 2. Force the Physics Body to match it
-                bi.SetPositionAndRotation(bodyId, newPos, newRot, JPH::EActivation::Activate);
-
-                // 3. Reset the flag
-                rb.isTeleporting = false;
-
-                // 4. Important: Clear velocity so it doesn't "fling"
-                bi.SetLinearVelocity(bodyId, JPH::Vec3::sZero());
-                bi.SetAngularVelocity(bodyId, JPH::Vec3::sZero());
+                newPos = JPH::Vec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+                sourceRotation = &tr.localRotation;
+            }
+            else {
+                // Safe to use World values
+                if (!IsFiniteVector3D(tr.worldPosition)) {
+                    continue;
+                }
+                newPos = JPH::Vec3(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z);
+                sourceRotation = &tr.worldRotation;
             }
 
-            if (rb.linearVel.x != 0.0f || rb.linearVel.y != 0.0f || rb.linearVel.z != 0.0f) {
-                bi.SetLinearVelocity(bodyId, ToJoltVec3(rb.linearVel));
-                rb.linearVel = Vector3D(0, 0, 0);
+            JPH::BodyLockWrite lock(bodyLockInterface, bodyId);
+            const JPH::Quat fallbackRotation = lock.Succeeded()
+                ? lock.GetBody().GetRotation()
+                : JPH::Quat::sIdentity();
+            const JPH::Quat newRot = MakeSafeJoltQuat(*sourceRotation, fallbackRotation);
+            if (!IsFiniteJoltVec3(newPos) || !IsFiniteJoltQuat(newRot)) {
+                continue;
             }
-            if (rb.angularVel.x != 0.0f || rb.angularVel.y != 0.0f || rb.angularVel.z != 0.0f) {
-                bi.SetAngularVelocity(bodyId, ToJoltVec3(rb.angularVel));
-                rb.angularVel = Vector3D(0, 0, 0);
+
+            if (lock.Succeeded()) {
+                // Force the body pose and clear both velocities under one lock.
+                biNoLock.SetPositionAndRotation(
+                    bodyId, newPos, newRot, JPH::EActivation::Activate);
+                biNoLock.SetLinearAndAngularVelocity(
+                    bodyId, JPH::Vec3::sZero(), JPH::Vec3::sZero());
             }
-            if (rb.forceApplied.x != 0.0f || rb.forceApplied.y != 0.0f || rb.forceApplied.z != 0.0f) {
-                bi.AddForce(bodyId, ToJoltVec3(rb.forceApplied));
-                rb.forceApplied = Vector3D(0.0f, 0.0f, 0.0f);
-            }
-            if (rb.torqueApplied.x != 0.0f || rb.torqueApplied.y != 0.0f || rb.torqueApplied.z != 0.0f) {
-                bi.AddTorque(bodyId, ToJoltVec3(rb.torqueApplied));
-                rb.torqueApplied = Vector3D(0.0f, 0.0f, 0.0f);
-            }
-            if (rb.impulseApplied.x != 0.0f || rb.impulseApplied.y != 0.0f || rb.impulseApplied.z != 0.0f) {
-                bi.AddImpulse(bodyId, ToJoltVec3(rb.impulseApplied));
-                rb.impulseApplied = Vector3D(0.0f, 0.0f, 0.0f);
-            }
+
+            // 3. Reset the flag
+            rb.isTeleporting = false;
+        }
+
+        const bool hasLinearVelocity =
+            rb.linearVel.x != 0.0f || rb.linearVel.y != 0.0f ||
+            rb.linearVel.z != 0.0f;
+        const bool hasAngularVelocity =
+            rb.angularVel.x != 0.0f || rb.angularVel.y != 0.0f ||
+            rb.angularVel.z != 0.0f;
+        if (hasLinearVelocity && hasAngularVelocity) {
+            bi.SetLinearAndAngularVelocity(
+                bodyId,
+                ToJoltVec3(rb.linearVel),
+                ToJoltVec3(rb.angularVel));
+        }
+        else if (hasLinearVelocity) {
+            bi.SetLinearVelocity(bodyId, ToJoltVec3(rb.linearVel));
+        }
+        else if (hasAngularVelocity) {
+            bi.SetAngularVelocity(bodyId, ToJoltVec3(rb.angularVel));
+        }
+        if (hasLinearVelocity) {
+            rb.linearVel = Vector3D(0, 0, 0);
+        }
+        if (hasAngularVelocity) {
+            rb.angularVel = Vector3D(0, 0, 0);
+        }
+
+        const bool hasForce =
+            rb.forceApplied.x != 0.0f || rb.forceApplied.y != 0.0f ||
+            rb.forceApplied.z != 0.0f;
+        const bool hasTorque =
+            rb.torqueApplied.x != 0.0f || rb.torqueApplied.y != 0.0f ||
+            rb.torqueApplied.z != 0.0f;
+        if (hasForce && hasTorque) {
+            bi.AddForceAndTorque(
+                bodyId,
+                ToJoltVec3(rb.forceApplied),
+                ToJoltVec3(rb.torqueApplied));
+        }
+        else if (hasForce) {
+            bi.AddForce(bodyId, ToJoltVec3(rb.forceApplied));
+        }
+        else if (hasTorque) {
+            bi.AddTorque(bodyId, ToJoltVec3(rb.torqueApplied));
+        }
+        if (hasForce) {
+            rb.forceApplied = Vector3D(0.0f, 0.0f, 0.0f);
+        }
+        if (hasTorque) {
+            rb.torqueApplied = Vector3D(0.0f, 0.0f, 0.0f);
+        }
+        if (rb.impulseApplied.x != 0.0f || rb.impulseApplied.y != 0.0f || rb.impulseApplied.z != 0.0f) {
+            bi.AddImpulse(bodyId, ToJoltVec3(rb.impulseApplied));
+            rb.impulseApplied = Vector3D(0.0f, 0.0f, 0.0f);
         }
     }
 
@@ -588,25 +660,24 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
     // ========== DISPATCH COLLISION/TRIGGER EVENTS TO LUA ==========
     if (contactListener && ecsManager.scriptSystem) {
-        std::vector<CollisionEvent> enters, exits;
-        contactListener->DrainEvents(enters, exits);
+        m_enterEventsScratch.clear();
+        m_exitEventsScratch.clear();
+        contactListener->DrainEvents(m_enterEventsScratch, m_exitEventsScratch);
 
         // PROCESS ENTER EVENTS.
-        for (const auto& evt : enters) {
+        for (const auto& evt : m_enterEventsScratch) {
             Entity a = static_cast<Entity>(evt.entityA);
             Entity b = static_cast<Entity>(evt.entityB);
 
-            // Add to active set (Ordered so A is always smaller than B for consistency)
-            if (a < b) m_activeInteractions.insert({ a, b });
-            else       m_activeInteractions.insert({ b, a });
+            InsertInteraction(m_activeInteractions, a, b);
 
             bool aIsTrigger = false, bIsTrigger = false;
-            if (ecsManager.HasComponent<RigidBodyComponent>(a))
-                aIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(a).isTrigger;
-            if (ecsManager.HasComponent<RigidBodyComponent>(b))
-                bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
+            if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(a))
+                aIsTrigger = rigidBody->get().isTrigger;
+            if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(b))
+                bIsTrigger = rigidBody->get().isTrigger;
 
-            const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerEnter" : "OnCollisionEnter";
+            const std::string& fn = (aIsTrigger || bIsTrigger) ? kOnTriggerEnter : kOnCollisionEnter;
             ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
             ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
 
@@ -618,53 +689,86 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         }
 
         // PROCESS EXIT EVENTS.
-        for (const auto& evt : exits) {
+        for (const auto& evt : m_exitEventsScratch) {
             Entity a = static_cast<Entity>(evt.entityA);
             Entity b = static_cast<Entity>(evt.entityB);
 
-            // Remove from active set
-            if (a < b) m_activeInteractions.erase({ a, b });
-            else       m_activeInteractions.erase({ b, a });
+            EraseInteraction(m_activeInteractions, a, b);
 
             bool aIsTrigger = false, bIsTrigger = false;
-            if (ecsManager.HasComponent<RigidBodyComponent>(a))
-                aIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(a).isTrigger;
-            if (ecsManager.HasComponent<RigidBodyComponent>(b))
-                bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
+            if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(a))
+                aIsTrigger = rigidBody->get().isTrigger;
+            if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(b))
+                bIsTrigger = rigidBody->get().isTrigger;
 
-            const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerExit" : "OnCollisionExit";
+            const std::string& fn = (aIsTrigger || bIsTrigger) ? kOnTriggerExit : kOnCollisionExit;
             ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
             ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
         }
 
         // PROCESS STAY EVENTS
         // Iterate through all currently active pairs and fire "OnTriggerStay"
-        for (auto it = m_activeInteractions.begin(); it != m_activeInteractions.end(); ) {
-            Entity a = it->first;
-            Entity b = it->second;
+        for (std::size_t interactionIndex = 0;
+            interactionIndex < m_activeInteractions.size();) {
+            const auto [a, b] = m_activeInteractions[interactionIndex];
 
-            // Safety Check: If an entity was destroyed but we missed the exit event (rare but possible), clean it up.
-            if (!ecsManager.IsEntityActiveInHierarchy(a) || !ecsManager.IsEntityActiveInHierarchy(b)) {
-                it = m_activeInteractions.erase(it);
+            // Safety check for a missed exit event after entity destruction.
+            if (!ecsManager.IsEntityAlive(a) || !ecsManager.IsEntityAlive(b)) {
+                m_activeInteractions.erase(
+                    m_activeInteractions.begin() +
+                    static_cast<std::ptrdiff_t>(interactionIndex));
+                continue;
+            }
+
+            const bool aHasScripts =
+                ecsManager.HasComponent<ScriptComponentData>(a);
+            const bool bHasScripts =
+                ecsManager.HasComponent<ScriptComponentData>(b);
+
+            // Stay callbacks are uncommon (the current game has one). Keep the
+            // interaction for correct future component changes, but skip all
+            // hierarchy/component work when neither endpoint can consume Stay.
+            const bool aMayHandleStay = aHasScripts &&
+                (ecsManager.scriptSystem->CanEntityHandleIntEvent(a, kOnTriggerStay) ||
+                 ecsManager.scriptSystem->CanEntityHandleIntEvent(a, kOnCollisionStay));
+            const bool bMayHandleStay = bHasScripts &&
+                (ecsManager.scriptSystem->CanEntityHandleIntEvent(b, kOnTriggerStay) ||
+                 ecsManager.scriptSystem->CanEntityHandleIntEvent(b, kOnCollisionStay));
+            if (!aMayHandleStay && !bMayHandleStay) {
+                ++interactionIndex;
+                continue;
+            }
+
+            if (!ecsManager.IsEntityActiveInHierarchy(a) ||
+                !ecsManager.IsEntityActiveInHierarchy(b)) {
+                m_activeInteractions.erase(
+                    m_activeInteractions.begin() +
+                    static_cast<std::ptrdiff_t>(interactionIndex));
                 continue;
             }
 
             bool aIsTrigger = false, bIsTrigger = false;
             // Check components again as they might have changed at runtime
-            if (ecsManager.HasComponent<RigidBodyComponent>(a))
-                aIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(a).isTrigger;
-            if (ecsManager.HasComponent<RigidBodyComponent>(b))
-                bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
+            if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(a))
+                aIsTrigger = rigidBody->get().isTrigger;
+            if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(b))
+                bIsTrigger = rigidBody->get().isTrigger;
 
             // Determine if this is a Trigger Stay or Collision Stay
-            const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerStay" : "OnCollisionStay";
+            const std::string& fn = (aIsTrigger || bIsTrigger) ? kOnTriggerStay : kOnCollisionStay;
 
-            // Call Lua functions
-            // Note: casting Entity to int for Lua
-            ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, static_cast<int>(b), ecsManager);
-            ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, static_cast<int>(a), ecsManager);
+            if (aHasScripts &&
+                ecsManager.scriptSystem->CanEntityHandleIntEvent(a, fn)) {
+                ecsManager.scriptSystem->CallEntityFunctionWithInt(
+                    a, fn, static_cast<int>(b), ecsManager);
+            }
+            if (bHasScripts &&
+                ecsManager.scriptSystem->CanEntityHandleIntEvent(b, fn)) {
+                ecsManager.scriptSystem->CallEntityFunctionWithInt(
+                    b, fn, static_cast<int>(a), ecsManager);
+            }
 
-            ++it;
+            ++interactionIndex;
         }
     }
 
@@ -690,41 +794,45 @@ void PhysicsSystem::EditorUpdate(ECSManager& ecs) {
 }
 
 void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
-    auto& bi = physics.GetBodyInterface();
-
 //#ifdef __ANDROID__
 //    static int syncCount = 0;
 //    if (syncCount++ % 60 == 0) {
 //        __android_log_print(ANDROID_LOG_INFO, "GAM300",
 //            "[Physics] physicsSyncBack called, entities=%zu", entities.size());
 //    }
-//#endif
+    //#endif
 
-    for (auto& e : entities) {
-        // Skip entities without a body in our map
-        auto bodyIt = entityBodyMap.find(e);
-        if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
-        JPH::BodyID bodyId = bodyIt->second;
+    // Update() already built aligned compact entity/body lists. Lock all body
+    // mutex stripes once instead of taking one read lock per dynamic body.
+    const std::size_t dynamicCount = std::min(
+        m_dynamicEntitiesScratch.size(), m_dynamicBodyIdsScratch.size());
+    if (dynamicCount == 0) return;
 
-        // Skip if body was removed from world (inactive entities handled in step 1)
-        if (!bi.IsAdded(bodyId)) continue;
+    JPH::BodyLockMultiRead bodyLocks(
+        physics.GetBodyLockInterface(),
+        m_dynamicBodyIdsScratch.data(),
+        static_cast<int>(dynamicCount));
 
-        if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
-            !ecsManager.HasComponent<ColliderComponent>(e) ||
-            !ecsManager.HasComponent<Transform>(e)) continue;
+    for (std::size_t index = 0; index < dynamicCount; ++index) {
+        const Entity e = m_dynamicEntitiesScratch[index];
+        // Collision callbacks dispatched earlier this update may have destroyed
+        // entities or removed their physics components, so never assume the
+        // lists built at the start of Update() are still fully valid.
+        auto rbOpt = ecsManager.TryGetComponent<RigidBodyComponent>(e);
+        if (!rbOpt) continue;
+        auto& rb = rbOpt->get();
+        if (!rb.enabled || rb.motion != Motion::Dynamic || !rb.physicsWorldAdded) continue;
 
-        auto& tr = ecsManager.GetComponent<Transform>(e);
-        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+        const JPH::Body* body = bodyLocks.GetBody(static_cast<int>(index));
+        if (!body) continue;
+        auto trOpt = ecsManager.TryGetComponent<Transform>(e);
+        auto colOpt = ecsManager.TryGetComponent<ColliderComponent>(e);
+        if (!trOpt || !colOpt) continue;
+        auto& tr = trOpt->get();
+        auto& col = colOpt->get();
 
-        if (!rb.enabled) continue;
-
-        // Only sync Dynamic bodies (physics controls them)
-        // Kinematic/Static bodies are controlled by Transform, not physics
-        if (rb.motion == Motion::Dynamic) {
-            JPH::RVec3 p;
-            JPH::Quat r;
-            bi.GetPositionAndRotation(bodyId, p, r);
+        const JPH::RVec3 p = body->GetPosition();
+        const JPH::Quat r = body->GetRotation();
 
             // Commented out as not used to fix warnings.
             // float offsetY = col.center.y * tr.localScale.y;     //in case meshes pivot start from the bottom instead of center
@@ -759,17 +867,22 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
 //                    p.GetX(), p.GetY(), p.GetZ());
 //            }
 //#endif
-        }
     }
 }
 
 
 void PhysicsSystem::Shutdown() {
+    Shutdown(ECSRegistry::GetInstance().GetActiveECSManager());
+}
+
+void PhysicsSystem::Shutdown(ECSManager& ecs) {
     // 1. Remove and destroy all bodies using entityBodyMap
     auto& bi = physics.GetBodyInterface();
     for (auto& [entity, bodyId] : entityBodyMap) {
-        if (!bodyId.IsInvalid() && bi.IsAdded(bodyId)) {
-            bi.RemoveBody(bodyId);
+        if (!bodyId.IsInvalid()) {
+            if (bi.IsAdded(bodyId)) {
+                bi.RemoveBody(bodyId);
+            }
             bi.DestroyBody(bodyId);
         }
     }
@@ -777,13 +890,17 @@ void PhysicsSystem::Shutdown() {
     bodyToEntityMap.clear();
     m_activeInteractions.clear();
 
-    // 2. Drop 
-    //  shapes
-    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // 2. Drop shapes and runtime handles on the ECS manager that owns this
+    //    system. Scene transitions can switch the active manager before the
+    //    old scene's entities are cleared, so never look it up globally here.
     for (auto e : entities) {
-        if (!ecs.HasComponent<ColliderComponent>(e)) continue;
-        auto& col = ecs.GetComponent<ColliderComponent>(e);
-        col.shape = nullptr;
+        if (auto rigidBody = ecs.TryGetComponent<RigidBodyComponent>(e)) {
+            rigidBody->get().id = JPH::BodyID();
+            rigidBody->get().physicsWorldAdded = false;
+        }
+        if (auto collider = ecs.TryGetComponent<ColliderComponent>(e)) {
+            collider->get().shape = nullptr;
+        }
     }
     //entities.clear();
 
@@ -810,6 +927,10 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
     auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
+    // Runtime Jolt handles are never persistent component state. Keep failed
+    // body creation from leaving a stale handle for the direct-ID hot paths.
+    rb.id = JPH::BodyID();
+    rb.physicsWorldAdded = false;
     rb.motion = static_cast<Motion>(rb.motionID);
 
     // --- FIX FOR NEWLY SPAWNED ENTITIES ---
@@ -898,12 +1019,15 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
                     JPH::TriangleList triangles;
                     for (const auto& mesh : rc.model->meshes) {
                         for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-                            const auto& v0 = mesh.vertices[mesh.indices[i]];
-                            const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
-                            const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
-                            JPH::Float3 p0(v0.position.x * sx, v0.position.y * sy, v0.position.z * sz);
-                            JPH::Float3 p1(v1.position.x * sx, v1.position.y * sy, v1.position.z * sz);
-                            JPH::Float3 p2(v2.position.x * sx, v2.position.y * sy, v2.position.z * sz);
+                            const glm::vec3& p0Source =
+                                mesh.GetCollisionPosition(mesh.indices[i]);
+                            const glm::vec3& p1Source =
+                                mesh.GetCollisionPosition(mesh.indices[i + 1]);
+                            const glm::vec3& p2Source =
+                                mesh.GetCollisionPosition(mesh.indices[i + 2]);
+                            JPH::Float3 p0(p0Source.x * sx, p0Source.y * sy, p0Source.z * sz);
+                            JPH::Float3 p1(p1Source.x * sx, p1Source.y * sy, p1Source.z * sz);
+                            JPH::Float3 p2(p2Source.x * sx, p2Source.y * sy, p2Source.z * sz);
                             triangles.push_back(JPH::Triangle(p0, p1, p2));
                         }
                     }
@@ -951,6 +1075,7 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
     bcs.mLinearDamping = rb.linearDamping;
     bcs.mAngularDamping = rb.angularDamping;
     bcs.mGravityFactor = rb.gravityFactor;
+    bcs.mIsSensor = rb.isTrigger;
 
     JPH::BodyID newBodyId = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
     entityBodyMap[e] = newBodyId;
@@ -958,10 +1083,13 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
     rb.id = newBodyId;
     rb.collider_seen_version = col.version;
     rb.transform_dirty = rb.motion_dirty = false;
+    rb.physicsWorldAdded = !newBodyId.IsInvalid();
+    rb.appliedGravityFactor = rb.gravityFactor;
+    rb.appliedIsTrigger = rb.isTrigger;
     //bi.SetMaxAngularVelocity(newBodyId, 2.0f);
 }
 
-void PhysicsSystem::RemoveBody(Entity entity) {
+void PhysicsSystem::RemoveBody(Entity entity, ECSManager& ecsManager) {
     auto it = entityBodyMap.find(entity);
     if (it == entityBodyMap.end()) return;
 
@@ -976,6 +1104,11 @@ void PhysicsSystem::RemoveBody(Entity entity) {
 
     bodyToEntityMap.erase(bodyId);
     entityBodyMap.erase(it);
+
+    if (auto rigidBody = ecsManager.TryGetComponent<RigidBodyComponent>(entity)) {
+        rigidBody->get().id = JPH::BodyID();
+        rigidBody->get().physicsWorldAdded = false;
+    }
 }
 
 JPH::BodyID PhysicsSystem::GetBodyID(Entity entity) const {

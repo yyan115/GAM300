@@ -54,10 +54,7 @@ local function CheckPlayerInRange(self)
         if not self._playerTr then return false end
     end
 
-    local pp = Engine.GetTransformPosition(self._playerTr)
-    if not pp then return false end
-
-    local px, pz = pp[1], pp[3]
+    local px, _, pz = Engine.GetTransformPositionXYZ(self._playerTr)
     local ex, ey, ez = self:GetPosition()
 
     local dx, dz = px - ex, pz - ez

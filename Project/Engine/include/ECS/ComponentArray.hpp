@@ -5,7 +5,9 @@
 #include <array>
 #include <optional>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 #include <assert.h>
 #include "Logging.hpp"
@@ -30,6 +32,8 @@ class ComponentArray : public IComponentArray {
 public:
     ComponentArray() {
         entityToIndex.fill(INVALID_ENTITY);
+		componentArray.reserve(256);
+		indexToEntity.reserve(256);
     }
 
     inline void InsertComponent(Entity entity, T component) {
@@ -43,11 +47,11 @@ public:
             return;
         }
 
-        assert(size < MAX_ENTITIES && "Component array capacity exceeded.");
+		assert(size < MAX_ENTITIES && "Component array capacity exceeded.");
         const Entity newIndex = static_cast<Entity>(size);
         entityToIndex[entity] = newIndex;
         indexToEntity.push_back(entity);
-        componentArray[newIndex] = component;
+		componentArray.push_back(std::make_unique<T>(std::move(component)));
 		++size;
     }
 
@@ -66,7 +70,8 @@ public:
 		// Replace the component to be removed with the last component to maintain density.
         const Entity indexOfLastElement = static_cast<Entity>(size - 1);
         if (indexOfRemovedEntity != indexOfLastElement) {
-            componentArray[indexOfRemovedEntity] = componentArray[indexOfLastElement];
+			componentArray[indexOfRemovedEntity] =
+				std::move(componentArray[indexOfLastElement]);
 
 			// Update the sparse and dense indices for the moved component.
             const Entity entityOfLastElement = indexToEntity[indexOfLastElement];
@@ -76,6 +81,7 @@ public:
 
         entityToIndex[entity] = INVALID_ENTITY;
         indexToEntity.pop_back();
+		componentArray.pop_back();
         --size;
     }
 
@@ -89,14 +95,14 @@ public:
         if (index == INVALID_ENTITY) {
             throw std::out_of_range("Retrieving non-existent component.");
         }
-		return componentArray[index];
+		return *componentArray[index];
     }
 
     inline std::optional<std::reference_wrapper<T>> TryGetComponent(Entity entity) {
         if (entity < MAX_ENTITIES) {
 			const Entity index = entityToIndex[entity];
 			if (index != INVALID_ENTITY) {
-				return componentArray[index];
+				return *componentArray[index];
 			}
         }
         return std::nullopt;
@@ -115,12 +121,14 @@ public:
     inline void AllEntitiesDestroyed() override {
         entityToIndex.fill(INVALID_ENTITY);
         indexToEntity.clear();
-        std::fill(componentArray.begin(), componentArray.end(), T{});
+		componentArray.clear();
         size = 0;
     }
 
 private:
-	std::array<T, MAX_ENTITIES> componentArray{}; // Array that stores densely-packed components of type T for all entities that have this component.
+	// Only live components are constructed. Owning pointers keep component
+	// addresses stable when the dense pointer array grows or swap-removes.
+	std::vector<std::unique_ptr<T>> componentArray;
 	std::array<Entity, MAX_ENTITIES> entityToIndex{}; // Sparse entity ID to dense component index lookup.
 	std::vector<Entity> indexToEntity{}; // Dense component index to entity ID lookup.
 

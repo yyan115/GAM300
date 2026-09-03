@@ -6,6 +6,9 @@
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
 #include "Logging.hpp"
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 
 Font::Font(unsigned int fontSize) : fontSize(fontSize) {}
 
@@ -124,6 +127,7 @@ bool Font::LoadResource(const std::string& resourcePath,
     if (!platform) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error,
             "[Font] ERROR: Platform not available for asset discovery!\n");
+        FT_Done_FreeType(ft);
         return false;
     }
 
@@ -172,6 +176,22 @@ bool Font::LoadResource(const std::string& resourcePath,
 
     ENGINE_PRINT(EngineLogging::LogLevel::Debug,
         "[Font] Loading glyphs...\n");
+
+    struct PendingGlyph {
+        unsigned char code = 0;
+        glm::ivec2 size{0};
+        glm::ivec2 bearing{0};
+        unsigned int advance = 0;
+        int atlasX = 0;
+        int atlasY = 0;
+        std::vector<unsigned char> pixels;
+    };
+
+    std::vector<PendingGlyph> glyphs;
+    glyphs.reserve(128);
+    std::size_t totalGlyphArea = 0;
+    int widestGlyph = 1;
+
     for (unsigned char c = 0; c < 128; c++)
     {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
@@ -181,41 +201,157 @@ bool Font::LoadResource(const std::string& resourcePath,
             continue;
         }
 
-        unsigned int texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        PendingGlyph glyph;
+        glyph.code = c;
+        glyph.size = glm::ivec2(
+            static_cast<int>(face->glyph->bitmap.width),
+            static_cast<int>(face->glyph->bitmap.rows));
+        glyph.bearing = glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top);
+        glyph.advance = static_cast<unsigned int>(face->glyph->advance.x);
 
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RED,
-            face->glyph->bitmap.width,
-            face->glyph->bitmap.rows,
-            0,
-            GL_RED,
-            GL_UNSIGNED_BYTE,
-            face->glyph->bitmap.buffer
-        );
+        const int width = glyph.size.x;
+        const int height = glyph.size.y;
+        maxGlyphHeight = std::max(maxGlyphHeight, height);
+        if (width > 0 && height > 0) {
+            glyph.pixels.resize(static_cast<std::size_t>(width) * height);
+            const int pitch = face->glyph->bitmap.pitch;
+            for (int row = 0; row < height; ++row) {
+                const unsigned char* sourceRow = pitch >= 0
+                    ? face->glyph->bitmap.buffer + row * pitch
+                    : face->glyph->bitmap.buffer + (height - 1 - row) * (-pitch);
+                std::memcpy(
+                    glyph.pixels.data() + static_cast<std::size_t>(row) * width,
+                    sourceRow,
+                    static_cast<std::size_t>(width));
+            }
+        }
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        totalGlyphArea += static_cast<std::size_t>(width + 2) * (height + 2);
+        widestGlyph = std::max(widestGlyph, width + 2);
+        glyphs.push_back(std::move(glyph));
+    }
 
-        Character character = {
-            texture,
-            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            static_cast<unsigned int>(face->glyph->advance.x)
-        };
-        Characters.insert(std::pair<char, Character>(c, character));
+    GLint maxTextureSize = 0;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    if (maxTextureSize <= 0) {
+        maxTextureSize = 2048;
+    }
+    if (widestGlyph > maxTextureSize) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error,
+            "[Font] A glyph exceeds the device texture-size limit for font size ",
+            fontSize, "\n");
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        FT_Done_Face(face);
+        FT_Done_FreeType(ft);
+        return false;
+    }
+
+    int atlasWidth = 1;
+    const int estimatedWidth = std::max(
+        widestGlyph,
+        static_cast<int>(std::ceil(std::sqrt(static_cast<double>(
+            std::max<std::size_t>(totalGlyphArea, 1))))));
+    while (atlasWidth < estimatedWidth && atlasWidth < maxTextureSize) {
+        atlasWidth *= 2;
+    }
+    atlasWidth = std::min(atlasWidth, maxTextureSize);
+
+    auto packGlyphs = [&glyphs](int width) {
+        int cursorX = 1;
+        int cursorY = 1;
+        int rowHeight = 0;
+
+        for (auto& glyph : glyphs) {
+            if (glyph.size.x == 0 || glyph.size.y == 0) {
+                glyph.atlasX = cursorX;
+                glyph.atlasY = cursorY;
+                continue;
+            }
+
+            if (cursorX + glyph.size.x + 1 > width) {
+                cursorX = 1;
+                cursorY += rowHeight + 1;
+                rowHeight = 0;
+            }
+
+            glyph.atlasX = cursorX;
+            glyph.atlasY = cursorY;
+            cursorX += glyph.size.x + 2;
+            rowHeight = std::max(rowHeight, glyph.size.y);
+        }
+
+        return cursorY + rowHeight + 1;
+    };
+
+    int atlasHeight = packGlyphs(atlasWidth);
+    while (atlasHeight > maxTextureSize && atlasWidth < maxTextureSize) {
+        atlasWidth = std::min(atlasWidth * 2, maxTextureSize);
+        atlasHeight = packGlyphs(atlasWidth);
+    }
+
+    if (atlasHeight > maxTextureSize) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error,
+            "[Font] Glyph atlas exceeds device texture limits for font size ",
+            fontSize, "\n");
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        FT_Done_Face(face);
+        FT_Done_FreeType(ft);
+        return false;
+    }
+
+    std::vector<unsigned char> atlasPixels(
+        static_cast<std::size_t>(atlasWidth) * atlasHeight, 0);
+    for (const auto& glyph : glyphs) {
+        for (int row = 0; row < glyph.size.y; ++row) {
+            std::memcpy(
+                atlasPixels.data() +
+                    static_cast<std::size_t>(glyph.atlasY + row) * atlasWidth +
+                    glyph.atlasX,
+                glyph.pixels.data() + static_cast<std::size_t>(row) * glyph.size.x,
+                static_cast<std::size_t>(glyph.size.x));
+        }
+    }
+
+    glGenTextures(1, &atlasTexture);
+    glBindTexture(GL_TEXTURE_2D, atlasTexture);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RED,
+        atlasWidth,
+        atlasHeight,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        atlasPixels.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    const glm::vec2 inverseAtlasSize(
+        1.0f / static_cast<float>(atlasWidth),
+        1.0f / static_cast<float>(atlasHeight));
+    for (const auto& glyph : glyphs) {
+        Character character;
+        character.textureID = atlasTexture;
+        character.size = glyph.size;
+        character.bearing = glyph.bearing;
+        character.advance = glyph.advance;
+        character.uvMin = glm::vec2(glyph.atlasX, glyph.atlasY) * inverseAtlasSize;
+        character.uvMax =
+            glm::vec2(glyph.atlasX + glyph.size.x, glyph.atlasY + glyph.size.y) *
+            inverseAtlasSize;
+        Characters[glyph.code] = character;
 
         ENGINE_PRINT(EngineLogging::LogLevel::Trace,
-            "[Font] Loaded glyph for char=", (int)c,
-            " texID=", texture,
-            " size=", face->glyph->bitmap.width, "x", face->glyph->bitmap.rows, "\n");
+            "[Font] Loaded glyph for char=", static_cast<int>(glyph.code),
+            " atlasTexID=", atlasTexture,
+            " size=", glyph.size.x, "x", glyph.size.y, "\n");
     }
+
     glBindTexture(GL_TEXTURE_2D, 0);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     ENGINE_PRINT(EngineLogging::LogLevel::Debug,
         "[Font] Cleaning up FreeType face and library\n");
@@ -225,7 +361,10 @@ bool Font::LoadResource(const std::string& resourcePath,
     ENGINE_PRINT(EngineLogging::LogLevel::Debug,
         "[Font] Setting up VAO/VBO for text rendering\n");
     textVAO = std::make_unique<VAO>();
-    textVBO = std::make_unique<VBO>(sizeof(float) * 6 * 4, GL_DYNAMIC_DRAW);
+    constexpr std::size_t initialGlyphCapacity = 256;
+    textVertexCapacity = initialGlyphCapacity * 6;
+    textVBO = std::make_unique<VBO>(
+        textVertexCapacity * sizeof(glm::vec4), GL_DYNAMIC_DRAW);
 
     textVAO->Bind();
     textVBO->Bind();
@@ -357,14 +496,12 @@ void Font::SetFontSize(unsigned int newSize)
 
 const Character& Font::GetCharacter(char c) const
 {
-    auto it = Characters.find(c);
-    if (it != Characters.end()) 
-    {
-        return it->second;
+    const unsigned int index = static_cast<unsigned char>(c);
+    if (index < Characters.size()) {
+        return Characters[index];
     }
 
-    // Return space character as fallback
-    static Character fallback = {};
+    static const Character fallback{};
     return fallback;
 }
 
@@ -381,26 +518,17 @@ float Font::GetTextWidth(const std::string& text, float scale) const
 
 float Font::GetTextHeight(float scale) const
 {
-    float maxHeight = 0.0f;
-    for (const auto& pair : Characters) 
-    {
-        float height = pair.second.size.y * scale;
-        if (height > maxHeight) 
-        {
-            maxHeight = height;
-        }
-    }
-    return maxHeight;
+    return static_cast<float>(maxGlyphHeight) * scale;
 }
 
 void Font::Cleanup()
 {
-    // Clean up textures
-    for (auto& pair : Characters) 
-    {
-        glDeleteTextures(1, &pair.second.textureID);
+    if (atlasTexture != 0) {
+        glDeleteTextures(1, &atlasTexture);
+        atlasTexture = 0;
     }
-    Characters.clear();
+    Characters.fill(Character{});
+    maxGlyphHeight = 0;
 
     // Clean up VAO/VBO
     if (textVAO) 
@@ -413,6 +541,22 @@ void Font::Cleanup()
         textVBO->Delete();
         textVBO.reset();
     }
+    textVertexCapacity = 0;
+}
+
+void Font::EnsureTextVertexCapacity(std::size_t vertexCount)
+{
+    if (!textVBO || vertexCount <= textVertexCapacity) {
+        return;
+    }
+
+    std::size_t newCapacity = std::max<std::size_t>(textVertexCapacity, 6);
+    while (newCapacity < vertexCount) {
+        newCapacity *= 2;
+    }
+
+    textVBO->InitializeBuffer(newCapacity * sizeof(glm::vec4), GL_DYNAMIC_DRAW);
+    textVertexCapacity = newCapacity;
 }
 
 std::shared_ptr<AssetMeta> Font::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)

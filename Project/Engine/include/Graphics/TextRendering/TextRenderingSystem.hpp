@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/System.hpp"
+#include "TextRenderItem.hpp"
 
-class TextRenderComponent;
 class Font;
 
 class TextRenderingSystem : public System {
@@ -25,4 +25,5 @@ public:
 private:
     // Internal helper for word wrapping algorithm
     static std::vector<std::string> WrapText(const std::string& text, Font* font, float maxWidth, float scaleX);
+    std::vector<TextRenderItem> renderSnapshots;
 };

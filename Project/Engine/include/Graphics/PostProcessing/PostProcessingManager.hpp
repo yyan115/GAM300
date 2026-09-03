@@ -19,7 +19,8 @@ public:
 
     void Shutdown();
 
-    void Process(unsigned int inputTexture, unsigned int outputFBO, int width, int height);
+    void Process(unsigned int inputTexture, unsigned int outputFBO,
+        int renderWidth, int renderHeight, int outputWidth = -1, int outputHeight = -1);
 
     unsigned int CreateHDRFramebuffer(int width, int height);
 
@@ -34,7 +35,8 @@ public:
 
     void BeginHDRRender(int width, int height);
 
-    void EndHDRRender(unsigned int outputFBO, int width, int height);
+    void EndHDRRender(unsigned int outputFBO, int renderWidth, int renderHeight,
+        int outputWidth = -1, int outputHeight = -1);
 
     HDREffect* GetHDREffect() { return hdrEffect.get(); }
     BlurEffect* GetBlurEffect() { return blurEffect.get(); }
@@ -48,7 +50,8 @@ public:
 
     void RenderScreenQuad();
 
-    // Enable/disable MRT for bloom emission writing during scene rendering
+    // Clear the bloom target once, then enable it only for draws that emit.
+    void PrepareBloomMRT();
     void EnableBloomMRT();
     void DisableBloomMRT();
 
@@ -119,6 +122,7 @@ private:
     unsigned int hdrColorTexture{};
     unsigned int hdrBloomEmissionTexture{};  // MRT attachment 1: per-entity bloom emission
     unsigned int hdrDepthTexture{};
+    unsigned int hdrDepthRenderbuffer{};      // Android depth is attachment-only
     int hdrWidth{};
     int hdrHeight{};
 

@@ -3,6 +3,7 @@
 #include <Input/InputManager.h>
 #include <Input/Keys.h>
 #include <WindowManager.hpp>
+#include <algorithm>
 #include <cmath>
 #include <ECS/ECSRegistry.hpp>
 #include <Asset Manager/AssetManager.hpp>
@@ -40,6 +41,143 @@
 #include <Settings/GameSettings.hpp>
 
 Entity fpsText;
+
+#ifdef ANDROID
+#ifndef GAM300_ANDROID_RENDER_SCALE
+#define GAM300_ANDROID_RENDER_SCALE 0.75
+#endif
+#ifndef GAM300_ANDROID_MIN_RENDER_SCALE
+#define GAM300_ANDROID_MIN_RENDER_SCALE 0.50
+#endif
+
+namespace {
+	constexpr float kAndroidMaxRenderScale =
+		std::clamp(static_cast<float>(GAM300_ANDROID_RENDER_SCALE), 0.5f, 1.0f);
+	constexpr float kAndroidMinRenderScale =
+		std::clamp(
+			static_cast<float>(GAM300_ANDROID_MIN_RENDER_SCALE),
+			0.5f,
+			kAndroidMaxRenderScale);
+
+	class AndroidRenderScaleController {
+	public:
+		float Update(double frameDeltaSeconds, double logicFrameSeconds) noexcept
+		{
+			constexpr float kOverBudgetSeconds = 0.020f;
+			constexpr float kSeverelyOverBudgetSeconds = 0.027f;
+			constexpr float kRecoveryFrameSeconds = 0.01725f;
+			constexpr float kScaleStep = 0.05f;
+			// Above this much pure CPU work per frame the game cannot reach 60 Hz
+			// no matter how few pixels are shaded, so lowering resolution would
+			// only blur the image. Keep the current scale until the CPU has room.
+			constexpr float kLogicBudgetSeconds = 0.012f;
+
+			// App suspension and debugger/load stalls are not rendering pressure.
+			if (!std::isfinite(frameDeltaSeconds) ||
+				frameDeltaSeconds <= 0.0 || frameDeltaSeconds > 0.1) {
+				overBudgetDuration = 0.0f;
+				stableDuration = 0.0f;
+				return currentScale;
+			}
+
+			const float frameSeconds = static_cast<float>(frameDeltaSeconds);
+			const float logicSeconds = std::isfinite(logicFrameSeconds)
+				? static_cast<float>(std::clamp(logicFrameSeconds, 0.0, 0.1))
+				: 0.0f;
+			if (!hasFrameSample) {
+				smoothedFrameSeconds = frameSeconds;
+				smoothedLogicSeconds = logicSeconds;
+				hasFrameSample = true;
+			}
+			else {
+				// Low-pass missed-vsync spikes while still reacting within a few frames.
+				smoothedFrameSeconds +=
+					(frameSeconds - smoothedFrameSeconds) * 0.10f;
+				smoothedLogicSeconds +=
+					(logicSeconds - smoothedLogicSeconds) * 0.10f;
+			}
+			const bool cpuBound = smoothedLogicSeconds > kLogicBudgetSeconds;
+
+			if (warmupFrames > 0) {
+				--warmupFrames;
+				return currentScale;
+			}
+
+			cooldownSeconds = std::max(0.0f, cooldownSeconds - frameSeconds);
+
+			if (smoothedFrameSeconds > kOverBudgetSeconds) {
+				stableDuration = 0.0f;
+				if (cpuBound) {
+					// Slow frames caused by game logic are not GPU pressure.
+					overBudgetDuration = 0.0f;
+				}
+				else if (cooldownSeconds <= 0.0f) {
+					overBudgetDuration += frameSeconds;
+					const float requiredPressure =
+						smoothedFrameSeconds > kSeverelyOverBudgetSeconds
+							? 0.20f
+							: 0.70f;
+					if (overBudgetDuration >= requiredPressure &&
+						currentScale > kAndroidMinRenderScale) {
+						currentScale = std::max(
+							kAndroidMinRenderScale,
+							currentScale - kScaleStep);
+						overBudgetDuration = 0.0f;
+						cooldownSeconds = 0.75f;
+					}
+				}
+			}
+			else {
+				overBudgetDuration = std::max(
+					0.0f, overBudgetDuration - frameSeconds);
+
+				if (smoothedFrameSeconds <= kRecoveryFrameSeconds) {
+					stableDuration += frameSeconds;
+				}
+				else {
+					stableDuration = 0.0f;
+				}
+
+				// Vsync hides GPU headroom. Probe upward only after a long stable
+				// interval so borderline devices do not resize render targets often.
+				if (stableDuration >= 20.0f && cooldownSeconds <= 0.0f &&
+					currentScale < kAndroidMaxRenderScale) {
+					currentScale = std::min(
+						kAndroidMaxRenderScale,
+						currentScale + kScaleStep);
+					stableDuration = 0.0f;
+					cooldownSeconds = 2.0f;
+				}
+			}
+
+			// Keep the target constant when dynamic scaling is disabled by setting
+			// the minimum and maximum CMake values to the same number.
+			if (kAndroidMinRenderScale == kAndroidMaxRenderScale) {
+				currentScale = kAndroidMaxRenderScale;
+			}
+			return currentScale;
+		}
+
+	private:
+		float currentScale = kAndroidMaxRenderScale;
+		float smoothedFrameSeconds = 1.0f / 60.0f;
+		float smoothedLogicSeconds = 0.0f;
+		float overBudgetDuration = 0.0f;
+		float stableDuration = 0.0f;
+		float cooldownSeconds = 0.0f;
+		int warmupFrames = 45;
+		bool hasFrameSample = false;
+	};
+
+	float GetAndroidRenderScale() noexcept
+	{
+		static AndroidRenderScaleController controller;
+		return controller.Update(
+			TimeManager::GetUnscaledDeltaTime(),
+			TimeManager::GetLogicFrameSeconds());
+	}
+}
+#endif
 
 void testing(ECSManager&);
 //SceneInstance::SceneInstance() {
@@ -199,8 +337,15 @@ void SceneInstance::Draw()
 	// Set to false so game view shows ALL sprites (not filtered by 2D/3D mode)
 	gfxManager.SetRenderingForEditor(false);
 
-	int renderWidth = RunTimeVar::window.width;
-	int renderHeight = RunTimeVar::window.height;
+	const int outputWidth = RunTimeVar::window.width;
+	const int outputHeight = RunTimeVar::window.height;
+	int renderWidth = outputWidth;
+	int renderHeight = outputHeight;
+#ifdef ANDROID
+	const float renderScale = GetAndroidRenderScale();
+	renderWidth = std::max(1, static_cast<int>(std::lround(outputWidth * renderScale)));
+	renderHeight = std::max(1, static_cast<int>(std::lround(outputHeight * renderScale)));
+#endif
 	if (gfxManager.IsGamePanelActive())
 	{
 		// BeginGameRender already selected the editor panel's render resolution.
@@ -250,11 +395,6 @@ void SceneInstance::Draw()
 
 		if (mainECS.lightingSystem) mainECS.lightingSystem->Update();
 	}
-	else
-	{
-		gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
-		gfxManager.UpdateFrustum();
-	}
 
 	drawSynchronized = false;
 	systemOrchestrator->Draw();
@@ -288,37 +428,50 @@ void SceneInstance::Draw()
 	// result pending so EndGameRender can process it directly into that target.
 	if (!gfxManager.IsGamePanelActive())
 	{
-		PostProcessingManager::GetInstance().EndHDRRender(0, renderWidth, renderHeight);
+		PostProcessingManager::GetInstance().EndHDRRender(
+			0, renderWidth, renderHeight, outputWidth, outputHeight);
 	}
 
 	// Render deferred items (excluded from post-processing) on top of blurred output
 	if (!gfxManager.IsGamePanelActive() && gfxManager.HasDeferredItems())
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, renderWidth, renderHeight);
+		glViewport(0, 0, outputWidth, outputHeight);
 		gfxManager.RenderDeferred();
 	}
+
+#ifdef ANDROID
+	// Rendering uses a lower-resolution HDR target, but input and subsequent
+	// overlays must continue to use native surface dimensions.
+	WindowManager::SetViewportDimensions(outputWidth, outputHeight);
+	gfxManager.SetViewportSize(outputWidth, outputHeight);
+#endif
 }
 
 void SceneInstance::Exit()
 {
-	// Exit systems.
-	// ECSRegistry::GetInstance().GetECSManager(scenePath).modelSystem->Exit();
-	// ECSRegistry::GetInstance().GetActiveECSManager().physicsSystem->Shutdown();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).characterControllerSystem->Shutdown();
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+
+	// Release scene-owned CPU and GPU resources while the GL context and ECS
+	// components are still alive.
+	ecsManager.characterControllerSystem->Shutdown();
 	ShutDownPhysics();
 	PostProcessingManager::GetInstance().Shutdown();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).dialogueSystem->Shutdown();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
-	ECSRegistry::GetInstance().GetECSManager(scenePath).fogSystem->Shutdown();
+	ecsManager.particleSystem->Shutdown();
+	ecsManager.spriteSystem->Shutdown();
+	ecsManager.debugDrawSystem->Shutdown();
+	ecsManager.lightingSystem->Shutdown();
+	ecsManager.dialogueSystem->Shutdown();
+	ecsManager.scriptSystem->Shutdown();
+	ecsManager.fogSystem->Shutdown();
 	systemOrchestrator.reset();
 	ENGINE_PRINT("TestScene Exited\n");
 }
 
 void SceneInstance::ShutDownPhysics()
 {
-	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	ecsManager.physicsSystem->Shutdown(ecsManager);
 }
 
 void SceneInstance::initializeOrchestrator() {
@@ -330,6 +483,8 @@ void SceneInstance::initializeOrchestrator() {
 
 void SceneInstance::processInput(float deltaTime)
 {
+	(void)deltaTime;
+
 	// ESC handling is now done in Lua (camera_follow.lua) for cursor lock toggle
 	// Game-specific pause menus should also be handled in Lua
 
@@ -352,18 +507,6 @@ void SceneInstance::processInput(float deltaTime)
 	// if (InputManager::GetKey(Input::Key::S))
 	// if (InputManager::GetKey(Input::Key::A))
 	// if (InputManager::GetKey(Input::Key::D))
-
-	// temp
-	Entity player{};
-	const auto &all = mainECS.GetAllEntities();
-	for (Entity e : all)
-	{
-		std::string enttName = mainECS.GetComponent<NameComponent>(e).name;
-		if (enttName == "Kachujin")
-		{
-			player = e;
-		}
-	}
 
 	// Temp player controls for playable level
 	//  Backwards = +z

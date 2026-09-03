@@ -55,7 +55,7 @@ public:
 
 	template <typename T>
 	void AddComponent(Entity entity, T component) {
-		GetComponentArray<T>()->InsertComponent(entity, component);
+		GetComponentArray<T>()->InsertComponent(entity, std::move(component));
 	}
 
 	template <typename T>
@@ -110,7 +110,7 @@ private:
 			return it->second;
 		}();
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(ANDROID)
 		const std::string& typeName = GetReadableTypeName<T>();
 		auto it = components.find(typeName);
 		assert(it != components.end() && it->second == cachedID &&

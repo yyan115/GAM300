@@ -31,7 +31,15 @@
 
 #include "Logging.hpp"
 
+#ifndef GAM300_ANDROID_MAX_TEXTURE_SIZE
+#define GAM300_ANDROID_MAX_TEXTURE_SIZE 1024
+#endif
+
 #ifdef EDITOR
+namespace {
+constexpr int kAndroidMaxTextureSize =
+	GAM300_ANDROID_MAX_TEXTURE_SIZE > 0 ? GAM300_ANDROID_MAX_TEXTURE_SIZE : 1;
+
 // Box-filter a pixel buffer down to the next mip level (2x downsample).
 static std::vector<uint8_t> BoxFilterMip(const uint8_t* src, int srcW, int srcH, int channels) {
 	int dstW = std::max(1, srcW / 2);
@@ -91,6 +99,19 @@ static bool CompressAndStoreMip(
 	free(mipDst.pData);
 	return true;
 }
+
+bool HasNonOpaqueAlpha(const uint8_t* pixels, int width, int height)
+{
+	const std::size_t pixelCount =
+		static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
+	for (std::size_t pixel = 0; pixel < pixelCount; ++pixel) {
+		if (pixels[pixel * 4 + 3] != 255) {
+			return true;
+		}
+	}
+	return false;
+}
+} // namespace
 #endif
 Texture::Texture() : ID(0), unit(-1), target(GL_TEXTURE_2D) {
 	metaData = std::make_shared<TextureMeta>();
@@ -145,6 +166,19 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	bool needsAlpha = !forAndroid || numColCh > 3;
 	stbi_image_free(bytes);
 	bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, needsAlpha ? 4 : 3);
+
+#ifdef EDITOR
+	// PNG exporters commonly leave a completely opaque alpha plane attached to
+	// PBR maps. ETC2 RGBA doubles their storage and sampling bandwidth for no
+	// visual benefit, so compile those maps as ETC2 RGB. Sprites retain alpha
+	// unconditionally because it is part of their authored UI representation.
+	if (bytes && forAndroid && needsAlpha && metaData->type != "sprite" &&
+		!HasNonOpaqueAlpha(bytes, widthImg, heightImg)) {
+		stbi_image_free(bytes);
+		needsAlpha = false;
+		bytes = stbi_load(assetPath.c_str(), &widthImg, &heightImg, &numColCh, 3);
+	}
+#endif
 #endif
 
 	// Check if image loading failed
@@ -160,12 +194,21 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	std::string outPath{};
 
 #ifdef EDITOR
+	// Android never uploads non-UI mips above its mobile quality tier. Omit
+	// those mips at compile time as well, avoiding dead APK bytes and temporary
+	// CPU memory while preserving the exact compressed mip data used at runtime.
+	int compileMaxSize = metaData->maxSize;
+	if (forAndroid && metaData->type != "sprite" &&
+		(compileMaxSize <= 0 || compileMaxSize > kAndroidMaxTextureSize)) {
+		compileMaxSize = kAndroidMaxTextureSize;
+	}
+
 	// Downscale to maxSize if either dimension exceeds it.
 	// Uses successive 2x box-filtering (same as mip generation) so quality is consistent.
-	if (metaData->maxSize > 0 && (widthImg > metaData->maxSize || heightImg > metaData->maxSize)) {
+	if (compileMaxSize > 0 && (widthImg > compileMaxSize || heightImg > compileMaxSize)) {
 		int srcChannels = needsAlpha ? 4 : 3;
 		std::vector<uint8_t> pixels(bytes, bytes + (std::size_t)(widthImg * heightImg * srcChannels));
-		while (widthImg > metaData->maxSize || heightImg > metaData->maxSize) {
+		while (widthImg > compileMaxSize || heightImg > compileMaxSize) {
 			pixels = BoxFilterMip(pixels.data(), widthImg, heightImg, srcChannels);
 			widthImg = std::max(1, widthImg / 2);
 			heightImg = std::max(1, heightImg / 2);
@@ -303,6 +346,7 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 				unsigned char* pixels = stbi_load_from_memory(
 					rawData.data(), static_cast<int>(rawData.size()), &w, &h, &channels, 4);
 				if (pixels) {
+					m_hasAlphaChannel = channels == 2 || channels == 4;
 					target = GL_TEXTURE_2D;
 					glGenTextures(1, &ID);
 					glBindTexture(GL_TEXTURE_2D, ID);
@@ -331,6 +375,7 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		//std::cerr << "[TEXTURE] DEBUG: GLI texture is empty!" << std::endl;
 		return false;
 	}
+	m_hasAlphaChannel = gli::component_count(texture.format()) >= 4;
 
 	//std::cout << "[TEXTURE] DEBUG: Texture dimensions: " << widthImg << "x" << heightImg << std::endl;
 	
@@ -369,33 +414,62 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	// Check if the loaded DDS/KTX is actually block-compressed
 	bool isCompressed = gli::is_compressed(texture.format());
 
-	// Upload every mip level that was baked into the DDS/KTX at compile time.
-	for (std::size_t level = 0; level < texture.levels(); ++level) {
+	std::size_t firstSourceLevel = 0;
+#ifdef ANDROID
+	// The mobile package contains full mip chains for hundreds of 2K PBR maps.
+	// Start those textures at the configured mobile quality tier instead of
+	// reserving the top mip in GPU memory. UI/sprite textures retain native
+	// resolution so text and controls stay crisp.
+	const int androidMaxTextureSize =
+		std::max(1, static_cast<int>(GAM300_ANDROID_MAX_TEXTURE_SIZE));
+	const bool preserveNativeResolution =
+		metaData && metaData->type == "sprite";
+	if (!preserveNativeResolution) {
+		while (firstSourceLevel + 1 < texture.levels()) {
+			const auto extent = texture.extent(firstSourceLevel);
+			if (static_cast<int>(extent.x) <= androidMaxTextureSize &&
+				static_cast<int>(extent.y) <= androidMaxTextureSize) {
+				break;
+			}
+			++firstSourceLevel;
+		}
+	}
+#endif
+
+	const std::size_t uploadedLevelCount =
+		texture.levels() - firstSourceLevel;
+
+	// Renumber the selected source mip chain from zero in the GL texture.
+	for (std::size_t sourceLevel = firstSourceLevel;
+		 sourceLevel < texture.levels();
+		 ++sourceLevel) {
+		const GLint destinationLevel =
+			static_cast<GLint>(sourceLevel - firstSourceLevel);
 		if (isCompressed) {
 			// Used for 3D PBR Textures (BC1, BC3, BC5, ETC2)
 			glCompressedTexImage2D(
 				target,
-				static_cast<GLint>(level),
+				destinationLevel,
 				format.Internal,
-				static_cast<GLsizei>(texture.extent(level).x),
-				static_cast<GLsizei>(texture.extent(level).y),
+				static_cast<GLsizei>(texture.extent(sourceLevel).x),
+				static_cast<GLsizei>(texture.extent(sourceLevel).y),
 				0,
-				static_cast<GLsizei>(texture.size(level)),
-				texture.data(0, 0, level)
+				static_cast<GLsizei>(texture.size(sourceLevel)),
+				texture.data(0, 0, sourceLevel)
 			);
 		}
 		else {
 			// Used for UI and Sprites (Raw uncompressed RGBA pixels)
 			glTexImage2D(
 				target,
-				static_cast<GLint>(level),
+				destinationLevel,
 				format.Internal,
-				static_cast<GLsizei>(texture.extent(level).x),
-				static_cast<GLsizei>(texture.extent(level).y),
+				static_cast<GLsizei>(texture.extent(sourceLevel).x),
+				static_cast<GLsizei>(texture.extent(sourceLevel).y),
 				0,
 				format.External, // e.g., GL_RGBA
 				format.Type,     // e.g., GL_UNSIGNED_BYTE
-				texture.data(0, 0, level)
+				texture.data(0, 0, sourceLevel)
 			);
 		}
 	}
@@ -420,9 +494,12 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	// Use the mip chain that was baked into the file at compile time.
 	// glGenerateMipmap() on a block-compressed texture is undefined in the OpenGL spec
 	// and silently fails on most drivers, so we never call it here.
-	if (metaData->generateMipmaps && texture.levels() > 1) {
+	if (metaData->generateMipmaps && uploadedLevelCount > 1) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
+		glTexParameteri(
+			GL_TEXTURE_2D,
+			GL_TEXTURE_MAX_LEVEL,
+			static_cast<GLint>(uploadedLevelCount - 1));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
@@ -577,7 +654,7 @@ void Texture::Delete()
 	glDeleteTextures(1, &ID);
 }
 
-std::string Texture::GetType() {
+const std::string& Texture::GetType() const {
 	return metaData->type;
 }
 

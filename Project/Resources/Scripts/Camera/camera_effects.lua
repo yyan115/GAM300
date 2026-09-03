@@ -337,6 +337,7 @@ return Component {
             --print("[CameraEffects] ERROR: CameraComponent not found on this entity")
             return
         end
+        self._isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid() or false
 
         -- === Vignette state ===
         self._vignetteCurrent       = self.BaselineVignetteIntensity
@@ -404,7 +405,7 @@ return Component {
         self._cgTimer             = 0
         self._cgHeld              = false
 
-        self._camera.colorGradingEnabled = true
+        self._camera.colorGradingEnabled = not self._isAndroid
         self._camera.cgBrightness        = self._cgBrightnessCurrent
         self._camera.cgContrast          = self._cgContrastCurrent
         self._camera.cgSaturation        = self._cgSaturationCurrent
@@ -456,6 +457,9 @@ return Component {
             end
         end
 
+        -- Android's compact tone-mapping shader intentionally omits vignette,
+        -- chromatic aberration, color grading, and directional blur.
+        if not self._isAndroid then
         -- === Vignette =========================================================
         do
             if not self._vignetteHeld and self._vignetteDuration then
@@ -490,6 +494,7 @@ return Component {
             self._camera.chromaticAberrationEnabled   = self._chromaticCurrent > 0.001
             self._camera.chromaticAberrationIntensity = self._chromaticCurrent
         end
+        end
 
         -- === Gaussian Blur ====================================================
         -- fx_blur events only. Motion blur is handled separately via dirBlur below.
@@ -512,6 +517,7 @@ return Component {
         end
 
         -- === Motion Blur (Directional) ========================================
+        if not self._isAndroid then
         do
             local mbTarget    = (self.MotionBlurEnabled ~= false) and self._motionBlurTarget         or 0
             local mbStrTarget = (self.MotionBlurEnabled ~= false) and self._motionBlurStrengthTarget or 0
@@ -554,6 +560,7 @@ return Component {
             self._camera.cgContrast   = self._cgContrastCurrent
             self._camera.cgSaturation = self._cgSaturationCurrent
             --self._camera:cgTint(self._cgTintCurrentR, self._cgTintCurrentG, self._cgTintCurrentB)
+        end
         end
 
         -- === Time Scale =======================================================

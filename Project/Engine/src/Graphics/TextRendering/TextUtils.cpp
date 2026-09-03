@@ -4,7 +4,10 @@
 
 void TextUtils::SetText(TextRenderComponent& comp, const std::string& newText) 
 {
-    comp.text = newText;
+    if (comp.text != newText) {
+        comp.text = newText;
+        comp.InvalidateWrappedLayout();
+    }
 }
 
 void TextUtils::SetColor(TextRenderComponent& comp, const Vector3D& newColor)
@@ -120,7 +123,7 @@ void TextUtils::SetWordWrap(TextRenderComponent& comp, bool enabled)
     if (comp.wordWrap != enabled)
     {
         comp.wordWrap = enabled;
-        comp.wrappedLines.clear();
+        comp.InvalidateWrappedLayout();
     }
 }
 
@@ -134,7 +137,7 @@ void TextUtils::SetMaxWidth(TextRenderComponent& comp, float maxWidth)
     if (comp.maxWidth != maxWidth)
     {
         comp.maxWidth = maxWidth;
-        comp.wrappedLines.clear();
+        comp.InvalidateWrappedLayout();
     }
 }
 
@@ -158,11 +161,11 @@ void TextUtils::EnableWordWrap(TextRenderComponent& comp, float maxWidth, float 
     comp.wordWrap = true;
     comp.maxWidth = maxWidth;
     comp.lineSpacing = lineSpacing;
-    comp.wrappedLines.clear();
+    comp.InvalidateWrappedLayout();
 }
 
 void TextUtils::DisableWordWrap(TextRenderComponent& comp)
 {
     comp.wordWrap = false;
-    comp.wrappedLines.clear();
+    comp.InvalidateWrappedLayout();
 }

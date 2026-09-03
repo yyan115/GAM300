@@ -23,7 +23,9 @@ void AudioSystem::Update(float deltaTime) {
     // Update all audio-related components in a single pass
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    for (const auto& entity : ecsManager.GetActiveEntities()) {
+    // The AudioSystem signature includes audio, listener, and reverb components,
+    // so this visits only audio-related entities instead of the entire scene.
+    for (const auto& entity : entities) {
         // Update AudioListener components
         if (ecsManager.HasComponent<AudioListenerComponent>(entity)) {
             AudioListenerComponent& listenerComp = ecsManager.GetComponent<AudioListenerComponent>(entity);
@@ -97,13 +99,13 @@ void AudioSystem::Update(float deltaTime) {
                 continue;
             }
 
-            audioComp.UpdateComponent();
-
-            // Update spatial audio position from Transform if applicable
-            if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
-                const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                audioComp.OnTransformChanged(transform.worldPosition);
+            const Vector3D* worldPosition = nullptr;
+            if (audioComp.Spatialize) {
+                if (auto transform = ecsManager.TryGetComponent<Transform>(entity)) {
+                    worldPosition = &transform->get().worldPosition;
+                }
             }
+            audioComp.UpdateComponent(worldPosition);
         }
     }
 }

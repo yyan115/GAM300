@@ -199,6 +199,7 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<AudioComponent>());
 		signature.set(GetComponentID<AudioListenerComponent>());
+		signature.set(GetComponentID<AudioReverbZoneComponent>());
 		SetSystemSignature<AudioSystem>(signature);
 	}
 
@@ -328,6 +329,16 @@ void ECSManager::DestroyEntity(Entity entity) {
 		}
 	}
 
+	// Runtime systems own resources that outlive their ECS components. Release
+	// them while the entity and component data are still valid instead of making
+	// each frame poll for orphaned handles after destruction.
+	if (characterControllerSystem) {
+		characterControllerSystem->RemoveController(entity);
+	}
+	if (physicsSystem) {
+		physicsSystem->RemoveBody(entity, *this);
+	}
+
 	EntityGUIDRegistry::GetInstance().Unregister(entity);
 	entityManager->DestroyEntity(entity);
 	componentManager->EntityDestroyed(entity);
@@ -336,6 +347,15 @@ void ECSManager::DestroyEntity(Entity entity) {
 }
 
 void ECSManager::ClearAllEntities(bool clearGUIDRegistry) {
+	// Bulk clears bypass DestroyEntity(), so release external runtime handles
+	// explicitly before their backing components disappear.
+	if (characterControllerSystem) {
+		characterControllerSystem->Shutdown();
+	}
+	if (physicsSystem && physicsSystem->IsJoltInitialized()) {
+		physicsSystem->Shutdown(*this);
+	}
+
 	// CRITICAL: Clear the GUID registry first to prevent duplicate entities during undo/redo
 	//EntityGUIDRegistry::GetInstance().Clear();
 	if (clearGUIDRegistry) {
@@ -350,7 +370,7 @@ void ECSManager::ClearAllEntities(bool clearGUIDRegistry) {
 
 std::vector<Entity> ECSManager::GetAllRootEntities() {
 	std::vector<Entity> rootEntities;
-	for (const auto& entity : GetAllEntities()) {
+	for (const auto& entity : GetAllEntitiesView()) {
 		if (!HasComponent<ParentComponent>(entity)) {
 			rootEntities.push_back(entity);
 		} 
@@ -360,14 +380,20 @@ std::vector<Entity> ECSManager::GetAllRootEntities() {
 }
 
 void ECSManager::PreWarmActiveHierarchyCache() {
-	const std::vector<Entity> activeEntities = GetActiveEntities();
-	const std::uint64_t epoch = m_activeHierarchyEpoch.load(std::memory_order_acquire);
-	std::vector<Entity> hierarchyPath;
-	hierarchyPath.reserve(16);
+	PreWarmActiveHierarchyCache(GetActiveEntitiesView());
+}
+
+void ECSManager::PreWarmActiveHierarchyCache(const std::vector<Entity>& entitiesToWarm) {
+	const std::uint64_t epoch = m_activeHierarchyEpoch.load(std::memory_order_relaxed);
+	thread_local std::vector<Entity> hierarchyPath;
+	hierarchyPath.clear();
+	if (hierarchyPath.capacity() < 16) {
+		hierarchyPath.reserve(16);
+	}
 	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
-	for (Entity entity : activeEntities) {
-		const std::uint64_t cachedValue = m_activeHierarchyCache[entity].load(std::memory_order_acquire);
+	for (Entity entity : entitiesToWarm) {
+		const std::uint64_t cachedValue = m_activeHierarchyCache[entity].load(std::memory_order_relaxed);
 		if (IsActiveHierarchyCacheHit(cachedValue, epoch)) {
 			continue;
 		}
@@ -383,7 +409,7 @@ void ECSManager::PreWarmActiveHierarchyCache() {
 			}
 
 			const std::uint64_t currentCachedValue =
-				m_activeHierarchyCache[currentEntity].load(std::memory_order_acquire);
+				m_activeHierarchyCache[currentEntity].load(std::memory_order_relaxed);
 			if (IsActiveHierarchyCacheHit(currentCachedValue, epoch)) {
 				hierarchyActive = CachedActiveHierarchyState(currentCachedValue);
 				break;
@@ -397,17 +423,18 @@ void ECSManager::PreWarmActiveHierarchyCache() {
 			}
 			hierarchyPath.push_back(currentEntity);
 
-			if (HasComponent<ActiveComponent>(currentEntity) &&
-				!GetComponent<ActiveComponent>(currentEntity).isActive) {
+			const auto activeComponent = TryGetComponent<ActiveComponent>(currentEntity);
+			if (activeComponent && !activeComponent->get().isActive) {
 				hierarchyActive = false;
 				break;
 			}
 
-			if (!HasComponent<ParentComponent>(currentEntity)) {
+			const auto parentComponent = TryGetComponent<ParentComponent>(currentEntity);
+			if (!parentComponent) {
 				break;
 			}
 
-			const GUID_128 parentGuid = GetComponent<ParentComponent>(currentEntity).parent;
+			const GUID_128 parentGuid = parentComponent->get().parent;
 			const Entity parentEntity = guidRegistry.GetEntityByGUID(parentGuid);
 			if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
 				break;
@@ -419,7 +446,7 @@ void ECSManager::PreWarmActiveHierarchyCache() {
 		for (Entity pathEntity : hierarchyPath) {
 			m_activeHierarchyCache[pathEntity].store(
 				PackActiveHierarchyState(epoch, hierarchyActive),
-				std::memory_order_release);
+				std::memory_order_relaxed);
 		}
 	}
 }
@@ -429,8 +456,8 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 		return false;
 	}
 
-	const std::uint64_t epoch = m_activeHierarchyEpoch.load(std::memory_order_acquire);
-	const std::uint64_t cachedValue = m_activeHierarchyCache[entity].load(std::memory_order_acquire);
+	const std::uint64_t epoch = m_activeHierarchyEpoch.load(std::memory_order_relaxed);
+	const std::uint64_t cachedValue = m_activeHierarchyCache[entity].load(std::memory_order_relaxed);
 	if (IsActiveHierarchyCacheHit(cachedValue, epoch)) {
 		return CachedActiveHierarchyState(cachedValue);
 	}
@@ -455,7 +482,7 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 		}
 
 		const std::uint64_t currentCachedValue =
-			m_activeHierarchyCache[currentEntity].load(std::memory_order_acquire);
+			m_activeHierarchyCache[currentEntity].load(std::memory_order_relaxed);
 		if (IsActiveHierarchyCacheHit(currentCachedValue, epoch)) {
 			hierarchyActive = CachedActiveHierarchyState(currentCachedValue);
 			break;
@@ -467,17 +494,18 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 		}
 		hierarchyPath.push_back(currentEntity);
 
-		if (HasComponent<ActiveComponent>(currentEntity) &&
-			!GetComponent<ActiveComponent>(currentEntity).isActive) {
+		const auto activeComponent = TryGetComponent<ActiveComponent>(currentEntity);
+		if (activeComponent && !activeComponent->get().isActive) {
 			hierarchyActive = false;
 			break;
 		}
 
-		if (!HasComponent<ParentComponent>(currentEntity)) {
+		const auto parentComponent = TryGetComponent<ParentComponent>(currentEntity);
+		if (!parentComponent) {
 			break;
 		}
 
-		const GUID_128 parentGuid = GetComponent<ParentComponent>(currentEntity).parent;
+		const GUID_128 parentGuid = parentComponent->get().parent;
 		const Entity parentEntity = guidRegistry.GetEntityByGUID(parentGuid);
 		if (parentEntity == INVALID_ENTITY || parentEntity == UINT32_MAX) {
 			break;
@@ -488,7 +516,7 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 
 	const std::uint64_t packedValue = PackActiveHierarchyState(epoch, hierarchyActive);
 	for (Entity pathEntity : hierarchyPath) {
-		m_activeHierarchyCache[pathEntity].store(packedValue, std::memory_order_release);
+		m_activeHierarchyCache[pathEntity].store(packedValue, std::memory_order_relaxed);
 	}
 	return hierarchyActive;
 }

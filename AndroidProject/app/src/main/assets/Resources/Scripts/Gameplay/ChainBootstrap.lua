@@ -41,6 +41,14 @@ local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
 local ControllerModule  = require("Gameplay.ChainController")
 local ChainAudioModule  = require("Gameplay.ChainAudio")
 
+local function write_local_position(tr, x, y, z)
+    local pos = tr.localPosition
+    if type(pos) == "table" or type(pos) == "userdata" then
+        pos.x, pos.y, pos.z = x, y, z
+        tr.isDirty = true
+    end
+end
+
 return Component {
     fields = {
         NumberOfLinks = 200,
@@ -160,7 +168,7 @@ return Component {
 
     _read_transform_position = function(self, tr)
         if not tr then return 0,0,0 end
-        local ok, a, b, c = pcall(function() return tr:GetPosition() end)
+        local ok, a, b, c = pcall(tr.GetPosition, tr)
         if ok then
             if type(a) == "table" then
                 return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
@@ -178,14 +186,8 @@ return Component {
 
     _read_world_pos = function(self, tr)
         if not tr then return 0,0,0 end
-        local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition and Engine.GetTransformWorldPosition(tr) end)
-        if ok and a ~= nil then
-            if type(a) == "table" then
-                return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-            end
-            if type(a) == "number" and type(b) == "number" and type(c) == "number" then
-                return a, b, c
-            end
+        if Engine and type(Engine.GetTransformWorldPositionXYZ) == "function" then
+            return Engine.GetTransformWorldPositionXYZ(tr)
         end
         return self:_read_transform_position(tr)
     end,
@@ -193,27 +195,33 @@ return Component {
     _write_world_pos = function(self, tr, x, y, z)
         if not tr then return false end
         if Engine and type(Engine.SetTransformWorldPosition) == "function" then
-            local ok = pcall(function() Engine.SetTransformWorldPosition(tr, x, y, z) end)
+            local ok = pcall(Engine.SetTransformWorldPosition, tr, x, y, z)
             if ok then return true end
         end
         if type(tr.SetPosition) == "function" then
-            local suc = pcall(function() tr:SetPosition(x, y, z) end)
+            local suc = pcall(tr.SetPosition, tr, x, y, z)
             if suc then return true end
         end
         if type(tr.localPosition) ~= "nil" then
-            pcall(function()
-                local pos = tr.localPosition
-                if type(pos) == "table" then
-                    pos.x, pos.y, pos.z = x, y, z
-                    tr.isDirty = true
-                elseif type(pos) == "userdata" then
-                    pos.x, pos.y, pos.z = x, y, z
-                    tr.isDirty = true
-                end
-            end)
+            pcall(write_local_position, tr, x, y, z)
             return true
         end
         return false
+    end,
+
+    _publish_endpoint_moved = function(self, x, y, z, isLocked, chainLength,
+        isExtending, isRetracting, isFlopping, isWallSnapped)
+        if not (_G.event_bus and _G.event_bus.publish) then return end
+        local position = self._endpointMovedPosition
+        position.x, position.y, position.z = x, y, z
+        local payload = self._endpointMovedPayload
+        payload.isLocked = isLocked or false
+        payload.chainLength = chainLength
+        payload.isExtending = isExtending or false
+        payload.isRetracting = isRetracting or false
+        payload.isFlopping = isFlopping or false
+        payload.isWallSnapped = isWallSnapped or false
+        _G.event_bus.publish("chain.endpoint_moved", payload)
     end,
 
     _on_chain_down = function(self, payload)
@@ -546,14 +554,21 @@ return Component {
 
         self._runtime = self._runtime or {}
         self._runtime.childTransforms = {}
+        self._runtime.childModels = {}
         for i = 1, math.max(1, self.NumberOfLinks) do
             local name = self.LinkName .. tostring(i)
             local tr = Engine.FindTransformByName(name)
-            if tr then table.insert(self._runtime.childTransforms, tr) end
+            if tr then
+                local runtimeIndex = #self._runtime.childTransforms + 1
+                self._runtime.childTransforms[runtimeIndex] = tr
+                local entity = Engine.GetEntityByName(name)
+                self._runtime.childModels[runtimeIndex] =
+                    (entity and GetComponent(entity, "ModelRenderComponent")) or false
+            end
         end
 
         self.linkHandler = LinkHandlerModule.New(self)
-        self.linkHandler:InitTransforms(self._runtime.childTransforms)
+        self.linkHandler:InitTransforms(self._runtime.childTransforms, self._runtime.childModels)
 
         local params = {
             NumberOfLinks = self.NumberOfLinks,
@@ -568,21 +583,23 @@ return Component {
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45)
         }
         self.controller = ControllerModule.New(params)
+        self._controllerSettings = {}
+        self._controllerSettings.getStart = function()
+            if not self.playerTransform then
+                self.playerTransform = Engine.FindTransformByName(self.PlayerName)
+            end
+            if self.playerTransform then
+                return self:_read_world_pos(self.playerTransform)
+            end
+            if self.controller then
+                local sp = self.controller.startPos
+                return sp[1], sp[2], sp[3]
+            end
+            return self:_unpack_pos(self:GetPosition())
+        end
 
         for i, tr in ipairs(self._runtime.childTransforms) do
-            local x, y, z
-            local ok, a, b, c = pcall(function()
-                if Engine and Engine.GetTransformWorldPosition then
-                    return Engine.GetTransformWorldPosition(tr)
-                end
-                return nil
-            end)
-            if ok and a ~= nil then
-                if type(a) == "table" then x,y,z = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                else x,y,z = a,b,c end
-            else
-                x,y,z = self:_read_world_pos(tr)
-            end
+            local x, y, z = self:_read_world_pos(tr)
             if self.controller.positions[i] then
                 self.controller.positions[i][1], self.controller.positions[i][2], self.controller.positions[i][3] = x, y, z
                 self.controller.prev[i][1], self.controller.prev[i][2], self.controller.prev[i][3] = x, y, z
@@ -607,6 +624,7 @@ return Component {
         self._spinFacingX        = 0
         self._spinFacingZ        = 1
         self._spinFacingLocked   = false  -- true once facing is snapshotted, prevents mid-spin updates
+        self._spinPositions      = {}
 
         -- Throwable interaction state
         self._hookedIsThrowable      = false   -- true while endpoint is on a Throwable
@@ -649,6 +667,10 @@ return Component {
         -- LockOn targets are queried live via Engine.GetEntitiesByTag at fire time.
 
         self._lastPublishedExtended = false
+        self._endpointMovedPosition = {x=0, y=0, z=0}
+        self._endpointMovedPayload = {position=self._endpointMovedPosition}
+        self._constraintPublishedActive = false
+        self._clearConstraintPayload = {ratio=0, exceeded=false, drag=false}
         self._retractTriggeredThisPress = false
         self._wasFlopping    = false   -- track flop transitions for chain.detached
         self._wasWallSnapped = false   -- track wall-snap transitions for chain.detached
@@ -669,14 +691,22 @@ return Component {
                     local fz = fwd.z or fwd[3] or 0
                     local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
                     if mag > 0.0001 then
-                        self._cameraForward = {fx/mag, fy/mag, fz/mag}
+                        local cameraForward = self._cameraForward
+                        cameraForward[1], cameraForward[2], cameraForward[3] =
+                            fx/mag, fy/mag, fz/mag
                     end
                 end
             end)
 
             self._cameraWorldTargetSub = _G.event_bus.subscribe("ChainAim_worldTarget", function(payload)
                 if payload then
-                    self._cameraAimWorldPoint = { x = payload.x, y = payload.y, z = payload.z }
+                    local worldPoint = self._cameraAimWorldPoint
+                    if not worldPoint then
+                        worldPoint = { x = 0, y = 0, z = 0 }
+                        self._cameraAimWorldPoint = worldPoint
+                    end
+                    worldPoint.x, worldPoint.y, worldPoint.z =
+                        payload.x, payload.y, payload.z
                 end
             end)
 
@@ -748,40 +778,30 @@ return Component {
 
                         -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then
-                            local ok, a, b, c = pcall(function()
-                                return Engine.GetTransformWorldPosition(self._endpointTransform)
-                            end)
-                            if ok and a ~= nil then
-                                local lx, ly, lz
-                                if type(a) == "table" then
-                                    lx, ly, lz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                                elseif type(a) == "number" then
-                                    lx, ly, lz = a, b, c
-                                end
-                                if lx then
-                                    self.controller.lockedEndPoint[1] = lx
-                                    self.controller.lockedEndPoint[2] = ly
-                                    self.controller.lockedEndPoint[3] = lz
-                                    dbg(string.format("[ChainBootstrap] lockedEndPoint snapshot at hit: (%.3f,%.3f,%.3f)", lx, ly, lz))
+                            local lx, ly, lz = self:_read_world_pos(self._endpointTransform)
+                            if lx then
+                                self.controller.lockedEndPoint[1] = lx
+                                self.controller.lockedEndPoint[2] = ly
+                                self.controller.lockedEndPoint[3] = lz
+                                dbg(string.format("[ChainBootstrap] lockedEndPoint snapshot at hit: (%.3f,%.3f,%.3f)", lx, ly, lz))
 
-                                    -- For throwables: trim chain to actual player→endpoint distance
-                                    -- so the chain doesn't hang loose at full MaxLength.
-                                    if self._hookedIsThrowable then
-                                        local sp = self.controller.startPos
-                                        local ddx = lx - sp[1]
-                                        local ddy = ly - sp[2]
-                                        local ddz = lz - sp[3]
-                                        local actualDist = math.sqrt(ddx*ddx + ddy*ddy + ddz*ddz)
-                                        self.controller.chainLen = actualDist
-                                        local lmd = tonumber(self.LinkMaxDistance) or 0.025
-                                        if lmd > 0 then
-                                            self.controller.activeN = math.min(
-                                                math.ceil(actualDist / lmd) + 1,
-                                                self.controller.n
-                                            )
-                                        end
-                                        dbg(string.format("[ChainBootstrap] Throwable hit — trimmed chainLen=%.3f activeN=%d", actualDist, self.controller.activeN))
+                                -- For throwables: trim chain to actual player→endpoint distance
+                                -- so the chain doesn't hang loose at full MaxLength.
+                                if self._hookedIsThrowable then
+                                    local sp = self.controller.startPos
+                                    local ddx = lx - sp[1]
+                                    local ddy = ly - sp[2]
+                                    local ddz = lz - sp[3]
+                                    local actualDist = math.sqrt(ddx*ddx + ddy*ddy + ddz*ddz)
+                                    self.controller.chainLen = actualDist
+                                    local lmd = tonumber(self.LinkMaxDistance) or 0.025
+                                    if lmd > 0 then
+                                        self.controller.activeN = math.min(
+                                            math.ceil(actualDist / lmd) + 1,
+                                            self.controller.n
+                                        )
                                     end
+                                    dbg(string.format("[ChainBootstrap] Throwable hit — trimmed chainLen=%.3f activeN=%d", actualDist, self.controller.activeN))
                                 end
                             end
                         end
@@ -840,18 +860,10 @@ return Component {
 
         for _, entityId in ipairs(entities) do
             repeat
-                local tr = nil
-                pcall(function() tr = Engine.FindTransformByID(entityId) end)
+                local tr = Engine.FindTransformByID(entityId)
                 if not tr then break end
 
-                local tx, ty, tz
-                local rok, a, b, c = pcall(function()
-                    return Engine.GetTransformWorldPosition(tr)
-                end)
-                if rok and a ~= nil then
-                    if type(a) == "table" then tx, ty, tz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                    elseif type(a) == "number" then tx, ty, tz = a, b, c end
-                end
+                local tx, ty, tz = self:_read_world_pos(tr)
                 if not tx then break end
 
                 local dx, dy, dz = tx - sx, ty - sy, tz - sz
@@ -930,7 +942,7 @@ return Component {
     -- Circle: cos(a)*forward + sin(a)*up.  Tangent: -sin(a)*forward + cos(a)*up.
     -- SpinFacing is updated each frame by _tickSpin via request_player_forward.
     _computeSpinPositions = function(self, startPos, angle, spinActiveN)
-        local result = {}
+        local result = self._spinPositions
         local r      = tonumber(self.SpinRadius) or 0.75
         local fx, fz = self._spinFacingX or 0, self._spinFacingZ or 1
         local flen   = math.sqrt(fx*fx + fz*fz)
@@ -956,11 +968,14 @@ return Component {
         local sa, ca = math.sin(self._spinAngle), math.cos(self._spinAngle)
         for i = 1, spinActiveN do
             local frac = i / spinActiveN
-            result[i] = {
-                startPos[1] + fx * ca * r * frac,
-                startPos[2] + sa * r * frac,
-                startPos[3] + fz * ca * r * frac,
-            }
+            local position = result[i]
+            if not position then
+                position = {0, 0, 0}
+                result[i] = position
+            end
+            position[1] = startPos[1] + fx * ca * r * frac
+            position[2] = startPos[2] + sa * r * frac
+            position[3] = startPos[3] + fz * ca * r * frac
         end
 
         -- Radial direction (startPos to tip) for endpoint rotation
@@ -1082,8 +1097,10 @@ return Component {
                     )
                 end
 
-                dbg(string.format("[ChainBootstrap] AdjustLength: chainLen=%.4f activeN=%d",
-                    newLen, self.controller.activeN))
+                if _G.CHAIN_DEBUG then
+                    dbg(string.format("[ChainBootstrap] AdjustLength: chainLen=%.4f activeN=%d",
+                        newLen, self.controller.activeN))
+                end
 
             elseif not self._intentContinue and not self._intentAimFire then
                 -- FUTURE: hold on extended, idle, unattached chain.
@@ -1109,40 +1126,30 @@ return Component {
         PROFILE_SCOPED_END()
 
         PROFILE_SCOPED("CB::ControllerUpdate")
-        local settings = {
-            ChainSpeed = self.ChainSpeed,
-            MaxLength = self.MaxLength,
-            IsElastic = self.IsElastic,
-            LinkMaxDistance = self.LinkMaxDistance,
-            VerletGravity = self.VerletGravity,
-            VerletDamping = self.VerletDamping,
-            ConstraintIterations = self.ConstraintIterations,
-            SubSteps = self.SubSteps,
-            GroundClamp = self.GroundClamp,
-            GroundClampOffset = self.GroundClampOffset,
-            WallClamp = self.WallClamp,
-            WallClampInterval = self.WallClampInterval,
-            WallClampRadius = self.WallClampRadius,
-            ChainSlackDistance = self.ChainSlackDistance,
-            DragTag = self.DragTag,
-            UseLOSAnchors = self.UseLOSAnchors,
-            AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
-            PinEndWhenExtended = self.PinEndWhenExtended,
-            getStart = function()
-                if not self.playerTransform then
-                    self.playerTransform = Engine.FindTransformByName(self.PlayerName)
-                end
-                if self.playerTransform then
-                    return self:_read_world_pos(self.playerTransform)
-                end
-                local sp = (self.controller and self.controller.startPos) or { self:_unpack_pos(self:GetPosition()) }
-                return sp[1], sp[2], sp[3]
-            end
-        }
+        local settings = self._controllerSettings
+        settings.ChainSpeed = self.ChainSpeed
+        settings.MaxLength = self.MaxLength
+        settings.IsElastic = self.IsElastic
+        settings.LinkMaxDistance = self.LinkMaxDistance
+        settings.VerletGravity = self.VerletGravity
+        settings.VerletDamping = self.VerletDamping
+        settings.ConstraintIterations = self.ConstraintIterations
+        settings.SubSteps = self.SubSteps
+        settings.GroundClamp = self.GroundClamp
+        settings.GroundClampOffset = self.GroundClampOffset
+        settings.WallClamp = self.WallClamp
+        settings.WallClampInterval = self.WallClampInterval
+        settings.WallClampRadius = self.WallClampRadius
+        settings.ChainSlackDistance = self.ChainSlackDistance
+        settings.DragTag = self.DragTag
+        settings.UseLOSAnchors = self.UseLOSAnchors
+        settings.AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45)
+        settings.PinEndWhenExtended = self.PinEndWhenExtended
+        settings.SpinActive = self._intentAimFire or self._pendingSpinRelease
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
         PROFILE_SCOPED_END() -- CB::ControllerUpdate
-        local activeN = self.controller.activeN
+        local activeN = self.controller._fullyInactive and 1 or self.controller.activeN
 
         -- Publish chain extended state change so other scripts (ComboManager)
         -- can react without relying on a global that may be one frame stale.
@@ -1205,11 +1212,9 @@ return Component {
             for i = 1, spinActiveN do
                 local vp = positions[i] or startPos
                 local sp = scripted[i]
-                positions[i] = {
-                    vp[1] + (sp[1] - vp[1]) * scriptedWeight,
-                    vp[2] + (sp[2] - vp[2]) * scriptedWeight,
-                    vp[3] + (sp[3] - vp[3]) * scriptedWeight,
-                }
+                vp[1] = vp[1] + (sp[1] - vp[1]) * scriptedWeight
+                vp[2] = vp[2] + (sp[2] - vp[2]) * scriptedWeight
+                vp[3] = vp[3] + (sp[3] - vp[3]) * scriptedWeight
             end
 
             -- Override activeN and endPos so rotations use spin tip
@@ -1257,12 +1262,8 @@ return Component {
                     end
                 end
 
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("chain.endpoint_moved", {
-                        position    = { x = tip[1], y = tip[2], z = tip[3] },
-                        isExtending = false,
-                    })
-                end
+                self:_publish_endpoint_moved(tip[1], tip[2], tip[3],
+                    false, nil, false, false, false, false)
             end
 
             -- Release window check (only when button has been released)
@@ -1304,17 +1305,18 @@ return Component {
             and _G.event_bus and _G.event_bus.publish
         then
             local cr = self.controller.constraintResult
-            dbg(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
-                cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
+            if _G.CHAIN_DEBUG then
+                dbg(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
+                    cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
+            end
             _G.event_bus.publish("chain.movement_constraint", cr)
-        elseif (not chainAttached or not chainIdle) and _G.event_bus and _G.event_bus.publish then
+            self._constraintPublishedActive = true
+        elseif self._constraintPublishedActive and _G.event_bus and _G.event_bus.publish then
             -- Chain not taut — clear any stale constraint so PlayerMovement doesn't
-            -- keep applying a ratio from the last taut frame.
-            _G.event_bus.publish("chain.movement_constraint", {
-                ratio    = 0,
-                exceeded = false,
-                drag     = false,
-            })
+            -- keep applying a ratio from the last taut frame. This is edge-driven;
+            -- publishing the same clear event every idle frame only wastes work.
+            _G.event_bus.publish("chain.movement_constraint", self._clearConstraintPayload)
+            self._constraintPublishedActive = false
         end
 
         -- Throwable tension: always published while throwable is hooked, including during retraction
@@ -1334,15 +1336,13 @@ return Component {
 
         -- === Audio ===
         PROFILE_SCOPED("CB::AudioUpdate")
+        local public = self.controller:GetPublicState()
         if self.audioHandler then
-            pcall(function()
-                self.audioHandler:Update(dt, self.controller:GetPublicState(), positions, activeN)
-            end)
+            pcall(self.audioHandler.Update, self.audioHandler, dt, public, positions, activeN)
         end
         PROFILE_SCOPED_END()
 
         PROFILE_SCOPED("CB::EndpointUpdate")
-        local public = self.controller:GetPublicState()
         self.m_CurrentLength = public.ChainLength
         self.m_IsExtending = public.IsExtending
         self.m_IsRetracting = public.IsRetracting
@@ -1486,17 +1486,10 @@ return Component {
 
                 -- Always publish endpoint_moved so ChainEndpointController
                 -- can manage RB keepalive and trigger window regardless of lock state
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("chain.endpoint_moved", {
-                        position     = { x = endPos[1], y = endPos[2], z = endPos[3] },
-                        isLocked     = public.EndPointLocked,
-                        chainLength  = self.m_CurrentLength,
-                        isExtending  = self.m_IsExtending,
-                        isRetracting = self.m_IsRetracting,
-                        isFlopping   = public.Flopping,           -- chain in free-fall physics
-                        isWallSnapped = public.RaycastSnapped,    -- chain locked onto static geometry
-                    })
-                end
+                self:_publish_endpoint_moved(endPos[1], endPos[2], endPos[3],
+                    public.EndPointLocked, self.m_CurrentLength,
+                    self.m_IsExtending, self.m_IsRetracting,
+                    public.Flopping, public.RaycastSnapped)
 
                 self._wasChainActive = true
             else
@@ -1525,6 +1518,11 @@ return Component {
     OnDisable = function(self)
         -- === Audio ===
         if self.audioHandler then pcall(function() self.audioHandler:Cleanup() end) end
+
+        if self._constraintPublishedActive and _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.movement_constraint", self._clearConstraintPayload)
+            self._constraintPublishedActive = false
+        end
 
         -- === Spin cleanup ===
         if self._pendingSpinRelease or self._intentAimFire then

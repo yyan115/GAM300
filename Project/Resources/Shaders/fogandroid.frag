@@ -44,6 +44,7 @@ layout(std140) uniform CameraBlock {
     mat4 projection;
     vec3 cameraPos;
     float _pad;
+    mat4 viewProjection;
 };
 
 uniform mat4 modelInverse;

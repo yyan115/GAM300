@@ -145,6 +145,8 @@ Once that is done, ideally you should restart your computer for best results. Th
 
 Android depends on Visual Studio code to compile, which is why you should have Visual Studio Code installed. You do not need Visual Studio Code open to run for Android, as I've configured the gradle and cmake so that you only need to open Android Studio to run for Android.
 
+The Run button in Android Studio builds the debug variant. The engine library for that variant is compiled as RelWithDebInfo (optimized, with symbols) so that frame rates seen while running from Android Studio match the release APK. Only the small JNI bridge is a true debug build. If you need to step through engine code at -O0, set the CMake cache entry `GAM300_ANDROID_DEBUG_ENGINE_CONFIG` to `Debug` in `AndroidProject/app/src/main/cpp/CMakeLists.txt` (or pass it through gradle's cmake arguments) and run clean-android.bat. Engine builds live in `Project/Build/android-relwithdebinfo` and `Project/Build/android-release`.
+
 Some Android binaries are not available, so some of them are manually compiled. A few scripts are provided to compile them currently in Project/Libraries/build-scripts. They will eventually be cleaned up for a more proper CI/CD pipeline. Currently they only need to be compiled once, so I have already compiled them, and the developers need not do anything unless they want to use another version of the libraries.
 
 ### Frequent Errors for Android Studio

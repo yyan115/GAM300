@@ -470,69 +470,79 @@ AudioSourceState AudioManager::GetState(ChannelHandle channel) {
     auto it = ChannelMap.find(channel);
     if (it == ChannelMap.end()) return AudioSourceState::Stopped;
 
-    UpdateChannelState(it->first);
+    // The audio thread refreshes/removes stopped channels at 60 Hz, while
+    // Pause/Resume update this state synchronously. Avoid querying FMOD twice
+    // for every playing AudioComponent on the game thread each frame.
     return it->second.State;
 }
 
-void AudioManager::SetChannelVolume(ChannelHandle channel, float volume) {
-    if (ShuttingDown.load()) return;
+void AudioManager::QueueChannelUpdate(ChannelHandle channel, const ChannelUpdate& update) {
+    if (ShuttingDown.load(std::memory_order_relaxed) || update.flags == 0) return;
 
     std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
+    auto channelIt = ChannelMap.find(channel);
+    if (channelIt == ChannelMap.end() || !channelIt->second.Channel) return;
 
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].volume = volume;
-    PendingUpdates[channel].flags |= UPDATE_VOLUME;
+    ChannelUpdate& pending = PendingUpdates[channel];
+    const uint32_t flags = update.flags;
+
+    if (flags & UPDATE_VOLUME) pending.volume = update.volume;
+    if (flags & UPDATE_PITCH) pending.pitch = update.pitch;
+    if (flags & UPDATE_LOOP) pending.loop = update.loop;
+    if (flags & UPDATE_POSITION) pending.position = update.position;
+    if (flags & UPDATE_3D_MINMAX) {
+        pending.minDistance = update.minDistance;
+        pending.maxDistance = update.maxDistance;
+    }
+    if (flags & UPDATE_REVERB_MIX) pending.reverbMix = update.reverbMix;
+    if (flags & UPDATE_PRIORITY) pending.priority = update.priority;
+    if (flags & UPDATE_STEREO_PAN) pending.stereoPan = update.stereoPan;
+    if (flags & UPDATE_DOPPLER_LEVEL) pending.dopplerLevel = update.dopplerLevel;
+
+    // A channel is either 2D or 3D. Make the most recent batched mode request
+    // authoritative instead of allowing stale opposite-mode flags to combine.
+    if (flags & UPDATE_STEREO_PAN) {
+        pending.flags &= ~(UPDATE_POSITION | UPDATE_3D_MINMAX);
+    } else if (flags & UPDATE_POSITION) {
+        pending.flags &= ~UPDATE_STEREO_PAN;
+    }
+    pending.flags |= flags;
+}
+
+void AudioManager::SetChannelVolume(ChannelHandle channel, float volume) {
+    ChannelUpdate update;
+    update.volume = volume;
+    update.flags = UPDATE_VOLUME;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::SetChannelPitch(ChannelHandle channel, float pitch) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].pitch = pitch;
-    PendingUpdates[channel].flags |= UPDATE_PITCH;
+    ChannelUpdate update;
+    update.pitch = pitch;
+    update.flags = UPDATE_PITCH;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::SetChannelLoop(ChannelHandle channel, bool loop) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].loop = loop;
-    PendingUpdates[channel].flags |= UPDATE_LOOP;
+    ChannelUpdate update;
+    update.loop = loop;
+    update.flags = UPDATE_LOOP;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::UpdateChannelPosition(ChannelHandle channel, const Vector3D& position) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].position = position;
-    PendingUpdates[channel].flags |= UPDATE_POSITION;
+    ChannelUpdate update;
+    update.position = position;
+    update.flags = UPDATE_POSITION;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::SetChannel3DMinMaxDistance(ChannelHandle channel, float minDistance, float maxDistance) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].minDistance = minDistance;
-    PendingUpdates[channel].maxDistance = maxDistance;
-    PendingUpdates[channel].flags |= UPDATE_3D_MINMAX;
+    ChannelUpdate update;
+    update.minDistance = minDistance;
+    update.maxDistance = maxDistance;
+    update.flags = UPDATE_3D_MINMAX;
+    QueueChannelUpdate(channel, update);
 }
 
 FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
@@ -695,7 +705,7 @@ void AudioManager::ReleaseSound(FMOD_SOUND* sound, const std::string& assetPath)
 }
 
 void AudioManager::CleanupStoppedChannels() {
-    std::vector<ChannelHandle> toErase;
+    m_stoppedChannelsScratch.clear();
     
     for (auto& kv : ChannelMap) {
         if (kv.second.Channel) {
@@ -704,13 +714,13 @@ void AudioManager::CleanupStoppedChannels() {
             
             if (!playing && kv.second.State != AudioSourceState::Paused) {
                 kv.second.State = AudioSourceState::Stopped;
-                toErase.push_back(kv.first);
+                m_stoppedChannelsScratch.push_back(kv.first);
             }
         }
     }
     
     // Remove from map
-    for (auto id : toErase) {
+    for (auto id : m_stoppedChannelsScratch) {
         ChannelMap.erase(id);
     }
 }
@@ -817,67 +827,47 @@ void AudioManager::SetReverbZoneProperties(FMOD_REVERB3D* reverb, const FMOD_REV
 }
 
 void AudioManager::SetChannelReverbMix(ChannelHandle channel, float reverbMix) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].reverbMix = reverbMix;
-    PendingUpdates[channel].flags |= UPDATE_REVERB_MIX;
+    ChannelUpdate update;
+    update.reverbMix = reverbMix;
+    update.flags = UPDATE_REVERB_MIX;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::SetChannelPriority(ChannelHandle channel, int priority) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].priority = priority;
-    PendingUpdates[channel].flags |= UPDATE_PRIORITY;
+    ChannelUpdate update;
+    update.priority = priority;
+    update.flags = UPDATE_PRIORITY;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::SetChannelStereoPan(ChannelHandle channel, float pan) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].stereoPan = pan;
-    PendingUpdates[channel].flags |= UPDATE_STEREO_PAN;
+    ChannelUpdate update;
+    update.stereoPan = pan;
+    update.flags = UPDATE_STEREO_PAN;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::SetChannelDopplerLevel(ChannelHandle channel, float level) {
-    if (ShuttingDown.load()) return;
-
-    std::unique_lock<std::shared_mutex> lock(Mutex);
-    auto it = ChannelMap.find(channel);
-    if (it == ChannelMap.end() || !it->second.Channel) return;
-
-    // Add to pending updates instead of immediate FMOD call
-    PendingUpdates[channel].dopplerLevel = level;
-    PendingUpdates[channel].flags |= UPDATE_DOPPLER_LEVEL;
+    ChannelUpdate update;
+    update.dopplerLevel = level;
+    update.flags = UPDATE_DOPPLER_LEVEL;
+    QueueChannelUpdate(channel, update);
 }
 
 void AudioManager::ApplyBatchUpdates() {
     if (ShuttingDown.load()) return;
 
-    std::unordered_map<ChannelHandle, ChannelUpdate> updatesToProcess;
-
     {
         std::unique_lock<std::shared_mutex> lock(Mutex);
         if (PendingUpdates.empty()) return;
-        updatesToProcess = std::move(PendingUpdates);
-        PendingUpdates.clear();
+        PendingUpdatesScratch.clear();
+        PendingUpdatesScratch.swap(PendingUpdates);
     }
 
+    bool hasVolumeUpdates = false;
+
     // Process updates outside of lock
-    for (const auto& updatePair : updatesToProcess) {
+    for (const auto& updatePair : PendingUpdatesScratch) {
         ChannelHandle channel = updatePair.first;
         const ChannelUpdate& update = updatePair.second;
 
@@ -889,6 +879,7 @@ void AudioManager::ApplyBatchUpdates() {
 
         // Apply updates to FMOD channel
         if (update.flags & UPDATE_VOLUME) {
+            hasVolumeUpdates = true;
             float finalVolume = update.volume * MasterVolume.load();
             FMOD_Channel_SetVolume(fmodChannel, finalVolume);
         }
@@ -948,9 +939,9 @@ void AudioManager::ApplyBatchUpdates() {
     }
 
     // Sync BaseVolume for any channels whose volume was explicitly updated
-    {
+    if (hasVolumeUpdates) {
         std::unique_lock<std::shared_mutex> writeLock(Mutex);
-        for (const auto& updatePair : updatesToProcess) {
+        for (const auto& updatePair : PendingUpdatesScratch) {
             if (updatePair.second.flags & UPDATE_VOLUME) {
                 auto it = ChannelMap.find(updatePair.first);
                 if (it != ChannelMap.end()) {

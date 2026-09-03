@@ -4,11 +4,11 @@
 local M = {}
 
 -- Returns the closest enemy entity ID and its XZ distance from the player.
--- Uses Engine.FindEntitiesWithScript (C++ cached) for performance.
+-- Uses a cached native query so the common no-nearby-enemy path does not build
+-- Lua tables or cross the binding once per enemy every frame.
 function M.findClosestEnemy(self)
     if not self._hasTarget or not Engine
-    or not Engine.FindEntitiesWithScript
-    or not Engine.GetEntityPosition then
+    or not Engine.FindClosestEntityWithScriptXZ then
         return nil, math.huge
     end
 
@@ -17,22 +17,15 @@ function M.findClosestEnemy(self)
     local closestDist  = math.huge
     local closestEnemy = nil
 
+    local maxRange = math.max(
+        self.enemyDetectionRange or 8.0,
+        self.enemyDisengageRange or 10.0)
     for _, scriptName in ipairs(self.enemyComponents or {}) do
-        local entities = Engine.FindEntitiesWithScript(scriptName)
-        if entities and #entities > 0 then
-            for i = 1, #entities do
-                local entityId = entities[i]
-                local x, y, z = Engine.GetEntityPosition(entityId)
-                if x and y and z then
-                    local dx   = x - playerX
-                    local dz   = z - playerZ
-                    local dist = math.sqrt(dx * dx + dz * dz)
-                    if dist < closestDist then
-                        closestDist  = dist
-                        closestEnemy = entityId
-                    end
-                end
-            end
+        local entityId, distance = Engine.FindClosestEntityWithScriptXZ(
+            scriptName, playerX, playerZ, maxRange)
+        if entityId and distance < closestDist then
+            closestDist = distance
+            closestEnemy = entityId
         end
     end
 

@@ -95,12 +95,8 @@ return Component {
         end
         
         -- Get Position from Jolt and pass it to ECS
-        local position = CharacterController.GetPosition(self._controller)
-        if position then
-            self:SetPosition(position.x, position.y, position.z)
-        else
-            --print("[LUA WARNING] GetPosition returned nil")
-        end
+        local px, py, pz = CharacterController.GetPositionXYZ(self._controller)
+        self:SetPosition(px, py, pz)
         
         -- Jump when grounded
         if CharacterController.IsGrounded(self._controller) then

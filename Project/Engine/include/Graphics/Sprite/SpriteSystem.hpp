@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 #include "ECS/System.hpp"
-#include "SpriteRenderComponent.hpp"
+#include "SpriteRenderItem.hpp"
 
 class VAO;
 class VBO;
@@ -25,5 +25,6 @@ private:
     std::unique_ptr<VAO> spriteVAO;
     std::unique_ptr<VBO> spriteVBO;
     std::unique_ptr<EBO> spriteEBO;
+    std::vector<SpriteRenderItem> renderSnapshots;
     bool spriteQuadInitialized = false;
 };

@@ -116,6 +116,15 @@ local function lerpQuaternion(w1, x1, y1, z1, w2, x2, y2, z2, t)
     return w/len, x/len, y/len, z/len
 end
 
+local function syncPlayerPosition(self, x, y, z)
+    self:SetPosition(x, y, z)
+    if event_bus and event_bus.publish then
+        local payload = self._playerPositionPayload
+        payload.x, payload.y, payload.z = x, y, z
+        event_bus.publish("player_position", payload)
+    end
+end
+
 -- ============================================================================
 
 return Component {
@@ -231,6 +240,8 @@ return Component {
     -- because fields aren't populated until after Awake.
     -- ==========================================================================
     Awake = function(self)
+
+        self._playerPositionPayload = { x = 0, y = 0, z = 0 }
 
         -- ── Rotation ──────────────────────────────────────────────────────────
         self._currentRotW = 1; self._currentRotX = 0
@@ -403,7 +414,7 @@ return Component {
             local w, x, y, z = directionToQuaternion(fwdX, fwdZ)
             self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
             self._facingX = fwdX; self._facingZ = fwdZ
-            pcall(self.SetRotation, self, w, x, y, z)
+            self:SetRotation(w, x, y, z)
         end)
 
         sub(self, "_chainFiredRotSub", "force_player_rotation_to_direction", function(payload)
@@ -416,7 +427,7 @@ return Component {
             local w, x, y, z = directionToQuaternion(dx, dz)
             self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
             self._facingX = dx; self._facingZ = dz
-            pcall(self.SetRotation, self, w, x, y, z)
+            self:SetRotation(w, x, y, z)
         end)
 
         -- ── Combat: lunge + lock ──────────────────────────────────────────────
@@ -491,13 +502,11 @@ return Component {
                 if not CharacterController.IsGrounded(self._controller)
                     and (self._airLiftCooldownTimer or 0) <= 0
                 then
-                    local curVel  = CharacterController.GetVelocity(self._controller)
-                    local curVelY = curVel and curVel.y or 0
+                    local curVelX, curVelY, curVelZ =
+                        CharacterController.GetVelocityXYZ(self._controller)
                     if curVelY < 0 then
-                        local vx = curVel and curVel.x or self._velX
-                        local vz = curVel and curVel.z or self._velZ
                         CharacterController.SetVelocity(self._controller,
-                            vx, self.AirLiftTargetVelY or 2.0, vz)
+                            curVelX, self.AirLiftTargetVelY or 2.0, curVelZ)
                         self._airLiftCooldownTimer = self.AirLiftCooldown or 0.35
                     end
                 end
@@ -516,7 +525,7 @@ return Component {
             local w, x, y, z = directionToQuaternion(dirX, dirZ)
             self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
             self._facingX = dirX; self._facingZ = dirZ
-            pcall(self.SetRotation, self, w, x, y, z)
+            self:SetRotation(w, x, y, z)
         end)
 
         -- combat_state_changed: update movement lock. Velocity NOT zeroed here.
@@ -560,15 +569,6 @@ return Component {
                 self._chainDragTargetY = payload.targetY or 0
                 self._chainDragTargetZ = payload.targetZ or 0
             end
-        end)
-
-        -- ── Enemy proximity (vault gate) ──────────────────────────────────────
-        self._nearbyEnemyPositions = {}
-        sub(self, "_enemyPosSub", "enemy_position", function(payload)
-            if not payload or not payload.entityId then return end
-            self._nearbyEnemyPositions[payload.entityId] = {
-                x = payload.x, y = payload.y, z = payload.z
-            }
         end)
 
         -- TO ADD new subscriptions: use sub(self, "_handleKey", "event.name", fn).
@@ -816,6 +816,11 @@ return Component {
             return
         end
 
+        -- Move() only updates the desired velocity; Jolt resolves position in the
+        -- controller system. One query is therefore sufficient for this script tick.
+        local controllerX, controllerY, controllerZ =
+            CharacterController.GetPositionXYZ(self._controller)
+
         -- ── 4. Cinematic freeze ───────────────────────────────────────────────
         if self._freezePending then
             self._freezeSettleTimer = self._freezeSettleTimer - dt
@@ -826,11 +831,7 @@ return Component {
         end
 
         if self._frozenBycinematic then
-            local position = CharacterController.GetPosition(self._controller)
-            if position then
-                self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-            end
+            syncPlayerPosition(self, controllerX, controllerY, controllerZ)
             return
         end
 
@@ -868,11 +869,7 @@ return Component {
         if self._isDamageStun and isGroundedStun then
             self._animator:SetBool("IsGrounded", isGroundedStun)
             self._animator:SetBool("IsRunning",  self._isRunning)
-            local position = CharacterController.GetPosition(self._controller)
-            if position then
-                self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-            end
+            syncPlayerPosition(self, controllerX, controllerY, controllerZ)
             return
         end
 
@@ -911,11 +908,7 @@ return Component {
         if _G.player_is_casting_skill and CharacterController.IsGrounded(self._controller) then
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
-            local position = CharacterController.GetPosition(self._controller)
-            if position then
-                self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-            end
+            syncPlayerPosition(self, controllerX, controllerY, controllerZ)
             return
         end
 
@@ -943,11 +936,7 @@ return Component {
 
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
-            local position = CharacterController.GetPosition(self._controller)
-            if position then
-                self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-            end
+            syncPlayerPosition(self, controllerX, controllerY, controllerZ)
             return
         end
 
@@ -964,11 +953,12 @@ return Component {
         elseif self._chainDrag then
             self:SetPosition(self._chainDragTargetX, self._chainDragTargetY, self._chainDragTargetZ)
             CharacterController.SetPosition(self._controller, self._transform)
+            controllerX, controllerY, controllerZ =
+                self._chainDragTargetX, self._chainDragTargetY, self._chainDragTargetZ
         elseif self._chainConstraintRatio and self._chainConstraintRatio > 0 then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos and self._chainEndX and self._chainEndZ then
-                local radX   = pos.x - self._chainEndX
-                local radZ   = pos.z - self._chainEndZ
+            if self._chainEndX and self._chainEndZ then
+                local radX   = controllerX - self._chainEndX
+                local radZ   = controllerZ - self._chainEndZ
                 local radLen = math.sqrt(radX*radX + radZ*radZ)
                 if radLen > 1e-4 then
                     tensionRadialX = radX / radLen
@@ -981,16 +971,18 @@ return Component {
 
         -- ── 15. Input ─────────────────────────────────────────────────────────
         -- Always read through InputInterpreter. Never touch _G.Input directly.
-        local axis
+        local rawX, rawZ
         if self._freezePending then
-            axis = { x = 0, y = 0 }
+            rawX, rawZ = 0, 0
         else
             local interp = _G.InputInterpreter
-            axis = (interp and interp:GetMovementAxis()) or { x = 0, y = 0 }
+            local axis = interp and interp:GetMovementAxis()
+            if axis then
+                rawX, rawZ = -axis.x, axis.y
+            else
+                rawX, rawZ = 0, 0
+            end
         end
-
-        local rawX = -axis.x
-        local rawZ =  axis.y
 
         -- Camera-relative movement: rotate input by camera yaw.
         local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
@@ -1086,12 +1078,10 @@ return Component {
                     end
                 end
 
-                pcall(function()
-                    scaleTable.x = sx
-                    scaleTable.y = sy
-                    scaleTable.z = sz
-                    self._transform.isDirty = true
-                end)
+                scaleTable.x = sx
+                scaleTable.y = sy
+                scaleTable.z = sz
+                self._transform.isDirty = true
             end
         end
 
@@ -1104,18 +1094,14 @@ return Component {
             -- Don't overwrite _lastGroundedY on the landing frame (while _isJumping
             -- is still true) — the fall distance calculation needs the takeoff Y.
             if not self._isJumping then
-                local gPos = CharacterController.GetPosition(self._controller)
-                if gPos then self._lastGroundedY = gPos.y end
+                self._lastGroundedY = controllerY
             end
             _G.player_air_height = 0
         else
-            local airPos = CharacterController.GetPosition(self._controller)
-            if airPos then
-                if airPos.y > (self._peakAirY or airPos.y) then
-                    self._peakAirY = airPos.y
-                end
-                _G.player_air_height = math.max(0, airPos.y - (self._lastGroundedY or airPos.y))
+            if controllerY > (self._peakAirY or controllerY) then
+                self._peakAirY = controllerY
             end
+            _G.player_air_height = math.max(0, controllerY - (self._lastGroundedY or controllerY))
         end
 
         -- ── 18. Death ─────────────────────────────────────────────────────────
@@ -1149,11 +1135,7 @@ return Component {
             end
             CharacterController.Move(self._controller,
                 self._rollDirX * self.Speed, 0, self._rollDirZ * self.Speed)
-            local position = CharacterController.GetPosition(self._controller)
-            if position then
-                self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-            end
+            syncPlayerPosition(self, controllerX, controllerY, controllerZ)
             return  -- Skip normal movement while rolling.
         end
 
@@ -1284,14 +1266,10 @@ return Component {
                 if self.SetRotation then
                     local w, x, y, z = directionToQuaternion(self._dashDirX, self._dashDirZ)
                     self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
-                    pcall(self.SetRotation, self, w, x, y, z)
+                    self:SetRotation(w, x, y, z)
                 end
 
-                local position = CharacterController.GetPosition(self._controller)
-                if position then
-                    self:SetPosition(position.x, position.y, position.z)
-                    if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-                end
+                syncPlayerPosition(self, controllerX, controllerY, controllerZ)
 
                 return  -- Skip movement + animation while dash is active.
             end
@@ -1301,10 +1279,6 @@ return Component {
         -- Vaulting is only allowed when at least one enemy is within VaultEnemyRadius.
         -- This prevents the mechanic from accidentally triggering during normal traversal
         -- while keeping it fully available the moment a fight is nearby.
-        -- enemy_position events (published every frame by each live EnemyAI) keep
-        -- _nearbyEnemyPositions current; dead/despawned enemies stop publishing and
-        -- naturally fall out of range on the next proximity check.
-
         -- Tick the ready timer — keeps _vaultDetected alive even if the ray misses this frame
         if self._vaultReadyTimer > 0 then
             self._vaultReadyTimer = self._vaultReadyTimer - dt
@@ -1315,33 +1289,26 @@ return Component {
             self._vaultDetected = false
         end
 
-        -- Check whether any known enemy is within VaultEnemyRadius.
-        local enemyNearby = false
-        local vaultRadiusSq = (self.VaultEnemyRadius or 8.0) ^ 2
-        local playerPos = CharacterController.GetPosition(self._controller)
-        if playerPos then
-            for _, epos in pairs(self._nearbyEnemyPositions) do
-                local ex = epos.x - playerPos.x
-                local ez = epos.z - playerPos.z
-                if ex*ex + ez*ez <= vaultRadiusSq then
-                    enemyNearby = true
-                    break
-                end
+        if isGrounded and isMoving and not self._isDamageStun then
+            local vaultRadius = self.VaultEnemyRadius or 8.0
+            local enemyNearby = Engine.AnyEntityWithScriptInRadiusXZ(
+                "EnemyAI.lua", controllerX, controllerZ, vaultRadius)
+            if not enemyNearby then
+                enemyNearby = Engine.AnyEntityWithScriptInRadiusXZ(
+                    "MinibossAI.lua", controllerX, controllerZ, vaultRadius)
             end
-        end
 
-        if not enemyNearby then
-            -- No enemies in range — discard any stale detection and skip probing.
-            self._vaultDetected   = false
-            self._vaultReadyTimer = 0
-        elseif isGrounded and isMoving and not self._isDamageStun then
+            if not enemyNearby then
+                -- No active enemy in range: discard stale detection and skip probing.
+                self._vaultDetected   = false
+                self._vaultReadyTimer = 0
+            else
             -- Low threshold so detection fires early as the player approaches.
             -- 0.15 * Speed means almost any forward-facing movement qualifies.
             local approachDot = self._velX * self._facingX + self._velZ * self._facingZ
             local approachThreshold = (self.Speed or 4.0) * 0.15
             if approachDot > approachThreshold then
-                local vpos = CharacterController.GetPosition(self._controller)
-                if vpos and Physics and Physics.Raycast then
+                if Physics and Physics.Raycast then
                     local fx, fz  = self._facingX, self._facingZ
                     local range   = self.VaultDetectRange     or 2.5
                     local minH    = self.VaultMinHeight        or 0.2
@@ -1349,17 +1316,15 @@ return Component {
                     local minDist = self.VaultMinApproachDist  or 0.4
 
                     -- Min ray: obstacle must reach at least this height
-                    local minOk, minHitDist = pcall(function()
-                        return Physics.Raycast(vpos.x, vpos.y + minH, vpos.z, fx, 0, fz, range)
-                    end)
-                    local minHit = minOk and minHitDist and minHitDist > 0
+                    local minHitDist = Physics.Raycast(
+                        controllerX, controllerY + minH, controllerZ, fx, 0, fz, range)
+                    local minHit = minHitDist > 0
 
                     if minHit and minHitDist > minDist then
                         -- Max ray: obstacle must NOT reach this height (too tall to vault)
-                        local maxOk, maxHitDist = pcall(function()
-                            return Physics.Raycast(vpos.x, vpos.y + maxH, vpos.z, fx, 0, fz, range)
-                        end)
-                        local maxHit = maxOk and maxHitDist and maxHitDist > 0
+                        local maxHitDist = Physics.Raycast(
+                            controllerX, controllerY + maxH, controllerZ, fx, 0, fz, range)
+                        local maxHit = maxHitDist > 0
 
                         if not maxHit then
                             self._vaultDetected   = true
@@ -1368,6 +1333,7 @@ return Component {
                         end
                     end
                 end
+            end
             end
         end
 
@@ -1398,8 +1364,7 @@ return Component {
             self._animator:SetBool("IsJumping", true)
             self._animator:SetBool("IsRunning", false)
             if event_bus and event_bus.publish then event_bus.publish("player_jumped", {}) end
-            local launchPos = CharacterController.GetPosition(self._controller)
-            self._peakAirY  = launchPos and launchPos.y or 0
+            self._peakAirY = controllerY
 
             -- Arm ascent lock for ALL jumps — suppresses landing detection
             -- until the player starts descending.  Prevents stair/ledge
@@ -1486,17 +1451,11 @@ return Component {
                     self._slamVelY = self.AirSlamInitialSpeed or 2.0
                 end
 
-                local hoverPos = CharacterController.GetPosition(self._controller)
-                if hoverPos then
-                    self:SetPosition(hoverPos.x, hoverPos.y, hoverPos.z)
-                    if event_bus and event_bus.publish then event_bus.publish("player_position", hoverPos) end
-                end
+                syncPlayerPosition(self, controllerX, controllerY, controllerZ)
                 return
             end
 
             -- ── Descent ───────────────────────────────────────────────────────
-            local slamPos = CharacterController.GetPosition(self._controller)
-
             -- Raycast straight down for all slam types.
             -- Horizontal movement is applied via Move() separately, so the floor
             -- is always directly below regardless of lateral direction.
@@ -1505,14 +1464,11 @@ return Component {
 
             local slamHit     = false
             local slamHitDist = 0
-            if rayLen > 0 and slamPos and Physics and Physics.Raycast then
-                local ok, dist = pcall(function()
-                    return Physics.Raycast(
-                        slamPos.x, slamPos.y + 0.05, slamPos.z,
-                        rayDX, rayDY, rayDZ, rayLen)
-                end)
-                slamHitDist = (ok and dist) or 0
-                slamHit     = ok and dist and dist > 0
+            if rayLen > 0 and Physics and Physics.Raycast then
+                slamHitDist = Physics.Raycast(
+                    controllerX, controllerY + 0.05, controllerZ,
+                    rayDX, rayDY, rayDZ, rayLen)
+                slamHit = slamHitDist > 0
             end
             --print(string.format("[SLAM] pos.y=%.3f | rayLen=%.3f | slamHit=%s | hitDist=%.3f | _slamVelY=%.2f",
             --    slamPos and slamPos.y or -999, rayLen, tostring(slamHit), slamHitDist, self._slamVelY))
@@ -1527,9 +1483,9 @@ return Component {
                     -- ── TARGET SLAM: direction recomputed every frame from player pos → chain landing pos ──
                     -- Full SlamLateralMultiplier.
                     local dirX, dirZ = 0, 0
-                    if slamPos and self._chainTargetX then
-                        local dx = self._chainTargetX - slamPos.x
-                        local dz = self._chainTargetZ - slamPos.z
+                    if self._chainTargetX then
+                        local dx = self._chainTargetX - controllerX
+                        local dz = self._chainTargetZ - controllerZ
                         local hd = math.sqrt(dx*dx + dz*dz)
                         if hd > 0.001 then
                             dirX = dx / hd
@@ -1549,7 +1505,7 @@ return Component {
                         -- Keep global in sync so EnemyAI slam knockback tracks the target.
                         _G.player_slam_dirX = dirX
                         _G.player_slam_dirZ = dirZ
-                        pcall(self.SetRotation, self, w, x, y, z)
+                        self:SetRotation(w, x, y, z)
                     end
 
                 else
@@ -1564,7 +1520,7 @@ return Component {
                         self._currentRotW, self._currentRotX,
                         self._currentRotY, self._currentRotZ = w, x, y, z
                         self._facingX = self._slamDirX; self._facingZ = self._slamDirZ
-                        pcall(self.SetRotation, self, w, x, y, z)
+                        self:SetRotation(w, x, y, z)
                     end
                 end
             else
@@ -1606,11 +1562,7 @@ return Component {
                         event_bus.publish("chain.retract", {})
                     end
                 end
-                local position = CharacterController.GetPosition(self._controller)
-                if position then
-                    self:SetPosition(position.x, position.y, position.z)
-                    if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-                end
+                syncPlayerPosition(self, controllerX, controllerY, controllerZ)
                 return  -- Next frame runs with _isLanding=true and clean state.
             end
         elseif not isJumping then
@@ -1623,8 +1575,7 @@ return Component {
                     -- Vault jump: blend from full control at launch down to normal at peak.
                     -- Progress tracks how far through the ascent the player is.
                     if self._vaultJumpActive then
-                        local airPos   = CharacterController.GetPosition(self._controller)
-                        local curY     = airPos and airPos.y or self._vaultLaunchY
+                        local curY     = controllerY
                         local span     = math.max(0.01, self._vaultPeakY - self._vaultLaunchY)
                         local progress = math.min(1.0, (curY - self._vaultLaunchY) / span)
                         self._vaultAirControlBlend = math.max(0.0, 1.0 - progress)
@@ -1724,16 +1675,14 @@ return Component {
                     self._isRunning = false
                     self._animator:SetBool("IsRunning", false)
                     self._animator:SetBool("IsJumping", true)
-                    local walkOffPos = CharacterController.GetPosition(self._controller)
-                    self._peakAirY   = walkOffPos and walkOffPos.y or 0
+                    self._peakAirY = controllerY
                 end
             end
 
             -- Track Y each airborne frame to detect when ascent has peaked.
             -- Once the player starts descending, release the ascent lock.
             if self._vaultAscentLock then
-                local airPos = CharacterController.GetPosition(self._controller)
-                local curY   = airPos and airPos.y or self._prevAirY
+                local curY = controllerY
                 if curY < self._prevAirY - 0.01 then
                     -- Y has dropped since last frame — past the peak, safe to land now
                     self._vaultAscentLock = false
@@ -1765,8 +1714,7 @@ return Component {
                 self._airLiftCooldownTimer  = 0
                 self._postLiftAirLock       = 0
 
-                local landPos  = CharacterController.GetPosition(self._controller)
-                local landY    = landPos and landPos.y or 0
+                local landY = controllerY
                 -- Use launch height (last grounded Y), not peak air Y, so a normal
                 -- jump on flat ground gives fallDist ~0 instead of the full jump arc.
                 local fallDist = (self._lastGroundedY or landY) - landY
@@ -1856,7 +1804,7 @@ return Component {
             self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ =
                 newW, newX, newY, newZ
             self._facingX = fwdX; self._facingZ = fwdZ
-            pcall(self.SetRotation, self, newW, newX, newY, newZ)
+            self:SetRotation(newW, newX, newY, newZ)
         elseif isMoving then
             -- Rotate toward input while input is held.
             -- Air: scaled by AirControlMultiplier (rotation tracks movement capability).
@@ -1894,17 +1842,13 @@ return Component {
 
             self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ =
                 newW, newX, newY, newZ
-            pcall(self.SetRotation, self, newW, newX, newY, newZ)
+            self:SetRotation(newW, newX, newY, newZ)
         end
 
         -- ── 25. Position sync ─────────────────────────────────────────────────
         -- Always the final write each frame. Keeps transform in sync with
         -- the CharacterController's resolved position after physics.
-        local position = CharacterController.GetPosition(self._controller)
-        if position then
-            self:SetPosition(position.x, position.y, position.z)
-            if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
-        end
+        syncPlayerPosition(self, controllerX, controllerY, controllerZ)
     end,
 
     -- ==========================================================================
@@ -1918,7 +1862,7 @@ return Component {
                 "_knockSub", "_respawnPlayerSub", "_activatedCheckpointSub",
                 "_freezePlayerSub", "_requestPlayerForwardSub", "_attackLungeSub",
                 "_combatStateSub", "_forceRotSub", "_chainFiredRotSub",
-                "_dashPerformedSub", "_chainConstraintSub", "_enemyPosSub",
+                "_dashPerformedSub", "_chainConstraintSub",
                 "_chainAimStateSub", "_chainEndpointSub", "_chainThrownSub",
                 "_chainDetachedSub", "_chainRetractedSub",
             }

@@ -6,6 +6,8 @@
 #include <Asset Manager/AssetManager.hpp>
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 
 static std::string NormalizeFbxName(std::string n);
 static  bool IsAssimpFbxTrsNode(const std::string& n);
@@ -102,10 +104,25 @@ bool Animation::LoadResource(const std::string& resourcePath, const std::map<std
 	Assimp::Importer importer;
 
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
-	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
-		aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+	// Animation loading only needs hierarchy and animation channels. Scale
+	// detection falls back to translation keys when meshes are removed; the
+	// packaged clips have the same scale classification through either path.
+	// Discard the embedded model and every unrelated component as early as
+	// Assimp allows instead of retaining tens of megabytes per clip.
+	const unsigned int discardedComponents =
+		aiComponent_NORMALS |
+		aiComponent_TANGENTS_AND_BITANGENTS |
+		aiComponent_COLORS |
+		aiComponent_TEXCOORDS |
+		aiComponent_BONEWEIGHTS |
+		aiComponent_TEXTURES |
+		aiComponent_LIGHTS |
+		aiComponent_CAMERAS |
+		aiComponent_MESHES |
+		aiComponent_MATERIALS;
+	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, discardedComponents);
 
-	unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs;
+	unsigned int postProcessFlags = aiProcess_RemoveComponent;
 
 	const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
 
@@ -153,6 +170,7 @@ bool Animation::LoadResource(const std::string& resourcePath, const std::map<std
 
 	mGlobalInverse = glm::inverse(aiMatrix4x4ToGlm(scene->mRootNode->mTransformation));
 
+	mRootNode = {};
 	ReadHierarchyData(mRootNode, scene->mRootNode);
 	ReadMissingBones(aiAnim, boneInfoMap, boneCount);
 
@@ -179,7 +197,9 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 {
 	mBoneInfoMap = boneInfoMap; // copy once upfront, modify our own copy
 	const int num = animation ? static_cast<int>(animation->mNumChannels) : 0;
-	mBones.reserve(mBones.size() + num);
+	mBones.clear();
+	mBoneLookup.clear();
+	mBones.reserve(num);
 
 	//ENGINE_LOG_DEBUG("[ReadMissingBones] Animation has " + std::to_string(num) + " channels\n");
 	//ENGINE_LOG_DEBUG("[ReadMissingBones] Incoming boneInfoMap has " + std::to_string(boneInfoMap.size()) + " bones\n");
@@ -215,6 +235,8 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 	for (auto& bone : mBones) {
 		mBoneLookup[bone.GetBoneName()] = &bone;
 	}
+	BindHierarchyData(mRootNode);
+	++mRevision;
 
 	//// FINAL CHECK: Log what ended up in mBoneInfoMap
 	//ENGINE_LOG_DEBUG("[ReadMissingBones] Final mBoneInfoMap has " + std::to_string(mBoneInfoMap.size()) + " bones\n");
@@ -248,6 +270,15 @@ void Animation::ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::
 
 	dest.name = NormalizeFbxName(rawName);
 	dest.transformation = accum * local;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(
+		dest.transformation,
+		dest.bindScale,
+		dest.bindRotation,
+		dest.bindTranslation,
+		skew,
+		perspective);
 
 	//// LOG KEY BONES
 	//if (dest.name == "mixamorig:Hips" || dest.name == "mixamorig:Spine") {
@@ -272,6 +303,19 @@ void Animation::ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::
 		}
 	}
 	dest.childrenCount = static_cast<int>(dest.children.size());
+}
+
+void Animation::BindHierarchyData(AssimpNodeData& node)
+{
+	auto boneIt = mBoneLookup.find(node.name);
+	node.animationBone = boneIt != mBoneLookup.end() ? boneIt->second : nullptr;
+
+	auto infoIt = mBoneInfoMap.find(node.name);
+	node.boneInfo = infoIt != mBoneInfoMap.end() ? &infoIt->second : nullptr;
+
+	for (AssimpNodeData& child : node.children) {
+		BindHierarchyData(child);
+	}
 }
 
 static inline std::string NormalizeFbxName(std::string n)

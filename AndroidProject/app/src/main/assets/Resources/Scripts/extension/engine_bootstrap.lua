@@ -3,9 +3,10 @@
 -- Put this in Resources/Scripts and require it or let your main script require it.
 
 -- [NEW] GLOBAL SEEDING (Do this exactly once here)
--- We mix os.time (seconds) with os.clock (CPU time) to ensure
--- a unique seed even if you restart the game multiple times per second.
-math.randomseed(os.time() + os.clock() * 100000)
+-- Lua 5.4 requires an integer seed. Keep the os.clock component for quick
+-- restarts, but floor the mixed value so this works consistently on Linux,
+-- Windows, and Android runtimes.
+math.randomseed(math.floor(os.time() + os.clock() * 100000))
 
 -- Pop a few random numbers to flush the state (good practice in Lua)
 math.random(); math.random(); math.random()
@@ -15,6 +16,7 @@ _G.__instances = _G.__instances or {}
 -- Ensure scheduler exists (if not provided elsewhere)
 _G.scheduler = _G.scheduler or {
     _timers = {},
+    _expired = {},
     _nextId = 1,
     after = function(seconds, fn)
         local id = scheduler._nextId; scheduler._nextId = scheduler._nextId + 1
@@ -28,7 +30,12 @@ _G.scheduler = _G.scheduler or {
     end,
     cancel = function(id) scheduler._timers[id] = nil end,
     tick = function(dt)
-        local expired = {}
+        local expired = scheduler._expired
+        if not expired then
+            expired = {}
+            scheduler._expired = expired
+        end
+        for i = #expired, 1, -1 do expired[i] = nil end
         for id, t in pairs(scheduler._timers) do
             t.remaining = t.remaining - dt
             while t.remaining <= 0 do
@@ -40,12 +47,12 @@ _G.scheduler = _G.scheduler or {
                     t.remaining = t.remaining + t.every
                     break
                 else
-                    table.insert(expired, id)
+                    expired[#expired + 1] = id
                     break
                 end
             end
         end
-        for _, id in ipairs(expired) do scheduler._timers[id] = nil end
+        for i = 1, #expired do scheduler._timers[expired[i]] = nil end
     end
 }
 

@@ -49,9 +49,9 @@ struct ENGINE_API Vector3D
 	static constexpr Vector3D Ones() { return { 1.f,1.f,1.f }; }
 
 	// Copy Constructor
-	Vector3D(const Vector3D&);
+	constexpr Vector3D(const Vector3D&) noexcept = default;
 
-	Vector3D& operator=(const Vector3D&);
+	constexpr Vector3D& operator=(const Vector3D&) noexcept = default;
 
 	// Indexing
 	float& operator[](int i);
@@ -61,31 +61,33 @@ struct ENGINE_API Vector3D
 	// Assignment Operator
 	constexpr Vector3D operator-() const noexcept { return { -x,-y,-z }; }
 
-	Vector3D operator+(const Vector3D&) const;
-	Vector3D operator-(const Vector3D&) const;
-	Vector3D operator*(const Vector3D&) const;
-	Vector3D operator/(const Vector3D&) const;
+	constexpr Vector3D operator+(const Vector3D& rhs) const noexcept { return {x + rhs.x, y + rhs.y, z + rhs.z}; }
+	constexpr Vector3D operator-(const Vector3D& rhs) const noexcept { return {x - rhs.x, y - rhs.y, z - rhs.z}; }
+	constexpr Vector3D operator*(const Vector3D& rhs) const noexcept { return {x * rhs.x, y * rhs.y, z * rhs.z}; }
+	constexpr Vector3D operator/(const Vector3D& rhs) const noexcept { return {x / rhs.x, y / rhs.y, z / rhs.z}; }
 
-	Vector3D operator*(float) const;
-	Vector3D operator/(float) const;
+	constexpr Vector3D operator*(float scalar) const noexcept { return {x * scalar, y * scalar, z * scalar}; }
+	constexpr Vector3D operator/(float scalar) const noexcept { return {x / scalar, y / scalar, z / scalar}; }
 
-	Vector3D& operator+=(const Vector3D&);
-	Vector3D& operator-=(const Vector3D&);
-	Vector3D& operator*=(const Vector3D&);
-	Vector3D& operator/=(const Vector3D&);
+	constexpr Vector3D& operator+=(const Vector3D& rhs) noexcept { x += rhs.x; y += rhs.y; z += rhs.z; return *this; }
+	constexpr Vector3D& operator-=(const Vector3D& rhs) noexcept { x -= rhs.x; y -= rhs.y; z -= rhs.z; return *this; }
+	constexpr Vector3D& operator*=(const Vector3D& rhs) noexcept { x *= rhs.x; y *= rhs.y; z *= rhs.z; return *this; }
+	constexpr Vector3D& operator/=(const Vector3D& rhs) noexcept { x /= rhs.x; y /= rhs.y; z /= rhs.z; return *this; }
 
-	Vector3D& operator*=(float);
-	Vector3D& operator/=(float);
+	constexpr Vector3D& operator*=(float scalar) noexcept { x *= scalar; y *= scalar; z *= scalar; return *this; }
+	constexpr Vector3D& operator/=(float scalar) noexcept { x /= scalar; y /= scalar; z /= scalar; return *this; }
 
 	// Comparison
-	bool operator==(const Vector3D&) const;
-	bool operator!=(const Vector3D&) const;
+	constexpr bool operator==(const Vector3D& rhs) const noexcept { return x == rhs.x && y == rhs.y && z == rhs.z; }
+	constexpr bool operator!=(const Vector3D& rhs) const noexcept { return !(*this == rhs); }
 
 	// Math functions
-	float Dot(const Vector3D&) const;
-	Vector3D Cross(const Vector3D&) const;
+	constexpr float Dot(const Vector3D& rhs) const noexcept { return x * rhs.x + y * rhs.y + z * rhs.z; }
+	constexpr Vector3D Cross(const Vector3D& rhs) const noexcept {
+		return {y * rhs.z - z * rhs.y, rhs.x * z - x * rhs.z, x * rhs.y - y * rhs.x};
+	}
 
-	float LengthSq() const;
+	constexpr float LengthSq() const noexcept { return x * x + y * y + z * z; }
 	float Length() const;
 
 	Vector3D Normalized() const;
@@ -108,7 +110,7 @@ struct ENGINE_API Vector3D
 typedef Vector3D Vec3;
 
 // Left scalar
-Vector3D operator*(float scalar, Vector3D& v);
+inline constexpr Vector3D operator*(float scalar, const Vector3D& v) noexcept { return v * scalar; }
 
 // Display Vector
 std::ostream& operator<<(std::ostream& os, const Vector3D& v);

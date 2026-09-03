@@ -44,23 +44,6 @@ static inline void assert_rc4(int r, int c) {
 }
 
 // ============================
-// Constructors
-// ============================
-Matrix4x4::Matrix4x4() {
-    *this = Identity();
-}
-
-Matrix4x4::Matrix4x4(float m00, float m01, float m02, float m03,
-    float m10, float m11, float m12, float m13,
-    float m20, float m21, float m22, float m23,
-    float m30, float m31, float m32, float m33) {
-	m ={m00, m01, m02, m03,
-        m10, m11, m12, m13,
-        m20, m21, m22, m23,
-		m30, m31, m32, m33 };
-}
-
-// ============================
 // Element access
 // ============================
 float& Matrix4x4::operator()(int r, int c)
@@ -102,28 +85,24 @@ Matrix4x4 Matrix4x4::operator-(const Matrix4x4& rhs) const {
 }
 
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4& rhs) const {
-    Matrix4x4 o;
-    // Row 0
-    o.m.m00 = m.m00 * rhs.m.m00 + m.m01 * rhs.m.m10 + m.m02 * rhs.m.m20 + m.m03 * rhs.m.m30;
-    o.m.m01 = m.m00 * rhs.m.m01 + m.m01 * rhs.m.m11 + m.m02 * rhs.m.m21 + m.m03 * rhs.m.m31;
-    o.m.m02 = m.m00 * rhs.m.m02 + m.m01 * rhs.m.m12 + m.m02 * rhs.m.m22 + m.m03 * rhs.m.m32;
-    o.m.m03 = m.m00 * rhs.m.m03 + m.m01 * rhs.m.m13 + m.m02 * rhs.m.m23 + m.m03 * rhs.m.m33;
-    // Row 1
-    o.m.m10 = m.m10 * rhs.m.m00 + m.m11 * rhs.m.m10 + m.m12 * rhs.m.m20 + m.m13 * rhs.m.m30;
-    o.m.m11 = m.m10 * rhs.m.m01 + m.m11 * rhs.m.m11 + m.m12 * rhs.m.m21 + m.m13 * rhs.m.m31;
-    o.m.m12 = m.m10 * rhs.m.m02 + m.m11 * rhs.m.m12 + m.m12 * rhs.m.m22 + m.m13 * rhs.m.m32;
-    o.m.m13 = m.m10 * rhs.m.m03 + m.m11 * rhs.m.m13 + m.m12 * rhs.m.m23 + m.m13 * rhs.m.m33;
-    // Row 2
-    o.m.m20 = m.m20 * rhs.m.m00 + m.m21 * rhs.m.m10 + m.m22 * rhs.m.m20 + m.m23 * rhs.m.m30;
-    o.m.m21 = m.m20 * rhs.m.m01 + m.m21 * rhs.m.m11 + m.m22 * rhs.m.m21 + m.m23 * rhs.m.m31;
-    o.m.m22 = m.m20 * rhs.m.m02 + m.m21 * rhs.m.m12 + m.m22 * rhs.m.m22 + m.m23 * rhs.m.m32;
-    o.m.m23 = m.m20 * rhs.m.m03 + m.m21 * rhs.m.m13 + m.m22 * rhs.m.m23 + m.m23 * rhs.m.m33;
-    // Row 3
-    o.m.m30 = m.m30 * rhs.m.m00 + m.m31 * rhs.m.m10 + m.m32 * rhs.m.m20 + m.m33 * rhs.m.m30;
-    o.m.m31 = m.m30 * rhs.m.m01 + m.m31 * rhs.m.m11 + m.m32 * rhs.m.m21 + m.m33 * rhs.m.m31;
-    o.m.m32 = m.m30 * rhs.m.m02 + m.m31 * rhs.m.m12 + m.m32 * rhs.m.m22 + m.m33 * rhs.m.m32;
-    o.m.m33 = m.m30 * rhs.m.m03 + m.m31 * rhs.m.m13 + m.m32 * rhs.m.m23 + m.m33 * rhs.m.m33;
-    return o;
+    return Matrix4x4(Matrix{
+        m.m00 * rhs.m.m00 + m.m01 * rhs.m.m10 + m.m02 * rhs.m.m20 + m.m03 * rhs.m.m30,
+        m.m00 * rhs.m.m01 + m.m01 * rhs.m.m11 + m.m02 * rhs.m.m21 + m.m03 * rhs.m.m31,
+        m.m00 * rhs.m.m02 + m.m01 * rhs.m.m12 + m.m02 * rhs.m.m22 + m.m03 * rhs.m.m32,
+        m.m00 * rhs.m.m03 + m.m01 * rhs.m.m13 + m.m02 * rhs.m.m23 + m.m03 * rhs.m.m33,
+        m.m10 * rhs.m.m00 + m.m11 * rhs.m.m10 + m.m12 * rhs.m.m20 + m.m13 * rhs.m.m30,
+        m.m10 * rhs.m.m01 + m.m11 * rhs.m.m11 + m.m12 * rhs.m.m21 + m.m13 * rhs.m.m31,
+        m.m10 * rhs.m.m02 + m.m11 * rhs.m.m12 + m.m12 * rhs.m.m22 + m.m13 * rhs.m.m32,
+        m.m10 * rhs.m.m03 + m.m11 * rhs.m.m13 + m.m12 * rhs.m.m23 + m.m13 * rhs.m.m33,
+        m.m20 * rhs.m.m00 + m.m21 * rhs.m.m10 + m.m22 * rhs.m.m20 + m.m23 * rhs.m.m30,
+        m.m20 * rhs.m.m01 + m.m21 * rhs.m.m11 + m.m22 * rhs.m.m21 + m.m23 * rhs.m.m31,
+        m.m20 * rhs.m.m02 + m.m21 * rhs.m.m12 + m.m22 * rhs.m.m22 + m.m23 * rhs.m.m32,
+        m.m20 * rhs.m.m03 + m.m21 * rhs.m.m13 + m.m22 * rhs.m.m23 + m.m23 * rhs.m.m33,
+        m.m30 * rhs.m.m00 + m.m31 * rhs.m.m10 + m.m32 * rhs.m.m20 + m.m33 * rhs.m.m30,
+        m.m30 * rhs.m.m01 + m.m31 * rhs.m.m11 + m.m32 * rhs.m.m21 + m.m33 * rhs.m.m31,
+        m.m30 * rhs.m.m02 + m.m31 * rhs.m.m12 + m.m32 * rhs.m.m22 + m.m33 * rhs.m.m32,
+        m.m30 * rhs.m.m03 + m.m31 * rhs.m.m13 + m.m32 * rhs.m.m23 + m.m33 * rhs.m.m33
+    });
 }
 
 Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& rhs) {
@@ -277,71 +256,71 @@ Matrix4x4 Matrix4x4::Inversed() const {
 // Factories
 // ============================
 Matrix4x4 Matrix4x4::Identity() {
-    return { 1,0,0,0,  0,1,0,0,  0,0,1,0,  0,0,0,1 };
+    return Matrix4x4(Matrix{1,0,0,0,  0,1,0,0,  0,0,1,0,  0,0,0,1});
 }
 
 Matrix4x4 Matrix4x4::Zero() {
-    return {0,0,0,0,  0,0,0,0,  0,0,0,0,  0,0,0,0};
+    return Matrix4x4(Matrix{0,0,0,0,  0,0,0,0,  0,0,0,0,  0,0,0,0});
 }
 
 Matrix4x4 Matrix4x4::Translate(float tx, float ty, float tz) {
-    return {
+    return Matrix4x4(Matrix{
         1,0,0,tx,
         0,1,0,ty,
         0,0,1,tz,
         0,0,0,1
-    };
+    });
 }
 
 Matrix4x4 Matrix4x4::Scale(float sx, float sy, float sz) {
-    return {
+    return Matrix4x4(Matrix{
         sx,0, 0, 0,
         0, sy,0, 0,
         0, 0, sz,0,
         0, 0, 0, 1
-    };
+    });
 }
 
 Matrix4x4 Matrix4x4::RotationX(float a) {
     float c = std::cos(a), s = std::sin(a);
-    return {
+    return Matrix4x4(Matrix{
         1, 0, 0, 0,
         0, c,-s, 0,
         0, s, c, 0,
         0, 0, 0, 1
-    };
+    });
 }
 
 Matrix4x4 Matrix4x4::RotationY(float a) {
     float c = std::cos(a), s = std::sin(a);
-    return {
+    return Matrix4x4(Matrix{
          c, 0, s, 0,
          0, 1, 0, 0,
         -s, 0, c, 0,
          0, 0, 0, 1
-    };
+    });
 }
 
 Matrix4x4 Matrix4x4::RotationZ(float a) {
     float c = std::cos(a), s = std::sin(a);
-    return {
+    return Matrix4x4(Matrix{
         c,-s, 0, 0,
         s, c, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1
-    };
+    });
 }
 
 Matrix4x4 Matrix4x4::RotationAxisAngle(const Vector3D& axis_unit, float a) {
     float x = axis_unit.x, y = axis_unit.y, z = axis_unit.z;
     float c = std::cos(a), s = std::sin(a), t = 1.0f - c;
     // Upper-left 3x3 is the rotation; last row/col make it affine
-    return {
+    return Matrix4x4(Matrix{
         t * x * x + c,      t * x * y - s * z,  t * x * z + s * y,  0,
         t * x * y + s * z,  t * y * y + c,      t * y * z - s * x,  0,
         t * x * z - s * y,  t * y * z + s * x,  t * z * z + c,      0,
         0,                  0,                  0,                  1
-    };
+    });
 }
 
 // Compose T * R * S  (applies S then R then T to column vectors)
@@ -349,12 +328,12 @@ Matrix4x4 Matrix4x4::TRS(const Vector3D& t, const Matrix4x4& R, const Vector3D& 
     // T * R * S for an affine rotation matrix. Scaling the three basis
     // columns and writing translation directly avoids two general 4x4
     // multiplications in every dirty-transform update.
-    return {
+    return Matrix4x4(Matrix{
         R.m.m00 * s.x, R.m.m01 * s.y, R.m.m02 * s.z, t.x,
         R.m.m10 * s.x, R.m.m11 * s.y, R.m.m12 * s.z, t.y,
         R.m.m20 * s.x, R.m.m21 * s.y, R.m.m22 * s.z, t.z,
         0.0f,            0.0f,            0.0f,            1.0f
-    };
+    });
 }
 
 // ============================
@@ -384,12 +363,12 @@ Matrix4x4 Matrix4x4::LookAtRH(const Vector3D& eye, const Vector3D& target, const
     Vector3D u = Cross(f, r);               // up (already normalized)
 
     // Row-major, column-vector: view = [ R | t; 0 0 0 1 ] with t = -R*eye
-    return {
+    return Matrix4x4(Matrix{
         r.x, r.y, r.z, -Dot(r, eye),
         u.x, u.y, u.z, -Dot(u, eye),
         f.x, f.y, f.z, -Dot(f, eye),
         0,   0,   0,    1
-    };
+    });
 }
 
 // Right-handed perspective (clip-space z in [-1,1] if using OpenGL)
@@ -398,12 +377,12 @@ Matrix4x4 Matrix4x4::PerspectiveFovRH(float fovY, float aspect, float zNear, flo
     float f = 1.0f / std::tan(fovY * 0.5f);
     float A = (zFar + zNear) / (zNear - zFar);
     float B = (2.0f * zFar * zNear) / (zNear - zFar);
-    return {
+    return Matrix4x4(Matrix{
         f / aspect, 0, 0,  0,
         0,        f, 0,  0,
         0,        0, A,  B,
         0,        0,-1,  0
-    };
+    });
 }
 
 Matrix4x4 Matrix4x4::OrthoRH(float l, float r, float b, float t, float n, float fz) {
@@ -414,26 +393,12 @@ Matrix4x4 Matrix4x4::OrthoRH(float l, float r, float b, float t, float n, float 
     float tx = -(r + l) / (r - l);
     float ty = -(t + b) / (t - b);
     float tz = -(fz + n) / (fz - n);
-    return {
+    return Matrix4x4(Matrix{
         sx, 0,  0,  tx,
         0,  sy, 0,  ty,
         0,  0,  sz, tz,
         0,  0,  0,  1
-    };
-}
-
-Vector3D Matrix4x4::ExtractTranslation(const Matrix4x4& m) {
-    Vector3D localPosition = Vec3(m.m.m03, m.m.m13, m.m.m23);
-    return localPosition;
-}
-
-Vector3D Matrix4x4::ExtractScale(const Matrix4x4& m) {
-    Vector3D xAxis = Vector3D(m.m.m00, m.m.m01, m.m.m02);
-    Vector3D yAxis = Vector3D(m.m.m10, m.m.m11, m.m.m12);
-    Vector3D zAxis = Vector3D(m.m.m20, m.m.m21, m.m.m22);
-
-    Vector3D localScale = Vector3D(xAxis.Length(), yAxis.Length(), zAxis.Length());
-    return localScale;
+    });
 }
 
 Vector3D Matrix4x4::ExtractRotation(const Matrix4x4& m) {

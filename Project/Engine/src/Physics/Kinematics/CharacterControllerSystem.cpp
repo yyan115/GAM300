@@ -19,9 +19,19 @@
 // CharacterVsCharacterCollisionFiltered
 // ============================================================================
 
+void CharacterVsCharacterCollisionFiltered::Add(JPH::CharacterVirtual* inCharacter)
+{
+    mCharacters.push_back({inCharacter});
+    RefreshBounds(inCharacter);
+}
+
 void CharacterVsCharacterCollisionFiltered::Remove(const JPH::CharacterVirtual* inCharacter)
 {
-    auto i = std::find(mCharacters.begin(), mCharacters.end(), inCharacter);
+    auto i = std::find_if(
+        mCharacters.begin(), mCharacters.end(),
+        [inCharacter](const CharacterEntry& entry) {
+            return entry.character == inCharacter;
+        });
     if (i != mCharacters.end())
         mCharacters.erase(i);
     mImmovableCharacters.erase(inCharacter);
@@ -33,11 +43,62 @@ void CharacterVsCharacterCollisionFiltered::SetImmovable(const JPH::CharacterVir
         mImmovableCharacters.insert(inCharacter);
     else
         mImmovableCharacters.erase(inCharacter);
+
+    auto entry = std::find_if(
+        mCharacters.begin(), mCharacters.end(),
+        [inCharacter](const CharacterEntry& value) {
+            return value.character == inCharacter;
+        });
+    if (entry != mCharacters.end())
+        entry->immovable = immovable;
 }
 
 bool CharacterVsCharacterCollisionFiltered::IsImmovable(const JPH::CharacterVirtual* inCharacter) const
 {
     return mImmovableCharacters.count(inCharacter) > 0;
+}
+
+void CharacterVsCharacterCollisionFiltered::RefreshBounds(
+    const JPH::CharacterVirtual* inCharacter)
+{
+    auto entry = std::find_if(
+        mCharacters.begin(), mCharacters.end(),
+        [inCharacter](const CharacterEntry& value) {
+            return value.character == inCharacter;
+        });
+    if (entry == mCharacters.end())
+        return;
+
+    RefreshBounds(*entry);
+}
+
+void CharacterVsCharacterCollisionFiltered::RefreshBounds(CharacterEntry& entry)
+{
+    const JPH::CharacterVirtual* character = entry.character;
+    if (!character || !character->GetShape()) {
+        entry.boundsValid = false;
+        return;
+    }
+
+    // Keep the cached box in world coordinates. Collision callbacks can make
+    // it relative to Jolt's query origin without rebuilding the shape bounds.
+    const JPH::RVec3 baseOffset = character->GetCenterOfMassPosition();
+    const JPH::Mat44 relativeTransform =
+        character->GetCenterOfMassTransform()
+            .PostTranslated(-baseOffset)
+            .ToMat44();
+    const JPH::AABox relativeBounds = character->GetShape()->GetWorldSpaceBounds(
+        relativeTransform, JPH::Vec3::sOne());
+
+    entry.worldBoundsMin = baseOffset + relativeBounds.mMin;
+    entry.worldBoundsMax = baseOffset + relativeBounds.mMax;
+    entry.boundsValid = true;
+}
+
+void CharacterVsCharacterCollisionFiltered::RefreshAllBounds()
+{
+    for (CharacterEntry& entry : mCharacters)
+        RefreshBounds(entry);
 }
 
 void CharacterVsCharacterCollisionFiltered::CollideCharacter(const JPH::CharacterVirtual* inCharacter, JPH::RMat44Arg inCenterOfMassTransform, const JPH::CollideShapeSettings& inCollideShapeSettings, JPH::RVec3Arg inBaseOffset, JPH::CollideShapeCollector& ioCollector) const
@@ -49,25 +110,33 @@ void CharacterVsCharacterCollisionFiltered::CollideCharacter(const JPH::Characte
     JPH::CollideShapeSettings settings = inCollideShapeSettings;
     JPH::AABox bounds1 = shape1->GetWorldSpaceBounds(transform1, JPH::Vec3::sOne());
 
-    for (const JPH::CharacterVirtual* c : mCharacters)
+    for (const CharacterEntry& entry : mCharacters)
     {
+        const JPH::CharacterVirtual* c = entry.character;
         if (c == inCharacter || ioCollector.ShouldEarlyOut())
             continue;
 
         // Skip collision when an immovable character queries against a non-immovable one (the player).
         // Immovable vs immovable (enemy vs enemy) still collides so they don't overlap.
-        if (queryerIsImmovable && !IsImmovable(c))
+        if (queryerIsImmovable && !entry.immovable)
             continue;
 
-        JPH::Mat44 transform2 = c->GetCenterOfMassTransform().PostTranslated(-inBaseOffset).ToMat44();
         settings.mMaxSeparationDistance = inCollideShapeSettings.mMaxSeparationDistance + c->GetCharacterPadding();
 
         const JPH::Shape* shape2 = c->GetShape();
-        JPH::AABox bounds2 = shape2->GetWorldSpaceBounds(transform2, JPH::Vec3::sOne());
-        bounds2.ExpandBy(JPH::Vec3::sReplicate(settings.mMaxSeparationDistance));
+        JPH::AABox bounds2 = entry.boundsValid
+            ? JPH::AABox(
+                entry.worldBoundsMin - inBaseOffset,
+                entry.worldBoundsMax - inBaseOffset)
+            : shape2->GetWorldSpaceBounds(
+                c->GetCenterOfMassTransform().PostTranslated(-inBaseOffset).ToMat44(),
+                JPH::Vec3::sOne());
+        bounds2.ExpandBy(JPH::Vec3::sReplicate(
+            settings.mMaxSeparationDistance + 1.0e-4f));
         if (!bounds1.Overlaps(bounds2))
             continue;
 
+        JPH::Mat44 transform2 = c->GetCenterOfMassTransform().PostTranslated(-inBaseOffset).ToMat44();
         ioCollector.SetUserData(reinterpret_cast<uint64_t>(c));
         JPH::CollisionDispatch::sCollideShapeVsShape(shape1, shape2, JPH::Vec3::sOne(), JPH::Vec3::sOne(), transform1, transform2, JPH::SubShapeIDCreator(), JPH::SubShapeIDCreator(), settings, ioCollector);
     }
@@ -84,22 +153,29 @@ void CharacterVsCharacterCollisionFiltered::CastCharacter(const JPH::CharacterVi
     JPH::Vec3 origin = shape_cast.mShapeWorldBounds.GetCenter();
     JPH::Vec3 extents = shape_cast.mShapeWorldBounds.GetExtent();
 
-    for (const JPH::CharacterVirtual* c : mCharacters)
+    for (const CharacterEntry& entry : mCharacters)
     {
+        const JPH::CharacterVirtual* c = entry.character;
         if (c == inCharacter || ioCollector.ShouldEarlyOut())
             continue;
 
         // Same filtering: immovable only skips non-immovable targets
-        if (queryerIsImmovable && !IsImmovable(c))
+        if (queryerIsImmovable && !entry.immovable)
             continue;
 
-        JPH::Mat44 transform2 = c->GetCenterOfMassTransform().PostTranslated(-inBaseOffset).ToMat44();
         const JPH::Shape* shape2 = c->GetShape();
-        JPH::AABox bounds2 = shape2->GetWorldSpaceBounds(transform2, JPH::Vec3::sOne());
-        bounds2.ExpandBy(extents);
+        JPH::AABox bounds2 = entry.boundsValid
+            ? JPH::AABox(
+                entry.worldBoundsMin - inBaseOffset,
+                entry.worldBoundsMax - inBaseOffset)
+            : shape2->GetWorldSpaceBounds(
+                c->GetCenterOfMassTransform().PostTranslated(-inBaseOffset).ToMat44(),
+                JPH::Vec3::sOne());
+        bounds2.ExpandBy(extents + JPH::Vec3::sReplicate(1.0e-4f));
         if (!JPH::RayAABoxHits(origin, inDirection, bounds2.mMin, bounds2.mMax))
             continue;
 
+        JPH::Mat44 transform2 = c->GetCenterOfMassTransform().PostTranslated(-inBaseOffset).ToMat44();
         ioCollector.SetUserData(reinterpret_cast<uint64_t>(c));
         JPH::CollisionDispatch::sCastShapeVsShapeWorldSpace(shape_cast, inShapeCastSettings, shape2, JPH::Vec3::sOne(), {}, transform2, JPH::SubShapeIDCreator(), JPH::SubShapeIDCreator(), ioCollector);
     }
@@ -148,7 +224,7 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
     // Hurtboxes are separate bone-attached colliders on the HURTBOX layer (set up in editor).
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     if (ecs.physicsSystem) {
-        ecs.physicsSystem->RemoveBody(id);
+        ecs.physicsSystem->RemoveBody(id, ecs);
     }
     if (ecs.HasComponent<RigidBodyComponent>(id)) {
         auto& rb = ecs.GetComponent<RigidBodyComponent>(id);
@@ -165,10 +241,22 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
 void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 
+    // Lua may teleport a controller between updates. Refresh all proxies once,
+    // then refresh each controller immediately after Jolt advances it so later
+    // controllers always collide against current conservative bounds.
+    if (m_charVsCharCollision)
+        m_charVsCharCollision->RefreshAllBounds();
+
     for (auto& [entityId, controller] : m_controllers) {
         if (!controller) continue;
+        if (!ecsManager.IsEntityAlive(entityId) ||
+            !ecsManager.IsEntityActiveInHierarchy(entityId)) {
+            continue;
+        }
 
         controller->Update(deltaTime);
+        if (m_charVsCharCollision)
+            m_charVsCharCollision->RefreshBounds(controller->GetCharacterVirtual());
 
         // Sync CharacterVirtual position back to Transform (same role as PhysicsSyncBack for regular bodies)
         if (ecsManager.HasComponent<Transform>(entityId)) {

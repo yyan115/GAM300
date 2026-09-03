@@ -77,6 +77,31 @@ message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 # Engine is ALWAYS a shared library
 add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp" "src/Animation/AnimationStateMachine.cpp" "src/Animation/AnimatorController.cpp" "src/Graphics/Model/ModelFactory.cpp" "src/Graphics/Shadows/PointShadowMap.cpp" "src/Prefab/PrefabLinkComponent.cpp" "src/Graphics/Instancing/InstanceBatch.cpp" "src/Graphics/Instancing/InstancingManager.cpp" "src/Graphics/Fog/FogSystem.cpp" "src/Graphics/Fog/FogComponent.cpp")
 
+# ThinLTO performs whole-engine optimization without the memory cost of full
+# LTO. Keep it Android-Release-only so editor iteration and desktop toolchains
+# are unaffected, and retain a switch for diagnosing vendor/toolchain issues.
+option(GAM300_ANDROID_THIN_LTO "Enable ThinLTO for Android Release" ON)
+if(ANDROID AND GAM300_ANDROID_THIN_LTO)
+    # Current Android NDKs use Clang/LLD and support ThinLTO directly. AGP's
+    # bundled CMake 3.22 otherwise pairs its generic IPO property with the
+    # removed gold linker. Spell out the Clang flags so both Android Studio and
+    # newer command-line CMake builds use the NDK's supported lld path.
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # RelWithDebInfo is what debug APKs use for the engine, so it gets the
+        # same whole-program optimization as the shipped Release build.
+        target_compile_options(Engine PRIVATE
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:-flto=thin>
+        )
+        target_link_options(Engine PRIVATE
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:-flto=thin>
+            $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>:-fuse-ld=lld>
+        )
+        message(STATUS "Android Release ThinLTO enabled for Engine")
+    else()
+        message(WARNING "Android ThinLTO disabled for non-Clang toolchain")
+    endif()
+endif()
+
 # Enable precompiled headers for faster compilation (C++ only)
 target_precompile_headers(Engine PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h>"
@@ -85,9 +110,31 @@ target_precompile_headers(Engine PRIVATE
 # Define ENGINE_EXPORTS when building the shared library
 target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 
+option(GAM300_ENABLE_GL_VALIDATION
+    "Enable synchronous OpenGL validation in draw hot paths"
+    OFF
+)
+if(GAM300_ENABLE_GL_VALIDATION)
+    target_compile_definitions(Engine PRIVATE GAM300_GL_VALIDATION)
+endif()
+
 # Define ANDROID for Android builds (needed for #ifdef ANDROID in code)
 if(ANDROID)
-    target_compile_definitions(Engine PUBLIC ANDROID)
+    set(GAM300_ANDROID_RENDER_SCALE "0.75" CACHE STRING
+        "Maximum Android internal 3D render scale; the final image is upscaled to the native surface")
+    set(GAM300_ANDROID_MIN_RENDER_SCALE "0.50" CACHE STRING
+        "Minimum Android internal 3D render scale used after sustained missed frame deadlines")
+    set(GAM300_ANDROID_MAX_TEXTURE_SIZE "1024" CACHE STRING
+        "Maximum resident dimension for non-UI Android textures")
+    target_compile_definitions(Engine
+        PUBLIC ANDROID
+        PRIVATE
+            GAM300_ANDROID_RENDER_SCALE=${GAM300_ANDROID_RENDER_SCALE}
+            GAM300_ANDROID_MIN_RENDER_SCALE=${GAM300_ANDROID_MIN_RENDER_SCALE}
+            GAM300_ANDROID_MAX_TEXTURE_SIZE=${GAM300_ANDROID_MAX_TEXTURE_SIZE}
+    )
+    message(STATUS "Android internal render scale: ${GAM300_ANDROID_MIN_RENDER_SCALE}-${GAM300_ANDROID_RENDER_SCALE}")
+    message(STATUS "Android non-UI texture cap: ${GAM300_ANDROID_MAX_TEXTURE_SIZE}")
     # Android 15+ requires 16KB page size alignment
     target_link_options(Engine PRIVATE -Wl,-z,max-page-size=16384)
 endif()

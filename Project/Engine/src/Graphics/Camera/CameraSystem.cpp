@@ -64,7 +64,7 @@ void CameraSystem::Update()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	// Validate that active camera entity still exists
-	if (activeCameraEntity != UINT32_MAX && entities.find(activeCameraEntity) == entities.end())
+	if (activeCameraEntity != UINT32_MAX && !entities.contains(activeCameraEntity))
 	{
 		// Active camera was deleted, find a new one
 		ENGINE_PRINT("[CameraSystem] Active camera entity ", activeCameraEntity, " no longer exists, finding new camera\n");
@@ -127,7 +127,7 @@ void CameraSystem::Update()
 	}
 
 	// Update active camera if we have one
-	if (activeCameraEntity != UINT32_MAX && entities.find(activeCameraEntity) != entities.end())
+	if (activeCameraEntity != UINT32_MAX && entities.contains(activeCameraEntity))
 	{
 		UpdateCameraFromComponent(activeCameraEntity);
 	}
@@ -200,7 +200,9 @@ void CameraSystem::Update()
 		ppManager.SetChromaticAberrationIntensity(camComp.chromaticAberrationIntensity);
 		ppManager.SetChromaticAberrationPadding(camComp.chromaticAberrationPadding);
 
-		// SSAO
+		// Android's lean final shader does not consume SSAO, so its generation
+		// and projection reconstruction are desktop-only.
+#ifndef ANDROID
 		SSAOEffect* ssao = ppManager.GetSSAOEffect();
 		if (ssao) {
 			ssao->SetEnabled(camComp.ssaoEnabled);
@@ -209,7 +211,7 @@ void CameraSystem::Update()
 		}
 
 		// Pass projection matrices for SSAO depth reconstruction
-		if (camComp.ssaoEnabled) {
+		if (ssao && ssao->IsEnabled()) {
 			auto& gfx = GraphicsManager::GetInstance();
 			Camera* cam = gfx.GetCurrentCamera();
 			if (cam) {
@@ -223,6 +225,7 @@ void CameraSystem::Update()
 				}
 			}
 		}
+#endif
 
 	}
 	else
@@ -242,7 +245,7 @@ void CameraSystem::SetActiveCamera(Entity entity)
 {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-	if (entities.find(entity) == entities.end()) 
+	if (!entities.contains(entity))
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", entity, " is not a camera!\n");
 		return;
@@ -450,7 +453,7 @@ void CameraSystem::UpdateCameraShake(Entity entity, float deltaTime)
 
 void CameraSystem::ZoomCamera(Entity cameraEntity, float zoomDelta)
 {
-	if (entities.find(cameraEntity) == entities.end())
+	if (!entities.contains(cameraEntity))
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", cameraEntity, " is not a camera!\n");
 		return;
@@ -475,7 +478,7 @@ void CameraSystem::ZoomCamera(Entity cameraEntity, float zoomDelta)
 
 void CameraSystem::SetZoom(Entity cameraEntity, float zoomLevel)
 {
-	if (entities.find(cameraEntity) == entities.end())
+	if (!entities.contains(cameraEntity))
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", cameraEntity, " is not a camera!\n");
 		return;
@@ -496,7 +499,7 @@ void CameraSystem::SetZoom(Entity cameraEntity, float zoomLevel)
 
 void CameraSystem::ShakeCamera(Entity cameraEntity, float intensity, float duration)
 {
-	if (entities.find(cameraEntity) == entities.end())
+	if (!entities.contains(cameraEntity))
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[CameraSystem] Entity ", cameraEntity, " is not a camera!\n");
 		return;
@@ -513,7 +516,7 @@ void CameraSystem::ShakeCamera(Entity cameraEntity, float intensity, float durat
 
 void CameraSystem::StopShake(Entity cameraEntity)
 {
-	if (entities.find(cameraEntity) == entities.end()) return;
+	if (!entities.contains(cameraEntity)) return;
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	auto& camComp = ecsManager.GetComponent<CameraComponent>(cameraEntity);

@@ -6,16 +6,7 @@ local TransformMixin = require("extension.transform_mixin")
 local KnifePool = require("Gameplay.KnifePool")
 local event_bus = _G.event_bus
 
-local function atan2(y, x)
-    local ok, v = pcall(math.atan, y, x) -- 2-arg if supported
-    if ok and type(v) == "number" then return v end
-    if x > 0 then return math.atan(y / x) end
-    if x < 0 and y >= 0 then return math.atan(y / x) + math.pi end
-    if x < 0 and y < 0 then return math.atan(y / x) - math.pi end
-    if x == 0 and y > 0 then return math.pi / 2 end
-    if x == 0 and y < 0 then return -math.pi / 2 end
-    return 0
-end
+local atan2 = math.atan
 
 local function eulerToQuat(pitch, yaw, roll)
     local p = math.rad(pitch or 0) * 0.5
@@ -114,17 +105,6 @@ return Component {
 
         self._baseScaleX, self._baseScaleY, self._baseScaleZ = 4, 4, 4
 
-        self._playerPos = nil
-        self._playerPosSub = nil
-
-        if event_bus and event_bus.subscribe then
-            self._playerPosSub = event_bus.subscribe("player_position", function(pos)
-                if pos then
-                    self._playerPos = pos
-                end
-            end)
-        end
-
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
         end
@@ -144,29 +124,7 @@ return Component {
     end,
 
     _GetPlayerPos = function(self)
-        local p = self._playerPos
-        if not p then return nil end
-
-        if (type(p) == "userdata" or type(p) == "table") and p.x ~= nil then
-            return { x = p.x, y = p.y, z = p.z }
-        end
-
-        return nil
-    end,
-
-    _CheckHitPlayer = function(self)
-        if not self.active then return false end
-        local p = self:_GetPlayerPos()
-        if not p then return false end
-
-        local kx, ky, kz = self:GetPosition()
-        local dx, dy, dz = p.x - kx, p.y - ky, p.z - kz
-
-        local r = self.HitRadius
-        if (dx*dx + dy*dy + dz*dz) <= (r*r) then
-            return true
-        end
-        return false
+        return KnifePool.GetPlayerPosition()
     end,
 
     Update = function(self, dt)
@@ -202,12 +160,12 @@ return Component {
         -- Arm + hit check
         self._armedTimer = (self._armedTimer or 0) + dt
         if self._armedTimer >= self.ArmDelay then
-            local p = self:_GetPlayerPos()
-            if p then
+            local playerX, playerY, playerZ = self:_GetPlayerPos()
+            if playerX then
                 local kx, ky, kz = self:GetPosition()
-                local dx = p.x - kx
-                local dy = p.y - ky
-                local dz = p.z - kz
+                local dx = playerX - kx
+                local dy = playerY - ky
+                local dz = playerZ - kz
                 local distSq = dx*dx + dy*dy + dz*dz
 
                 -- Predictive: notify before contact so PlayerHealth can check dodge early
@@ -410,12 +368,5 @@ return Component {
         end
 
         if self.collider then self.collider.enabled = false end
-    end,
-
-    OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._playerPosSub then
-            event_bus.unsubscribe(self._playerPosSub)
-            self._playerPosSub = nil
-        end
     end,
 }

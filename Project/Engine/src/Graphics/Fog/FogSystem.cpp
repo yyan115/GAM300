@@ -16,6 +16,13 @@ bool FogSystem::Initialise(bool forceInit)
 {
     if (fogSystemInitialised && !forceInit) return true;
 
+#ifdef ANDROID
+	// The mobile render path intentionally omits volumetric fog. Avoid loading
+	// its shader/textures and creating geometry that can never be submitted.
+	fogSystemInitialised = true;
+	return true;
+#endif
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     for (const auto& entity : entities)
@@ -70,8 +77,8 @@ void FogSystem::Update()
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
-    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
-    renderItems.reserve(entities.size());
+    renderSnapshots.reserve(entities.size());
+    std::size_t renderSnapshotCount = 0;
 
     for (const auto& entity : entities)
     {
@@ -153,10 +160,15 @@ void FogSystem::Update()
         }
 
         // Submit to renderer
-        auto renderItem = std::make_unique<FogVolumeComponent>(fogComp);
-        renderItems.push_back(std::move(renderItem));
+        if (renderSnapshotCount == renderSnapshots.size()) {
+            renderSnapshots.emplace_back(fogComp);
+        }
+        else {
+            renderSnapshots[renderSnapshotCount] = fogComp;
+        }
+        ++renderSnapshotCount;
     }
-    gfxManager.SubmitBatch(std::move(renderItems));
+    gfxManager.SubmitBatch(renderSnapshots, renderSnapshotCount);
 }
 
 void FogSystem::Shutdown()

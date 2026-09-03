@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "ECS/EntityManager.hpp"
+#include <algorithm>
 #include <assert.h>
 
 EntityManager::EntityManager() {
+	activeEntityList.reserve(MAX_ENTITIES);
 	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
 		availableEntities.push(entity);
 	}
@@ -23,6 +25,14 @@ Entity EntityManager::CreateEntity() {
 	//ENGINE_LOG_INFO("[EntityManager] Active entity count: " + std::to_string(activeEntityCount));
 
 	activeEntities[entity] = true;
+	if (activeEntityList.empty() || activeEntityList.back() < entity) {
+		activeEntityList.push_back(entity);
+	}
+	else {
+		activeEntityList.insert(
+			std::lower_bound(activeEntityList.begin(), activeEntityList.end(), entity),
+			entity);
+	}
 
 	return entity;
 }
@@ -45,6 +55,10 @@ void EntityManager::DestroyEntity(Entity entity) {
 	//ENGINE_LOG_INFO("[EntityManager] Active entity count: " + std::to_string(activeEntityCount));
 
 	activeEntities[entity] = false;
+	const auto entityIt = std::lower_bound(activeEntityList.begin(), activeEntityList.end(), entity);
+	if (entityIt != activeEntityList.end() && *entityIt == entity) {
+		activeEntityList.erase(entityIt);
+	}
 }
 
 Signature EntityManager::GetEntitySignature(Entity entity) const {
@@ -77,6 +91,7 @@ void EntityManager::DestroyAllEntities() {
 	}
 
 	activeEntities.reset();
+	activeEntityList.clear();
 	activeEntityCount = 0;
 
 	while (!availableEntities.empty()) {
@@ -95,7 +110,19 @@ void EntityManager::SetActive(Entity entity, bool isActive) {
 	}
 
 	//assert(entity < MAX_ENTITIES && "Entity out of range.");
+	const bool wasActive = activeEntities[entity];
+	if (wasActive == isActive) {
+		return;
+	}
+
 	activeEntities[entity] = isActive;
+	const auto entityIt = std::lower_bound(activeEntityList.begin(), activeEntityList.end(), entity);
+	if (isActive) {
+		activeEntityList.insert(entityIt, entity);
+	}
+	else if (entityIt != activeEntityList.end() && *entityIt == entity) {
+		activeEntityList.erase(entityIt);
+	}
 }
 
 bool EntityManager::IsActive(Entity entity) const {
@@ -109,24 +136,17 @@ bool EntityManager::IsActive(Entity entity) const {
 }
 
 std::vector<Entity> EntityManager::GetActiveEntities() const {
-	std::vector<Entity> entities;
-	// Loop through ALL possible entity IDs, not just activeEntityCount
-	// activeEntityCount is the COUNT of entities, not the max entity ID!
-	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
-		if (activeEntities[entity]) {
-			entities.push_back(entity);
-		}
-	}
-	return entities;
+	return activeEntityList;
 }
 
 std::vector<Entity> EntityManager::GetAllEntities() const {
-	std::vector<Entity> entities;
-	// Loop through ALL possible entity IDs, not just activeEntityCount
-	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
-		if (activeEntities[entity]) {
-			entities.push_back(entity);
-		}
-	}
-	return entities;
+	return activeEntityList;
+}
+
+const std::vector<Entity>& EntityManager::GetActiveEntitiesView() const noexcept {
+	return activeEntityList;
+}
+
+const std::vector<Entity>& EntityManager::GetAllEntitiesView() const noexcept {
+	return activeEntityList;
 }

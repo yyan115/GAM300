@@ -2,7 +2,8 @@
 precision highp float;
 precision highp sampler2D;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BloomEmission;
 
 in vec3 TexCoords;
 
@@ -17,4 +18,5 @@ void main()
 
     vec4 texColor = texture(skyboxTexture, vec2(u, v));
     FragColor = texColor;
+    BloomEmission = vec4(0.0);
 }

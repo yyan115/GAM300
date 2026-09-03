@@ -9,6 +9,19 @@
 namespace {
 constexpr float kMinKeyframeGap = 1.0e-6f;
 
+glm::mat4 ComposeTRS(
+    const glm::vec3& translation,
+    const glm::quat& rotation,
+    const glm::vec3& scale)
+{
+    glm::mat4 result = glm::toMat4(rotation);
+    result[0] *= scale.x;
+    result[1] *= scale.y;
+    result[2] *= scale.z;
+    result[3] = glm::vec4(translation, 1.0f);
+    return result;
+}
+
 bool IsFiniteVec3(const glm::vec3& value)
 {
     return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
@@ -31,6 +44,13 @@ glm::quat SafeNormalizeQuat(const glm::quat& value, const glm::quat& fallback = 
         return fallback;
     }
 
+    // Imported keys are normalized once and GLM's slerp preserves unit length
+    // to normal floating-point precision. Keep the defensive slow path for bad
+    // data without renormalizing every animated bone on every frame.
+    if (std::fabs(lenSq - 1.0f) <= 1.0e-5f) {
+        return value;
+    }
+
     const glm::quat normalized = glm::normalize(value);
     return IsFiniteQuat(normalized) ? normalized : fallback;
 }
@@ -41,6 +61,51 @@ float ClampBlendFactor(float value)
         return 0.0f;
     }
     return std::clamp(value, 0.0f, 1.0f);
+}
+
+template <typename Key>
+int FindKeyIndex(const std::vector<Key>& keys, float animationTime, int& cachedIndex)
+{
+    // Callers handle single-key channels, but guard anyway: std::clamp with
+    // an inverted range is undefined behaviour.
+    if (keys.size() < 2) {
+        cachedIndex = 0;
+        return 0;
+    }
+    const int lastInterval = static_cast<int>(keys.size()) - 2;
+    cachedIndex = std::clamp(cachedIndex, 0, lastInterval);
+
+    if (!std::isfinite(animationTime)) {
+        cachedIndex = 0;
+        return cachedIndex;
+    }
+
+    if (animationTime >= keys[cachedIndex].timeStamp &&
+        animationTime < keys[cachedIndex + 1].timeStamp) {
+        return cachedIndex;
+    }
+
+    // Playback normally advances by less than one key interval per frame. Walk
+    // the cached cursor forward in that common case and reserve binary search
+    // for loops, editor seeks, and other backward jumps.
+    if (animationTime >= keys[cachedIndex + 1].timeStamp) {
+        while (cachedIndex < lastInterval &&
+            animationTime >= keys[cachedIndex + 1].timeStamp) {
+            ++cachedIndex;
+        }
+        return cachedIndex;
+    }
+
+    const auto upper = std::upper_bound(
+        keys.begin() + 1,
+        keys.end(),
+        animationTime,
+        [](float time, const Key& key) { return time < key.timeStamp; });
+    cachedIndex = std::clamp(
+        static_cast<int>(std::distance(keys.begin(), upper)) - 1,
+        0,
+        lastInterval);
+    return cachedIndex;
 }
 }
 
@@ -104,7 +169,8 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
         aiQuaternion aiOrientation = channel->mRotationKeys[rotationIndex].mValue;
         float timeStamp = static_cast<float>(channel->mRotationKeys[rotationIndex].mTime);
         KeyRotation data;
-        data.orientation = glm::quat(aiOrientation.w, aiOrientation.x, aiOrientation.y, aiOrientation.z);
+        data.orientation = SafeNormalizeQuat(
+            glm::quat(aiOrientation.w, aiOrientation.x, aiOrientation.y, aiOrientation.z));
         data.timeStamp = timeStamp;
         mRotations.push_back(data);
     }
@@ -128,7 +194,8 @@ void Bone::Update(float animationTime)
     mLocalTranslation = InterpolatePosition(animationTime);
     mLocalRotation = InterpolateRotation(animationTime);
     mLocalScale = InterpolateScaling(animationTime);
-    mLocalTransform = glm::translate(glm::mat4(1.0f), mLocalTranslation) * glm::toMat4(mLocalRotation) * glm::scale(glm::mat4(1.0f), mLocalScale);
+    mLocalTransform =
+        ComposeTRS(mLocalTranslation, mLocalRotation, mLocalScale);
 
     //// Log for key bones at start of animation
     //if ((mName == "mixamorig:Hips" || mName == "mixamorig:Spine") && animationTime < 0.5f) {
@@ -145,36 +212,21 @@ void Bone::Update(float animationTime)
 	the current animation time*/
 int Bone::GetPositionIndex(float animationTime)
 {
-	for (int index = 0; index < mNumPositions - 1; ++index)
-	{
-		if (animationTime < mPositions[index + 1].timeStamp)
-			return index;
-	}
-	return mNumPositions - 2;
+    return FindKeyIndex(mPositions, animationTime, mLastPositionIndex);
 }
 
 /* Gets the current index on mKeyRotations to interpolate to based on the
 current animation time*/
 int Bone::GetRotationIndex(float animationTime)
 {
-	for (int index = 0; index < mNumRotations - 1; ++index)
-	{
-		if (animationTime < mRotations[index + 1].timeStamp)
-			return index;
-	}
-	return mNumRotations - 2;
+    return FindKeyIndex(mRotations, animationTime, mLastRotationIndex);
 }
 
 /* Gets the current index on mKeyScalings to interpolate to based on the
 current animation time */
 int Bone::GetScaleIndex(float animationTime)
 {
-	for (int index = 0; index < mNumScalings - 1; ++index)
-	{
-		if (animationTime < mScales[index + 1].timeStamp)
-			return index;
-	}
-	return mNumScalings - 2;
+    return FindKeyIndex(mScales, animationTime, mLastScaleIndex);
 }
 
 
@@ -219,14 +271,14 @@ glm::quat Bone::InterpolateRotation(float animationTime)
 {
 	if (1 == mNumRotations)
 	{
-		return glm::normalize(mRotations[0].orientation);
+		return mRotations[0].orientation;
 	}
 
 	int r0Index = GetRotationIndex(animationTime);
 	int r1Index = r0Index + 1;
     float scaleFactor = GetScaleFactor(mRotations[r0Index].timeStamp, mRotations[r1Index].timeStamp, animationTime);
-    glm::quat startRotation = SafeNormalizeQuat(mRotations[r0Index].orientation);
-    glm::quat endRotation = SafeNormalizeQuat(mRotations[r1Index].orientation, startRotation);
+    const glm::quat& startRotation = mRotations[r0Index].orientation;
+    const glm::quat& endRotation = mRotations[r1Index].orientation;
 	glm::quat finalRotation = glm::slerp(startRotation, endRotation, scaleFactor);
 
 	finalRotation = SafeNormalizeQuat(finalRotation, startRotation);

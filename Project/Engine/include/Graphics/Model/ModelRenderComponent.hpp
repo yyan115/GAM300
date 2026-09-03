@@ -3,6 +3,8 @@
 #include "../include/Graphics/Material.hpp"
 #include "Model.h"
 #include <memory>
+#include <cstdint>
+#include <limits>
 #include <glm/glm.hpp>
 #include <vector>
 #include "Math/Matrix4x4.hpp"
@@ -34,41 +36,89 @@ public:
 
 	// Don't serialize these.
 	float distanceFadeOpacity = 1.0f; // Set per-frame by ModelSystem distance fade
+	std::uint32_t lightMask = 0xFFFFFFFFu;
 	std::shared_ptr<Model> model;
 	std::shared_ptr<Shader> shader;
 	// Single material for the entire model (like Unity)
 	std::shared_ptr<Material> material;
+	// Incremented once after an animator finishes writing a complete skin pose.
+	// Render preparation uses this to retain exact bounds for frozen/cull-skipped
+	// animations instead of transforming every bone bound again each frame.
+	std::uint64_t bonePoseRevision = 0;
+#ifdef __ANDROID__
+	std::size_t bonePaletteOffset =
+		std::numeric_limits<std::size_t>::max();
+#endif
+
+	// Static authored models retain these derived values until their transform
+	// or model resource changes. Animated bounds bypass this cache.
+	const Model* cachedBoundsModel = nullptr;
+	std::uint64_t cachedBoundsWorldRevision =
+		std::numeric_limits<std::uint64_t>::max();
+	AABB cachedWorldBounds;
+#ifdef __ANDROID__
+	const Model* cachedSkinnedBoundsModel = nullptr;
+	std::uint64_t cachedSkinnedBoundsPoseRevision =
+		std::numeric_limits<std::uint64_t>::max();
+	AABB cachedSkinnedLocalBounds;
+	bool cachedSkinnedBoundsValid = false;
+	const Model* cachedLightMaskModel = nullptr;
+	std::uint64_t cachedLightMaskWorldRevision =
+		std::numeric_limits<std::uint64_t>::max();
+	std::uint64_t cachedLightingRevision =
+		std::numeric_limits<std::uint64_t>::max();
+	std::uint32_t cachedLightMask = 0xFFFFFFFFu;
+#endif
 
 	ModelRenderComponent(GUID_128 m_GUID, GUID_128 s_GUID, GUID_128 mat_GUID)
-		: modelGUID(m_GUID), shaderGUID(s_GUID), materialGUID(mat_GUID), transform(), isVisible(true) 
-	{
-		mFinalBoneMatrices.assign(100, glm::mat4(1.0f));
-	}
+		: modelGUID(m_GUID), shaderGUID(s_GUID), materialGUID(mat_GUID), transform(), isVisible(true) {}
 
-	ModelRenderComponent() { mFinalBoneMatrices.assign(100, glm::mat4(1.0f)); }
+	ModelRenderComponent() = default;
 
 	// Render submissions do not need the model hierarchy lookup map. Static
 	// models also do not need the component's placeholder bone matrices.
-	ModelRenderComponent(const ModelRenderComponent& other, RenderSnapshotTag)
-		: IRenderComponent(other),
-		overrideFromPrefab(other.overrideFromPrefab),
-		modelGUID(other.modelGUID),
-		shaderGUID(other.shaderGUID),
-		materialGUID(other.materialGUID),
-		transform(other.transform),
-		isVisible(other.isVisible),
-		childBonesSaved(other.childBonesSaved),
-		depthOffset(other.depthOffset),
-		depthOffsetFactor(other.depthOffsetFactor),
-		depthOffsetUnits(other.depthOffsetUnits),
-		distanceFadeOpacity(other.distanceFadeOpacity),
-		model(other.model),
-		shader(other.shader),
-		material(other.material),
-		animator(other.animator)
-	{
-		if (model && !model->mBoneInfoMap.empty()) {
+	ModelRenderComponent(const ModelRenderComponent& other, RenderSnapshotTag) {
+		UpdateRenderSnapshot(other);
+	}
+
+	void UpdateRenderSnapshot(const ModelRenderComponent& other) {
+		static_cast<IRenderComponent&>(*this) = static_cast<const IRenderComponent&>(other);
+		overrideFromPrefab = other.overrideFromPrefab;
+		modelGUID = other.modelGUID;
+		shaderGUID = other.shaderGUID;
+		materialGUID = other.materialGUID;
+		transform = other.transform;
+		isVisible = other.isVisible;
+		childBonesSaved = other.childBonesSaved;
+		depthOffset = other.depthOffset;
+		depthOffsetFactor = other.depthOffsetFactor;
+		depthOffsetUnits = other.depthOffsetUnits;
+		distanceFadeOpacity = other.distanceFadeOpacity;
+		lightMask = other.lightMask;
+		model = other.model;
+		shader = other.shader;
+		material = other.material;
+		bonePoseRevision = other.bonePoseRevision;
+#ifdef __ANDROID__
+		bonePaletteOffset = std::numeric_limits<std::size_t>::max();
+#endif
+		animator = other.animator;
+		renderBoneMatrices = nullptr;
+
+		if (HasAnimation() && model && !model->mBoneInfoMap.empty()) {
+			// Animation has finished before render preparation starts, and ECS
+			// component addresses remain stable for the frame. Refer to its matrix
+			// array instead of copying up to 100 matrices for every animated draw.
+			mFinalBoneMatrices.clear();
+			renderBoneMatrices = &other.mFinalBoneMatrices;
+		}
+		else if (model && !model->mBoneInfoMap.empty()) {
+			// Manual-bone rendering updates the snapshot below, so it still needs
+			// an independent writable array.
 			mFinalBoneMatrices = other.mFinalBoneMatrices;
+		}
+		else {
+			mFinalBoneMatrices.clear();
 		}
 	}
 
@@ -186,6 +236,9 @@ public:
 	//bool IsVisible() const override { return isVisible && model && shader; }
 
 	std::vector<glm::mat4> mFinalBoneMatrices;
+	const std::vector<glm::mat4>& GetRenderBoneMatrices() const noexcept {
+		return renderBoneMatrices ? *renderBoneMatrices : mFinalBoneMatrices;
+	}
 	std::map<std::string, Entity> boneNameToEntityMap;
 
 	Animator* animator = nullptr;
@@ -194,4 +247,7 @@ public:
 
 	void SetVisible(bool v) { isVisible = v; }
 	bool IsVisible() const { return isVisible; }
+
+private:
+	const std::vector<glm::mat4>* renderBoneMatrices = nullptr;
 };

@@ -59,7 +59,11 @@ void DirectionalBlurEffect::CreatePingPongFBOs(int w, int h)
 
     glGenTextures(1, &pingTexture);
     glBindTexture(GL_TEXTURE_2D, pingTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -75,7 +79,11 @@ void DirectionalBlurEffect::CreatePingPongFBOs(int w, int h)
 
     glGenTextures(1, &pongTexture);
     glBindTexture(GL_TEXTURE_2D, pongTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -130,7 +138,6 @@ void DirectionalBlurEffect::Apply(unsigned int inputTexture, unsigned int output
     // Pass 1: read inputTexture -> write to pingFBO
     glBindFramebuffer(GL_FRAMEBUFFER, pingFBO);
     glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);

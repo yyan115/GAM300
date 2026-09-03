@@ -3,7 +3,8 @@
 #include <glm/glm.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <map>
+#include <array>
+#include <cstddef>
 #include <string>
 #include "Asset Manager/Asset.hpp"
 
@@ -11,10 +12,12 @@ class VAO;
 class VBO;
 
 struct Character {
-	unsigned int textureID;
-	glm::ivec2 size;
-	glm::ivec2 bearing;
-	unsigned int advance;
+	unsigned int textureID = 0;
+	glm::ivec2 size{0};
+	glm::ivec2 bearing{0};
+	unsigned int advance = 0;
+	glm::vec2 uvMin{0.0f};
+	glm::vec2 uvMax{0.0f};
 };
 
 class ENGINE_API Font : public IAsset {
@@ -38,13 +41,17 @@ public:
 
 	VAO* GetVAO() const { return textVAO.get(); }
 	VBO* GetVBO() const { return textVBO.get(); }
+	unsigned int GetAtlasTexture() const { return atlasTexture; }
+	void EnsureTextVertexCapacity(std::size_t vertexCount);
 private:
-	std::map<GLchar, Character> Characters;
+	std::array<Character, 128> Characters{};
 	std::unique_ptr<VAO> textVAO;
 	std::unique_ptr<VBO> textVBO;
+	unsigned int atlasTexture = 0;
+	std::size_t textVertexCapacity = 0;
+	int maxGlyphHeight = 0;
 	unsigned int fontSize;
 	std::string fontAssetPath;
-	std::string fontResourcePath;;
+	std::string fontResourcePath;
 	std::vector<uint8_t> buffer;
 };
-

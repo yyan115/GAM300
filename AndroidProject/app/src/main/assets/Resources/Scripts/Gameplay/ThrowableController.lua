@@ -61,6 +61,7 @@ return Component {
         self._effectiveDist = 0
         self._chainLength   = 0
         self._pullTarget    = nil
+        self._pullTargetScratch = {0,0,0}
         self._dbgTimer      = 0
 
         if not _G.event_bus then
@@ -95,7 +96,10 @@ return Component {
             self._effectiveDist = payload.effectiveDist or 0
             self._chainLength   = payload.chainLength   or 0
             if payload.pullTargetX then
-                self._pullTarget = {payload.pullTargetX, payload.pullTargetY, payload.pullTargetZ}
+                local target = self._pullTargetScratch
+                target[1], target[2], target[3] =
+                    payload.pullTargetX, payload.pullTargetY, payload.pullTargetZ
+                self._pullTarget = target
             else
                 self._pullTarget = nil
             end
@@ -166,12 +170,8 @@ return Component {
 
     _readWorldPos = function(self, transform)
         if not transform then return nil end
-        if Engine and Engine.GetTransformWorldPosition then
-            local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(transform) end)
-            if ok and a ~= nil then
-                if type(a) == "table" then return a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                elseif type(a) == "number" then return a, b, c end
-            end
+        if Engine and Engine.GetTransformWorldPositionXYZ then
+            return Engine.GetTransformWorldPositionXYZ(transform)
         end
         if transform.localPosition then
             local p = transform.localPosition

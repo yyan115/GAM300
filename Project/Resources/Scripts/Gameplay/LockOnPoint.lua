@@ -28,8 +28,9 @@ return Component {
     },
 
     Start = function(self)
-        -- Initialize the empty table to hold the IDs
+        -- Keep dense, parallel arrays: the sweep iterates these every active frame.
         self.PartEntityIds = {}
+        self._partTransforms = {}
         local parentId = Engine.GetParentEntity(self.entityId)
 
         -- Loop through all the names provided by the editor
@@ -43,8 +44,9 @@ return Component {
                 local childId = Engine.FindChildByName(parentId, partName)
                 
                 if childId ~= -1 then
-                    -- Store it in the dictionary using the name as the key
-                    self.PartEntityIds[partName] = childId
+                    local index = #self.PartEntityIds + 1
+                    self.PartEntityIds[index] = childId
+                    self._partTransforms[index] = Engine.FindTransformByID(childId)
                     --print("[LockOnPoint] Found body part: " .. partName .. " (ID: " .. childId .. ")")
                 else
                     --print("[LockOnPoint] WARNING: Could not find child named: " .. partName)
@@ -92,8 +94,15 @@ return Component {
             end
         end
 
+        self._rootTransform = self._rootEntityId and Engine.FindTransformByID(self._rootEntityId) or nil
+        local sweepRadius = tonumber(self.SweepRadius) or 0.3
+        self._sweepRadiusSq = sweepRadius * sweepRadius
+        self._closestPartPos = {x=0, y=0, z=0}
+
         self._endpointPos  = nil
         self._endpointPrev = nil
+        self._endpointPosScratch = {x=0, y=0, z=0}
+        self._endpointPrevScratch = {0, 0, 0}
         self._sweepActive  = false
         self._sweepFired   = false
 
@@ -101,16 +110,21 @@ return Component {
             self._subMoved = _G.event_bus.subscribe("chain.endpoint_moved", function(payload)
                 if not payload then return end
                 if self._endpointPos then
-                    self._endpointPrev = {
-                        self._endpointPos.x,
-                        self._endpointPos.y,
-                        self._endpointPos.z,
-                    }
+                    local previous = self._endpointPrevScratch
+                    previous[1], previous[2], previous[3] =
+                        self._endpointPos.x, self._endpointPos.y, self._endpointPos.z
+                    self._endpointPrev = previous
                 end
                 if payload.position then
-                    self._endpointPos = payload.position
+                    local position = self._endpointPosScratch
+                    position.x, position.y, position.z =
+                        payload.position.x, payload.position.y, payload.position.z
+                    self._endpointPos = position
                 end
                 self._sweepActive = payload.isExtending or false
+                if self._sweepActive and not self._sweepFired then
+                    self:_Sweep()
+                end
             end)
 
             self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function(_)
@@ -133,68 +147,60 @@ return Component {
     GetClosestPart = function(self, px, py, pz)
         -- ── Throwable mode: return root position directly ─────────────────
         if self._isThrowable then
-            if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPosition) then return nil end
+            if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPositionXYZ) then return nil end
             if not self._rootEntityId then return nil end
-            local transform = Engine.FindTransformByID(self._rootEntityId)
+            local transform = self._rootTransform
             if not transform then return nil end
-            local p = Engine.GetTransformWorldPosition(transform)
-            local ex, ey, ez
-            if type(p) == "table" then
-                ex = p[1] or p.x or 0.0
-                ey = p[2] or p.y or 0.0
-                ez = p[3] or p.z or 0.0
-            else
-                ex, ey, ez = p or 0.0, 0.0, 0.0
-            end
+            local ex, ey, ez = Engine.GetTransformWorldPositionXYZ(transform)
             local dx = px - ex
             local dy = py - ey
             local dz = pz - ez
-            return { x = ex, y = ey, z = ez }, self._rootEntityId, math.sqrt(dx*dx + dy*dy + dz*dz)
+            local bestPos = self._closestPartPos
+            bestPos.x, bestPos.y, bestPos.z = ex, ey, ez
+            return bestPos, self._rootEntityId, math.sqrt(dx*dx + dy*dy + dz*dz)
         end
 
         -- ── Enemy mode: iterate PartEntityIds ─────────────────────────────
         local ids = self.PartEntityIds
         if not ids or #ids == 0 then return nil end
-        if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPosition) then return nil end
+        if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPositionXYZ) then return nil end
 
         local bestDistSq = math.huge
-        local bestPos    = nil
         local bestId     = nil
+        local bestX, bestY, bestZ
+        local transforms = self._partTransforms
 
         for i = 1, #ids do
-            local id = tonumber(ids[i])
+            local id = ids[i]
             if id and id ~= 0 then
-                local transform = Engine.FindTransformByID(id)
+                local transform = transforms[i]
                 if transform then
-                    local p = Engine.GetTransformWorldPosition(transform)
-                    local ex, ey, ez
-                    if type(p) == "table" then
-                        ex = p[1] or p.x or 0.0
-                        ey = p[2] or p.y or 0.0
-                        ez = p[3] or p.z or 0.0
-                    else
-                        ex, ey, ez = p or 0.0, 0.0, 0.0
-                    end
+                    local ex, ey, ez = Engine.GetTransformWorldPositionXYZ(transform)
                     local dx = px - ex
                     local dy = py - ey
                     local dz = pz - ez
                     local distSq = dx*dx + dy*dy + dz*dz
                     if distSq < bestDistSq then
                         bestDistSq = distSq
-                        bestPos    = { x = ex, y = ey, z = ez }
+                        bestX, bestY, bestZ = ex, ey, ez
                         bestId     = id
                     end
                 end
             end
         end
 
+        if not bestId then return nil end
+        local bestPos = self._closestPartPos
+        bestPos.x, bestPos.y, bestPos.z = bestX, bestY, bestZ
         return bestPos, bestId, math.sqrt(bestDistSq)
     end,
 
-    Update = function(self, dt)
+    -- Endpoint movement is already event-driven. Running the sweep from that
+    -- event avoids invoking 18 idle Lua Update callbacks on every frame.
+    _Sweep = function(self)
         if not self._sweepActive or self._sweepFired then return end
         if not self._endpointPos then return end
-        if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPosition) then return end
+        if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPositionXYZ) then return end
 
         local ex = self._endpointPos.x
         local ey = self._endpointPos.y
@@ -204,8 +210,7 @@ return Component {
         local py = self._endpointPrev and self._endpointPrev[2] or ey
         local pz = self._endpointPrev and self._endpointPrev[3] or ez
 
-        local sweepRad   = tonumber(self.SweepRadius) or 0.3
-        local sweepRadSq = sweepRad * sweepRad
+        local sweepRadSq = self._sweepRadiusSq
 
         local segDX, segDY, segDZ = ex - px, ey - py, ez - pz
         local segLenSq = segDX*segDX + segDY*segDY + segDZ*segDZ
@@ -214,18 +219,11 @@ return Component {
         if self._isThrowable or self._isInteractable then
             if not self._rootEntityId then return end
             repeat
-                local transform = Engine.FindTransformByID(self._rootEntityId)
+                local transform = self._rootTransform
                 if not transform then break end
 
-                local p = Engine.GetTransformWorldPosition(transform)
-                local partX, partY, partZ
-                if type(p) == "table" then
-                    partX = p[1] or p.x or 0.0
-                    partY = p[2] or p.y or 0.0
-                    partZ = p[3] or p.z or 0.0
-                else
-                    partX, partY, partZ = p or 0.0, 0.0, 0.0
-                end
+                local partX, partY, partZ =
+                    Engine.GetTransformWorldPositionXYZ(transform)
 
                 local closestX, closestY, closestZ
                 if segLenSq < 1e-8 then
@@ -254,16 +252,13 @@ return Component {
                     local ndy = toPY / toDist
                     local ndz = toPZ / toDist
                     if Physics.RaycastFull then
-                        local ok, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
-                            return Physics.RaycastFull(ex, ey, ez, ndx, ndy, ndz, toDist)
-                        end)
+                        local ok, hit, hitDist, _, _, _, _, _, _, hitBodyId =
+                            pcall(Physics.RaycastFull, ex, ey, ez, ndx, ndy, ndz, toDist)
                         if ok and hit and hitDist and hitDist < toDist - 0.05 then
                             hasLOS = (hitBodyId == self._rootEntityId)
                         end
                     elseif Physics.Raycast then
-                        local ok, hitDist = pcall(function()
-                            return Physics.Raycast(ex, ey, ez, ndx, ndy, ndz, toDist)
-                        end)
+                        local ok, hitDist = pcall(Physics.Raycast, ex, ey, ez, ndx, ndy, ndz, toDist)
                         if ok and hitDist and hitDist > 0 and hitDist < toDist - 0.05 then
                             hasLOS = false
                         end
@@ -289,25 +284,19 @@ return Component {
         -- ── Enemy mode: iterate PartEntityIds (original logic) ────────────
         local ids = self.PartEntityIds
         if not ids or #ids == 0 then return end
+        local transforms = self._partTransforms
 
         for i = 1, #ids do
-            local id = tonumber(ids[i])
+            local id = ids[i]
             if not id or id == 0 then
                 -- skip unset/empty slots
             else
             repeat
-                local transform = Engine.FindTransformByID(id)
+                local transform = transforms[i]
                 if not transform then break end
 
-                local p = Engine.GetTransformWorldPosition(transform)
-                local partX, partY, partZ
-                if type(p) == "table" then
-                    partX = p[1] or p.x or 0.0
-                    partY = p[2] or p.y or 0.0
-                    partZ = p[3] or p.z or 0.0
-                else
-                    partX, partY, partZ = p or 0.0, 0.0, 0.0
-                end
+                local partX, partY, partZ =
+                    Engine.GetTransformWorldPositionXYZ(transform)
 
                 local closestX, closestY, closestZ
                 if segLenSq < 1e-8 then
@@ -335,16 +324,13 @@ return Component {
                     local ndy = toPY / toDist
                     local ndz = toPZ / toDist
                     if Physics.RaycastFull then
-                        local ok, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
-                            return Physics.RaycastFull(ex, ey, ez, ndx, ndy, ndz, toDist)
-                        end)
+                        local ok, hit, hitDist, _, _, _, _, _, _, hitBodyId =
+                            pcall(Physics.RaycastFull, ex, ey, ez, ndx, ndy, ndz, toDist)
                         if ok and hit and hitDist and hitDist < toDist - 0.05 then
                             hasLOS = (hitBodyId == id)
                         end
                     elseif Physics.Raycast then
-                        local ok, hitDist = pcall(function()
-                            return Physics.Raycast(ex, ey, ez, ndx, ndy, ndz, toDist)
-                        end)
+                        local ok, hitDist = pcall(Physics.Raycast, ex, ey, ez, ndx, ndy, ndz, toDist)
                         if ok and hitDist and hitDist > 0 and hitDist < toDist - 0.05 then
                             hasLOS = false
                         end

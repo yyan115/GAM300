@@ -34,6 +34,18 @@ void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type,
 	VBO.Unbind();
 }
 
+void VAO::LinkAttribNormalized(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor)
+{
+	VBO.Bind();
+	glVertexAttribPointer(layout, numComponents, type, GL_TRUE, static_cast<GLsizei>(stride), offset);
+	glEnableVertexAttribArray(layout);
+	if (divisor > 0)
+	{
+		glVertexAttribDivisor(layout, divisor);
+	}
+	VBO.Unbind();
+}
+
 void VAO::LinkAttribInt(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
 {
 	VBO.Bind();
@@ -42,7 +54,7 @@ void VAO::LinkAttribInt(VBO& VBO, GLuint layout, GLuint numComponents, GLenum ty
 	VBO.Unbind();
 }
 
-void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor = 0) 
+void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor)
 {
 	VBO.Bind();
 	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, static_cast<GLsizei>(stride), offset);
@@ -75,7 +87,7 @@ void VAO::Bind()
 #endif
 		ClearGLErrors();
 		glGenVertexArrays(1, &ID);  
-#if defined(ANDROID) && !defined(NDEBUG)
+#if defined(ANDROID) && defined(GAM300_GL_VALIDATION)
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] glGenVertexArrays completed, Generated VAO ID: %u", ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
@@ -87,13 +99,13 @@ void VAO::Bind()
 	}
 
 	if (ID != 0) {
-#if defined(ANDROID) && !defined(NDEBUG)
+#if defined(ANDROID) && defined(GAM300_GL_VALIDATION)
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] About to bind VAO ID: %u", ID);
 #endif
-		glBindVertexArray(ID);
-#if defined(ANDROID) && !defined(NDEBUG)
+		BindID(ID);
+#if defined(ANDROID) && defined(GAM300_GL_VALIDATION)
 		// glGetError can synchronize with the driver; validate every bind only
-		// in debug builds, not in the production draw loop.
+		// when explicitly diagnosing a driver or graphics-state issue.
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[VAO] glBindVertexArray completed for VAO ID: %u", ID);
 		GLenum error = glGetError();
 		if (error != GL_NO_ERROR) {
@@ -109,12 +121,23 @@ void VAO::Bind()
 	}
 }
 
+void VAO::BindID(GLuint id)
+{
+	if (s_boundVAO == id) return;
+	glBindVertexArray(id);
+	s_boundVAO = id;
+}
+
 void VAO::Unbind()
 {
-	glBindVertexArray(0);
+	BindID(0);
 }
 
 void VAO::Delete()
 {
 	glDeleteVertexArrays(1, &ID);
+	if (s_boundVAO == ID) {
+		s_boundVAO = 0;
+	}
+	ID = 0;
 }

@@ -88,13 +88,19 @@ void AudioComponent::PlayOneShot(std::string guidStr) {
     }
     
     if (oneShotChannel != 0) {
-        audioMgr.SetChannelPitch(oneShotChannel, Pitch);
-        audioMgr.SetChannelReverbMix(oneShotChannel, bypassListenerEffects ? 0.0f : reverbZoneMix);
-        audioMgr.SetChannelPriority(oneShotChannel, Priority);
+        ChannelUpdate update;
+        update.pitch = Pitch;
+        update.reverbMix = bypassListenerEffects ? 0.0f : reverbZoneMix;
+        update.priority = Priority;
+        update.dopplerLevel = DopplerLevel;
+        update.flags =
+            UPDATE_PITCH | UPDATE_REVERB_MIX |
+            UPDATE_PRIORITY | UPDATE_DOPPLER_LEVEL;
         if (!(Spatialize && SpatialBlend > 0.0f)) {
-            audioMgr.SetChannelStereoPan(oneShotChannel, StereoPan);
+            update.stereoPan = StereoPan;
+            update.flags |= UPDATE_STEREO_PAN;
         }
-        audioMgr.SetChannelDopplerLevel(oneShotChannel, DopplerLevel);
+        audioMgr.QueueChannelUpdate(oneShotChannel, update);
     }
 }
 
@@ -248,9 +254,13 @@ bool AudioComponent::HasValidClip() const {
     return CachedAudioAsset != nullptr && AssetLoaded;
 }
 
-void AudioComponent::UpdateComponent() {
+void AudioComponent::UpdateComponent(const Vector3D* worldPosition) {
     if (!AssetLoaded && (audioGUID.high != 0 || audioGUID.low != 0)) {
         EnsureAssetLoaded();
+    }
+
+    if (worldPosition) {
+        Position = *worldPosition;
     }
 
     UpdatePlaybackState();
@@ -292,25 +302,76 @@ bool AudioComponent::EnsureAssetLoaded() {
 
 void AudioComponent::UpdateChannelProperties() {
     if (CurrentChannel == 0) return;
-    AudioManager& audioMgr = AudioManager::GetInstance();
-    audioMgr.SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
-    audioMgr.SetChannelPitch(CurrentChannel, Pitch);
-    audioMgr.SetChannelLoop(CurrentChannel, Loop);
-    
-    // Apply reverb zone mix
-    audioMgr.SetChannelReverbMix(CurrentChannel, bypassListenerEffects ? 0.0f : reverbZoneMix);
-    
-    // New optimized batched properties
-    audioMgr.SetChannelPriority(CurrentChannel, Priority);
-    if (!(Spatialize && SpatialBlend > 0.0f)) {
-        audioMgr.SetChannelStereoPan(CurrentChannel, StereoPan);
+
+    const bool spatialized = Spatialize && SpatialBlend > 0.0f;
+    const bool newChannel =
+        !PropertiesCacheValid || LastPropertiesChannel != CurrentChannel;
+    const float effectiveVolume = Mute ? 0.0f : Volume;
+    const float effectiveReverb =
+        bypassListenerEffects ? 0.0f : reverbZoneMix;
+
+    ChannelUpdate update;
+    if (newChannel || LastQueuedProperties.volume != effectiveVolume) {
+        update.volume = effectiveVolume;
+        update.flags |= UPDATE_VOLUME;
     }
-    audioMgr.SetChannelDopplerLevel(CurrentChannel, DopplerLevel);
-    
-    if (Spatialize && SpatialBlend > 0.0f) {
-        audioMgr.UpdateChannelPosition(CurrentChannel, Position);
-        audioMgr.SetChannel3DMinMaxDistance(CurrentChannel, MinDistance, MaxDistance);
+    if (newChannel || LastQueuedProperties.pitch != Pitch) {
+        update.pitch = Pitch;
+        update.flags |= UPDATE_PITCH;
     }
+    if (newChannel || LastQueuedProperties.loop != Loop) {
+        update.loop = Loop;
+        update.flags |= UPDATE_LOOP;
+    }
+    if (newChannel || LastQueuedProperties.reverbMix != effectiveReverb) {
+        update.reverbMix = effectiveReverb;
+        update.flags |= UPDATE_REVERB_MIX;
+    }
+    if (newChannel || LastQueuedProperties.priority != Priority) {
+        update.priority = Priority;
+        update.flags |= UPDATE_PRIORITY;
+    }
+    if (newChannel || LastQueuedProperties.dopplerLevel != DopplerLevel) {
+        update.dopplerLevel = DopplerLevel;
+        update.flags |= UPDATE_DOPPLER_LEVEL;
+    }
+
+    if (spatialized) {
+        if (newChannel || !LastSpatialized ||
+            LastQueuedProperties.position != Position) {
+            update.position = Position;
+            update.flags |= UPDATE_POSITION;
+        }
+        if (newChannel || !LastSpatialized ||
+            LastQueuedProperties.minDistance != MinDistance ||
+            LastQueuedProperties.maxDistance != MaxDistance) {
+            update.minDistance = MinDistance;
+            update.maxDistance = MaxDistance;
+            update.flags |= UPDATE_3D_MINMAX;
+        }
+    } else if (newChannel || LastSpatialized ||
+               LastQueuedProperties.stereoPan != StereoPan) {
+        update.stereoPan = StereoPan;
+        update.flags |= UPDATE_STEREO_PAN;
+    }
+
+    if (update.flags != 0) {
+        AudioManager::GetInstance().QueueChannelUpdate(CurrentChannel, update);
+    }
+
+    LastQueuedProperties.volume = effectiveVolume;
+    LastQueuedProperties.pitch = Pitch;
+    LastQueuedProperties.loop = Loop;
+    LastQueuedProperties.position = Position;
+    LastQueuedProperties.minDistance = MinDistance;
+    LastQueuedProperties.maxDistance = MaxDistance;
+    LastQueuedProperties.reverbMix = effectiveReverb;
+    LastQueuedProperties.priority = Priority;
+    LastQueuedProperties.stereoPan = StereoPan;
+    LastQueuedProperties.dopplerLevel = DopplerLevel;
+    LastPropertiesChannel = CurrentChannel;
+    LastSpatialized = spatialized;
+    PropertiesCacheValid = true;
 }
 
 void AudioComponent::UpdatePlaybackState() {
@@ -354,16 +415,23 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     }
     
     if (channel != 0) {
-        audioMgr.SetChannelPitch(channel, Pitch);
-        audioMgr.SetChannelReverbMix(channel, bypassListenerEffects ? 0.0f : reverbZoneMix);
-        audioMgr.SetChannelPriority(channel, Priority);
+        ChannelUpdate update;
+        update.pitch = Pitch;
+        update.reverbMix = bypassListenerEffects ? 0.0f : reverbZoneMix;
+        update.priority = Priority;
+        update.dopplerLevel = DopplerLevel;
+        update.flags =
+            UPDATE_PITCH | UPDATE_REVERB_MIX |
+            UPDATE_PRIORITY | UPDATE_DOPPLER_LEVEL;
         if (!(Spatialize && SpatialBlend > 0.0f)) {
-            audioMgr.SetChannelStereoPan(channel, StereoPan);
+            update.stereoPan = StereoPan;
+            update.flags |= UPDATE_STEREO_PAN;
         }
-        audioMgr.SetChannelDopplerLevel(channel, DopplerLevel);
         if (Mute) {
-            audioMgr.SetChannelVolume(channel, 0.0f);
+            update.volume = 0.0f;
+            update.flags |= UPDATE_VOLUME;
         }
+        audioMgr.QueueChannelUpdate(channel, update);
     }
     return channel;
 }

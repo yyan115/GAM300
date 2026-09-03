@@ -3,6 +3,7 @@
 #include <vector>
 #include "ECS/System.hpp"
 #include "Model.h"
+#include "ModelRenderComponent.hpp"
 #include "Graphics/Camera/Camera.hpp"
 #include "Graphics/ShaderClass.h"
 
@@ -38,4 +39,5 @@ public:
 
 private:
     CullingStats cullingStats;
+    std::vector<ModelRenderComponent> renderSnapshots;
 };

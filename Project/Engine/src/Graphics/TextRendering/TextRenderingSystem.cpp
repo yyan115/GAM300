@@ -39,8 +39,8 @@ void TextRenderingSystem::Update()
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
     const uint32_t excludedLayerMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
-    renderItems.reserve(entities.size());
+    renderSnapshots.reserve(entities.size());
+    std::size_t renderSnapshotCount = 0;
 
     for (const auto& entity : entities)
     {
@@ -80,9 +80,9 @@ void TextRenderingSystem::Update()
         }
 
         // Sync position, scale and transform from Transform component
-        if (ecsManager.HasComponent<Transform>(entity)) 
+        if (auto transformComponent = ecsManager.TryGetComponent<Transform>(entity))
         {
-            Transform& transform = ecsManager.GetComponent<Transform>(entity);
+            Transform& transform = transformComponent->get();
 
             textComponent.transformScale = transform.localScale;
 
@@ -92,9 +92,7 @@ void TextRenderingSystem::Update()
             }
             else 
             {
-                textComponent.position = Vector3D(transform.worldMatrix.m.m03,
-                    transform.worldMatrix.m.m13,
-                    transform.worldMatrix.m.m23);
+                textComponent.position = transform.worldPosition;
             }
         }
 
@@ -111,19 +109,13 @@ void TextRenderingSystem::Update()
 
         if (textComponent.isVisible && TextUtils::IsValid(textComponent))
         {
-            auto textRenderItem = std::make_unique<TextRenderComponent>(textComponent);
-
-            // Per-entity bloom emission
-            if (ecsManager.HasComponent<BloomComponent>(entity)) {
-                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
-                if (bloom.enabled) {
-                    textRenderItem->bloomColor = bloom.bloomColor;
-                    textRenderItem->bloomIntensity = bloom.bloomIntensity;
-                    if (bloom.bloomIntensity > 0.01f) {
-                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
-                    }
-                }
+            if (renderSnapshotCount == renderSnapshots.size()) {
+                renderSnapshots.emplace_back(textComponent);
             }
+            else {
+                renderSnapshots[renderSnapshotCount].Capture(textComponent);
+            }
+            TextRenderItem* textRenderItem = &renderSnapshots[renderSnapshotCount++];
 
             // 2D UI text always skips post-processing — must not be tonemapped
             if (!textComponent.is3D) {
@@ -136,10 +128,24 @@ void TextRenderingSystem::Update()
                 }
             }
 
-            renderItems.push_back(std::move(textRenderItem));
+#ifndef ANDROID
+            // Mobile's compact text shader has no bloom output.
+            if (auto bloomComponent = ecsManager.TryGetComponent<BloomComponent>(entity)) {
+                const auto& bloom = bloomComponent->get();
+                if (bloom.enabled) {
+                    textRenderItem->bloomColor = bloom.bloomColor;
+                    textRenderItem->bloomIntensity = bloom.bloomIntensity;
+                    if (!textRenderItem->excludeFromPostProcess &&
+                        bloom.bloomIntensity > 0.01f) {
+                        gfxManager.NotifyBloomUsedThisFrame();
+                    }
+                }
+            }
+#endif
+
         }
     }
-    gfxManager.SubmitBatch(std::move(renderItems));
+    gfxManager.SubmitBatch(renderSnapshots, renderSnapshotCount);
 }
 
 void TextRenderingSystem::Shutdown()
@@ -149,15 +155,29 @@ void TextRenderingSystem::Shutdown()
 
 void TextRenderingSystem::ComputeWrappedLines(TextRenderComponent& comp, float scaleX)
 {
-    comp.wrappedLines.clear();
-
-    // If word wrap is disabled or no max width, return single line
+    // An empty line list is the renderer's allocation-free single-line path.
     if (!comp.wordWrap || comp.maxWidth <= 0.0f || !comp.font) {
-        comp.wrappedLines.push_back(comp.text);
+        if (!comp.wrappedLines.empty()) {
+            comp.wrappedLines.clear();
+        }
+        comp.wrappedLayoutCacheValid = false;
+        return;
+    }
+
+    if (comp.wrappedLayoutCacheValid &&
+        comp.wrappedTextCache == comp.text &&
+        comp.wrappedFontCache == comp.font.get() &&
+        comp.wrappedMaxWidthCache == comp.maxWidth &&
+        comp.wrappedScaleXCache == scaleX) {
         return;
     }
 
     comp.wrappedLines = WrapText(comp.text, comp.font.get(), comp.maxWidth, scaleX);
+    comp.wrappedTextCache = comp.text;
+    comp.wrappedFontCache = comp.font.get();
+    comp.wrappedMaxWidthCache = comp.maxWidth;
+    comp.wrappedScaleXCache = scaleX;
+    comp.wrappedLayoutCacheValid = true;
 }
 
 std::vector<std::string> TextRenderingSystem::WrapText(const std::string& text, Font* font, float maxWidth, float scaleX)

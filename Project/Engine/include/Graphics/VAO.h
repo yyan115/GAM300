@@ -12,13 +12,22 @@ public:
 	~VAO();
 
 	void LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset);
+	void LinkAttribNormalized(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor = 0);
 	void LinkAttribInt(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset);
 	void LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset, GLuint divisor);
 	void Bind();
 	void Unbind();
 	void Delete();
 
+	static void BindID(GLuint id);
+	static void ResetBindingCache() noexcept {
+		s_boundVAO = ~GLuint{0};
+	}
+
 	VAO(VAO&& other) noexcept : ID(other.ID) {
 		other.ID = 0; // Prevent the moved-from object from deleting the VAO
 	}
+
+private:
+	inline static thread_local GLuint s_boundVAO = ~GLuint{0};
 };

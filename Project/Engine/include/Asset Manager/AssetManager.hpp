@@ -146,6 +146,7 @@ public:
 
 	std::string ENGINE_API GetAssetPathFromGUID(const GUID_128 guid);
 	std::vector<std::string> ENGINE_API CompileAllAssetsForAndroid();
+	bool ENGINE_API WriteAndroidAssetManifest();
 	std::vector<std::string> CompileAllAssetsForDesktop();
 
 	void SetRootAssetDirectory(const std::string& _rootAssetsFolder);

@@ -1,6 +1,7 @@
 -- verletAdapter.lua (refactored: pure physics, does NOT mutate invMass; controller owns invMass)
 local M = {}
 local EPS = 1e-6
+local nativeStep = ChainPhysics and ChainPhysics.Step
 
 local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
 
@@ -276,6 +277,10 @@ function M.Step(state, dt, params)
         -- constraint error but does NOT remove the frame-rate dependence because
         -- each slice still has a different length at different frame rates.
         -- -----------------------------------------------------------------------
+        if nativeStep and nativeStep(state.positions, state.prev, state.invMass, dt, params) then
+            return state.positions, state.prev, state.invMass
+        end
+
         local subSteps = math.max(1, tonumber((params and params.SubSteps) or 4))
         local subDt = dt / subSteps
 

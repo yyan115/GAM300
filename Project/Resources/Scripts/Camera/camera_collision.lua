@@ -13,10 +13,14 @@ local function raycastGetEntity(ox, oy, oz, dx, dy, dz, maxDist)
     return r1 or -1.0, r2 or -1
 end
 
--- Builds a set of all entity IDs that have any of the collisionIgnoreScripts.
-local function buildIgnoreSet(self)
-    local set = {}
-    if not Engine or not Engine.FindEntitiesWithScript then return set end
+-- Refresh a reusable set of all entity IDs that have any ignored script.
+-- Script membership changes rarely, so rebuilding this for every ray hit was
+-- pure allocation and repeated C++/Lua query overhead.
+local function refreshScriptIgnoreSet(self)
+    local set = self._scriptIgnoreSet or {}
+    for entityId in pairs(set) do set[entityId] = nil end
+    self._scriptIgnoreSet = set
+    if not Engine or not Engine.FindEntitiesWithScript then return end
     for _, scriptName in ipairs(self.collisionIgnoreScripts or {}) do
         local entities = Engine.FindEntitiesWithScript(scriptName)
         if entities then
@@ -25,7 +29,6 @@ local function buildIgnoreSet(self)
             end
         end
     end
-    return set
 end
 
 -- Recursively adds an entity and all its descendants to the set.
@@ -69,19 +72,31 @@ end
 local function isIgnoredEntity(self, entityId)
     if not entityId or entityId < 0 then return false end
 
-    local ignoreSet    = buildIgnoreSet(self)
-    local deadSet      = self._deadEnemies or {}
+    local ignoreSet    = self._scriptIgnoreSet
+    local deadSet      = self._deadEnemies
     local tagIgnoreSet = getTagIgnoreSet(self)
 
     local id = entityId
     for _ = 1, 4 do  -- max 4 levels up to avoid runaway loops
         if id < 0 then break end
-        if deadSet[id] or ignoreSet[id] or tagIgnoreSet[id] then return true end
+        if (deadSet and deadSet[id]) or (ignoreSet and ignoreSet[id]) or tagIgnoreSet[id] then
+            return true
+        end
         if not (Engine and Engine.GetParentEntity) then break end
         id = Engine.GetParentEntity(id)
     end
 
     return false
+end
+
+local function getCeilingMaxDistance(self, ox, ty, oz, collisionOffset, dirY)
+    local distance, entityId = raycastGetEntity(ox, ty, oz, 0, 1, 0, 50.0)
+    if distance < 0 or isIgnoredEntity(self, entityId) then
+        return math.huge
+    end
+
+    local maxDistance = (distance - collisionOffset) / dirY
+    return maxDistance > 0 and maxDistance or math.huge
 end
 
 -- Adjusts desiredX/Y/Z based on scene geometry.
@@ -92,6 +107,12 @@ end
 function M.applyCollision(self, tx, ty, tz, desiredX, desiredY, desiredZ, dt)
     if not (self.collisionEnabled and Physics and Physics.RaycastGetEntity) then
         return desiredX, desiredY, desiredZ
+    end
+
+    self._scriptIgnoreRefreshTimer = (self._scriptIgnoreRefreshTimer or 0.0) - dt
+    if not self._scriptIgnoreSet or self._scriptIgnoreRefreshTimer <= 0.0 then
+        refreshScriptIgnoreSet(self)
+        self._scriptIgnoreRefreshTimer = 1.0
     end
 
     local dirX = desiredX - tx
@@ -125,21 +146,11 @@ function M.applyCollision(self, tx, ty, tz, desiredX, desiredY, desiredZ, dt)
     -- position (the orbit may push the camera out from under the ceiling the
     -- pivot-only ray covers). Use whichever gives the tighter constraint.
     if dirY > 0.01 then
-        local bestMaxDist = math.huge
-
-        local function tryCeilRay(ox, oz)
-            local d, ceilEntityId = raycastGetEntity(ox, ty, oz, 0, 1, 0, 50.0)
-            if d >= 0 and not isIgnoredEntity(self, ceilEntityId) then
-                local md = (d - collisionOffset) / dirY
-                -- md <= 0 means the ray started inside geometry (d ≈ 0) or the
-                -- ceiling is below the start point — both produce garbage constraints,
-                -- so skip them.  Only a positive md gives a valid upper bound.
-                if md > 0 and md < bestMaxDist then bestMaxDist = md end
-            end
-        end
-
-        tryCeilRay(tx, tz)               -- directly above pivot
-        tryCeilRay(desiredX, desiredZ)   -- above camera's horizontal position
+        local pivotMaxDist = getCeilingMaxDistance(
+            self, tx, ty, tz, collisionOffset, dirY)
+        local cameraMaxDist = getCeilingMaxDistance(
+            self, desiredX, ty, desiredZ, collisionOffset, dirY)
+        local bestMaxDist = math.min(pivotMaxDist, cameraMaxDist)
 
         if bestMaxDist < math.huge then
             targetDist = math.min(targetDist, math.max(bestMaxDist, 0.5))

@@ -298,6 +298,11 @@ bool Scripting::Init(const InitOptions& opts) {
     lua_State* L = g_runtime->GetLuaState();
     if (L) {
         lua_pushcfunction(L, [](lua_State* L) -> int {
+            if constexpr (!EngineLogging::ShouldLog(
+                              EngineLogging::LogLevel::Info)) {
+                return 0;
+            }
+
             int n = lua_gettop(L);
             std::string msg;
             for (int i = 1; i <= n; i++) {
@@ -557,8 +562,12 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
 
     // allow both tables and userdata wrappers (some Component wrappers return userdata)
     int instIndex = lua_gettop(L);
-    const char* instType = luaL_typename(L, instIndex);
-    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: instanceRef=", instanceRef, " pushed type=", instType);
+    if constexpr (EngineLogging::ShouldLog(EngineLogging::LogLevel::Debug)) {
+        ENGINE_PRINT(
+            EngineLogging::LogLevel::Debug,
+            "CallInstanceFunction: instanceRef=", instanceRef,
+            " pushed type=", luaL_typename(L, instIndex));
+    }
 
     // Attempt normal field lookup first (this uses __index metamethods)
     lua_getfield(L, instIndex, funcName.c_str()); // +1 -> field or nil
@@ -597,8 +606,10 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
         return false;
     }
 
-    // Diagnostic: log candidate type and stack snapshot for debugging crashes
-    {
+    // Compile diagnostics completely out of filtered release builds. Building
+    // this string for every callback used to allocate even when Debug logging
+    // was disabled.
+    if constexpr (EngineLogging::ShouldLog(EngineLogging::LogLevel::Debug)) {
         const char* candType = luaL_typename(L, -1);
         ENGINE_PRINT(EngineLogging::LogLevel::Debug, "CallInstanceFunction: candidate type=", candType, " for method=", funcName.c_str(), " instanceRef=", instanceRef);
         int top = lua_gettop(L);
@@ -802,7 +813,7 @@ void Scripting::SetHostGetComponentHandler(HostGetComponentFn fn) {
 #endif
     if (g_runtime) {
         // forward to runtime (runtime exposes setter implemented below)
-        g_runtime->SetHostGetComponentHandler([sp](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
+        g_runtime->SetHostGetComponentHandler([sp](lua_State* L, uint32_t entityId, std::string_view compName) -> bool {
             try { if (sp && *sp) return (*sp)(L, entityId, compName); }
             catch (...) {}
             return false;

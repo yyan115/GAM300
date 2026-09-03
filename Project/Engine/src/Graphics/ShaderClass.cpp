@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include <filesystem>
+#include <cstring>
 #include "Graphics/ShaderClass.h"
 #include "Logging.hpp"
 
@@ -119,6 +120,16 @@ bool Shader::SetupShader(const std::string& path) {
 
 	std::filesystem::path p(path);
 	std::string genericPath = (p.parent_path() / p.stem()).generic_string();
+#ifdef __ANDROID__
+	// The opaque mobile PBR permutation shares the maintained default sources.
+	// Its virtual asset path only injects a compile-time define, avoiding a
+	// second 450-line shader copy that could drift out of sync.
+	const bool opaqueDiffuseVariant = p.stem() == "defaultopaqueandroid";
+	if (opaqueDiffuseVariant) {
+		genericPath =
+			(p.parent_path() / "defaultandroid").generic_string();
+	}
+#endif
 	std::string vertexFile = genericPath + ".vert";
 	std::string fragmentFile = genericPath + ".frag";
 	std::string geometryFile = genericPath + ".geom";  // NEW: Geometry shader path
@@ -130,6 +141,19 @@ bool Shader::SetupShader(const std::string& path) {
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile.c_str());
 	std::string fragmentCode = get_file_contents(fragmentFile.c_str());
+
+#ifdef __ANDROID__
+	if (opaqueDiffuseVariant) {
+		// GLSL requires #version to remain the first directive.
+		const std::size_t versionEnd = fragmentCode.find('\n');
+		if (versionEnd == std::string::npos) {
+			return false;
+		}
+		fragmentCode.insert(
+			versionEnd + 1,
+			"#define GAM300_OPAQUE_DIFFUSE 1\n");
+	}
+#endif
 
 #ifndef __ANDROID__
 	// NEW: Try to read geometry shader (optional)
@@ -166,7 +190,6 @@ bool Shader::SetupShader(const std::string& path) {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling vertex shader with %d chars", (int)strlen(vertexSource));
 #endif
 	glCompileShader(vertexShader);
-	glFlush();
 
 	GLint success = GL_FALSE;
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -204,7 +227,6 @@ bool Shader::SetupShader(const std::string& path) {
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling geometry shader with %d chars", (int)strlen(geometrySource));
 #endif
 		glCompileShader(geometryShader);
-		glFlush();
 
 		GLint geomSuccess = GL_FALSE;
 		glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &geomSuccess);
@@ -245,7 +267,6 @@ bool Shader::SetupShader(const std::string& path) {
 	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "Compiling fragment shader with %d chars", (int)strlen(fragmentSource));
 #endif
 	glCompileShader(fragmentShader);
-	glFlush();
 
 	GLint fragmentSuccess = GL_FALSE;
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &fragmentSuccess);
@@ -277,7 +298,9 @@ bool Shader::SetupShader(const std::string& path) {
 	// SHADER PROGRAM LINKING
 	// ========================================================================
 	ID = glCreateProgram();
+#ifndef __ANDROID__
 	glProgramParameteri(ID, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
+#endif
 
 	// Attach all shaders
 	glAttachShader(ID, vertexShader);
@@ -316,6 +339,8 @@ bool Shader::SetupShader(const std::string& path) {
 		if (hasGeometryShader) glDeleteShader(geometryShader);
 #endif
 		glDeleteShader(fragmentShader);
+		glDeleteProgram(ID);
+		ID = 0;
 		return false;
 	}
 
@@ -327,35 +352,6 @@ bool Shader::SetupShader(const std::string& path) {
 	}
 #endif
 	glDeleteShader(fragmentShader);
-
-#ifdef __ANDROID__
-	// Log all active attributes for debugging
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] === Shader ID=%u linked successfully ===", ID);
-	GLint numAttribs = 0;
-	glGetProgramiv(ID, GL_ACTIVE_ATTRIBUTES, &numAttribs);
-	//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Active attributes: %d", numAttribs);
-	for (int i = 0; i < numAttribs; i++) {
-		char name[128];
-		GLsizei length;
-		GLint attribSize;
-		GLenum attribType;
-		glGetActiveAttrib(ID, i, 128, &length, &attribSize, &attribType, name);
-		GLint location = glGetAttribLocation(ID, name);
-		const char* typeName = "unknown";
-		switch(attribType) {
-			case GL_FLOAT: typeName = "float"; break;
-			case GL_FLOAT_VEC2: typeName = "vec2"; break;
-			case GL_FLOAT_VEC3: typeName = "vec3"; break;
-			case GL_FLOAT_VEC4: typeName = "vec4"; break;
-			case GL_INT: typeName = "int"; break;
-			case GL_INT_VEC2: typeName = "ivec2"; break;
-			case GL_INT_VEC3: typeName = "ivec3"; break;
-			case GL_INT_VEC4: typeName = "ivec4"; break;
-		}
-		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER] Attrib[%d]: '%s' location=%d type=%s(0x%x) size=%d",
-		//	i, name, location, typeName, attribType, attribSize);
-	}
-#endif
 
     BindKnownUniformBlocks();
 
@@ -481,7 +477,19 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 
 bool Shader::LoadResource(const std::string& resourcePath, const std::string& assetPath)
 {
-	assetPath;
+#ifdef ANDROID
+	// OpenGL ES program binaries are vendor/driver specific and the current
+	// asset format carries no source hash. Loading a packaged binary can
+	// therefore silently select stale code on a compatible device. Compile the
+	// packaged GLSL source once at startup; Android drivers retain their own
+	// implementation-specific shader cache.
+	const std::string& sourcePath =
+		assetPath.empty() ? resourcePath : assetPath;
+	return SetupShader(sourcePath);
+#else
+	(void)assetPath;
+#endif
+
 	if (!binarySupported) {
 		// Fallback to regular shader compilation if binary is not supported.
 		if (!SetupShader(resourcePath)) {
@@ -611,7 +619,11 @@ std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, 
 
 void Shader::Activate()
 {
-	glUseProgram(ID);
+	if (s_activeProgram != ID)
+	{
+		glUseProgram(ID);
+		s_activeProgram = ID;
+	}
 }
 
 void Shader::BindKnownUniformBlocks()
@@ -619,6 +631,8 @@ void Shader::BindKnownUniformBlocks()
     // A reload creates a new program, so cached locations and block metadata
     // from the previous program are no longer valid.
     m_uniformCache.clear();
+    m_uniformValueCache.clear();
+    m_hasStaticShadowUniforms = false;
 
     const GLuint cameraBlock = glGetUniformBlockIndex(ID, "CameraBlock");
     m_usesCameraBlock = cameraBlock != GL_INVALID_INDEX;
@@ -631,118 +645,165 @@ void Shader::BindKnownUniformBlocks()
     if (m_usesLightingBlock) {
         glUniformBlockBinding(ID, lightingBlock, 1);
     }
+
+    const GLuint bonesBlock = glGetUniformBlockIndex(ID, "BonesBlock");
+    m_usesBonesBlock = bonesBlock != GL_INVALID_INDEX;
+    if (m_usesBonesBlock) {
+        glUniformBlockBinding(ID, bonesBlock, 2);
+    }
+
+    const GLuint materialBlock = glGetUniformBlockIndex(ID, "MaterialBlock");
+    m_usesMaterialBlock = materialBlock != GL_INVALID_INDEX;
+    if (m_usesMaterialBlock) {
+        glUniformBlockBinding(ID, materialBlock, 3);
+    }
 }
 
 void Shader::Delete()
 {
+	if (ID == 0) {
+		return;
+	}
+	if (s_activeProgram == ID) {
+		s_activeProgram = 0;
+	}
 	glDeleteProgram(ID);
+	ID = 0;
+	m_uniformCache.clear();
+	m_uniformValueCache.clear();
+	m_usesCameraBlock = false;
+	m_usesLightingBlock = false;
+	m_usesBonesBlock = false;
+	m_usesMaterialBlock = false;
+	m_hasStaticShadowUniforms = false;
 }
 
-void Shader::setBool(const std::string& name, GLboolean value)
+void Shader::setBool(std::string_view name, GLboolean value)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
-		glUniform1i(location, (int)value);
+	const int intValue = static_cast<int>(value);
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Int, &intValue, sizeof(intValue))) {
+		glUniform1i(location, intValue);
 	}
 }
 
-void Shader::setInt(const std::string& name, int value)
+void Shader::setInt(std::string_view name, int value)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Int, &value, sizeof(value))) {
 		glUniform1i(location, value);
 	}
 }
 
-void Shader::setIntArray(const std::string& name, const GLint* values, GLint count)
+void Shader::setIntArray(std::string_view name, const GLint* values, GLint count)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	const std::size_t byteCount =
+		count > 0 ? static_cast<std::size_t>(count) * sizeof(GLint) : 0;
+	if (location != -1 && values && count > 0 &&
+		(byteCount > sizeof(CachedUniformValue::bytes) ||
+		 ShouldUploadUniform(
+			 location, UniformValueType::IntArray, values, byteCount))) {
 		glUniform1iv(location, count, values);
 	}
 }
 
-void Shader::setFloat(const std::string& name, GLfloat value)
+void Shader::setFloat(std::string_view name, GLfloat value)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Float, &value, sizeof(value))) {
 		glUniform1f(location, value);
 	}
 }
 
-void Shader::setVec2(const std::string& name, const glm::vec2& value)
+void Shader::setVec2(std::string_view name, const glm::vec2& value)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Vec2, &value[0], sizeof(float) * 2)) {
 		glUniform2fv(location, 1, &value[0]);
 	}
 }
 
-void Shader::setVec2(const std::string& name, float x, float y)
+void Shader::setVec2(std::string_view name, float x, float y)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	const float value[2] = { x, y };
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Vec2, value, sizeof(value))) {
 		glUniform2f(location, x, y);
 	}
 }
 
-void Shader::setVec3(const std::string& name, const glm::vec3& value)
+void Shader::setVec3(std::string_view name, const glm::vec3& value)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Vec3, &value[0], sizeof(float) * 3)) {
 		glUniform3fv(location, 1, &value[0]);
 	}
 }
 
-void Shader::setVec3(const std::string& name, float x, float y, float z)
+void Shader::setVec3(std::string_view name, float x, float y, float z)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	const float value[3] = { x, y, z };
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Vec3, value, sizeof(value))) {
 		glUniform3f(location, x, y, z);
 	}
 }
 
-void Shader::setVec4(const std::string& name, const glm::vec4& value)
+void Shader::setVec4(std::string_view name, const glm::vec4& value)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Vec4, &value[0], sizeof(float) * 4)) {
 		glUniform4fv(location, 1, &value[0]);
 	}
 }
 
-void Shader::setVec4(const std::string& name, float x, float y, float z, float w)
+void Shader::setVec4(std::string_view name, float x, float y, float z, float w)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	const float value[4] = { x, y, z, w };
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Vec4, value, sizeof(value))) {
 		glUniform4f(location, x, y, z, w);
 	}
 }
 
-void Shader::setMat2(const std::string& name, const glm::mat2& mat)
+void Shader::setMat2(std::string_view name, const glm::mat2& mat)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Mat2, &mat[0][0], sizeof(float) * 4)) {
 		glUniformMatrix2fv(location, 1, GL_FALSE, &mat[0][0]);
 	}
 }
 
-void Shader::setMat3(const std::string& name, const glm::mat3& mat)
+void Shader::setMat3(std::string_view name, const glm::mat3& mat)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Mat3, &mat[0][0], sizeof(float) * 9)) {
 		glUniformMatrix3fv(location, 1, GL_FALSE, &mat[0][0]);
 	}
 }
 
-void Shader::setMat4(const std::string& name, const glm::mat4& mat)
+void Shader::setMat4(std::string_view name, const glm::mat4& mat)
 {
 	GLint location = getUniformLocation(name);
-	if (location != -1) {
+	if (location != -1 &&
+		ShouldUploadUniform(location, UniformValueType::Mat4, &mat[0][0], sizeof(float) * 16)) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &mat[0][0]);
 	}
 }
 
-void Shader::setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count)
+void Shader::setMat4Array(std::string_view firstName, const glm::mat4* matrices, GLsizei count)
 {
 	if (count <= 0) return;
 	// Look up the base element once — GL treats array uniforms as contiguous
@@ -753,7 +814,7 @@ void Shader::setMat4Array(const std::string& firstName, const glm::mat4* matrice
 	}
 }
 
-GLint Shader::getUniformLocation(const std::string& name)
+GLint Shader::getUniformLocation(std::string_view name)
 {
 	auto it = m_uniformCache.find(name);
 	if (it != m_uniformCache.end())
@@ -761,8 +822,9 @@ GLint Shader::getUniformLocation(const std::string& name)
 		return it->second;
 	}
 
-	GLint location = glGetUniformLocation(ID, name.c_str());
-	m_uniformCache[name] = location;
+	auto cacheIt = m_uniformCache.emplace(std::string(name), -1).first;
+	GLint location = glGetUniformLocation(ID, cacheIt->first.c_str());
+	cacheIt->second = location;
 
 	// Debug output for missing uniforms (can be removed later)
 	if (location == -1)
@@ -771,4 +833,35 @@ GLint Shader::getUniformLocation(const std::string& name)
 	}
 
 	return location;
+}
+
+bool Shader::ShouldUploadUniform(
+	GLint location,
+	UniformValueType type,
+	const void* data,
+	std::size_t size)
+{
+	if (location < 0 || !data || size == 0 ||
+		size > sizeof(CachedUniformValue::bytes)) {
+		return true;
+	}
+
+	const std::size_t index = static_cast<std::size_t>(location);
+	if (index >= m_uniformValueCache.size()) {
+		m_uniformValueCache.resize(index + 1);
+	}
+
+	CachedUniformValue& cached = m_uniformValueCache[index];
+	if (cached.valid &&
+		cached.type == type &&
+		cached.size == size &&
+		std::memcmp(cached.bytes.data(), data, size) == 0) {
+		return false;
+	}
+
+	std::memcpy(cached.bytes.data(), data, size);
+	cached.type = type;
+	cached.size = static_cast<std::uint8_t>(size);
+	cached.valid = true;
+	return true;
 }

@@ -8,9 +8,7 @@ void AnimationStateMachine::Update(float dt, Entity entity)
 
 	mStateTime += dt;
 
-	AnimStateID nextState = mCurrentState;
-	bool found = false;
-	AnimTransition* triggeredTransition = nullptr;
+	const AnimTransition* triggeredTransition = nullptr;
 
 	// Get current animation progress for exit time checks
 	float normalizedTime = mOwner->GetNormalizedTime();
@@ -18,10 +16,10 @@ void AnimationStateMachine::Update(float dt, Entity entity)
 	// Check if a loop just completed (for looping animations with exitTime ~1.0)
 	bool loopJustCompleted = mOwner->HasLoopJustCompleted();
 
-	for (auto& t : mTransitions)
+	const auto& candidates = GetTransitionCandidates();
+	for (const std::size_t transitionIndex : candidates)
 	{
-		if (!t.anyState && t.from != mCurrentState)
-			continue;
+		const AnimTransition& t = mTransitions[transitionIndex];
 
 		// Check exit time first (if required)
 		// hasExitTime means we must wait until animation reaches exitTime before transitioning
@@ -75,20 +73,80 @@ void AnimationStateMachine::Update(float dt, Entity entity)
 
 		if (conditionMet)
 		{
-			nextState = t.to;
 			triggeredTransition = &t;
-			found = true;
 			break;
 		}
 	}
 
-	if (found && triggeredTransition)
+	if (triggeredTransition)
 	{
 		// Consume any triggers that were used in this transition
 		ConsumeTriggers(*triggeredTransition);
 
-		EnterState(nextState, entity, triggeredTransition->transitionDuration);
+		EnterState(triggeredTransition->to, entity, triggeredTransition->transitionDuration);
 	}
+}
+
+const std::vector<std::size_t>& AnimationStateMachine::GetTransitionCandidates() const
+{
+	// Size/data checks also catch direct vector edits made through editor accessors.
+	if (mTransitionCacheDirty ||
+		mCachedTransitionData != mTransitions.data() ||
+		mCachedTransitionCount != mTransitions.size())
+	{
+		RebuildTransitionCache();
+	}
+
+	auto it = mTransitionCandidates.find(mCurrentState);
+	if (it != mTransitionCandidates.end())
+		return it->second;
+
+	static const std::vector<std::size_t> empty;
+	return empty;
+}
+
+void AnimationStateMachine::RebuildTransitionCache() const
+{
+	mTransitionCandidates.clear();
+	mTransitionCandidates.reserve(mStates.size() + mTransitions.size() + 1);
+
+	for (const auto& [stateId, config] : mStates)
+	{
+		(void)config;
+		mTransitionCandidates.try_emplace(stateId);
+	}
+	mTransitionCandidates.try_emplace(mCurrentState);
+
+	// Include referenced states even if a controller is temporarily incomplete.
+	for (const AnimTransition& transition : mTransitions)
+	{
+		if (!transition.anyState)
+			mTransitionCandidates.try_emplace(transition.from);
+		mTransitionCandidates.try_emplace(transition.to);
+	}
+
+	// Iterating transitions first preserves the serialized priority order when
+	// Any State and state-specific transitions are mixed.
+	for (std::size_t i = 0; i < mTransitions.size(); ++i)
+	{
+		const AnimTransition& transition = mTransitions[i];
+		if (transition.anyState)
+		{
+			for (auto& [stateId, indices] : mTransitionCandidates)
+			{
+				(void)stateId;
+				indices.push_back(i);
+			}
+		}
+		else
+		{
+			mTransitionCandidates[transition.from].push_back(i);
+		}
+	}
+
+	mCachedTransitionData = mTransitions.data();
+	mCachedTransitionCount = mTransitions.size();
+	mTransitionCacheDirty = false;
 }
 
 bool AnimationStateMachine::EvaluateTransitionConditions(const AnimTransition& transition) const
@@ -172,6 +230,8 @@ void AnimationStateMachine::RemoveState(const AnimStateID& id)
 	{
 		mEntryState = mStates.empty() ? "" : mStates.begin()->first;
 	}
+
+	InvalidateTransitionCache();
 }
 
 void AnimationStateMachine::RenameState(const AnimStateID& oldId, const AnimStateID& newId)
@@ -193,6 +253,7 @@ void AnimationStateMachine::RenameState(const AnimStateID& oldId, const AnimStat
 	// Update entry state if needed
 	if (mEntryState == oldId) mEntryState = newId;
 	if (mCurrentState == oldId) mCurrentState = newId;
+	InvalidateTransitionCache();
 }
 
 AnimStateConfig* AnimationStateMachine::GetState(const AnimStateID& id)
@@ -212,11 +273,13 @@ void AnimationStateMachine::RemoveTransition(size_t index)
 	if (index < mTransitions.size())
 	{
 		mTransitions.erase(mTransitions.begin() + index);
+		InvalidateTransitionCache();
 	}
 }
 
 AnimTransition* AnimationStateMachine::GetTransition(size_t index)
 {
+	InvalidateTransitionCache();
 	return index < mTransitions.size() ? &mTransitions[index] : nullptr;
 }
 
@@ -246,4 +309,8 @@ void AnimationStateMachine::Clear()
 	mCurrentState = "";
 	mEntryState = "";
 	mStateTime = 0.0f;
+	mTransitionCandidates.clear();
+	mCachedTransitionData = nullptr;
+	mCachedTransitionCount = 0;
+	mTransitionCacheDirty = true;
 }

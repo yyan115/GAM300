@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include <cstdint>
 #include <glm/glm.hpp>
 #include "InstanceBatch.hpp"
 #include "ECS/ECSManager.hpp"
@@ -11,6 +12,9 @@ class Material;
 class Shader;
 class ModelRenderComponent;
 class Frustum;
+class Camera;
+class LightingSystem;
+struct AABB;
 
 struct BatchKey {
 	Model* model;
@@ -57,6 +61,12 @@ struct InstancingStats {
 	} 
 };
 
+enum class InstanceSubmissionResult : uint8_t {
+	NotInstanced,
+	Culled,
+	Added
+};
+
 class ENGINE_API InstancingManager {
 public:
 	static InstancingManager& GetInstance();
@@ -69,8 +79,15 @@ public:
 
 	void BeginFrame();
 	void EndFrame();
+	void Clear();
 
-	bool TryAddInstance(const ModelRenderComponent& component, const glm::mat4& worldMatrix, const glm::vec3& bloomColor = glm::vec3(0.0f), float bloomIntensity = 0.0f);
+	InstanceSubmissionResult TryAddInstance(
+		const ModelRenderComponent& component,
+		const glm::mat4& worldMatrix,
+		const AABB& worldBounds,
+		const glm::vec3& bloomColor = glm::vec3(0.0f),
+		float bloomIntensity = 0.0f,
+		std::uint32_t lightMask = 0xFFFFFFFFu);
 
 	void RenderBatches(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos);
 
@@ -96,12 +113,19 @@ private:
 	InstancingManager& operator=(const InstancingManager&) = delete;
 
 	bool IsInstanceable(const ModelRenderComponent& component) const;
-	InstanceBatch& GetOrCreateBatch(const BatchKey& key, std::shared_ptr<Model> model, std::shared_ptr<Material> material, std::shared_ptr<Shader> shader);
+	InstanceBatch& GetOrCreateBatch(
+		const BatchKey& key,
+		const std::shared_ptr<Model>& model,
+		const std::shared_ptr<Material>& material,
+		const std::shared_ptr<Shader>& shader);
 	bool m_enabled = true;
 
 	int m_minInstancesForBatching = 2;
 	std::unordered_map<BatchKey, InstanceBatch, BatchKeyHash> m_batches;
+	std::vector<InstanceBatch*> m_batchList;
 	std::vector<InstanceBatch*> m_sortedBatches;
 	const Frustum* m_frustum = nullptr;
+	const Camera* m_frameCamera = nullptr;
+	LightingSystem* m_frameLightingSystem = nullptr;
 	InstancingStats m_stats;
 };

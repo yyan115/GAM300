@@ -1,34 +1,6 @@
 -- Resources/Scripts/GamePlay/GroundPatrolState.lua
 local PatrolState = {}
 
-local Physics = _G.Physics
-
-local function atan2(y, x)
-    local ok, v = pcall(math.atan, y, x)
-    if ok and type(v) == "number" then return v end
-    if x > 0 then return math.atan(y / x) end
-    if x < 0 and y >= 0 then return math.atan(y / x) + math.pi end
-    if x < 0 and y < 0 then return math.atan(y / x) - math.pi end
-    if x == 0 and y > 0 then return math.pi / 2 end
-    if x == 0 and y < 0 then return -math.pi / 2 end
-    return 0
-end
-
-local function eulerToQuat(pitch, yaw, roll)
-    local p = math.rad(pitch or 0) * 0.5
-    local y = math.rad(yaw or 0)   * 0.5
-    local r = math.rad(roll or 0)  * 0.5
-    local sinP, cosP = math.sin(p), math.cos(p)
-    local sinY, cosY = math.sin(y), math.cos(y)
-    local sinR, cosR = math.sin(r), math.cos(r)
-    return {
-        w = cosP * cosY * cosR + sinP * sinY * sinR,
-        x = sinP * cosY * cosR - cosP * sinY * sinR,
-        y = cosP * sinY * cosR + sinP * cosY * sinR,
-        z = cosP * cosY * sinR - sinP * sinY * cosR
-    }
-end
-
 local function stop(ai)
     if ai.StopCC then ai:StopCC() end
 end
@@ -98,7 +70,7 @@ function PatrolState:Enter(ai)
     if needRepath then
         --print("[GroundPatrolState] NEED REPATH.")
         ai._pathRepathT = 0
-        ai:RequestPathToXZ(t.x, t.z)
+        ai:RequestPathToXZ(t.x, t.z, x, z)
     end
 end
 
@@ -128,7 +100,7 @@ function PatrolState:Update(ai, dt)
     -- end
 
     local detect = (ai.config and ai.config.DetectionRange) or ai.DetectionRange or 4.0
-    local d2 = ai:GetPlayerDistanceSq()
+    local d2, _, _, ex, ez = ai:GetPlayerDistanceSq()
 
     if d2 <= (detect * detect) then
         stop(ai)
@@ -142,36 +114,32 @@ function PatrolState:Update(ai, dt)
     local t = ai._patrolTarget
     if not t then return end
 
-    local pathEnded = ai:FollowPath(dtSec, speed)
+    -- Detection still runs while waiting, but the controller was already
+    -- stopped on entry. Do not traverse an exhausted path and query position
+    -- repeatedly until the wait expires.
+    if ai._isPatrolWait then
+        ai._patrolWaitT = ai._patrolWaitT - dtSec
+        if ai._patrolWaitT <= 0 then
+            switchTarget(ai)
+            ai._isPatrolWait = false
+            ai._animator:SetBool("PatrolEnabled", true)
+            t = ai._patrolTarget
+            ai:RequestPathToXZ(t.x, t.z, ex, ez)
+        end
+        return
+    end
 
-    -- Only treat as arrived if we're actually close to the patrol target (world-space)
-    local ex, ez = ai:GetEnemyPosXZ()
-    local dx = ex - t.x
-    local dz = ez - t.z
-    local arrivedSq = dx*dx + dz*dz
-    local arriveR = ai.PathArriveRadius or 0.5
+    local pathEnded = ai:FollowPath(dtSec, speed, ex, ez)
 
-    if ai._isPatrolWait == false and pathEnded then
+    if pathEnded then
         --print("[GroundPatrolState] Arrived at patrol point")
         ai._waitLockRot = ai._lastFacingRot
         ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
         stop(ai)
         ai._isPatrolWait = true
+        ai._footstepTimer = 0
         ai._animator:SetBool("PatrolEnabled", false)
         return
-    end
-
-    if ai._isPatrolWait and pathEnded then
-        ai._patrolWaitT = ai._patrolWaitT - dtSec
-        if ai._patrolWaitT <= 0 then
-            --print("[GroundPatrolState] Switching patrol targets")
-            switchTarget(ai)
-            ai._isPatrolWait = false
-            ai._animator:SetBool("PatrolEnabled", true)
-
-            t = ai._patrolTarget
-            ai:RequestPathToXZ(t.x, t.z)
-        end
     end
 
     -- -- If the path ended but we are NOT near target, it means the path ended early (bad goal snap)
@@ -180,7 +148,6 @@ function PatrolState:Update(ai, dt)
     --     ai:RequestPathToXZ(t.x, t.z) -- retry, don't switch targets
     -- end
 
-    local ex, ez = ai:GetEnemyPosXZ()
     local movedSq = 0
     if ai._lastX ~= nil and ai._lastZ ~= nil then
         local mx = ex - ai._lastX

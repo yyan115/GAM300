@@ -70,8 +70,8 @@ void SpriteSystem::Update()
 #endif
 
     // Submit all visible sprites to the graphics manager
-    std::vector<std::unique_ptr<IRenderComponent>> renderItems;
-    renderItems.reserve(entities.size());
+    renderSnapshots.reserve(entities.size());
+    std::size_t renderSnapshotCount = 0;
     for (const auto& entity : entities)
     {
         // Skip entities that are inactive in hierarchy (checks parents too)
@@ -108,26 +108,29 @@ void SpriteSystem::Update()
 #ifdef ANDROID
             // __android_log_print(ANDROID_LOG_INFO, "GAM300", "Submitting sprite for entity: %u", entity);
 #endif
-            auto spriteRenderItem = std::make_unique<SpriteRenderComponent>(spriteComponent);
+            if (renderSnapshotCount == renderSnapshots.size()) {
+                renderSnapshots.emplace_back(spriteComponent);
+            }
+            else {
+                renderSnapshots[renderSnapshotCount].Capture(spriteComponent);
+            }
+            SpriteRenderItem* spriteRenderItem = &renderSnapshots[renderSnapshotCount++];
 
             // Copy the VAO pointer to the render item
             spriteRenderItem->spriteVAO = spriteVAO.get();
 
             // For both 2D and 3D sprites, update position/scale/rotation from Transform component if it exists
-            if (ecsManager.HasComponent<Transform>(entity))
+            if (auto transformComponent = ecsManager.TryGetComponent<Transform>(entity))
             {
-                auto& transform = ecsManager.GetComponent<Transform>(entity);
-
-                // Extract position from world matrix
-                glm::vec3 transformPos = glm::vec3(transform.worldMatrix.m.m03,
-                    transform.worldMatrix.m.m13,
-                    transform.worldMatrix.m.m23);
+                auto& transform = transformComponent->get();
+                Vector3D transformPosition = transform.worldPosition;
+                bool migratedThisFrame = false;
 
                 // For 2D sprites: If Transform position is at origin (0,0,0) but sprite has a different position,
                 // it means the sprite was created with position in sprite component, not Transform
                 // In this case, sync Transform to sprite position and scale
                 if (!spriteComponent.is3D && !spriteComponent.hasMigratedToTransform &&
-                    transformPos.x == 0.0f && transformPos.y == 0.0f && transformPos.z == 0.0f &&
+                    transformPosition.x == 0.0f && transformPosition.y == 0.0f && transformPosition.z == 0.0f &&
                     !(spriteComponent.position.x == 0.0f && spriteComponent.position.y == 0.0f && spriteComponent.position.z == 0.0f))
                 {
                     // Sync Transform to sprite position and scale (one-time migration)
@@ -135,8 +138,9 @@ void SpriteSystem::Update()
                         Vector3D(spriteComponent.position.x, spriteComponent.position.y, spriteComponent.position.z));
                     ecsManager.transformSystem->SetWorldScale(entity,
                         Vector3D(spriteComponent.scale.x, spriteComponent.scale.y, spriteComponent.scale.z));
-                    transformPos = spriteComponent.position.ConvertToGLM();
+                    transformPosition = spriteComponent.position;
                     spriteComponent.hasMigratedToTransform = true;
+                    migratedThisFrame = true;
 
                     // Log the migration (only once)
                     //std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
@@ -144,25 +148,17 @@ void SpriteSystem::Update()
                     //          << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;
                 }
 
-                spriteRenderItem->position = Vector3D::ConvertGLMToVector3D(transformPos);
+                spriteRenderItem->position = transformPosition;
+                spriteRenderItem->scale = migratedThisFrame
+                    ? spriteComponent.scale
+                    : transform.worldScale;
 
-                // Extract scale from world matrix (length of basis vectors)
-                float scaleX = sqrt(transform.worldMatrix.m.m00 * transform.worldMatrix.m.m00 +
-                                   transform.worldMatrix.m.m10 * transform.worldMatrix.m.m10 +
-                                   transform.worldMatrix.m.m20 * transform.worldMatrix.m.m20);
-                float scaleY = sqrt(transform.worldMatrix.m.m01 * transform.worldMatrix.m.m01 +
-                                   transform.worldMatrix.m.m11 * transform.worldMatrix.m.m11 +
-                                   transform.worldMatrix.m.m21 * transform.worldMatrix.m.m21);
-                float scaleZ = sqrt(transform.worldMatrix.m.m02 * transform.worldMatrix.m.m02 +
-                                   transform.worldMatrix.m.m12 * transform.worldMatrix.m.m12 +
-                                   transform.worldMatrix.m.m22 * transform.worldMatrix.m.m22);
-
-                spriteRenderItem->scale = Vector3D::ConvertGLMToVector3D(glm::vec3(scaleX, scaleY, scaleZ));
-
-                // Extract Z-axis rotation from the world matrix for 2D sprites
-                // Calculate rotation from the 2D rotation matrix (using X and Y basis vectors)
-                float rotationRadians = atan2(transform.worldMatrix.m.m10, transform.worldMatrix.m.m00);
-                spriteRenderItem->rotation = glm::degrees(rotationRadians);
+                // Extract only the Z angle needed by sprites from the cached
+                // world quaternion instead of decomposing the matrix again.
+                const Quaternion& rotation = transform.worldRotation;
+                const float sinZ = 2.0f * (rotation.w * rotation.z + rotation.x * rotation.y);
+                const float cosZ = 1.0f - 2.0f * (rotation.y * rotation.y + rotation.z * rotation.z);
+                spriteRenderItem->rotation = glm::degrees(std::atan2(sinZ, cosZ));
 
             } else {
                 // No Transform component - use sprite's own properties
@@ -170,18 +166,6 @@ void SpriteSystem::Update()
                 
             // Sync sorting values to renderOrder
             spriteRenderItem->renderOrder = spriteComponent.sortingLayer * 100 + spriteComponent.sortingOrder;
-
-            // Per-entity bloom emission
-            if (ecsManager.HasComponent<BloomComponent>(entity)) {
-                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
-                if (bloom.enabled) {
-                    spriteRenderItem->bloomColor = bloom.bloomColor;
-                    spriteRenderItem->bloomIntensity = bloom.bloomIntensity;
-                    if (bloom.bloomIntensity > 0.01f) {
-                        GraphicsManager::GetInstance().NotifyBloomUsedThisFrame();
-                    }
-                }
-            }
 
             // 2D UI sprites & if not include post process always skip post-processing — they must not be tonemapped
             if (!spriteComponent.is3D && !spriteComponent.includePostProcess) {
@@ -194,7 +178,21 @@ void SpriteSystem::Update()
                 }
             }
 
-            renderItems.push_back(std::move(spriteRenderItem));
+#ifndef ANDROID
+            // Mobile's compact sprite shader has no bloom output.
+            if (auto bloomComponent = ecsManager.TryGetComponent<BloomComponent>(entity)) {
+                const auto& bloom = bloomComponent->get();
+                if (bloom.enabled) {
+                    spriteRenderItem->bloomColor = bloom.bloomColor;
+                    spriteRenderItem->bloomIntensity = bloom.bloomIntensity;
+                    if (!spriteRenderItem->excludeFromPostProcess &&
+                        bloom.bloomIntensity > 0.01f) {
+                        gfxManager.NotifyBloomUsedThisFrame();
+                    }
+                }
+            }
+#endif
+
         }
 #ifdef ANDROID
         else {
@@ -203,7 +201,7 @@ void SpriteSystem::Update()
         }
 #endif
     }
-    gfxManager.SubmitBatch(std::move(renderItems));
+    gfxManager.SubmitBatch(renderSnapshots, renderSnapshotCount);
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "SpriteSystem::Update() completed");
 #endif

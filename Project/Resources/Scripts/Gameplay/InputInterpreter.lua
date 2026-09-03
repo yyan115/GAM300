@@ -172,21 +172,18 @@ return Component {
         -- ══════════════════════════════════════════════════════════════════
         -- POLL RAW ENGINE INPUT
         -- ══════════════════════════════════════════════════════════════════
-        local attackPressed       = Input.IsActionHeld("Attack")
-        local attackJustPressed   = Input.IsActionPressed("Attack")
-        local attackJustReleased  = Input.IsActionJustReleased("Attack")
+        local attackPressed, attackJustPressed, attackJustReleased =
+            Input.GetActionState("Attack")
 
-        local chainPressed        = Input.IsActionHeld("ChainAttack")
-        local chainJustPressed    = Input.IsActionPressed("ChainAttack")
-        local chainJustReleased   = Input.IsActionJustReleased("ChainAttack")
+        local chainPressed, chainJustPressed, chainJustReleased =
+            Input.GetActionState("ChainAttack")
 
-        local dashPressed         = Input.IsActionHeld("Dash")
-        local dashJustPressed     = Input.IsActionPressed("Dash")
-        local dashJustReleased    = Input.IsActionJustReleased("Dash")
+        local dashPressed, dashJustPressed, dashJustReleased =
+            Input.GetActionState("Dash")
 
         local jumpJustPressed     = Input.IsActionPressed("Jump")
 
-        local movementAxis        = Input.GetAxis("Movement") or { x = 0, y = 0 }
+        local movementX, movementY = Input.GetAxisXY("Movement")
 
         -- ══════════════════════════════════════════════════════════════════
         -- UPDATE CURRENT FRAME STATE
@@ -205,13 +202,11 @@ return Component {
 
         self._currentFrame.jumpJustPressed  = jumpJustPressed
 
-        -- Convert Vector2D userdata to a plain Lua table
-        self._currentFrame.movement = {
-            x = movementAxis.x or 0,
-            y = movementAxis.y or 0,
-        }
+        -- Keep the public table stable so polling input does not create garbage.
+        self._currentFrame.movement.x = movementX
+        self._currentFrame.movement.y = movementY
         self._currentFrame.isMoving = (
-            math.abs(movementAxis.x) > 0.1 or math.abs(movementAxis.y) > 0.1
+            math.abs(movementX) > 0.1 or math.abs(movementY) > 0.1
         )
 
         -- ══════════════════════════════════════════════════════════════════
@@ -278,7 +273,8 @@ return Component {
         self._currentFrame.dashJustPressed  = false
         self._currentFrame.dashJustReleased = false
         self._currentFrame.jumpJustPressed  = false
-        self._currentFrame.movement = { x = 0, y = 0 }
+        self._currentFrame.movement.x = 0
+        self._currentFrame.movement.y = 0
         self._currentFrame.isMoving = false
 
         -- Still decay so stale inputs don't fire the moment the freeze lifts

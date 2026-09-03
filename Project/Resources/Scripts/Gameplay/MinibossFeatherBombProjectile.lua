@@ -3,16 +3,7 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local function atan2(y, x)
-    local ok, v = pcall(math.atan, y, x)
-    if ok and type(v) == "number" then return v end
-    if x > 0 then return math.atan(y / x) end
-    if x < 0 and y >= 0 then return math.atan(y / x) + math.pi end
-    if x < 0 and y < 0 then return math.atan(y / x) - math.pi end
-    if x == 0 and y > 0 then return math.pi / 2 end
-    if x == 0 and y < 0 then return -math.pi / 2 end
-    return 0
-end
+local atan2 = math.atan
 
 local function lerp(a, b, t)
     return a + (b - a) * t

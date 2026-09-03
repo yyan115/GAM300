@@ -22,8 +22,10 @@ struct Vertex {
 class VBO {
 public:
 	VBO() = default;
+	~VBO();
 	GLuint ID{};
 	VBO(std::vector<Vertex>& vertices);
+	VBO(const void* data, size_t size, GLenum usage);
 
 	void Bind();
 	void Unbind();
@@ -31,6 +33,8 @@ public:
 
 	VBO(size_t size, GLenum usage = GL_DYNAMIC_DRAW);
 	void UpdateData(const void* data, size_t size, size_t offset = 0);
+	// Fast path for repeated updates after the caller has bound this VBO.
+	void UpdateBoundData(const void* data, size_t size, size_t offset = 0);
 	// New method to initialize buffer with specific size (for deferred init)
 	void InitializeBuffer(size_t size, GLenum usage = GL_DYNAMIC_DRAW);
 

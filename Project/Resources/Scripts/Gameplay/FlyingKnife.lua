@@ -85,26 +85,14 @@ Launch = function(self)
     local offsetY   = 1
     local offsetZ   = 0        
 
-    -- Get enemy position and rotation
+    -- Get enemy position
     local enemyTr = Engine.FindTransformByName(ENEMY_NAME)
-    local enemyPos = Engine.GetTransformPosition(enemyTr)
-    local enemyRot = Engine.GetTransformRotation(enemyTr)  -- Get enemy rotation
-    
-    -- Convert local offset to world space based on enemy rotation
-    -- You'll need to rotate the offset vector by the enemy's rotation
-    -- This is a simplified version - adjust based on your rotation format
-    
-    -- Get enemy's forward direction from rotation
-    local enemy_x = enemyPos[1]
-    local enemy_y = enemyPos[2]
-    local enemy_z = enemyPos[3]
+    local enemy_x, enemy_y, enemy_z = Engine.GetTransformPositionXYZ(enemyTr)
     
     -- Get player position (target)
     local playerTr = Engine.FindTransformByName(PLAYER_NAME)
-    local playerPos = Engine.GetTransformPosition(playerTr)
-    local player_x = playerPos[1]
-    local player_y = playerPos[2] + 0.5
-    local player_z = playerPos[3]
+    local player_x, player_y, player_z = Engine.GetTransformPositionXYZ(playerTr)
+    player_y = player_y + 0.5
     
     -- Calculate enemy's forward direction (same calculation as rotation)
     local dx_to_player = player_x - enemy_x

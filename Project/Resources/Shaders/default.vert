@@ -40,6 +40,7 @@ layout(std140) uniform CameraBlock {
     mat4 projection;
     vec3 cameraPos;
     float _pad;
+    mat4 viewProjection;
 };
 
 // ============================================================================
@@ -103,7 +104,7 @@ void main()
     if (hasBones && !useInstancing)
     {
         mat4 skin = mat4(0.0);
-        float wsum = 0.0;
+        bool hasInfluence = false;
         
         for (int i = 0; i < MAX_BONE_INFLUENCE; ++i)
         {
@@ -113,17 +114,19 @@ void main()
             if (id >= 0 && id < MAX_BONES && w > 0.0)
             {
                 skin += finalBonesMatrices[id] * w;
-                wsum += w;
+                hasInfluence = true;
             }
         }
         
-        if (wsum == 0.0) {
+        if (!hasInfluence) {
             skin = mat4(1.0);
         }
 
         pos = skin * pos;
-        nrm = normalize(mat3(skin) * nrm);
-        tan = normalize(mat3(skin) * tan);
+        // The world-space transform below normalizes both vectors, so an
+        // intermediate normalization only duplicates work.
+        nrm = mat3(skin) * nrm;
+        tan = mat3(skin) * tan;
     }
 
     // Transform to world space
@@ -140,5 +143,5 @@ void main()
     FragPosLightSpace = lightSpaceMatrix * worldPos;
 
     // Final clip-space position
-    gl_Position = projection * view * worldPos;
+    gl_Position = viewProjection * worldPos;
 }

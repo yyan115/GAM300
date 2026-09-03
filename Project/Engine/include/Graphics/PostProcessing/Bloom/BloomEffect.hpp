@@ -28,6 +28,10 @@ public:
     void SetScatter(float s) { scatter = s; }
     float GetScatter() const { return scatter; }
 
+    // Android fuses the final bloom composite into tone mapping. This is the
+    // accumulated top mip after downsample/upsample, or 0 when unavailable.
+    unsigned int GetResolvedBloomTexture() const { return resolvedBloomTexture; }
+
 private:
     std::shared_ptr<Shader> shader;
     float threshold = 1.0f;
@@ -54,6 +58,7 @@ private:
     int fboWidth = 0, fboHeight = 0;
 
     unsigned int bloomEmissionTexture = 0;  // From MRT, set by PostProcessingManager
+    unsigned int resolvedBloomTexture = 0;
 
     void CreateFBOs(int w, int h);
     void DeleteFBOs();

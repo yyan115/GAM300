@@ -5,6 +5,7 @@
 #include "Graphics/Material.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Frustum/Frustum.hpp"
+#include "Graphics/Lights/LightingSystem.hpp"
 #include "Logging.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include "Graphics/GraphicsManager.hpp"
@@ -19,9 +20,15 @@ void InstancingManager::BeginFrame()
 {
     m_stats.Reset();
 
-    for (auto& [key, batch] : m_batches)
+    GraphicsManager& graphics = GraphicsManager::GetInstance();
+    m_frameCamera = graphics.GetCurrentCamera();
+    ECSManager& ecsManager =
+        ECSRegistry::GetInstance().GetActiveECSManager();
+    m_frameLightingSystem = ecsManager.lightingSystem.get();
+
+    for (InstanceBatch* batch : m_batchList)
     {
-        batch.Clear();
+        batch->Clear();
     }
 
     m_sortedBatches.clear();
@@ -31,37 +38,60 @@ void InstancingManager::EndFrame()
 {
     m_stats.batchCount = 0;
 
-    for (auto& [key, batch] : m_batches)
+    for (const InstanceBatch* batch : m_batchList)
     {
-        if (!batch.IsEmpty())
+        if (!batch->IsEmpty())
         {
             m_stats.batchCount++;
         }
     }
 }
 
-bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, const glm::mat4& worldMatrix, const glm::vec3& bloomColor, float bloomIntensity)
+void InstancingManager::Clear()
+{
+    m_sortedBatches.clear();
+    for (InstanceBatch* batch : m_batchList) {
+        if (Model* model = batch->GetModel()) {
+            for (Mesh& mesh : model->meshes) {
+                mesh.InvalidateInstanceAttributes();
+            }
+        }
+    }
+    m_batchList.clear();
+    m_batches.clear();
+    m_frameCamera = nullptr;
+    m_frameLightingSystem = nullptr;
+    m_frustum = nullptr;
+    m_stats.Reset();
+}
+
+InstanceSubmissionResult InstancingManager::TryAddInstance(
+    const ModelRenderComponent& component,
+    const glm::mat4& worldMatrix,
+    const AABB& worldBounds,
+    const glm::vec3& bloomColor,
+    float bloomIntensity,
+    std::uint32_t lightMask)
 {
     m_stats.totalObjects++;
 
     if (!m_enabled)
     {
-        return false;
+        return InstanceSubmissionResult::NotInstanced;
     }
 
     if (!IsInstanceable(component))
     {
         m_stats.nonInstancedObjects++;
-        return false;
+        return InstanceSubmissionResult::NotInstanced;
     }
 
-    if (m_frustum && component.model)
+    if (m_frustum)
     {
-        AABB worldBounds = component.model->GetBoundingBox().Transform(worldMatrix);
         if (!m_frustum->IsBoxVisible(worldBounds))
         {
             m_stats.culledObjects++;
-            return true;  // Return true to indicate "handled" (culled)
+            return InstanceSubmissionResult::Culled;
         }
     }
 
@@ -73,10 +103,20 @@ bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, co
 
     InstanceBatch& batch = GetOrCreateBatch(key, component.model, component.material, component.shader);
 
-    batch.AddInstance(worldMatrix, bloomColor, bloomIntensity);
+    float cameraDistanceSq = 0.0f;
+    if (const Camera* camera = m_frameCamera) {
+        const glm::vec3 closest = glm::clamp(
+            camera->Position, worldBounds.min, worldBounds.max);
+        const glm::vec3 cameraDelta = camera->Position - closest;
+        cameraDistanceSq = glm::dot(cameraDelta, cameraDelta);
+    }
+
+    batch.AddInstance(
+        worldMatrix, bloomColor, bloomIntensity, lightMask,
+        cameraDistanceSq);
     m_stats.instancedObjects++;
 
-    return true;
+    return InstanceSubmissionResult::Added;
 }
 
 bool InstancingManager::IsInstanceable(const ModelRenderComponent& component) const
@@ -89,11 +129,22 @@ bool InstancingManager::IsInstanceable(const ModelRenderComponent& component) co
     // Transparent and fading objects need per-instance opacity — cannot be instanced
     if (component.distanceFadeOpacity < 1.0f) return false;
     if (component.material && component.material->GetOpacity() < 1.0f) return false;
+    if (!component.material) {
+        for (const auto& mesh : component.model->meshes) {
+            if (mesh.material && mesh.material->GetOpacity() < 1.0f) {
+                return false;
+            }
+        }
+    }
 
     return true;
 }
 
-InstanceBatch& InstancingManager::GetOrCreateBatch(const BatchKey& key, std::shared_ptr<Model> model, std::shared_ptr<Material> material, std::shared_ptr<Shader> shader)
+InstanceBatch& InstancingManager::GetOrCreateBatch(
+    const BatchKey& key,
+    const std::shared_ptr<Model>& model,
+    const std::shared_ptr<Material>& material,
+    const std::shared_ptr<Shader>& shader)
 {
     auto it = m_batches.find(key);
     if (it != m_batches.end())
@@ -112,11 +163,10 @@ InstanceBatch& InstancingManager::GetOrCreateBatch(const BatchKey& key, std::sha
 
     // 2. Grab a reference to the permanent batch
     InstanceBatch& newBatch = insertIt->second;
+    m_batchList.push_back(&newBatch);
 
     // 3. Initialize and Prewarm the permanent batch
     newBatch.Initialize(model, material, shader);
-    newBatch.Prewarm();
-
     if (model) {
         for (auto& mesh : model->meshes) {
             mesh.Prewarm();  // Upload vertex data to GPU now, not mid-frame
@@ -137,22 +187,51 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
 
     // Build sorted batch list (only non-empty batches)
     m_sortedBatches.clear();
-    for (auto& [key, batch] : m_batches) {
-        // Enforce the threshold! Small batches will be skipped here.
-        if (!batch.IsEmpty())
+    for (InstanceBatch* batch : m_batchList) {
+        // Collect only batches populated by this frame's culling pass.
+        if (!batch->IsEmpty())
         {
-            m_sortedBatches.push_back(&batch);
+#ifdef ANDROID
+            // Depth sorting only needs the closest instance in each batch.
+            // Convert its squared distance once per batch, not once per object.
+            batch->FinalizeDepthBucket();
+#endif
+            m_sortedBatches.push_back(batch);
         }
     }
 
-    // Sort batches by shader -> material -> model to minimize state changes
+    GraphicsManager& graphics = GraphicsManager::GetInstance();
+#ifdef ANDROID
+    const bool groupBloomOutput = graphics.IsBloomTargetPrepared();
+#endif
+
+    // Android has no depth prepass, so coarse front-to-back ordering lets
+    // early depth rejection avoid expensive PBR work while preserving state
+    // grouping for batches at similar depths. Desktop keeps pure state order.
     std::sort(m_sortedBatches.begin(), m_sortedBatches.end(),
+#ifdef ANDROID
+        [groupBloomOutput](const InstanceBatch* a, const InstanceBatch* b) {
+#else
         [](const InstanceBatch* a, const InstanceBatch* b) {
+#endif
+#ifdef ANDROID
+            if (a->GetDepthBucket() != b->GetDepthBucket()) {
+                return a->GetDepthBucket() < b->GetDepthBucket();
+            }
+#endif
             // Sort by shader first
             if (a->GetShader() != b->GetShader()) 
             {
                 return a->GetShader() < b->GetShader();
             }
+#ifdef ANDROID
+            // glDrawBuffers changes can be expensive on tile-based GPUs.
+            // Group bloom writes without disturbing coarse depth ordering.
+            if (groupBloomOutput &&
+                a->HasBloomEmission() != b->HasBloomEmission()) {
+                return !a->HasBloomEmission();
+            }
+#endif
             // Then by material
             if (a->GetMaterial() != b->GetMaterial()) 
             {
@@ -165,8 +244,10 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
     // Track current state to avoid redundant switches
     Shader* currentShader = nullptr;
     Material* currentMaterial = nullptr;
+    const bool hasEnvironmentMap = graphics.IsEnvReflectionActive();
+    const float environmentIntensity =
+        graphics.GetEnvReflectionIntensity();
 
-    int batchIndex = 0;
     for (InstanceBatch* batch : m_sortedBatches) 
       {
         // Check if we need to switch shader
@@ -183,19 +264,18 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
             batch->GetShader()->setFloat("brightnessBoost", 1.0f);
 
             // Apply lighting on shader switch
-            ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-            if (ecsManager.lightingSystem)
+            if (m_frameLightingSystem)
             {
-                ecsManager.lightingSystem->ApplyLighting(*batch->GetShader());
-                ecsManager.lightingSystem->ApplyShadows(*batch->GetShader());
+                m_frameLightingSystem->ApplyLighting(*batch->GetShader());
+                m_frameLightingSystem->ApplyShadows(*batch->GetShader());
             }
 
             // Environment reflections (skybox already bound to texture unit 12 by GraphicsManager)
-            auto& gfx = GraphicsManager::GetInstance();
-            batch->GetShader()->setBool("hasEnvMap", gfx.IsEnvReflectionActive());
-            if (gfx.IsEnvReflectionActive()) {
+            batch->GetShader()->setBool("hasEnvMap", hasEnvironmentMap);
+            if (hasEnvironmentMap) {
                 batch->GetShader()->setInt("envMap", 12);
-                batch->GetShader()->setFloat("envReflectionIntensity", gfx.GetEnvReflectionIntensity());
+                batch->GetShader()->setFloat(
+                    "envReflectionIntensity", environmentIntensity);
             }
 
             currentShader = batch->GetShader();
@@ -212,9 +292,12 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
             currentMaterial = batch->GetMaterial();
         }
 
+        // Most batches do not emit bloom. Keep the second color attachment
+        // disabled for those draws to save mobile tile/color bandwidth.
+        graphics.SetBloomOutputEnabled(batch->HasBloomEmission());
+
         // Render the batch
-        batch->Render(view, projection, cameraPos);
-        ++batchIndex;
+        batch->Render();
         m_stats.drawCalls += static_cast<int>(batch->GetModel()->meshes.size());
     }
 
@@ -232,11 +315,11 @@ void InstancingManager::RenderBatchesDepthOnly(const glm::mat4& lightSpaceMatrix
         return;
     }
 
-    for (auto& [key, batch] : m_batches)
+    for (InstanceBatch* batch : m_batchList)
     {
-        if (batch.GetInstanceCount() >= static_cast<size_t>(m_minInstancesForBatching))
+        if (!batch->IsEmpty())
         {
-            batch.RenderDepthOnly(lightSpaceMatrix);
+            batch->RenderDepthOnly(lightSpaceMatrix);
         }
     }
 }
@@ -252,11 +335,11 @@ void InstancingManager::RenderBatchesDepthPrepass(const glm::mat4& view, const g
     depthShader.setBool("isAnimated", false);   // instanced batches are never animated
     depthShader.setBool("hasDiffuseMap", false); // alpha-cutout handled conservatively
 
-    for (auto& [key, batch] : m_batches)
+    for (InstanceBatch* batch : m_batchList)
     {
-        if (batch.IsEmpty()) continue;
+        if (batch->IsEmpty()) continue;
         // RenderDepthOnly uses whatever shader is currently bound — that's our prepass shader
-        batch.RenderDepthOnly(glm::mat4(1.0f));
+        batch->RenderDepthOnly(glm::mat4(1.0f));
     }
 
     depthShader.setBool("useInstancing", false);
@@ -264,8 +347,13 @@ void InstancingManager::RenderBatchesDepthPrepass(const glm::mat4& view, const g
 
 void InstancingManager::PrewarmScene(ECSManager& ecsManager)
 {
+    std::unordered_map<BatchKey, size_t, BatchKeyHash> batchCounts;
+    batchCounts.reserve(ecsManager.modelSystem
+        ? ecsManager.modelSystem->entities.size()
+        : 0);
+
     // Loop through every model in the scene, regardless of where the camera is
-    for (Entity entity : ecsManager.GetAllEntities())
+    for (Entity entity : ecsManager.GetAllEntitiesView())
     {
         if (ecsManager.HasComponent<ModelRenderComponent>(entity))
         {
@@ -279,26 +367,25 @@ void InstancingManager::PrewarmScene(ECSManager& ecsManager)
                     component.shader.get()
                 };
 
-                // This forces the batch to be created and Prewarmed() in memory
-                // while the loading screen is still up!
+                // Create each unique batch while the loading screen is up.
                 GetOrCreateBatch(key, component.model, component.material, component.shader);
+                ++batchCounts[key];
             }
         }
     }
 
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthMask(GL_FALSE);
-
-    glm::mat4 dummyMatrix = glm::mat4(1.0f);
-    glm::vec3 dummyPos = glm::vec3(0.0f);
-
-    for (auto& [key, batch] : m_batches) {
-        // This forces the Instanced Shader to compile and the instanced VBO to map!
-        batch.Render(dummyMatrix, dummyMatrix, dummyPos);
+    // Most scenes have many singleton/small material combinations and only a
+    // few large repeated batches. Size each CPU/GPU instance buffer for its
+    // authored count instead of allocating 512 records for every key.
+    for (const auto& [key, instanceCount] : batchCounts) {
+        auto batch = m_batches.find(key);
+        if (batch != m_batches.end()) {
+            batch->second.Prewarm(instanceCount);
+        }
     }
 
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthMask(GL_TRUE);
+    // ModelSystem separately prewarms shared shader and mesh pipelines with
+    // its hidden draw.
 }
 
 bool InstancingManager::WasRenderedInstanced(const ModelRenderComponent& component) const
@@ -315,8 +402,7 @@ bool InstancingManager::WasRenderedInstanced(const ModelRenderComponent& compone
     auto it = m_batches.find(key);
     if (it != m_batches.end())
     {
-        // It was ONLY rendered if its batch met the threshold this frame!
-        return it->second.GetInstanceCount() >= static_cast<size_t>(m_minInstancesForBatching);
+        return !it->second.IsEmpty();
     }
 
     return false;

@@ -17,6 +17,9 @@ void main()
 {
     vec4 texColor = texture(particleTexture, TexCoord);
     FragColor = texColor * ParticleColor;
+	if (FragColor.a == 0.0) {
+		discard;
+	}
 
     // Per-entity bloom emission — written only to MRT attachment 1
     BloomEmission = vec4(bloomColor * bloomIntensity, FragColor.a);

@@ -41,7 +41,8 @@ return Component {
 
     Awake = function(self)
         self._rb           = nil
-        self._hitLockTimer = 0
+        self._hitLocked    = false
+        self._hitUnlockTimer = nil
         self._sub          = nil
         self._playerTr     = nil
     end,
@@ -64,15 +65,12 @@ return Component {
         end
     end,
 
-    Update = function(self, dt)
-        if self._hitLockTimer > 0 then
-            local dtSec = dt or 0
-            if dtSec > 1.0 then dtSec = dtSec * 0.001 end  -- ms → s guard
-            self._hitLockTimer = math.max(0, self._hitLockTimer - dtSec)
-        end
-    end,
-
     OnDisable = function(self)
+        if self._hitUnlockTimer and _G.scheduler then
+            _G.scheduler.cancel(self._hitUnlockTimer)
+            self._hitUnlockTimer = nil
+        end
+        self._hitLocked = false
         if event_bus and event_bus.unsubscribe and self._sub then
             event_bus.unsubscribe(self._sub)
             self._sub = nil
@@ -80,6 +78,11 @@ return Component {
     end,
 
     OnDestroy = function(self)
+        if self._hitUnlockTimer and _G.scheduler then
+            _G.scheduler.cancel(self._hitUnlockTimer)
+            self._hitUnlockTimer = nil
+        end
+        self._hitLocked = false
         if event_bus and event_bus.unsubscribe and self._sub then
             event_bus.unsubscribe(self._sub)
             self._sub = nil
@@ -89,7 +92,7 @@ return Component {
     -- ── Internal ──────────────────────────────────────────────────────────
 
     _onHit = function(self, payload)
-        if self._hitLockTimer > 0 then return end
+        if self._hitLocked then return end
         if not self._rb then return end
 
         local hitType = string.upper(payload.hitType or "COMBO")
@@ -110,7 +113,13 @@ return Component {
             self._rb:AddImpulse(ix, iy, iz)
         end)
 
-        self._hitLockTimer = tonumber(self.ImpulseIFrame) or 0.15
+        self._hitLocked = true
+        self._hitUnlockTimer = _G.scheduler.after(
+            tonumber(self.ImpulseIFrame) or 0.15,
+            function()
+                self._hitLocked = false
+                self._hitUnlockTimer = nil
+            end)
     end,
 
     -- Returns the normalised XZ direction pointing away from the player.
@@ -120,19 +129,16 @@ return Component {
             self._playerTr = Engine.FindTransformByName(self.PlayerName)
         end
 
-        local ep = self._transform and Engine.GetTransformPosition(self._transform)
-        if not ep then return 1, 0 end
-        local ex, ez = ep[1], ep[3]
+        if not self._transform then return 1, 0 end
+        local ex, _, ez = Engine.GetTransformPositionXYZ(self._transform)
 
         if self._playerTr then
-            local pp = Engine.GetTransformPosition(self._playerTr)
-            if pp then
-                local dx = ex - pp[1]
-                local dz = ez - pp[3]
-                local len = math.sqrt(dx * dx + dz * dz)
-                if len > 1e-4 then
-                    return dx / len, dz / len
-                end
+            local px, _, pz = Engine.GetTransformPositionXYZ(self._playerTr)
+            local dx = ex - px
+            local dz = ez - pz
+            local len = math.sqrt(dx * dx + dz * dz)
+            if len > 1e-4 then
+                return dx / len, dz / len
             end
         end
 

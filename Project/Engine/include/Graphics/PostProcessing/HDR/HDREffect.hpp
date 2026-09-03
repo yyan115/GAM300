@@ -52,6 +52,11 @@ public:
 	void SetSSAOEnabled(bool e) { ssaoEnabled = e; }
 	void SetSSAOTexture(unsigned int tex) { ssaoTexture = tex; }
 
+	void SetBloomInput(unsigned int texture, float intensity) {
+		bloomTexture = texture;
+		bloomIntensity = texture != 0 ? intensity : 0.0f;
+	}
+
 private:
 	std::shared_ptr<Shader> shader;
 	float exposure;
@@ -79,4 +84,8 @@ private:
 	// SSAO
 	bool ssaoEnabled = false;
 	unsigned int ssaoTexture = 0;
+
+	// Mobile combines bloom with tone mapping to avoid a separate HDR composite.
+	unsigned int bloomTexture = 0;
+	float bloomIntensity = 0.0f;
 };

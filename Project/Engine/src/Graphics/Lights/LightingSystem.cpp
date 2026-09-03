@@ -6,11 +6,13 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include <cstring>
 
 bool LightingSystem::Initialise()
 {
     //std::cout << "[LightingSystem] Initializing..." << std::endl;
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
     // Initialize directional shadow map
     if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
@@ -25,24 +27,14 @@ bool LightingSystem::Initialise()
         {
             //std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
         }
-#ifdef ANDROID
-        // On Android, stagger updates so only ~half the shadow maps render per frame.
-        // The PCF minimum disk radius (0.03) blurs enough to hide 1-frame stale maps.
-        pointShadowMaps[i].cacheConfig.updateInterval = 2;  // Check every other frame
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;  // Force update after 4 frames
-        pointShadowMaps[i].SetPhaseOffset(i % 2);           // Stagger: maps 0,2 and 1,3 alternate
-#else
-        // On PC, update every frame — the ECS traversal culls aggressively enough
-        // that the per-frame cost is acceptable.
+        // Desktop updates every frame.
         pointShadowMaps[i].cacheConfig.updateInterval = 0;
         pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
         pointShadowMaps[i].SetPhaseOffset(0);
-#endif
     }
-
-#ifdef ANDROID
-    // Textures are allocated above so samplers have valid objects at units 9-12.
-    // Disable rendering into them — RenderShadowMaps and ApplyShadows both early-out.
+#else
+    // Mobile uses a shadow-free shader variant. Do not allocate unused depth
+    // textures/FBOs or carry their samplers through the fragment shader.
     shadowsEnabled = false;
 #endif
 
@@ -50,6 +42,35 @@ bool LightingSystem::Initialise()
     // Allocate the lighting UBO (binding = 1). CameraBlock owns binding = 0.
     InitLightingUBO();
 #endif
+
+    const std::size_t pointCapacity = static_cast<std::size_t>(MAX_POINT_LIGHTS);
+    pointLightData.positions.reserve(pointCapacity);
+    pointLightData.ambient.reserve(pointCapacity);
+    pointLightData.diffuse.reserve(pointCapacity);
+    pointLightData.specular.reserve(pointCapacity);
+    pointLightData.constant.reserve(pointCapacity);
+    pointLightData.linear.reserve(pointCapacity);
+    pointLightData.quadratic.reserve(pointCapacity);
+    pointLightData.intensity.reserve(pointCapacity);
+    pointLightData.range.reserve(pointCapacity);
+    pointLightData.shadowIndex.reserve(pointCapacity);
+
+    const std::size_t spotCapacity = static_cast<std::size_t>(MAX_SPOT_LIGHTS);
+    spotLightData.positions.reserve(spotCapacity);
+    spotLightData.directions.reserve(spotCapacity);
+    spotLightData.ambient.reserve(spotCapacity);
+    spotLightData.diffuse.reserve(spotCapacity);
+    spotLightData.specular.reserve(spotCapacity);
+    spotLightData.constant.reserve(spotCapacity);
+    spotLightData.linear.reserve(spotCapacity);
+    spotLightData.quadratic.reserve(spotCapacity);
+    spotLightData.cutOff.reserve(spotCapacity);
+    spotLightData.outerCutOff.reserve(spotCapacity);
+    spotLightData.intensity.reserve(spotCapacity);
+
+    m_allPointLights.reserve(entities.size());
+    m_shadowCandidates.reserve(
+        static_cast<std::size_t>(MAX_VISIBLE_POINT_LIGHTS));
 
     //std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
@@ -84,6 +105,7 @@ void LightingSystem::Shutdown()
         glDeleteBuffers(1, &m_lightingUBO);
         m_lightingUBO = 0;
     }
+    m_hasUploadedLightingData = false;
 #endif
 
     //std::cout << "[LightingSystem] Shutdown" << std::endl;
@@ -93,6 +115,12 @@ void LightingSystem::SetPointShadowQuality(int quality)
 {
     const int resolutions[] = { 128, 256, 512 };
     int newRes = resolutions[std::clamp(quality, 0, 2)];
+
+#if defined(ANDROID) || defined(__ANDROID__)
+    // Android's renderer intentionally has no shadow targets.
+    pointShadowMapResolution = newRes;
+    return;
+#endif
 
     if (newRes == pointShadowMapResolution) return;
 
@@ -107,15 +135,9 @@ void LightingSystem::SetPointShadowQuality(int quality)
             //std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed at res " << newRes << std::endl;
 
 
-#ifdef ANDROID
-        pointShadowMaps[i].cacheConfig.updateInterval = 2;
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;
-        pointShadowMaps[i].SetPhaseOffset(i % 2);
-#else
         pointShadowMaps[i].cacheConfig.updateInterval = 0;
         pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
         pointShadowMaps[i].SetPhaseOffset(0);
-#endif
     }
 }
 
@@ -209,10 +231,33 @@ void LightingSystem::ApplyLighting(Shader& shader)
 {
 #ifdef __ANDROID__
     // Built-in Android shaders use the LightingBlock populated once per frame.
-    // Keep the legacy uniform path available for custom shaders without that block.
+    // The vertex stage still needs this compact summary to skip normal/tangent
+    // work on draws that have no normal-dependent lighting. These values change
+    // only with the selected light set and Shader caches unchanged uniforms.
     if (shader.UsesLightingBlock()) {
+        const int numPoint = std::min(
+            static_cast<int>(pointLightData.positions.size()),
+            LIGHTING_UBO_MAX_POINT_LIGHTS);
+        const int numSpot = std::min(
+            static_cast<int>(spotLightData.positions.size()),
+            LIGHTING_UBO_MAX_SPOT_LIGHTS);
+        const std::uint32_t pointMask = numPoint > 0
+            ? (1u << static_cast<std::uint32_t>(numPoint)) - 1u
+            : 0u;
+        const std::uint32_t spotMask = numSpot > 0
+            ? ((1u << static_cast<std::uint32_t>(numSpot)) - 1u)
+                << LIGHTING_UBO_MAX_POINT_LIGHTS
+            : 0u;
+        const bool needsGlobalNormal =
+            directionalLightData.hasDirectionalLight ||
+            (ambientIntensity != 0.0f && ambientMode == AmbientMode::Gradient);
+        shader.setInt(
+            "u_vertexActiveLightMask",
+            static_cast<int>(pointMask | spotMask));
+        shader.setBool("u_vertexNeedsGlobalNormal", needsGlobalNormal);
         return;
     }
+    // Keep the legacy uniform path available for custom shaders without that block.
 #endif
 
     shader.setInt("ambientMode", static_cast<int>(ambientMode));
@@ -278,6 +323,12 @@ void LightingSystem::ApplyLighting(Shader& shader)
 
 void LightingSystem::ApplyShadows(Shader& shader)
 {
+#if defined(ANDROID) || defined(__ANDROID__)
+    // The mobile shader has no shadow uniforms or samplers.
+    (void)shader;
+    return;
+#else
+
     // CRITICAL: Always set samplerCube uniforms to their dedicated texture units (9-12)
     // to prevent conflict with sampler2D textures at units 0-7.
     // If these aren't set, they default to 0 which causes "samplers of different type
@@ -321,6 +372,7 @@ void LightingSystem::ApplyShadows(Shader& shader)
     {
         shader.setInt("pointLights[" + std::to_string(i) + "].shadowIndex", pointLightData.shadowIndex[i]);
     }
+#endif
 }
 
 void LightingSystem::CollectLightData()
@@ -358,6 +410,10 @@ void LightingSystem::CollectLightData()
     // =========================================================================
     Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
     glm::vec3 camPos = camera ? camera->Position : glm::vec3(0.0f);
+    const GraphicsManager& graphics = GraphicsManager::GetInstance();
+    const bool cullFiniteLights =
+        camera && graphics.IsFrustumCullingEnabled();
+    const Frustum& cameraFrustum = graphics.GetFrustum();
 
     // =========================================================================
     // REUSE CLASS-LEVEL VECTORS (avoids per-frame heap allocation)
@@ -366,30 +422,30 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
-        // Skip inactive entities
-        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-            if (!activeComp.isActive) {
-                continue;
-            }
+        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+            continue;
+        }
+
+        const Transform* transform = nullptr;
+        if (auto transformComponent = ecsManager.TryGetComponent<Transform>(entity)) {
+            transform = &transformComponent->get();
         }
 
         // Collect directional light (first one only)
-        if (ecsManager.HasComponent<DirectionalLightComponent>(entity))
+        if (auto directionalComponent =
+                ecsManager.TryGetComponent<DirectionalLightComponent>(entity))
         {
-            auto& light = ecsManager.GetComponent<DirectionalLightComponent>(entity);
+            auto& light = directionalComponent->get();
             if (light.enabled && !directionalLightData.hasDirectionalLight)
             {
                 directionalLightData.hasDirectionalLight = true;
 
                 glm::vec3 baseDirection = light.direction.ConvertToGLM();
                 glm::vec3 direction = baseDirection;
-                if (ecsManager.HasComponent<Transform>(entity))
+                if (transform)
                 {
-                    auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                    glm::mat3 rotationMatrix = glm::mat3(worldMat);
-                    direction = glm::normalize(rotationMatrix * baseDirection);
+                    direction = glm::normalize(
+                        transform->worldRotation.RotateVector(light.direction).ConvertToGLM());
                 }
                 else
                 {
@@ -407,21 +463,29 @@ void LightingSystem::CollectLightData()
         // =====================================================================
         // COLLECT ALL POINT LIGHTS INTO TEMPORARY VECTOR
         // =====================================================================
-        if (ecsManager.HasComponent<PointLightComponent>(entity))
+        if (auto pointComponent =
+                ecsManager.TryGetComponent<PointLightComponent>(entity))
         {
-            auto& light = ecsManager.GetComponent<PointLightComponent>(entity);
+            auto& light = pointComponent->get();
 
             if (light.enabled)
             {
                 glm::vec3 position(0.0f);
-                if (ecsManager.HasComponent<Transform>(entity))
+                if (transform)
                 {
-                    auto& transform = ecsManager.GetComponent<Transform>(entity);
-                    glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                    position = glm::vec3(worldMat[3]);
+                    position = transform->worldPosition.ConvertToGLM();
                 }
 
-                float dist = glm::distance(position, camPos);
+                // The shader already treats range as a hard finite influence.
+                // If that sphere cannot touch the camera frustum, omitting the
+                // light is exact and shortens every visible fragment's PBR loop.
+                if (cullFiniteLights && light.range > 0.0f &&
+                    !cameraFrustum.IsSphereVisible(position, light.range)) {
+                    continue;
+                }
+
+                const glm::vec3 cameraOffset = position - camPos;
+                const float distanceSq = glm::dot(cameraOffset, cameraOffset);
 
                 m_allPointLights.push_back({
                     position,
@@ -434,15 +498,16 @@ void LightingSystem::CollectLightData()
                     light.intensity,
                     light.range,
                     light.castShadows,
-                    dist
+                    distanceSq
                     });
             }
         }
 
         // Collect spot lights (unchanged)
-        if (ecsManager.HasComponent<SpotLightComponent>(entity))
+        if (auto spotComponent =
+                ecsManager.TryGetComponent<SpotLightComponent>(entity))
         {
-            auto& light = ecsManager.GetComponent<SpotLightComponent>(entity);
+            auto& light = spotComponent->get();
 
             if (light.enabled)
             {
@@ -451,13 +516,13 @@ void LightingSystem::CollectLightData()
                     glm::vec3 position(0.0f);
                     glm::vec3 direction(0.0f, 0.0f, -1.0f);
 
-                    if (ecsManager.HasComponent<Transform>(entity))
+                    if (transform)
                     {
-                        auto& transform = ecsManager.GetComponent<Transform>(entity);
-                        glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                        position = glm::vec3(worldMat[3]);
-                        glm::mat3 rotationMatrix = glm::mat3(worldMat);
-                        direction = glm::normalize(rotationMatrix * direction);
+                        position = transform->worldPosition.ConvertToGLM();
+                        direction = glm::normalize(
+                            transform->worldRotation
+                                .RotateVector(Vector3D(0.0f, 0.0f, -1.0f))
+                                .ConvertToGLM());
                     }
 
                     spotLightData.positions.push_back(position);
@@ -490,23 +555,37 @@ void LightingSystem::CollectLightData()
     // Sort all point lights by distance, keep only closest MAX_VISIBLE_POINT_LIGHTS
     // =========================================================================
 
-    // Sort by distance (closest first)
-    std::sort(m_allPointLights.begin(), m_allPointLights.end(),
-        [](const PointLightCandidate& a, const PointLightCandidate& b) {
-            return a.distanceToCamera < b.distanceToCamera;
-        });
-
     // Determine how many lights to keep
     size_t numLightsToKeep = std::min(m_allPointLights.size(), static_cast<size_t>(MAX_VISIBLE_POINT_LIGHTS));
 
     // Also respect the shader's maximum
     numLightsToKeep = std::min(numLightsToKeep, static_cast<size_t>(MAX_POINT_LIGHTS));
 
+    // Only order the nearest lights that can reach the shader. Squared distance
+    // preserves ordering and avoids a square root for every point light.
+    if (numLightsToKeep < m_allPointLights.size()) {
+        std::partial_sort(
+            m_allPointLights.begin(),
+            m_allPointLights.begin() + static_cast<std::ptrdiff_t>(numLightsToKeep),
+            m_allPointLights.end(),
+            [](const PointLightCandidate& a, const PointLightCandidate& b) {
+                return a.distanceSqToCamera < b.distanceSqToCamera;
+            });
+    }
+    else {
+        std::sort(m_allPointLights.begin(), m_allPointLights.end(),
+            [](const PointLightCandidate& a, const PointLightCandidate& b) {
+                return a.distanceSqToCamera < b.distanceSqToCamera;
+            });
+    }
+
     // =========================================================================
     // BUILD FINAL POINT LIGHT ARRAYS (only closest N lights)
     // =========================================================================
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
     m_shadowCandidates.clear();
+#endif
 
     for (size_t i = 0; i < numLightsToKeep; ++i)
     {
@@ -523,26 +602,23 @@ void LightingSystem::CollectLightData()
         pointLightData.range.push_back(light.range);
         pointLightData.shadowIndex.push_back(-1);  // Will be assigned below
 
-        // Track shadow candidates
+#if !defined(ANDROID) && !defined(__ANDROID__)
+        // Track shadow candidates on platforms that render shadow maps.
         if (light.castShadows)
         {
             m_shadowCandidates.push_back({
                 pointLightData.positions.size() - 1,
-                light.distanceToCamera
+                light.distanceSqToCamera
                 });
         }
+#endif
     }
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
     // =========================================================================
     // SHADOW DISTANCE CULLING
     // From visible lights, assign shadows to closest MAX_POINT_LIGHT_SHADOWS
     // =========================================================================
-
-    // Already sorted by distance (inherited from point light sort)
-    std::sort(m_shadowCandidates.begin(), m_shadowCandidates.end(),
-        [](const ShadowCandidate& a, const ShadowCandidate& b) {
-            return a.distanceToCamera < b.distanceToCamera;
-        });
 
     int pointShadowCount = 0;
     for (size_t i = 0; i < m_shadowCandidates.size() && pointShadowCount < MAX_POINT_LIGHT_SHADOWS; ++i)
@@ -554,6 +630,9 @@ void LightingSystem::CollectLightData()
 
     // Update active shadow caster count for editor
     activeShadowCasterCount = pointShadowCount;
+#else
+    activeShadowCasterCount = 0;
+#endif
 
     // =========================================================================
     // DEBUG LOGGING (comment out in production)
@@ -590,6 +669,7 @@ void LightingSystem::InitLightingUBO()
     glBufferData(GL_UNIFORM_BUFFER, sizeof(LightingUBOData), nullptr, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_lightingUBO);  // binding = 1
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    m_hasUploadedLightingData = false;
 }
 
 // ============================================================================
@@ -604,21 +684,18 @@ void LightingSystem::UploadLightingUBO()
 
     // ---- Ambient (globals) ----
     data.ambSkyIntensity   = glm::vec4(ambientSky,     ambientIntensity);
-    data.ambEquatorMode    = glm::vec4(ambientEquator, static_cast<float>(static_cast<int>(ambientMode)));
+    data.ambEquatorMode    = glm::vec4(ambientEquator, 0.0f);
     data.ambGround         = glm::vec4(ambientGround,  0.0f);
 
     // ---- Directional light ----
     if (directionalLightData.hasDirectionalLight) {
-        data.dirLightDir      = glm::vec4(directionalLightData.direction, directionalLightData.intensity);
-        data.dirLightAmbient  = glm::vec4(directionalLightData.ambient,   1.0f);  // w = hasDir flag
-        data.dirLightDiffuse  = glm::vec4(directionalLightData.diffuse,   0.0f);
-        data.dirLightSpecular = glm::vec4(directionalLightData.specular,  0.0f);
+        data.dirLightDir = glm::vec4(
+            directionalLightData.direction, directionalLightData.intensity);
+        data.dirLightDiffuse = glm::vec4(
+            directionalLightData.diffuse, 1.0f);
     } else {
-        // Zero everything; shader checks dirLightAmbient.w > 0.5 as "has directional"
-        data.dirLightDir      = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
-        data.dirLightAmbient  = glm::vec4(0.0f);                          // w = 0 → no dir light
-        data.dirLightDiffuse  = glm::vec4(0.0f);
-        data.dirLightSpecular = glm::vec4(0.0f);
+        data.dirLightDir = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
+        data.dirLightDiffuse = glm::vec4(0.0f);
     }
 
     // ---- Light counts ----
@@ -626,34 +703,155 @@ void LightingSystem::UploadLightingUBO()
                                   LIGHTING_UBO_MAX_POINT_LIGHTS);
     const int numSpot = std::min(static_cast<int>(spotLightData.positions.size()),
                                  LIGHTING_UBO_MAX_SPOT_LIGHTS);
-    data.lightCounts = glm::ivec4(numPoint, numSpot, 0, 0);
+    const std::uint32_t pointMask = numPoint > 0
+        ? (1u << static_cast<std::uint32_t>(numPoint)) - 1u
+        : 0u;
+    const std::uint32_t spotMask = numSpot > 0
+        ? ((1u << static_cast<std::uint32_t>(numSpot)) - 1u)
+            << LIGHTING_UBO_MAX_POINT_LIGHTS
+        : 0u;
+    // A zero ambient multiplier makes the entire ambient/AO path a no-op.
+    // Encode that once on the CPU so fragments can skip it exactly. Negative
+    // values remain active to preserve the existing behavior.
+    const int packedAmbientMode = ambientIntensity == 0.0f
+        ? -1
+        : static_cast<int>(ambientMode);
+    data.lightCounts = glm::ivec4(
+        numPoint,
+        numSpot,
+        static_cast<int>(pointMask | spotMask),
+        packedAmbientMode);
 
-    // ---- Point lights (5 vec4s each) ----
+    // ---- Point lights (3 vec4s each) ----
     for (int i = 0; i < numPoint; ++i) {
-        int base = i * 5;
-        data.pointLights[base + 0] = glm::vec4(pointLightData.positions[i], pointLightData.range[i]);
-        data.pointLights[base + 1] = glm::vec4(pointLightData.ambient[i],   pointLightData.constant[i]);
-        data.pointLights[base + 2] = glm::vec4(pointLightData.diffuse[i],   pointLightData.linear[i]);
-        data.pointLights[base + 3] = glm::vec4(pointLightData.specular[i],  pointLightData.quadratic[i]);
-        data.pointLights[base + 4] = glm::vec4(pointLightData.intensity[i],
-                                               static_cast<float>(pointLightData.shadowIndex[i]),
-                                               0.0f, 0.0f);
+        const int base = i * 3;
+        const float range = pointLightData.range[i];
+        const float invRange = range > 0.0f ? 1.0f / range : 0.0f;
+        data.pointLights[base + 0] =
+            glm::vec4(pointLightData.positions[i], invRange);
+        data.pointLights[base + 1] =
+            glm::vec4(pointLightData.diffuse[i], pointLightData.linear[i]);
+        data.pointLights[base + 2] = glm::vec4(
+            pointLightData.constant[i],
+            pointLightData.quadratic[i],
+            pointLightData.intensity[i],
+            0.0f);
     }
 
-    // ---- Spot lights (6 vec4s each) ----
+    // ---- Spot lights (4 vec4s each) ----
     for (int i = 0; i < numSpot; ++i) {
-        int base = i * 6;
-        data.spotLights[base + 0] = glm::vec4(spotLightData.positions[i],  spotLightData.cutOff[i]);
-        data.spotLights[base + 1] = glm::vec4(spotLightData.directions[i], spotLightData.outerCutOff[i]);
-        data.spotLights[base + 2] = glm::vec4(spotLightData.ambient[i],    spotLightData.constant[i]);
-        data.spotLights[base + 3] = glm::vec4(spotLightData.diffuse[i],    spotLightData.linear[i]);
-        data.spotLights[base + 4] = glm::vec4(spotLightData.specular[i],   spotLightData.quadratic[i]);
-        data.spotLights[base + 5] = glm::vec4(spotLightData.intensity[i],  0.0f, 0.0f, 0.0f);
+        const int base = i * 4;
+        const float cutoffWidth = std::max(
+            spotLightData.cutOff[i] - spotLightData.outerCutOff[i], 0.0001f);
+        data.spotLights[base + 0] =
+            glm::vec4(spotLightData.positions[i], spotLightData.cutOff[i]);
+        data.spotLights[base + 1] =
+            glm::vec4(spotLightData.directions[i], spotLightData.outerCutOff[i]);
+        data.spotLights[base + 2] =
+            glm::vec4(spotLightData.diffuse[i], spotLightData.linear[i]);
+        data.spotLights[base + 3] = glm::vec4(
+            spotLightData.constant[i],
+            spotLightData.quadratic[i],
+            spotLightData.intensity[i],
+            1.0f / cutoffWidth);
     }
 
-    // ---- Upload in one call ----
+    // Static scenes normally keep the same selected lights for many frames.
+    // Avoid entering the driver when the packed UBO contents are unchanged.
+    if (m_hasUploadedLightingData &&
+        std::memcmp(&m_lastUploadedLightingData, &data, sizeof(data)) == 0) {
+        return;
+    }
+
     glBindBuffer(GL_UNIFORM_BUFFER, m_lightingUBO);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightingUBOData), &data);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    std::memcpy(&m_lastUploadedLightingData, &data, sizeof(data));
+    m_hasUploadedLightingData = true;
+    ++m_lightingRevision;
+}
+
+std::uint32_t LightingSystem::GetLightMask(
+    const AABB& worldBounds) const noexcept
+{
+    std::uint32_t mask = 0;
+    const std::size_t pointLightCount = std::min(
+        pointLightData.positions.size(),
+        static_cast<std::size_t>(LIGHTING_UBO_MAX_POINT_LIGHTS));
+
+    for (std::size_t index = 0; index < pointLightCount; ++index) {
+        const float range = pointLightData.range[index];
+        if (range <= 0.0f) {
+            mask |= (1u << index);
+            continue;
+        }
+
+        const glm::vec3 closest = glm::clamp(
+            pointLightData.positions[index], worldBounds.min, worldBounds.max);
+        const glm::vec3 offset =
+            pointLightData.positions[index] - closest;
+        const float distanceSq = glm::dot(offset, offset);
+
+        // Expand very slightly so CPU/GPU rounding at the hard range boundary
+        // can only retain an extra light, never remove a visible contribution.
+        const float conservativeRange =
+            range + std::max(0.01f, range * 0.0001f);
+        if (distanceSq <= conservativeRange * conservativeRange) {
+            mask |= (1u << index);
+        }
+    }
+
+    // A spotlight is exactly zero outside its outer cone. Test the AABB's
+    // enclosing sphere against that infinite cone; rejecting the sphere also
+    // rejects the box while retaining every potentially contributing light.
+    const glm::vec3 center = worldBounds.GetCenter();
+    const float radius = glm::length(worldBounds.GetExtents());
+    const float conservativeRadius =
+        radius + std::max(0.01f, radius * 0.0001f);
+    const std::size_t spotLightCount = std::min(
+        spotLightData.positions.size(),
+        static_cast<std::size_t>(LIGHTING_UBO_MAX_SPOT_LIGHTS));
+
+    for (std::size_t index = 0; index < spotLightCount; ++index) {
+        const std::uint32_t bit =
+            1u << (LIGHTING_UBO_MAX_POINT_LIGHTS + index);
+        const float outerCos = spotLightData.outerCutOff[index];
+        const glm::vec3 direction = spotLightData.directions[index];
+        const float directionLengthSq = glm::dot(direction, direction);
+
+        // Malformed cone data must retain the light rather than risk a visible
+        // false-negative. Authored directions are normalized during collection.
+        if (!(outerCos > 0.0f && outerCos <= 1.0f) ||
+            !std::isfinite(outerCos) ||
+            !std::isfinite(directionLengthSq) ||
+            glm::abs(directionLengthSq - 1.0f) > 0.001f) {
+            mask |= bit;
+            continue;
+        }
+
+        const glm::vec3 fromApex =
+            center - spotLightData.positions[index];
+        const float axial = glm::dot(fromApex, direction);
+        const float distanceSq = glm::dot(fromApex, fromApex);
+        const float radial = std::sqrt(std::max(
+            0.0f, distanceSq - axial * axial));
+        const float outerSin =
+            std::sqrt(std::max(0.0f, 1.0f - outerCos * outerCos));
+
+        // In a 2D axial slice, the cone boundary is a ray. If the center
+        // projects behind that ray, the apex is its nearest cone point;
+        // otherwise use perpendicular distance to the boundary.
+        const float boundaryProjection =
+            axial * outerCos + radial * outerSin;
+        const float distanceToCone = boundaryProjection <= 0.0f
+            ? std::sqrt(std::max(distanceSq, 0.0f))
+            : std::max(0.0f, radial * outerCos - axial * outerSin);
+
+        if (distanceToCone <= conservativeRadius) {
+            mask |= bit;
+        }
+    }
+
+    return mask;
 }
 #endif

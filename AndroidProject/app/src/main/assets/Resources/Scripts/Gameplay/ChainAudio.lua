@@ -81,8 +81,10 @@ function M.New(linkName, clips, settings)
     -- _flopState[i] = "slow" | "fast" | nil (nil = not playing)
     self._flopState         = {}
     self._prevPositions     = {}   -- positions[i] from last frame for speed calc
+    self._flopSelected      = {}
+    self._flopTopIndices    = {}
+    self._flopTopSpeeds     = {}
     self._prevIsTaut        = false
-    self._prevTipPos        = nil  -- tip position for lax speed calc
     self._subAim            = nil
     return self
 end
@@ -161,13 +163,17 @@ function M:Update(dt, pub, positions, activeN)
     -- Store positions for next frame
     if positions then
         for i = 1, activeN do
-            if positions[i] then
-                self._prevPositions[i] = positions[i]
+            local current = positions[i]
+            if current then
+                local previous = self._prevPositions[i]
+                if not previous then
+                    previous = {0, 0, 0}
+                    self._prevPositions[i] = previous
+                end
+                previous[1], previous[2], previous[3] =
+                    _posX(current), _posY(current), _posZ(current)
             end
         end
-    end
-    if positions and positions[activeN] then
-        self._prevTipPos = positions[activeN]
     end
 end
 
@@ -183,7 +189,6 @@ function M:Cleanup()
     end)
     self._prevIsTaut    = false
     self._prevPositions = {}
-    self._prevTipPos    = nil
     self._flopState     = {}
     if _G.event_bus and _G.event_bus.unsubscribe then
         if self._subAim then pcall(function() _G.event_bus.unsubscribe(self._subAim) end) end
@@ -276,21 +281,31 @@ end
 function M:_updateMultiFlop(dt, positions, activeN)
     if not positions then return end
 
-    -- Compute speed for every active link
-    local speeds = {}
-    for i = 1, activeN do
-        speeds[i] = self:_linkSpeed(i, positions, dt)
+    -- Keep only the few fastest links instead of allocating and sorting all 200.
+    local limit = math.max(0, math.min(math.floor(self.maxActiveLinks), activeN))
+    local selected = self._flopSelected
+    local topIndices = self._flopTopIndices
+    local topSpeeds = self._flopTopSpeeds
+    for index in pairs(selected) do selected[index] = nil end
+    for slot = 1, limit do
+        topIndices[slot], topSpeeds[slot] = nil, -math.huge
     end
 
-    -- Sort indices by speed descending, cap at maxActiveLinks
-    local indices = {}
-    for i = 1, activeN do indices[#indices+1] = i end
-    table.sort(indices, function(a, b) return speeds[a] > speeds[b] end)
-
-    local limit    = math.min(self.maxActiveLinks, activeN)
-    local selected = {}
-    for i = 1, limit do
-        selected[indices[i]] = true
+    for index = 1, activeN do
+        local speed = self:_linkSpeed(index, positions, dt)
+        for slot = 1, limit do
+            if speed > topSpeeds[slot] then
+                for move = limit, slot + 1, -1 do
+                    topIndices[move] = topIndices[move - 1]
+                    topSpeeds[move] = topSpeeds[move - 1]
+                end
+                topIndices[slot], topSpeeds[slot] = index, speed
+                break
+            end
+        end
+    end
+    for slot = 1, limit do
+        selected[topIndices[slot]] = true
     end
 
     -- Stop links no longer selected
@@ -301,8 +316,9 @@ function M:_updateMultiFlop(dt, positions, activeN)
     end
 
     -- Start or switch mode for selected links
-    for idx in pairs(selected) do
-        local mode = (speeds[idx] >= self.flopSpeedThreshold) and "fast" or "slow"
+    for slot = 1, limit do
+        local idx = topIndices[slot]
+        local mode = (topSpeeds[slot] >= self.flopSpeedThreshold) and "fast" or "slow"
         if self._flopState[idx] ~= mode then
             -- Mode changed (or not yet playing) — restart with correct clip set
             self:_stopFlopOnLink(idx)

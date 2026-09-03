@@ -62,30 +62,22 @@ struct AABB {
 
 	AABB Transform(const glm::mat4& transform) const 
 	{
-		glm::vec3 corners[8] = {
-			glm::vec3(min.x, min.y, min.z),
-			glm::vec3(max.x, min.y, min.z),
-			glm::vec3(min.x, max.y, min.z),
-			glm::vec3(max.x, max.y, min.z),
-			glm::vec3(min.x, min.y, max.z),
-			glm::vec3(max.x, min.y, max.z),
-			glm::vec3(min.x, max.y, max.z),
-			glm::vec3(max.x, max.y, max.z)
-		};
+		// Model transforms are affine. Transforming center/extents is exact for
+		// an AABB and avoids eight matrix multiplies and homogeneous divides.
+		const glm::vec3 center = GetCenter();
+		const glm::vec3 extents = GetExtents();
+		const glm::mat3 linear(transform);
+		const glm::mat3 absLinear(
+			glm::abs(linear[0]),
+			glm::abs(linear[1]),
+			glm::abs(linear[2]));
+		const glm::vec3 transformedCenter =
+			glm::vec3(transform * glm::vec4(center, 1.0f));
+		const glm::vec3 transformedExtents = absLinear * extents;
 
-		glm::vec3 newMin(FLT_MAX);
-		glm::vec3 newMax(-FLT_MAX);
-
-		for (int i = 0; i < 8; ++i) 
-		{
-			glm::vec4 transformed = transform * glm::vec4(corners[i], 1.0f);
-			glm::vec3 point = glm::vec3(transformed) / transformed.w;
-
-			newMin = glm::min(newMin, point);
-			newMax = glm::max(newMax, point);
-		}
-
-		return AABB(newMin, newMax);
+		return AABB(
+			transformedCenter - transformedExtents,
+			transformedCenter + transformedExtents);
 	}
 };
 
@@ -152,10 +144,14 @@ public:
     // Test AABB against frustum (returns true if visible)
     bool IsBoxVisible(const AABB& box, float tolerance = 0.5f) const 
     {
+		const glm::vec3 center = box.GetCenter();
+		const glm::vec3 extents = box.GetExtents();
         for (int i = 0; i < PLANE_COUNT; ++i) 
         {
-            glm::vec3 positiveVertex = box.GetPositiveVertex(planes[i].normal);
-            if (planes[i].GetSignedDistanceToPoint(positiveVertex) < -tolerance)
+			const Plane& plane = planes[i];
+			const float projectedRadius =
+				glm::dot(glm::abs(plane.normal), extents);
+            if (plane.GetSignedDistanceToPoint(center) + projectedRadius < -tolerance)
             {
                 return false;
             }

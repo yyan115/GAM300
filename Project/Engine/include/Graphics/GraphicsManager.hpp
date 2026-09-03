@@ -1,6 +1,13 @@
 #pragma once
+#include <atomic>
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <vector>
 #include <memory>
+#include <mutex>
+#include <type_traits>
 #include <glm/glm.hpp>
 #include "IRenderComponent.hpp"
 #include "Graphics/Camera/Camera.hpp"
@@ -9,8 +16,10 @@
 #include "Model/ModelRenderComponent.hpp"
 #include "TextRendering/Font.hpp"
 #include "TextRendering/TextRenderComponent.hpp"
+#include "TextRendering/TextRenderItem.hpp"
 #include "DebugDraw/DebugDrawComponent.hpp"
 #include "Sprite/SpriteRenderComponent.hpp"
+#include "Sprite/SpriteRenderItem.hpp"
 #include <Math/Matrix4x4.hpp>
 #include "Engine.h"  // For ENGINE_API macro
 #include "Particle/ParticleComponent.hpp"
@@ -93,8 +102,26 @@ public:
     void GetTargetGameResolution(int& width, int& height) const { width = targetGameWidth; height = targetGameHeight; }
 
     // Render queue management
-    void Submit(std::unique_ptr<IRenderComponent> renderItem);
-    void SubmitBatch(std::vector<std::unique_ptr<IRenderComponent>>&& renderItems);
+    void Submit(IRenderComponent* renderItem);
+
+    template <typename T>
+    void SubmitBatch(std::vector<T>& renderItems, std::size_t count)
+    {
+        static_assert(std::is_base_of_v<IRenderComponent, T>);
+        count = std::min(count, renderItems.size());
+        if (count == 0) return;
+
+        std::lock_guard<std::mutex> lock(renderQueueMutex);
+        renderQueue.reserve(renderQueue.size() + count);
+        for (std::size_t index = 0; index < count; ++index)
+        {
+            IRenderComponent* renderItem = &renderItems[index];
+            if (renderItem->isVisible)
+            {
+                renderQueue.push_back(renderItem);
+            }
+        }
+    }
 
     // Main rendering
     void Render();
@@ -142,9 +169,19 @@ public:
 
     // Bloom dirty tracking - skip the whole bloom post-process pass when no
     // entity on screen has bloom emission this frame. Saves ~3-5ms on mobile.
-    void ResetBloomFlag() { m_hasBloomEmissionThisFrame = false; }
-    void NotifyBloomUsedThisFrame() { m_hasBloomEmissionThisFrame = true; }
-    bool HasBloomEmissionThisFrame() const { return m_hasBloomEmissionThisFrame; }
+    void ResetBloomFlag() noexcept {
+        m_hasBloomEmissionThisFrame.store(false, std::memory_order_relaxed);
+    }
+    void NotifyBloomUsedThisFrame() noexcept {
+        m_hasBloomEmissionThisFrame.store(true, std::memory_order_relaxed);
+    }
+    bool HasBloomEmissionThisFrame() const noexcept {
+        return m_hasBloomEmissionThisFrame.load(std::memory_order_relaxed);
+    }
+    // Instanced rendering shares the scene framebuffer and uses this to avoid
+    // writing the bloom attachment for batches with no emission.
+    void SetBloomOutputEnabled(bool enabled);
+    bool IsBloomTargetPrepared() const { return m_bloomTargetPrepared; }
 
 private:
     GraphicsManager() = default;
@@ -161,10 +198,13 @@ private:
 
     // Private text rendering methods
     void RenderText(const TextRenderComponent& item);
+    void RenderText(const TextRenderItem& item);
     void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY);
 
-    std::vector<std::unique_ptr<IRenderComponent>> renderQueue;
-    std::vector<std::unique_ptr<IRenderComponent>> deferredQueue; // Post-process excluded items
+    // Frame snapshots are owned and reused by their submitting systems.
+    // These pointers are valid until the next BeginFrame().
+    std::vector<IRenderComponent*> renderQueue;
+    std::vector<IRenderComponent*> deferredQueue; // Post-process excluded items
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
@@ -197,15 +237,44 @@ private:
         const std::shared_ptr<Texture>& texture,
         const std::shared_ptr<Shader>& shader,
         VAO* vao,
-        EBO* ebo,
         std::size_t particleCount,
-        bool additiveBlending);
+        bool additiveBlending,
+        const glm::vec4& startColor,
+        const glm::vec4& endColor,
+        float startSize,
+        float endSize);
 
     // Sprite rendering methods
     void RenderSprite(const SpriteRenderComponent& item);
+    void RenderSprite(const SpriteRenderItem& item);
     void Setup2DSpriteMatrices(Shader& shader, const glm::vec3& position,
         const glm::vec3& scale, float rotation);
     void Setup3DSpriteMatrices(Shader& shader, const glm::mat4& modelMatrix);
+    const glm::mat4& GetScreenProjection();
+
+    // The sprite/text/particle pass changes the same handful of states for
+    // every draw. Cache them across adjacent items to avoid redundant GLES
+    // driver calls, then restore the engine's canonical state once per pass.
+    struct CachedRenderState {
+        std::int8_t depthTest = -1;
+        std::int8_t depthWrite = -1;
+        std::int8_t blend = -1;
+        std::int8_t cullFace = -1;
+        GLenum blendSource = 0;
+        GLenum blendDestination = 0;
+        bool blendFunctionKnown = false;
+    };
+    CachedRenderState m_cachedRenderState;
+    GLuint m_cachedTexture2DUnit0 = 0;
+    bool m_texture2DUnit0Known = false;
+    void InvalidateRenderStateCache() noexcept;
+    void SetDepthTestCached(bool enabled);
+    void SetDepthWriteCached(bool enabled);
+    void SetBlendCached(bool enabled);
+    void SetCullFaceCached(bool enabled);
+    void SetBlendFunctionCached(GLenum source, GLenum destination);
+    void BindTexture2DUnit0Cached(GLuint texture);
+    void RestoreDefaultRenderState();
 
     // FRUSTUM MEMBERS:
     Frustum viewFrustum;
@@ -236,16 +305,52 @@ private:
     bool m_depthPrepassEnabled = true;
     void RunDepthPrepass(const glm::mat4& view, const glm::mat4& projection);
 
-    // Camera UBO — view, projection, cameraPos uploaded once per frame (binding = 0)
+    // Camera UBO — camera data uploaded once per frame (binding = 0).
+    // viewProjection avoids repeating projection * view for every 3D vertex.
     struct CameraUBOData {
         glm::mat4 view;
         glm::mat4 projection;
         glm::vec3 cameraPos;
         float _pad = 0.0f; // matches std140 implicit padding after vec3
+        glm::mat4 viewProjection;
     };
     GLuint m_cameraUBO = 0;
+    CameraUBOData m_lastCameraUBOData{};
+    bool m_hasLastCameraUBOData = false;
     void InitCameraUBO();
     void UploadCameraUBO(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& camPos);
+
+#ifdef ANDROID
+    // Visible skin palettes are packed into one streaming UBO per frame. Each
+    // affine bone uses three vec4 columns: xyz is the linear transform and w
+    // carries one translation component. The implicit final row is 0,0,0,1,
+    // reducing both UBO bandwidth and vertex-shader blending work by 25%.
+    static constexpr std::size_t kBonePaletteMatrixCount = 100;
+    static constexpr std::size_t kBonePaletteColumnsPerMatrix = 3;
+    static constexpr std::size_t kBonePaletteBytes =
+        kBonePaletteMatrixCount * kBonePaletteColumnsPerMatrix *
+        sizeof(glm::vec4);
+    GLuint m_bonePaletteUBO = 0;
+    std::size_t m_bonePaletteStride = kBonePaletteBytes;
+    std::size_t m_bonePaletteUploadSize = 0;
+    std::size_t m_boundBonePaletteOffset =
+        std::numeric_limits<std::size_t>::max();
+    std::vector<std::uint8_t> m_bonePaletteScratch;
+    void InitBonePaletteUBO();
+    void PrepareBonePalettes();
+    void BindBonePalette(const ModelRenderComponent& item);
+#endif
+
+    // Camera matrices are identical for nearly every draw in a pass. Keep the
+    // frame values so legacy shaders and particles do not rebuild them per item.
+    glm::mat4 m_frameView{1.0f};
+    glm::mat4 m_frameProjection{1.0f};
+    glm::vec3 m_frameCameraRight{1.0f, 0.0f, 0.0f};
+    glm::vec3 m_frameCameraUp{0.0f, 1.0f, 0.0f};
+
+    glm::mat4 m_screenProjection{1.0f};
+    int m_screenProjectionWidth = -1;
+    int m_screenProjectionHeight = -1;
 
     // Current point light shadow data for per-light culling
     // Set before each point shadow render, -1 farPlane means directional (no sphere cull)
@@ -258,6 +363,7 @@ private:
     std::vector<IRenderComponent*> m_otherRenderItems;
     std::vector<IRenderComponent*> m_deferredModelRenderItems;
     std::vector<IRenderComponent*> m_deferredOtherRenderItems;
+    std::vector<glm::vec4> m_textVertexScratch;
 
     // State sorting support
     struct ModelSortEntry {
@@ -265,6 +371,7 @@ private:
         RenderLayer::Type layer = RenderLayer::Type::LAYER_OPAQUE;
         float distanceSq = 0.0f;
         int depthBucket = 0;
+        bool bloomOutput = false;
         RenderSortKey stateKey;
     };
     std::vector<ModelSortEntry> m_modelSortEntries;
@@ -282,7 +389,9 @@ private:
     // Bloom dirty flag - reset at start of each frame, set when any entity
     // submits a bloom emission > 0. Used to skip the post-process bloom pass
     // entirely when nothing is glowing this frame.
-    bool m_hasBloomEmissionThisFrame = false;
+    std::atomic_bool m_hasBloomEmissionThisFrame{false};
+    bool m_bloomTargetPrepared = false;
+    bool m_bloomOutputEnabled = false;
 
     void RenderModelOptimized(const ModelRenderComponent& item);
 

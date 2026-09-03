@@ -17,9 +17,10 @@ local function interruptOut(ai)
     ai._attackWindupT = 0
 
     local attackR, _, diseng = ai:GetRanges()
-    if not ai:IsPlayerInRange(diseng) then
+    local distanceSq = ai:GetPlayerDistanceSq()
+    if distanceSq > (diseng * diseng) then
         ai.fsm:Change("Chase", ai.states.Chase)
-    elseif not ai:IsPlayerInRange(attackR) then
+    elseif distanceSq > (attackR * attackR) then
         ai.fsm:Change("Chase", ai.states.Chase)
     else
         ai.fsm:Change("Hurt", ai.states.Hurt)
@@ -50,13 +51,15 @@ function FlyingAttack:Update(ai, dt)
     local dtSec = toDtSec(dt)
     if dtSec <= 0 then return end
 
-    ai:MaintainHover(dtSec)
-    ai:FacePlayer()
+    local hoverX, hoverY, hoverZ = ai:MaintainHover(dtSec)
 
     local attackR, _, diseng = ai:GetRanges()
+    local distanceSq, px, pz, ex, ez, ey =
+        ai:GetPlayerDistanceSq(hoverX, hoverZ, hoverY)
+    ai:FacePlayer(px, pz, ex, ez)
 
     -- if player left disengage range -> chase
-    if not ai:IsPlayerInRange(diseng) then
+    if distanceSq > (diseng * diseng) then
         ai._animator:SetBool("ReadyToAttack", false)
         ai._animator:SetBool("PlayerInAttackRange", false)
         ai._readyLatched = false
@@ -74,13 +77,13 @@ function FlyingAttack:Update(ai, dt)
     ai._attackCooldownT = math.max(0, (ai._attackCooldownT or 0) - dtSec)
 
     -- If not in attack range yet, keep moving closer
-    if not ai:IsPlayerInRange(attackR) then
+    if distanceSq > (attackR * attackR) then
         ai._animator:SetBool("ReadyToAttack", false)
         ai._animator:SetBool("PlayerInAttackRange", false)
         ai._readyLatched = false
         ai._readySettleT = 0
 
-        ai:MoveTowardPlayerXZ_Flying(dtSec, ai.FlyingChaseSpeed or 1.2)
+        ai:MoveTowardPlayerXZ_Flying(dtSec, ai.FlyingChaseSpeed or 1.2, px, pz, ex, ez, ey)
         return
     end
 

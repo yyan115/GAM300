@@ -41,11 +41,12 @@ public:
 	//void SyncDirtyComponents(ECSManager& ecsManager);	//APPLY INSPECTOR CHANGES TO JOLT
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
+	void Shutdown(ECSManager& ecsManager);
 
 	void CreatePhysicsBody(Entity e, ECSManager& ecsManager);
 	
 	// Remove a single entity's physics body (used when CharacterVirtual takes over)
-	void RemoveBody(Entity entity);
+	void RemoveBody(Entity entity, ECSManager& ecsManager);
 
 	// Convert entity's body to kinematic hurtbox (keeps body in broadphase for trigger detection)
 	void ConvertToKinematicHurtbox(Entity entity);
@@ -125,7 +126,15 @@ private:
 	std::unique_ptr<JPH::JobSystem> jobs;           // e.g., JobSystemThreadPool
 	std::unique_ptr<JPH::TempAllocator> temp;       // e.g., TempAllocatorImpl
 	bool m_joltInitialized;  // Track if THIS instance's physics has been initialized
-	std::set<std::pair<Entity, Entity>> m_activeInteractions; // Stores currently colliding pairs {EntityA, EntityB} where A < B
+	// Sorted flat set of colliding pairs. Contact changes are relatively rare,
+	// while Stay processing iterates this every physics tick; contiguous storage
+	// is substantially cheaper than pointer-chasing a std::set.
+	std::vector<std::pair<Entity, Entity>> m_activeInteractions;
+	std::vector<CollisionEvent> m_enterEventsScratch;
+	std::vector<CollisionEvent> m_exitEventsScratch;
+	std::vector<Entity> m_kinematicEntitiesScratch;
+	std::vector<Entity> m_dynamicEntitiesScratch;
+	std::vector<JPH::BodyID> m_dynamicBodyIdsScratch;
 
 	void SyncPhysicsBodyToTransform(Entity entity, ECSManager& ecs);
 	void UpdateColliderShapeScale(ColliderComponent& col, Vector3D worldScale);

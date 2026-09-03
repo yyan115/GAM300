@@ -7,7 +7,10 @@
 // - Minimal global pollution: everything inside namespace Scripting.
 
 #include "Scripting.h"
+#include <cstddef>
+#include <cstdint>
 #include <string>
+#include <string_view>
 #include <memory>
 
 extern "C" {
@@ -40,6 +43,9 @@ namespace Scripting {
         void Awake();
         void Start();
         void Update(float dt);
+        void Update(float dt, lua_State* mainState);
+        static void UpdateBatch(float dt, lua_State* mainState,
+                                ScriptComponent* const* components, std::size_t count);
         void OnDisable();
 
         // Serialization helpers. Operate on the currently attached instance table.
@@ -52,7 +58,12 @@ namespace Scripting {
         // Accessors
         int GetInstanceRef() const { return m_instanceRef; }
         bool IsAttached() const { return m_instanceRef != LUA_NOREF; }
+        bool HasUpdate() const noexcept {
+            return m_instanceRef != LUA_NOREF && m_fnUpdateRef != LUA_NOREF;
+        }
         const std::string& GetScriptPath() const { return m_scriptPath; }
+        bool CanHandleIntEvent(std::string_view functionName) const noexcept;
+        std::uint8_t GetIntEventMask() const noexcept { return m_intEventMask; }
 
     private:
         // helpers (main-thread only)
@@ -62,6 +73,7 @@ namespace Scripting {
 
         // Pushes message handler for pcall (traceback). Returns absolute index of msg handler on stack.
         static int PushMessageHandler(lua_State* L);
+        void UpdateWithMessageHandler(float dt, lua_State* L, int messageHandlerIndex);
 
     private:
         // Lua registry refs
@@ -70,6 +82,7 @@ namespace Scripting {
         int m_fnStartRef = LUA_NOREF;
         int m_fnUpdateRef = LUA_NOREF;
         int m_fnOnDisableRef = LUA_NOREF;
+        std::uint8_t m_intEventMask = 0;
 
         // metadata / state
         std::string m_scriptPath;

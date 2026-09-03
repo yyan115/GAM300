@@ -14,6 +14,7 @@
 #include "Sound/AudioManager.hpp"
 #include <Physics/PhysicsSystem.hpp>
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/Instancing/InstancingManager.hpp"
 #include <Multi-threading/SequentialSystemOrchestrator.hpp>
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
@@ -68,6 +69,7 @@ SceneManager& SceneManager::GetInstance() {
 // Temporary function to load the test scene.
 void SceneManager::LoadTestScene() {
     const std::string testScenePath = NormalizeScenePathForRuntime("Resources/Scenes/FakeScene.scene");
+	InstancingManager::GetInstance().Clear();
 	ECSRegistry::GetInstance().CreateECSManager(testScenePath);
 	currentScene = std::make_unique<SceneInstance>(testScenePath);
 	currentScenePath = testScenePath;
@@ -114,6 +116,11 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 #endif
     // Stop all audio when loading a new scene
     AudioManager::GetInstance().StopAll();
+
+    // Batches own scene model/material references and GL instance buffers.
+    // Release the previous scene's batches before loading the replacement so
+    // menu/cutscene assets do not accumulate into the gameplay frame loop.
+    InstancingManager::GetInstance().Clear();
 
     // Exit and clean up the current scene if it exists.
     if (currentScene)
@@ -340,6 +347,7 @@ void SceneManager::ExitScene() {
     if (currentScene) {
         //Serializer::GetInstance().SerializeScene(currentScenePath);
         currentScene->Exit();
+        InstancingManager::GetInstance().Clear();
         currentScene.reset();
         currentScenePath.clear();
     }
@@ -390,6 +398,7 @@ void SceneManager::UpdateAsyncLoad() {
                 ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
                 currentScene->Exit();
                 currentScene.reset();
+                InstancingManager::GetInstance().Clear();
                 ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
                 ECSRegistry::GetInstance()
                     .GetECSManager(currentScenePath).ClearAllEntities(false);
@@ -426,6 +435,13 @@ void SceneManager::UpdateAsyncLoad() {
         currentScenePath = asyncScenePath;
         currentSceneName = std::filesystem::path(currentScenePath)
             .stem().generic_string();
+
+        {
+            PROFILE_SCOPED("AsyncLoad::PrewarmInstancing");
+            ECSManager& ecs =
+                ECSRegistry::GetInstance().GetECSManager(currentScenePath);
+            InstancingManager::GetInstance().PrewarmScene(ecs);
+        }
 
         {
             PROFILE_SCOPED("AsyncLoad::InitOrchestrator");

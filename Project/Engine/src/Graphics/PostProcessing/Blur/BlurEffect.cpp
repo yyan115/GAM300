@@ -57,7 +57,11 @@ void BlurEffect::CreatePingPongFBOs(int w, int h)
 
     glGenTextures(1, &pingTexture);
     glBindTexture(GL_TEXTURE_2D, pingTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -73,7 +77,11 @@ void BlurEffect::CreatePingPongFBOs(int w, int h)
 
     glGenTextures(1, &pongTexture);
     glBindTexture(GL_TEXTURE_2D, pongTexture);
+#ifdef __ANDROID__
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, w, h, 0, GL_RGB, GL_FLOAT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h, 0, GL_RGBA, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -102,7 +110,7 @@ void BlurEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wi
         return;
 
     // Early out if no blur needed
-    if (intensity < 0.01f)
+    if (intensity < 0.01f || passes <= 0)
         return;
 
     // Create or resize ping-pong FBOs if needed
@@ -124,7 +132,6 @@ void BlurEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wi
         // Horizontal pass: read currentInput -> write to pingFBO
         glBindFramebuffer(GL_FRAMEBUFFER, pingFBO);
         glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         shader->setBool("horizontal", true);
         // Only blend on the last pass
@@ -134,10 +141,13 @@ void BlurEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wi
         glBindTexture(GL_TEXTURE_2D, currentInput);
         PostProcessingManager::GetInstance().RenderScreenQuad();
 
-        // Vertical pass: read pingTexture -> write to pongFBO
-        glBindFramebuffer(GL_FRAMEBUFFER, pongFBO);
+        // The final vertical pass can write directly back to the HDR target.
+        // This avoids a full-resolution texture blit with identical output.
+        const bool finalPass = (i == passes - 1);
+        glBindFramebuffer(
+            GL_FRAMEBUFFER,
+            finalPass ? outputFBO : pongFBO);
         glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         shader->setBool("horizontal", false);
         shader->setFloat("intensity", (i == passes - 1) ? intensity : 1.0f);
@@ -146,14 +156,10 @@ void BlurEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wi
         glBindTexture(GL_TEXTURE_2D, pingTexture);
         PostProcessingManager::GetInstance().RenderScreenQuad();
 
-        // Use pong result as input for next pass
-        currentInput = pongTexture;
+        if (!finalPass) {
+            currentInput = pongTexture;
+        }
     }
-
-    // Blit final result back to outputFBO (the HDR framebuffer)
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, pongFBO);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, outputFBO);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     // Cleanup
     glBindTexture(GL_TEXTURE_2D, 0);

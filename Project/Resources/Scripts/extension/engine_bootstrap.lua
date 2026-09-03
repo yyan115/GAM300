@@ -16,6 +16,7 @@ _G.__instances = _G.__instances or {}
 -- Ensure scheduler exists (if not provided elsewhere)
 _G.scheduler = _G.scheduler or {
     _timers = {},
+    _expired = {},
     _nextId = 1,
     after = function(seconds, fn)
         local id = scheduler._nextId; scheduler._nextId = scheduler._nextId + 1
@@ -29,7 +30,12 @@ _G.scheduler = _G.scheduler or {
     end,
     cancel = function(id) scheduler._timers[id] = nil end,
     tick = function(dt)
-        local expired = {}
+        local expired = scheduler._expired
+        if not expired then
+            expired = {}
+            scheduler._expired = expired
+        end
+        for i = #expired, 1, -1 do expired[i] = nil end
         for id, t in pairs(scheduler._timers) do
             t.remaining = t.remaining - dt
             while t.remaining <= 0 do
@@ -41,12 +47,12 @@ _G.scheduler = _G.scheduler or {
                     t.remaining = t.remaining + t.every
                     break
                 else
-                    table.insert(expired, id)
+                    expired[#expired + 1] = id
                     break
                 end
             end
         end
-        for _, id in ipairs(expired) do scheduler._timers[id] = nil end
+        for i = 1, #expired do scheduler._timers[expired[i]] = nil end
     end
 }
 

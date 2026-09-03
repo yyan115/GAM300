@@ -6,6 +6,11 @@
 #include "ScriptSerializer.h"   // if you call ScriptSerializer methods directly
 
 #include "Script/ComponentProxy.h" // Exposing c++ functions to lua
+#include <array>
+#include <atomic>
+#include <bitset>
+#include <cstdint>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -27,6 +32,7 @@ public:
     void ReloadScriptForEntity(Entity e, ECSManager& ecsManager);
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);
     bool CallEntityFunctionWithInt(Entity e, const std::string& funcName, int intArg, ECSManager& ecsManager);
+    bool CanEntityHandleIntEvent(Entity e, std::string_view funcName) const noexcept;
     void ReloadSystem();
     void ReloadAllInstances();
 
@@ -66,6 +72,7 @@ private:
     // Creates instances without calling Awake/Start - used for phased initialization
     bool EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsManager);
     void DestroyInstanceForEntity(Entity e);
+    void RefreshEntityIntEventMask(Entity e);
     ScriptComponentData* GetScriptComponent(Entity e, ECSManager& ecsManager);
     const ScriptComponentData* GetScriptComponentConst(Entity e, const ECSManager& ecsManager) const;
 
@@ -73,6 +80,10 @@ private:
     std::vector<std::pair<void*, InstancesChangedCb>> m_instancesChangedCbs;
     std::unordered_set<std::string> m_luaRegisteredComponents;
     std::unordered_map<Entity, std::vector<std::unique_ptr<Scripting::ScriptComponent>>> m_runtimeMap;
+    std::vector<Entity> m_newlyCreatedEntitiesScratch;
+    std::vector<Entity> m_runtimeRemovalScratch;
+    std::vector<Entity> m_justActivatedEntitiesScratch;
+    std::vector<Scripting::ScriptComponent*> m_activeUpdateInstancesScratch;
 
     // Standalone script instances (keyed by scriptGuidStr) - for ButtonComponent callbacks
     std::unordered_map<std::string, std::unique_ptr<Scripting::ScriptComponent>> m_standaloneInstances;
@@ -84,8 +95,14 @@ private:
     std::recursive_mutex m_mutex;
 
     bool m_needsReconcile = true;
+    std::uint64_t m_lastMembershipVersion = 0;
 
     // Track which script entities were active-in-hierarchy last frame so we can
     // set ActiveComponent::justActivated on inactive→active transitions.
-    std::unordered_set<Entity> m_prevActiveEntities;
+    std::bitset<MAX_ENTITIES> m_prevActiveEntities;
+
+    // Aggregate collision callback presence per entity. Physics can reject the
+    // overwhelmingly common "no handler" path with one atomic byte load,
+    // without entering the ECS/runtime maps or locking the Lua VM.
+    std::array<std::atomic<std::uint8_t>, MAX_ENTITIES> m_intEventMasks{};
 };

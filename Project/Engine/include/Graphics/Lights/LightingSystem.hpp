@@ -3,29 +3,32 @@
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Shadows/ShadowMap.hpp"
 #include "Graphics/Shadows/PointShadowMap.hpp"
+#include <cstdint>
 
 struct DirectionalLightComponent;
 struct PointLightComponent;
 struct SpotLightComponent;
+struct AABB;
 class Camera;
 
 // Shader-side array sizes for the Android lighting UBO — must match
 // NR_POINT_LIGHTS / NR_SPOT_LIGHTS in defaultandroid.frag EXACTLY.
 // Only used by the Android UBO path; PC keeps the old per-draw uniform path.
-constexpr int LIGHTING_UBO_MAX_POINT_LIGHTS = 16;
-constexpr int LIGHTING_UBO_MAX_SPOT_LIGHTS = 8;
+constexpr int LIGHTING_UBO_MAX_POINT_LIGHTS = 8;
+constexpr int LIGHTING_UBO_MAX_SPOT_LIGHTS = 4;
 
 class LightingSystem : public System {
 public:
+#ifdef __ANDROID__
+    int MAX_POINT_LIGHTS = 8;
+    int MAX_SPOT_LIGHTS = 4;
+    const int MAX_VISIBLE_POINT_LIGHTS = 8;
+#else
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
-#ifdef __ANDROID__
-    const int MAX_VISIBLE_POINT_LIGHTS = 16;
-    static const int MAX_POINT_LIGHT_SHADOWS = 4;
-#else
     const int MAX_VISIBLE_POINT_LIGHTS = 24;
-    static const int MAX_POINT_LIGHT_SHADOWS = 4;
 #endif
+    static const int MAX_POINT_LIGHT_SHADOWS = 4;
 
     
     LightingSystem() = default;
@@ -51,39 +54,40 @@ public:
     // predictable — vec3 in std140 is 16-byte aligned which causes subtle padding
     // bugs when mixed with scalars.
     //
-    // Total size: 2176 bytes.
+    // Only values consumed by the mobile PBR shader are stored here. Keeping the
+    // block compact reduces uniform-cache pressure in every lit fragment.
+    // Total size: 736 bytes.
     struct alignas(16) LightingUBOData {
         // Ambient (globals)
         glm::vec4 ambSkyIntensity;   // xyz = ambientSky,     w = ambientIntensity
-        glm::vec4 ambEquatorMode;    // xyz = ambientEquator, w = ambientMode (as float)
+        glm::vec4 ambEquatorMode;    // xyz = ambientEquator, w = pad
         glm::vec4 ambGround;         // xyz = ambientGround,  w = pad
 
         // Directional light
         glm::vec4 dirLightDir;       // xyz = direction,      w = intensity
-        glm::vec4 dirLightAmbient;   // xyz = ambient,        w = hasDirectionalLight (as float)
-        glm::vec4 dirLightDiffuse;   // xyz = diffuse,        w = pad
-        glm::vec4 dirLightSpecular;  // xyz = specular,       w = pad
+        glm::vec4 dirLightDiffuse;   // xyz = diffuse,        w = hasDirectionalLight
 
         // Light counts
-        glm::ivec4 lightCounts;      // x = numPointLights, y = numSpotLights
+        glm::ivec4 lightCounts;      // xy = counts, z = active mask,
+                                     // w = ambient mode (-1 when disabled)
 
-        // Point lights: 5 vec4s each (std140 array stride = max(elemSize, 16))
-        //   [0] positionRange:     xyz = position, w = range
-        //   [1] ambientConstant:   xyz = ambient,  w = constant
-        //   [2] diffuseLinear:     xyz = diffuse,  w = linear
-        //   [3] specularQuadratic: xyz = specular, w = quadratic
-        //   [4] intensityShadow:   x = intensity, y = shadowIndex (float), zw = pad
-        glm::vec4 pointLights[LIGHTING_UBO_MAX_POINT_LIGHTS * 5];
+        // Point lights: 3 vec4s each.
+        //   [0] positionInvRange:    xyz = position, w = 1/range (0 = unlimited)
+        //   [1] diffuseLinear:       xyz = diffuse,  w = linear
+        //   [2] attenuationIntensity: x = constant, y = quadratic,
+        //                             z = intensity, w = pad
+        glm::vec4 pointLights[LIGHTING_UBO_MAX_POINT_LIGHTS * 3];
 
-        // Spot lights: 6 vec4s each
-        //   [0] positionCutoff:    xyz = position,  w = cutOff
-        //   [1] directionOuter:    xyz = direction, w = outerCutOff
-        //   [2] ambientConstant:   xyz = ambient,   w = constant
-        //   [3] diffuseLinear:     xyz = diffuse,   w = linear
-        //   [4] specularQuadratic: xyz = specular,  w = quadratic
-        //   [5] intensityPad:      x = intensity, yzw = pad
-        glm::vec4 spotLights[LIGHTING_UBO_MAX_SPOT_LIGHTS * 6];
+        // Spot lights: 4 vec4s each.
+        //   [0] positionCutoff:       xyz = position,  w = cutOff
+        //   [1] directionOuter:       xyz = direction, w = outerCutOff
+        //   [2] diffuseLinear:        xyz = diffuse,   w = linear
+        //   [3] attenuationIntensity: x = constant, y = quadratic,
+        //                             z = intensity, w = 1/(cutOff-outerCutOff)
+        glm::vec4 spotLights[LIGHTING_UBO_MAX_SPOT_LIGHTS * 4];
     };
+    static_assert(sizeof(LightingUBOData) == 736,
+        "Lighting UBO must match defaultandroid.frag's std140 block");
 
     // Allocate the UBO and bind to binding point 1 (CameraBlock uses 0).
     void InitLightingUBO();
@@ -93,6 +97,11 @@ public:
 
     // Getter so GraphicsManager can bind the UBO explicitly if needed.
     GLuint GetLightingUBO() const { return m_lightingUBO; }
+    std::uint64_t GetLightingRevision() const { return m_lightingRevision; }
+
+    // Returns conservative packed masks for lights that can touch the supplied
+    // bounds. Point lights occupy bits 0-7 and spot lights bits 8-11.
+    std::uint32_t GetLightMask(const AABB& worldBounds) const noexcept;
 #endif
 
     // ========================================================================
@@ -196,13 +205,13 @@ private:
         float intensity;
         float range;
         bool castShadows;
-        float distanceToCamera;
+        float distanceSqToCamera;
     };
     std::vector<PointLightCandidate> m_allPointLights;
 
     struct ShadowCandidate {
         size_t lightIndex;
-        float distanceToCamera;
+        float distanceSqToCamera;
     };
     std::vector<ShadowCandidate> m_shadowCandidates;
 
@@ -223,5 +232,8 @@ private:
     // Lighting UBO (binding = 1) — uploaded once per frame, read by all shaders
     // that declare `layout(std140) uniform LightingBlock`.
     GLuint m_lightingUBO = 0;
+    LightingUBOData m_lastUploadedLightingData{};
+    bool m_hasUploadedLightingData = false;
+    std::uint64_t m_lightingRevision = 0;
 #endif
 };

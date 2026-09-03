@@ -7,6 +7,7 @@
 #include <functional>
 #include <fstream>
 #include <filesystem>
+#include <cstdint>
 #include "Texture.h"
 #include "ShaderClass.h"
 #include "Asset Manager/Asset.hpp"
@@ -26,12 +27,16 @@ public:
 		OPACITY = 7,
 		METALLIC = 15,
 		ROUGHNESS = 16,
+		// Android-only aggregate: R=AO, G=roughness, B=metallic.
+		// The original records remain in the material so channel-presence flags
+		// and the individual-texture fallback stay intact.
+		PACKED_ORM = 17,
 	};
 
 	Material();
 	Material(const std::string& name);
 	Material(std::shared_ptr<AssetMeta> metaData);
-	~Material() = default;
+	~Material();
 
 	Material(const Material&) = delete;
 	Material& operator=(const Material&) = delete;
@@ -63,14 +68,21 @@ public:
 	const glm::vec2& GetTiling() const { return tiling; }
 	const glm::vec2& GetOffset() const { return offset; }
 
-	void SetTiling(const glm::vec2& _tiling) { tiling = _tiling; }
-	void SetOffset(const glm::vec2& _offset) { offset = _offset; }
+	void SetTiling(const glm::vec2& _tiling) {
+		tiling = _tiling;
+		MarkAndroidMaterialDataDirty();
+	}
+	void SetOffset(const glm::vec2& _offset) {
+		offset = _offset;
+		MarkAndroidMaterialDataDirty();
+	}
 
 	// Texture Managment
 	void SetTexture(TextureType type, std::unique_ptr<TextureInfo> textureInfo);
 	std::optional<std::reference_wrapper<TextureInfo>>  GetTextureInfo(TextureType type) const;
 	const std::unordered_map<TextureType, std::unique_ptr<TextureInfo>>&  GetAllTextureInfo();
 	bool HasTexture(TextureType type) const;
+	bool RequiresDiffuseAlphaTest() const noexcept;
 	void RemoveTexture(TextureType type);
 
 	// Utility methods
@@ -117,9 +129,22 @@ private:
 
 	// Texture storage
 	std::unordered_map<TextureType, std::unique_ptr<TextureInfo>> m_textureInfo;
+	std::uint32_t m_textureMask = 0;
 
 	// Helper methods
-	std::string TextureTypeToString(TextureType type) const;
-	void BindTextures(Shader& shader) const;
+	static constexpr std::uint32_t TextureTypeMask(TextureType type) noexcept {
+		const auto index = static_cast<unsigned int>(type);
+		return index < 32 ? (1u << index) : 0u;
+	}
+	static const char* TextureTypeToString(TextureType type);
+	std::uint32_t BindTextures(Shader& shader) const;
+	void MarkAndroidMaterialDataDirty() noexcept;
+#if defined(ANDROID) || defined(__ANDROID__)
+	void BindAndroidMaterialBlock(
+		Shader& shader, std::uint32_t featureMask) const;
+	mutable GLuint m_androidMaterialUBO = 0;
+	mutable std::uint32_t m_androidMaterialFeatureMask = UINT32_MAX;
+	mutable bool m_androidMaterialDataDirty = true;
+#endif
 	std::filesystem::path ResolveToProjectRoot(const std::filesystem::path& path);
 };

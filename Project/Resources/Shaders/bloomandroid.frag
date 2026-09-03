@@ -1,16 +1,16 @@
 #version 300 es
-precision highp float;
+precision mediump float;
 precision highp sampler2D;
 
 out vec4 FragColor;
-in vec2 TexCoords;
+in highp vec2 TexCoords;
 
 uniform sampler2D inputTexture;
-uniform int passType;       // 0=extract, 1=downsample, 2=upsample, 3=composite
+uniform int passType;       // 0=extract, 1=downsample, 2=upsample
 uniform float threshold;
 uniform float intensity;
 uniform float scatter;      // upsample blend weight (0..1), controls bloom spread energy
-uniform vec2 texelSize;
+uniform highp vec2 texelSize;
 
 void main()
 {
@@ -52,7 +52,7 @@ void main()
 
         FragColor = vec4(result, 1.0);
     }
-    else if (passType == 2)
+    else
     {
         // 9-tap tent filter upsample
         vec2 uv = TexCoords;
@@ -72,11 +72,5 @@ void main()
         result += e * (4.0 / 16.0);
 
         FragColor = vec4(result * scatter, 1.0);
-    }
-    else if (passType == 3)
-    {
-        // Composite: output blurred bloom texture scaled by intensity
-        vec3 bloom = texture(inputTexture, TexCoords).rgb;
-        FragColor = vec4(bloom * intensity, 1.0);
     }
 }

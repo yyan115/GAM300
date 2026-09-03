@@ -10,25 +10,9 @@ local function toDtSec(dt)
 end
 
 local function reachedPlayer(ai)
-    local tr = ai._playerTr
-    if not tr then
-        tr = Engine.FindTransformByName(ai.PlayerName or "Player")
-        ai._playerTr = tr
-    end
-    if not tr then return false end
-
-    local pp = Engine.GetTransformPosition(tr)
-    if not pp then return false end
-    local px, pz = pp[1], pp[3]
-
-    local ex, ez = ai:GetEnemyPosXZ()
-    if ex == nil or ez == nil then return false end
-
-    local dx, dz = px - ex, pz - ez
-    local d2 = dx*dx + dz*dz
-
+    local d2, px, pz, ex, ez = ai:GetPlayerDistanceSq()
     local stopR = tonumber(ai.HookStopDistance) or 1.2
-    return d2 <= (stopR * stopR)
+    return d2 <= (stopR * stopR), d2, px, pz, ex, ez
 end
 
 function HookedState:Enter(ai)
@@ -73,26 +57,29 @@ function HookedState:Update(ai, dt)
         return
     end
 
+    local distanceSq, px, pz, ex, ez
     if not ai._hookReachedPlayer then
-        if reachedPlayer(ai) then
+        local reached
+        reached, distanceSq, px, pz, ex, ez = reachedPlayer(ai)
+        if reached then
             ai._hookReachedPlayer = true
             if ai.StopCC then ai:StopCC() end
         else
             -- PULL toward player every frame while hooked
             if ai.PullTowardPlayer then
-                ai:PullTowardPlayer(dtSec)
+                ai:PullTowardPlayer(dtSec, px, pz, ex, ez)
             end
         end
-    else
-        -- keep still (prevents micro-movement / run-in-place)
-        if ai.StopCC then ai:StopCC() end
     end
 
     -- Exit hooked after duration
     if ai._hookedTimer >= (ai.config.HookedDuration or 0) then
         ai._hookedTimer = 0
 
-        if ai:IsPlayerInRange(ai.config.DetectionRange) then
+        if distanceSq == nil then
+            distanceSq = ai:GetPlayerDistanceSq()
+        end
+        if distanceSq <= (ai.config.DetectionRange * ai.config.DetectionRange) then
             if ai._animator then ai._animator:SetBool("PlayerInRange", true) end
             ai.fsm:Change("Attack", ai.states.Attack)
         else

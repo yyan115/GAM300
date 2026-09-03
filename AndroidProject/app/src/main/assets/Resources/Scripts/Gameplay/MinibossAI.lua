@@ -10,29 +10,18 @@ local RecoverState = require("Gameplay.MinibossRecoverState")
 local BattlecryState = require("Gameplay.MinibossBattlecryState")
 
 local KnifePool = require("Gameplay.KnifePool")
+local ENABLE_DEBUG_INPUT = _G.ENEMY_DEBUG_INPUT == true
 
 -------------------------------------------------
 -- Helpers
 -------------------------------------------------
-local function atan2(y, x)
-    local ok, v = pcall(math.atan, y, x)
-    if ok and type(v) == "number" then return v end
-    if x > 0 then return math.atan(y / x) end
-    if x < 0 and y >= 0 then return math.atan(y / x) + math.pi end
-    if x < 0 and y < 0 then return math.atan(y / x) - math.pi end
-    if x == 0 and y > 0 then return math.pi / 2 end
-    if x == 0 and y < 0 then return -math.pi / 2 end
-    return 0
-end
+local atan2 = math.atan
 
 local function yawQuatFromDir(dx, dz)
     local lenSq = (dx or 0)*(dx or 0) + (dz or 0)*(dz or 0)
     if lenSq < 1e-10 then
         return nil
     end
-    local invLen = 1.0 / math.sqrt(lenSq)
-    dx, dz = dx * invLen, dz * invLen
-
     local yaw = atan2(dx, dz) -- radians
     local half = yaw * 0.5
     return math.cos(half), 0, math.sin(half), 0 -- (w,x,y,z) yaw-only about Y
@@ -44,25 +33,6 @@ local function toDtSec(dt)
     if dtSec <= 0 then return 0 end
     if dtSec > 0.05 then dtSec = 0.05 end
     return dtSec
-end
-
-local function unpackPos(pp)
-    if not pp then return nil end
-
-    if type(pp) == "table" then
-        if (pp.x ~= nil or pp.y ~= nil or pp.z ~= nil) then
-            return pp.x, pp.y, pp.z
-        end
-        return pp[1], pp[2], pp[3]
-    end
-
-    -- NEW: userdata that supports numeric indexing
-    if type(pp) == "userdata" then
-        local ok, x, y, z = pcall(function() return pp[1], pp[2], pp[3] end)
-        if ok then return x, y, z end
-    end
-
-    return nil
 end
 
 local function requestUpTo(n)
@@ -351,9 +321,10 @@ return Component {
             local ok, ctrl = pcall(function()
                 return CharacterController.Create(self.entityId, self._collider, self._transform)
             end)
-            if ok then
+            if ok and ctrl then
                 self._controller = ctrl
                 pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+                pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             else
                 --print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
@@ -512,16 +483,10 @@ return Component {
             self:_ForceBackInsideArena(dtSec)
         end
 
-        if Keyboard.IsDigitPressed(2) then
-            self:ApplyHook(self.HookedDuration)
-        end
-
-        if Keyboard.IsDigitPressed(4) then
-            self:ApplyHit(10)
-        end
-
-        if Keyboard.IsDigitPressed(6) then
-            self:ForceNextPhase()
+        if ENABLE_DEBUG_INPUT then
+            if Keyboard.IsDigitPressed(2) then self:ApplyHook(self.HookedDuration) end
+            if Keyboard.IsDigitPressed(4) then self:ApplyHit(10) end
+            if Keyboard.IsDigitPressed(6) then self:ForceNextPhase() end
         end
 
         -- Show boss HP bar only after the intro/cinematic is fully over
@@ -651,19 +616,11 @@ return Component {
 
         -- 5) Physics sync
         if self._controller then
-            if not self._inAir then
-                -- GROUND: CC is authoritative
-                local pos = CharacterController.GetPosition(self._controller)
-                if pos then
-                    self:SetPosition(pos.x, pos.y, pos.z)
-                end
-            else
+            if self._inAir then
                 -- AIR: Transform is authoritative (like FlyingEnemy)
                 local x, y, z = self:GetPosition()
-                if x ~= nil and CharacterController.SetPosition then
-                    pcall(function()
-                        CharacterController.SetPosition(self._controller, x, y, z)
-                    end)
+                if x ~= nil then
+                    CharacterController.SetPositionXYZ(self._controller, x, y, z)
                 end
             end
 
@@ -734,14 +691,6 @@ return Component {
 
         -- If locked (and not INTRO), block ONLY phase decision-making
         if locked and lockReason ~= "INTRO" then
-            -- still broadcast position etc if you want
-            if _G.event_bus and _G.event_bus.publish then
-                local x, y, z = self:GetPosition()
-                _G.event_bus.publish("enemy_position", {
-                    entityId = self.entityId,
-                    x = x, y = y, z = z
-                })
-            end
             return
         end
 
@@ -774,14 +723,6 @@ return Component {
             self:MaintainHover(dtSec)
         end
 
-        -- 10) Broadcast position
-        if _G.event_bus and _G.event_bus.publish then
-            local x, y, z = self:GetPosition()
-            _G.event_bus.publish("enemy_position", {
-                entityId = self.entityId,
-                x = x, y = y, z = z
-            })
-        end
     end,
 
     -- =================================================
@@ -815,11 +756,10 @@ return Component {
         if ok and ctrl then
             self._controller = ctrl
             pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+            pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             -- Sync CC to current Transform position
             local x,y,z = self:GetPosition()
-            if CharacterController.SetPosition then
-                pcall(function() CharacterController.SetPosition(self._controller, x, y, z) end)
-            end
+            CharacterController.SetPositionXYZ(self._controller, x, y, z)
             self._animator:SetBool("Flying", false)
             return true
         end
@@ -960,18 +900,15 @@ return Component {
         CharacterController.Move(self._controller, 0, self._vy * dtSec, 0)
 
         -- heuristic “grounded”: if Y didn’t change and we are falling, zero out vy
-        local pos = CharacterController.GetPosition(self._controller)
-        if pos then
-            local y = pos.y
-            if self._prevY ~= nil then
-                local dy = y - self._prevY
-                if dy >= -1e-6 and (self._vy or 0) < 0 then
-                    -- on ground (or blocked)
-                    self._vy = self.GroundStickVel or 0
-                end
+        local _, y = CharacterController.GetPositionXYZ(self._controller)
+        if self._prevY ~= nil then
+            local dy = y - self._prevY
+            if dy >= -1e-6 and (self._vy or 0) < 0 then
+                -- on ground (or blocked)
+                self._vy = self.GroundStickVel or 0
             end
-            self._prevY = y
         end
+        self._prevY = y
     end,
 
     EnsureController = function(self)
@@ -985,7 +922,12 @@ return Component {
     -- Facing (copied from EnemyAI)
     -------------------------------------------------
     ApplyRotation = function(self, w, x, y, z)
-        self._lastFacingRot = { w = w, x = x, y = y, z = z }
+        local lastRotation = self._lastFacingRot
+        if not lastRotation then
+            lastRotation = {}
+            self._lastFacingRot = lastRotation
+        end
+        lastRotation.w, lastRotation.x, lastRotation.y, lastRotation.z = w, x, y, z
         self:SetRotation(w, x, y, z)
     end,
 
@@ -1004,10 +946,8 @@ return Component {
         -- If the player is practically inside the boss, don't rotate (prevents snapping)
         if (dx*dx + dz*dz) < 0.1 then return end
 
-        local q = { yawQuatFromDir(dx, dz) }
-        if #q >= 4 then
-            self:ApplyRotation(q[1], q[2], q[3], q[4])
-        end
+        local w, x, y, z = yawQuatFromDir(dx, dz)
+        if w then self:ApplyRotation(w, x, y, z) end
     end,
 
     _FaceXZ = function(self, tx, tz)
@@ -1019,15 +959,14 @@ return Component {
         local d2 = dx*dx + dz*dz
         if d2 < 1e-6 then return end
 
-        local yaw = math.deg(atan2(dx, dz))
-        local q = eulerToQuat(0, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+        local w, qx, qy, qz = yawQuatFromDir(dx, dz)
+        if w then self:SetRotation(w, qx, qy, qz) end
     end,
 
     GetEnemyPosXZ = function(self)
         if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then return pos.x, pos.z end
+            local x, _, z = CharacterController.GetPositionXYZ(self._controller)
+            return x, z
         end
         local x, _, z = self:GetPosition()
         return x, z
@@ -1059,16 +998,7 @@ return Component {
             self._playerTr = tr
         end
         if not tr then return nil end
-        local pp = Engine.GetTransformPosition(tr)
-        local px, py, pz = unpackPos(pp)
-        if not px then
-            -- try reacquire once (stale handle)
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
-            pp = tr and Engine.GetTransformPosition(tr) or nil
-            px, py, pz = unpackPos(pp)
-        end
-        if not px then return nil end
+        local px, py, pz = Engine.GetTransformPositionXYZ(tr)
         return px, py, pz
     end,
 
@@ -1126,10 +1056,7 @@ return Component {
         if dtSec <= 0 then return false end
         if not self._controller then return true end
 
-        local pos = CharacterController.GetPosition(self._controller)
-        if not pos then return true end
-
-        local x, y, z = pos.x, pos.y, pos.z
+        local x, y, z = CharacterController.GetPositionXYZ(self._controller)
         local dx, dz = tx - x, tz - z
 
         local r = self.ArenaReturnStopDistance or 0.25
@@ -1748,20 +1675,7 @@ return Component {
         end
         if not tr then return nil end
 
-        local pp = Engine.GetTransformPosition(tr)
-        local px, py, pz = unpackPos(pp)
-
-        if not px then
-            -- try reacquire once (stale handle)
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
-            if not tr then return nil end
-
-            pp = Engine.GetTransformPosition(tr)
-            px, py, pz = unpackPos(pp)
-        end
-
-        if not px then return nil end
+        local px, py, pz = Engine.GetTransformPositionXYZ(tr)
 
         yOffset = yOffset or 0.5
         return px, (py or 0) + yOffset, pz
@@ -1770,8 +1684,7 @@ return Component {
     _GetSpawnPos = function(self)
         local ex, ey, ez
         if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then ex, ey, ez = pos.x, pos.y, pos.z end
+            ex, ey, ez = CharacterController.GetPositionXYZ(self._controller)
         end
         if not ex then
             ex, ey, ez = self:GetPosition()
@@ -2467,8 +2380,8 @@ return Component {
                     end
 
                     -- face dash direction
-                    local q = { yawQuatFromDir(dx, dz) }
-                    if #q > 0 then self:ApplyRotation(q[1], q[2], q[3], q[4]) end
+                    local w, x, y, z = yawQuatFromDir(dx, dz)
+                    if w then self:ApplyRotation(w, x, y, z) end
 
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
@@ -2762,9 +2675,8 @@ return Component {
         if self._phase2State == "MOVE" then
             local tx, ty, tz = self:_GetAirWaypoint(self._phase2Numpad or 5)
             local x,y,z = self:GetPosition()
-            if self._controller and CharacterController.GetPosition then
-                local p = CharacterController.GetPosition(self._controller)
-                if p then x,y,z = p.x,p.y,p.z end
+            if self._controller and CharacterController.GetPositionXYZ then
+                x, y, z = CharacterController.GetPositionXYZ(self._controller)
             end
             local arrived = self:_MoveToXZ_Air(tx, tz, dtSec)
             if not arrived then return end
@@ -2956,8 +2868,8 @@ return Component {
 
             local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
             self:SetPosition(self._phase3Dive.gx, gy, self._phase3Dive.gz)
-            if self._controller and CharacterController.SetPosition then
-                pcall(function() CharacterController.SetPosition(self._controller, self._phase3Dive.gx, gy, self._phase3Dive.gz) end)
+            if self._controller then
+                CharacterController.SetPositionXYZ(self._controller, self._phase3Dive.gx, gy, self._phase3Dive.gz)
             end
 
             if _G.event_bus and _G.event_bus.publish then

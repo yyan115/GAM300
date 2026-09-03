@@ -62,6 +62,8 @@ return Component {
         -- Rolling endpoint positions (for segment sweep)
         self._endpointPos  = nil
         self._endpointPrev = nil
+        self._endpointPosScratch = {x=0, y=0, z=0}
+        self._endpointPrevScratch = {0, 0, 0}
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
             --print("[ChainInteractable] WARNING: event_bus not available — no interactions will fire")
@@ -70,7 +72,7 @@ return Component {
 
         -- Every frame the chain is active
         self._subMoved = _G.event_bus.subscribe("chain.endpoint_moved", function(payload)
-            if payload then pcall(function() self:_onEndpointMoved(payload) end) end
+            if payload then pcall(self._onEndpointMoved, self, payload) end
         end)
 
         -- Chain finished retracting all the way back
@@ -102,14 +104,8 @@ return Component {
         local tr = self._transform
         if not tr then return nil end
 
-        if Engine and Engine.GetTransformWorldPosition then
-            local ok, p = pcall(function() return Engine.GetTransformWorldPosition(tr) end)
-            if ok and p then
-                if type(p) == "table" then
-                    return p[1] or p.x or 0, p[2] or p.y or 0, p[3] or p.z or 0
-                end
-                if type(p) == "number" then return p, 0, 0 end
-            end
+        if Engine and Engine.GetTransformWorldPositionXYZ then
+            return Engine.GetTransformWorldPositionXYZ(tr)
         end
         if type(tr.GetPosition) == "function" then
             local ok, a, b, c = pcall(function() return tr:GetPosition() end)
@@ -136,9 +132,17 @@ return Component {
 
         -- Roll positions along
         if self._endpointPos then
-            self._endpointPrev = { self._endpointPos.x, self._endpointPos.y, self._endpointPos.z }
+            local previous = self._endpointPrevScratch
+            previous[1], previous[2], previous[3] =
+                self._endpointPos.x, self._endpointPos.y, self._endpointPos.z
+            self._endpointPrev = previous
         end
-        if payload.position then self._endpointPos = payload.position end
+        if payload.position then
+            local position = self._endpointPosScratch
+            position.x, position.y, position.z =
+                payload.position.x, payload.position.y, payload.position.z
+            self._endpointPos = position
+        end
 
         -- ── Pull (Fallback): fire the instant the chain starts coming back ────────────
         -- This covers cases where the veto somehow dropped but we still want the behaviour to trigger

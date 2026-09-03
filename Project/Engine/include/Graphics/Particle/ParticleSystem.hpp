@@ -15,25 +15,37 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include "ECS/System.hpp"
+#include <cstdint>
 #include <random>
 #include "ParticleComponent.hpp"
+#include "ParticleRenderItem.hpp"
 
 /******************************************************************************/
 /*!
 \struct     ParticleInstanceData
 \brief      GPU instance data structure for a single particle
 
-\details    Contains all per-particle data needed for instanced rendering:
-            position in world space, RGBA color with alpha, size scalar,
-            and rotation in degrees. Tightly packed for efficient GPU upload.
+\details    Contains the per-particle data needed for instanced rendering.
+            Android interpolates emitter color and size in the vertex shader,
+            so its compact stream contains position, life, and rotation only.
 */
 /******************************************************************************/
+#ifdef ANDROID
+struct ParticleInstanceData {
+    float position[3];
+    std::uint16_t lifeUnorm;
+    std::uint16_t padding;
+    std::int16_t rotationSinCos[2];
+};
+static_assert(sizeof(ParticleInstanceData) == 20);
+#else
 struct ParticleInstanceData {
     glm::vec3 position;
     glm::vec4 color;
     float size;
-    float rotation;
+    glm::vec2 rotationSinCos;
 };
+#endif
 
 /******************************************************************************/
 /*!
@@ -56,10 +68,15 @@ public:
 private:
     void InitializeParticleComponent(ParticleComponent& particleComp);
     void UpdateParticles(ParticleComponent& comp, float dt);
-    void EmitParticles(ParticleComponent& comp, float dt, const glm::vec3& worldPos);
+    void EmitParticles(
+        ParticleComponent& comp,
+        float dt,
+        const glm::vec3& worldPos,
+        float emissionRate);
     void UpdateInstanceBuffer(ParticleComponent& comp);
 
     std::mt19937 rng;
     std::uniform_real_distribution<float> dist{ -1.0f, 1.0f };
+    std::vector<ParticleRenderItem> renderSnapshots;
     bool particleSystemInitialised = false;
 };

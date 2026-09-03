@@ -9,10 +9,136 @@
 #include <Hierarchy/EntityGUIDRegistry.hpp>
 #include <ECS/NameComponent.hpp>
 
+namespace {
+glm::mat4 MultiplyAffine(
+	const glm::mat4& lhs,
+	const glm::mat4& rhs)
+{
+	const glm::vec3 lhsX(lhs[0]);
+	const glm::vec3 lhsY(lhs[1]);
+	const glm::vec3 lhsZ(lhs[2]);
+	const glm::vec3 rhsTranslation(rhs[3]);
+
+	glm::mat4 result(1.0f);
+	result[0] = glm::vec4(
+		lhsX * rhs[0].x + lhsY * rhs[0].y + lhsZ * rhs[0].z,
+		0.0f);
+	result[1] = glm::vec4(
+		lhsX * rhs[1].x + lhsY * rhs[1].y + lhsZ * rhs[1].z,
+		0.0f);
+	result[2] = glm::vec4(
+		lhsX * rhs[2].x + lhsY * rhs[2].y + lhsZ * rhs[2].z,
+		0.0f);
+	result[3] = glm::vec4(
+		lhsX * rhsTranslation.x +
+		lhsY * rhsTranslation.y +
+		lhsZ * rhsTranslation.z + glm::vec3(lhs[3]),
+		1.0f);
+	return result;
+}
+
+glm::mat4 ComposeTRS(
+	const glm::vec3& translation,
+	const glm::quat& rotation,
+	const glm::vec3& scale)
+{
+	glm::mat4 result = glm::mat4_cast(rotation);
+	result[0] *= scale.x;
+	result[1] *= scale.y;
+	result[2] *= scale.z;
+	result[3] = glm::vec4(translation, 1.0f);
+	return result;
+}
+}
+
 Animator::Animator(Animation* animation)
 {
 	mCurrentTime = 0.0f;
 	mCurrentAnimation = animation;
+}
+
+void Animator::ResetBoneEntityCache(Entity owner)
+{
+	mBoneEntityCache.clear();
+	mBoneEntityCacheCursor = 0;
+	mBoneEntityCacheOwner = owner;
+	mTransformSetVersion = 0;
+}
+
+void Animator::ResetPreviousBoneCache()
+{
+	mPreviousBoneCache.clear();
+	mPreviousBoneCacheCursor = 0;
+	mPreviousBoneCacheAnimation = nullptr;
+	mPreviousBoneCacheRevision = 0;
+}
+
+Bone* Animator::ResolvePreviousBone(
+	const AssimpNodeData* node,
+	const std::string& nodeName)
+{
+	if (!mPrevAnimation) {
+		return nullptr;
+	}
+
+	const std::uint64_t revision = mPrevAnimation->GetRevision();
+	if (mPreviousBoneCacheAnimation != mPrevAnimation ||
+		mPreviousBoneCacheRevision != revision) {
+		mPreviousBoneCache.clear();
+		mPreviousBoneCacheCursor = 0;
+		mPreviousBoneCacheAnimation = mPrevAnimation;
+		mPreviousBoneCacheRevision = revision;
+	}
+
+	const std::size_t cacheIndex = mPreviousBoneCacheCursor++;
+	if (cacheIndex < mPreviousBoneCache.size() &&
+		mPreviousBoneCache[cacheIndex].node == node) {
+		return mPreviousBoneCache[cacheIndex].bone;
+	}
+
+	Bone* bone = mPrevAnimation->FindBone(nodeName);
+	const PreviousBoneCacheEntry entry{node, bone};
+	if (cacheIndex < mPreviousBoneCache.size()) {
+		mPreviousBoneCache[cacheIndex] = entry;
+	}
+	else {
+		mPreviousBoneCache.push_back(entry);
+	}
+	return bone;
+}
+
+Transform* Animator::ResolveBoneTransform(
+	const AssimpNodeData* node,
+	const std::string& nodeName,
+	Entity owner,
+	const ModelRenderComponent& modelComp,
+	ECSManager& ecsManager)
+{
+	if (mBoneEntityCacheOwner != owner) {
+		ResetBoneEntityCache(owner);
+	}
+
+	const std::size_t cacheIndex = mBoneEntityCacheCursor++;
+	if (cacheIndex < mBoneEntityCache.size() &&
+		mBoneEntityCache[cacheIndex].node == node) {
+		return mBoneEntityCache[cacheIndex].transform;
+	}
+
+	const auto mapped = modelComp.boneNameToEntityMap.find(nodeName);
+	Transform* boneTransform = nullptr;
+	if (mapped != modelComp.boneNameToEntityMap.end()) {
+		if (auto transform = ecsManager.TryGetComponent<Transform>(mapped->second)) {
+			boneTransform = &transform->get();
+		}
+	}
+
+	const BoneTransformCacheEntry entry{node, boneTransform};
+	if (cacheIndex < mBoneEntityCache.size()) {
+		mBoneEntityCache[cacheIndex] = entry;
+	} else {
+		mBoneEntityCache.push_back(entry);
+	}
+	return boneTransform;
 }
 
 void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity, float speed)
@@ -58,6 +184,7 @@ void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity, float speed
 			// Blend complete - switch fully to current animation
 			mIsBlending = false;
 			mPrevAnimation = nullptr;
+			ResetPreviousBoneCache();
 			CalculateBoneTransform(&mCurrentAnimation->GetRootNode(), glm::mat4(1.0f), entity);
 		}
 		else
@@ -85,10 +212,14 @@ void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity, float speed
 
 void Animator::PlayAnimation(Animation* pAnimation, Entity entity)
 {
+	if (mCurrentAnimation != pAnimation || mBoneEntityCacheOwner != entity) {
+		ResetBoneEntityCache(entity);
+	}
 	mCurrentAnimation = pAnimation;
 	mCurrentTime = 0.0f;
 	mIsBlending = false;
 	mPrevAnimation = nullptr;
+	ResetPreviousBoneCache();
 	if (pAnimation)
 	{
 		size_t n = pAnimation->GetBoneIDMap().size();
@@ -117,10 +248,15 @@ void Animator::StartCrossfade(Animation* newAnim, float duration, bool prevLoop,
 		return;
 	}
 
+	if (mCurrentAnimation != newAnim || mBoneEntityCacheOwner != entity) {
+		ResetBoneEntityCache(entity);
+	}
+
 	// Store current animation as previous
 	mPrevAnimation = mCurrentAnimation;
 	mPrevTime = mCurrentTime;
 	mPrevIsLoop = prevLoop;
+	ResetPreviousBoneCache();
 
 	// Set new animation as current
 	mCurrentAnimation = newAnim;
@@ -149,20 +285,38 @@ void Animator::StartCrossfade(Animation* newAnim, float duration, bool prevLoop,
 
 void Animator::CalculateBlendedBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent, float blendFactor)
 {
-	CalculateBlendedBoneTransformInternal(node, parentTransform, entity, bakeParent,
-		ECSRegistry::GetInstance().GetActiveECSManager(),
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	const std::uint64_t transformSetVersion =
+		ecsManager.transformSystem->entities.Version();
+	if (mBoneEntityCacheOwner != entity ||
+		mTransformSetVersion != transformSetVersion) {
+		ResetBoneEntityCache(entity);
+		mTransformSetVersion = transformSetVersion;
+	}
+	mBoneEntityCacheCursor = 0;
+	mPreviousBoneCacheCursor = 0;
+
+	auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+	const std::string& rootName = ecsManager.GetComponent<NameComponent>(entity).name;
+	CalculateBlendedBoneTransformInternal(node, parentTransform, entity, bakeParent, nullptr,
+		ecsManager,
+		modelComp,
+		rootName,
 		mCurrentAnimation->GetBoneIDMap(),
 		mCurrentAnimation->GetGlobalInverse(),
 		blendFactor);
+	++modelComp.bonePoseRevision;
 }
 
 void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-	ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor)
+	const glm::mat4* bakedParentTransform,
+	ECSManager& ecsManager, ModelRenderComponent& modelComp, const std::string& rootName,
+	const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor)
 {
 	bool isRoot = (node == &mCurrentAnimation->GetRootNode());
 
 	const std::string& nodeName = isRoot
-		? ecsManager.GetComponent<NameComponent>(entity).name
+		? rootName
 		: node->name;
 
 	glm::mat4 nodeTransform = node->transformation; // Default bind pose
@@ -174,8 +328,8 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 	bool hasBlendedTRS = false; // Track if we actually calculated a blend
 
 	// Look up bone in both animations
-	Bone* oldBone = mPrevAnimation ? mPrevAnimation->FindBone(nodeName) : nullptr;
-	Bone* newBone = mCurrentAnimation->FindBone(nodeName);
+	Bone* oldBone = ResolvePreviousBone(node, nodeName);
+	Bone* newBone = isRoot ? mCurrentAnimation->FindBone(nodeName) : node->animationBone;
 
 	if (oldBone && newBone)
 	{
@@ -187,17 +341,10 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 		finalScale = glm::mix(oldBone->GetLocalScale(), newBone->GetLocalScale(), blendFactor);
 		hasBlendedTRS = true;
 
-		nodeTransform = glm::translate(glm::mat4(1.0f), finalPos)
-			* glm::mat4_cast(finalRot)
-			* glm::scale(glm::mat4(1.0f), finalScale);
+		nodeTransform = ComposeTRS(finalPos, finalRot, finalScale);
 	}
 	else if (oldBone || newBone)
 	{
-		glm::vec3 bindPos, bindScale, skew;
-		glm::quat bindRot;
-		glm::vec4 perspective;
-		glm::decompose(node->transformation, bindScale, bindRot, bindPos, skew, perspective);
-
 		glm::vec3 srcPos, srcScale, dstPos, dstScale;
 		glm::quat srcRot, dstRot;
 
@@ -205,12 +352,12 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 		{
 			oldBone->Update(mPrevTime);
 			srcPos = oldBone->GetLocalPosition(); srcRot = oldBone->GetLocalRotation(); srcScale = oldBone->GetLocalScale();
-			dstPos = bindPos; dstRot = bindRot; dstScale = bindScale;
+			dstPos = node->bindTranslation; dstRot = node->bindRotation; dstScale = node->bindScale;
 		}
 		else
 		{
 			newBone->Update(mCurrentTime);
-			srcPos = bindPos; srcRot = bindRot; srcScale = bindScale;
+			srcPos = node->bindTranslation; srcRot = node->bindRotation; srcScale = node->bindScale;
 			dstPos = newBone->GetLocalPosition(); dstRot = newBone->GetLocalRotation(); dstScale = newBone->GetLocalScale();
 		}
 
@@ -219,190 +366,232 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 		finalScale = glm::mix(srcScale, dstScale, blendFactor);
 		hasBlendedTRS = true;
 
-		nodeTransform = glm::translate(glm::mat4(1.0f), finalPos)
-			* glm::mat4_cast(finalRot)
-			* glm::scale(glm::mat4(1.0f), finalScale);
+		nodeTransform = ComposeTRS(finalPos, finalRot, finalScale);
 	}
 
-	// 2. ECS Update (The Optimized Part)
-	auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-	auto boneIt = modelComp.boneNameToEntityMap.find(nodeName);
-	if (boneIt != modelComp.boneNameToEntityMap.end())
+	// The root entity owns the model transform and must not receive a bone-local
+	// pose. Cache stable component pointers for all actual bone entities.
+	if (!isRoot)
 	{
-		Entity boneEntity = boneIt->second;
-		if (boneEntity != INVALID_ENTITY && ecsManager.HasComponent<Transform>(boneEntity))
+		Transform* boneTransform = ResolveBoneTransform(
+			node, nodeName, entity, modelComp, ecsManager);
+		if (boneTransform)
 		{
-			if (!isRoot)
+			if (bakeParent && bakedParentTransform)
 			{
-				if (bakeParent)
-				{
-					// SLOW PATH: We must multiply and decompose
-					glm::mat4 matrixToApply = parentTransform * nodeTransform;
-					glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-					glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
+				// SLOW PATH: We must multiply and decompose
+				glm::mat4 matrixToApply = MultiplyAffine(*bakedParentTransform, nodeTransform);
+				glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+				glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
-					Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+				Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+				TransformSystem::SetLocalTransform(
+					*boneTransform,
+					Vector3D::ConvertGLMToVector3D(translation),
+					engineRot,
+					Vector3D::ConvertGLMToVector3D(scale),
+					Matrix4x4::ConvertToMatrix4x4(matrixToApply));
+			}
+			else
+			{
+				// FAST PATH
+				if (hasBlendedTRS)
+				{
+					// We already have the math! Just plug it straight into the engine.
+					Quaternion engineRot(finalRot.w, finalRot.x, finalRot.y, finalRot.z);
+					TransformSystem::SetLocalTransform(
+						*boneTransform,
+						Vector3D::ConvertGLMToVector3D(finalPos),
+						engineRot,
+						Vector3D::ConvertGLMToVector3D(finalScale),
+						Matrix4x4::ConvertToMatrix4x4(nodeTransform)
+					);
 				}
 				else
 				{
-					// FAST PATH
-					if (hasBlendedTRS)
-					{
-						// We already have the math! Just plug it straight into the engine.
-						Quaternion engineRot(finalRot.w, finalRot.x, finalRot.y, finalRot.z);
-						ecsManager.transformSystem->SetLocalTransform(
-							boneEntity,
-							Vector3D::ConvertGLMToVector3D(finalPos),
-							engineRot,
-							Vector3D::ConvertGLMToVector3D(finalScale)
-						);
-					}
-					else
-					{
-						// Fallback: This is a static bind-pose bone (not animated in either clip)
-						glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-						glm::decompose(node->transformation, scale, rotation, translation, skew, perspective);
-
-						Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
-					}
+					Quaternion engineRot(
+						node->bindRotation.w,
+						node->bindRotation.x,
+						node->bindRotation.y,
+						node->bindRotation.z);
+					TransformSystem::SetLocalTransform(
+						*boneTransform,
+						Vector3D::ConvertGLMToVector3D(node->bindTranslation),
+						engineRot,
+						Vector3D::ConvertGLMToVector3D(node->bindScale),
+						Matrix4x4::ConvertToMatrix4x4(nodeTransform));
 				}
 			}
 		}
 	}
 
-	// 3. Calculate global transform for recursion and shader
-	glm::mat4 globalTransformation = parentTransform * nodeTransform;
+	// Keep skin-space transforms through the recursion. Applying the constant
+	// global inverse once at the root removes one affine multiply per child bone.
+	glm::mat4 rootHierarchyTransform;
+	glm::mat4 skinTransformation;
+	if (isRoot) {
+		rootHierarchyTransform = MultiplyAffine(parentTransform, nodeTransform);
+		skinTransformation = MultiplyAffine(globalInverse, rootHierarchyTransform);
+	}
+	else {
+		skinTransformation = MultiplyAffine(parentTransform, nodeTransform);
+	}
 
 	// 4. Update shader matrices
-	auto infoIt = boneInfoMap.find(nodeName);
-	if (infoIt != boneInfoMap.end())
+	const BoneInfo* boneInfo = node->boneInfo;
+	if (isRoot)
 	{
-		int index = infoIt->second.id;
-		const glm::mat4& offset = infoIt->second.offset;
-		modelComp.mFinalBoneMatrices[index] = globalInverse * globalTransformation * offset;
+		auto infoIt = boneInfoMap.find(nodeName);
+		boneInfo = infoIt != boneInfoMap.end() ? &infoIt->second : nullptr;
+	}
+	if (boneInfo)
+	{
+		modelComp.mFinalBoneMatrices[boneInfo->id] =
+			MultiplyAffine(skinTransformation, boneInfo->offset);
 	}
 
 	// 5. Recurse into children
 	for (int i = 0; i < node->childrenCount; i++)
 	{
 		bool shouldChildBake = isRoot;
-		CalculateBlendedBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
-			ecsManager, boneInfoMap, globalInverse, blendFactor);
+		CalculateBlendedBoneTransformInternal(&node->children[i], skinTransformation, entity, shouldChildBake,
+			isRoot ? &rootHierarchyTransform : nullptr,
+			ecsManager, modelComp, rootName, boneInfoMap, globalInverse, blendFactor);
 	}
 }
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent)
 {
-    CalculateBoneTransformInternal(node, parentTransform, entity, bakeParent,
-        ECSRegistry::GetInstance().GetActiveECSManager(),
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	const std::uint64_t transformSetVersion =
+		ecsManager.transformSystem->entities.Version();
+	if (mBoneEntityCacheOwner != entity ||
+		mTransformSetVersion != transformSetVersion) {
+		ResetBoneEntityCache(entity);
+		mTransformSetVersion = transformSetVersion;
+	}
+	mBoneEntityCacheCursor = 0;
+
+	auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+	const std::string& rootName = ecsManager.GetComponent<NameComponent>(entity).name;
+    CalculateBoneTransformInternal(node, parentTransform, entity, bakeParent, nullptr,
+        ecsManager,
+		modelComp,
+		rootName,
         mCurrentAnimation->GetBoneIDMap(),
         mCurrentAnimation->GetGlobalInverse());
+	++modelComp.bonePoseRevision;
 }
 
 void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-    ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse)
+	const glm::mat4* bakedParentTransform,
+    ECSManager& ecsManager, ModelRenderComponent& modelComp, const std::string& rootName,
+	const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse)
 {
     bool isRoot = (node == &mCurrentAnimation->GetRootNode());
 
     const std::string& nodeName = isRoot
-        ? ecsManager.GetComponent<NameComponent>(entity).name
+        ? rootName
         : node->name;
 
     glm::mat4 nodeTransform = node->transformation; // Default Bind Pose
 
     // 1. Calculate Animation Matrix
-    Bone* bone = mCurrentAnimation->FindBone(nodeName);
+    Bone* bone = isRoot ? mCurrentAnimation->FindBone(nodeName) : node->animationBone;
     if (bone)
     {
         bone->Update(mCurrentTime);
         nodeTransform = bone->GetLocalTransform();
     }
 
-    // 3. Update ECS Entity
-    auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-    auto boneIt = modelComp.boneNameToEntityMap.find(nodeName);
-    if (boneIt != modelComp.boneNameToEntityMap.end())
-    {
-        Entity boneEntity = boneIt->second;
-        if (boneEntity != INVALID_ENTITY && ecsManager.HasComponent<Transform>(boneEntity))
-        {
-            if (!isRoot)
-            {
-				if (bakeParent)
-				{
-					// SLOW PATH: We must multiply and decompose
-					glm::mat4 matrixToApply = parentTransform * nodeTransform;
-					glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-					glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
+	// The root entity owns the model transform and must not receive a bone-local
+	// pose. Cache stable component pointers for all actual bone entities.
+	if (!isRoot)
+	{
+		Transform* boneTransform = ResolveBoneTransform(
+			node, nodeName, entity, modelComp, ecsManager);
+		if (boneTransform)
+		{
+			if (bakeParent && bakedParentTransform)
+			{
+				// SLOW PATH: We must multiply and decompose
+				glm::mat4 matrixToApply = MultiplyAffine(*bakedParentTransform, nodeTransform);
+				glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+				glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
-					Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+				Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+				TransformSystem::SetLocalTransform(
+					*boneTransform,
+					Vector3D::ConvertGLMToVector3D(translation),
+					engineRot,
+					Vector3D::ConvertGLMToVector3D(scale),
+					Matrix4x4::ConvertToMatrix4x4(matrixToApply));
+			}
+			else
+			{
+				// FAST PATH: Skip matrix math completely! Get TRS directly from the Bone.
+				if (bone)
+				{
+					// The bone was animated this frame. Use its direct values.
+					Quaternion engineRot(bone->GetLocalRotation().w, bone->GetLocalRotation().x, bone->GetLocalRotation().y, bone->GetLocalRotation().z);
+
+					TransformSystem::SetLocalTransform(
+						*boneTransform,
+						Vector3D::ConvertGLMToVector3D(bone->GetLocalPosition()),
+						engineRot,
+						Vector3D::ConvertGLMToVector3D(bone->GetLocalScale()),
+						Matrix4x4::ConvertToMatrix4x4(nodeTransform)
+					);
 				}
 				else
 				{
-					// FAST PATH: Skip matrix math completely! Get TRS directly from the Bone.
-					if (bone)
-					{
-						// The bone was animated this frame. Use its direct values.
-						Quaternion engineRot(bone->GetLocalRotation().w, bone->GetLocalRotation().x, bone->GetLocalRotation().y, bone->GetLocalRotation().z);
-
-						ecsManager.transformSystem->SetLocalTransform(
-							boneEntity,
-							Vector3D::ConvertGLMToVector3D(bone->GetLocalPosition()),
-							engineRot,
-							Vector3D::ConvertGLMToVector3D(bone->GetLocalScale())
-						);
-					}
-					else
-					{
-						// Fallback: This is a static bind-pose bone (no animation). 
-						// We only decompose it once (or you can cache this in AssimpNodeData!)
-						glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-						glm::decompose(node->transformation, scale, rotation, translation, skew, perspective);
-						Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
-					}
+					Quaternion engineRot(
+						node->bindRotation.w,
+						node->bindRotation.x,
+						node->bindRotation.y,
+						node->bindRotation.z);
+					TransformSystem::SetLocalTransform(
+						*boneTransform,
+						Vector3D::ConvertGLMToVector3D(node->bindTranslation),
+						engineRot,
+						Vector3D::ConvertGLMToVector3D(node->bindScale),
+						Matrix4x4::ConvertToMatrix4x4(nodeTransform));
 				}
-            }
-            //else 
-            //{
-            //    glm::mat4 matrixToApply = nodeTransform;
+			}
+	        }
+	    }
 
-            //    // Decompose and Apply
-            //    glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-            //    glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
-
-            //    ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
-
-            //    // Use (w, x, y, z) matching your struct
-            //    Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-            //    ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
-
-            //    ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));
-            //}
-        }
-    }
-
-    // 4. Calculate Global Transform for Recursion & Shader
-    glm::mat4 globalTransformation = parentTransform * nodeTransform;
+    // Keep skin-space transforms through the recursion. Applying the constant
+    // global inverse once at the root removes one affine multiply per child bone.
+	glm::mat4 rootHierarchyTransform;
+	glm::mat4 skinTransformation;
+	if (isRoot) {
+		rootHierarchyTransform = MultiplyAffine(parentTransform, nodeTransform);
+		skinTransformation = MultiplyAffine(globalInverse, rootHierarchyTransform);
+	}
+	else {
+		skinTransformation = MultiplyAffine(parentTransform, nodeTransform);
+	}
 
     // 5. Update Shader Matrices
-    auto infoIt = boneInfoMap.find(nodeName);
-    if (infoIt != boneInfoMap.end())
+	const BoneInfo* boneInfo = node->boneInfo;
+	if (isRoot)
+	{
+		auto infoIt = boneInfoMap.find(nodeName);
+		boneInfo = infoIt != boneInfoMap.end() ? &infoIt->second : nullptr;
+	}
+    if (boneInfo)
     {
-        int index = infoIt->second.id;
-        const glm::mat4& offset = infoIt->second.offset;
-        modelComp.mFinalBoneMatrices[index] =
-            globalInverse * globalTransformation * offset;
+        modelComp.mFinalBoneMatrices[boneInfo->id] =
+			MultiplyAffine(skinTransformation, boneInfo->offset);
     }
 
     // 6. Recurse
     for (int i = 0; i < node->childrenCount; i++)
     {
         bool shouldChildBake = isRoot;
-        CalculateBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
-            ecsManager, boneInfoMap, globalInverse);
+        CalculateBoneTransformInternal(&node->children[i], skinTransformation, entity, shouldChildBake,
+			isRoot ? &rootHierarchyTransform : nullptr,
+            ecsManager, modelComp, rootName, boneInfoMap, globalInverse);
     }
 }

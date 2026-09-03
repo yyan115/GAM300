@@ -7,6 +7,14 @@
 // - Static functions are preferred over instance methods where possible
 // - Wrapper functions are used to simplify API (e.g., passing x,y,z instead of Vector3D)
 
+// Native hot path for the 200-link gameplay chain. The Lua adapter retains a
+// feature-complete fallback and uses this only for variable-timestep stepping.
+BEGIN_SYSTEM("ChainPhysics")
+    FUNCTION("Step", &ChainPhysicsWrappers::Step)
+    FUNCTION("ApplyPositions", &Lua_ApplyChainPositions)
+    FUNCTION("ApplyRotations", &Lua_ApplyChainRotations)
+END_SYSTEM()
+
 // ============================================================================
 // INPUT SYSTEM
 // ============================================================================
@@ -169,9 +177,11 @@ BEGIN_SYSTEM("Input")
     FUNCTION("IsActionHeld", InputWrappers::IsActionHeld)
     FUNCTION("IsActionPressed", InputWrappers::IsActionPressed)
     FUNCTION("IsActionJustReleased", InputWrappers::IsActionJustReleased)
+    FUNCTION("GetActionState", &Lua_GetInputActionState)
 
     // Axes (returns Vector2D object with .x and .y properties)
     FUNCTION("GetAxis", InputWrappers::GetAxis)
+    FUNCTION("GetAxisXY", &Lua_GetInputAxisXY)
 
     // Scroll wheel (desktop only; returns delta this frame, positive = scroll up)
     FUNCTION("GetScrollY", InputWrappers::GetScrollY)
@@ -418,10 +428,13 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("Jump", CharacterControllerWrappers::Jump)
     FUNCTION("Update", CharacterControllerWrappers::Update)
     FUNCTION("SetPosition", CharacterControllerWrappers::SetPosition)
+    FUNCTION("SetPositionXYZ", CharacterControllerWrappers::SetPositionXYZ)
     FUNCTION("GetPosition", CharacterControllerWrappers::GetPosition)
+    FUNCTION("GetPositionXYZ", &Lua_GetCharacterControllerPositionXYZ)
     FUNCTION("IsGrounded", CharacterControllerWrappers::IsGrounded)
     FUNCTION("SetVelocity", CharacterControllerWrappers::SetVelocity)
     FUNCTION("GetVelocity", CharacterControllerWrappers::GetVelocity)
+    FUNCTION("GetVelocityXYZ", &Lua_GetCharacterControllerVelocityXYZ)
     FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
     FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
     FUNCTION("DestroyByEntity", CharacterControllerWrappers::DestroyByEntity)
@@ -492,6 +505,8 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByID", &Lua_FindTransformByID)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
+    FUNCTION("GetTransformPositionXYZ", &Lua_GetTransformPositionXYZ)
+    FUNCTION("GetTransformWorldPositionXYZ", &Lua_GetTransformWorldPositionXYZ)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
@@ -504,6 +519,10 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
 
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
+    FUNCTION("EntityHasScript", &EntityQueryWrappers::EntityHasScript)
+    FUNCTION("FindClosestEntityWithScriptXZ", &EntityQueryWrappers::FindClosestEntityWithScriptXZ)
+    FUNCTION("AnyEntityWithScriptInRadiusXZ", &EntityQueryWrappers::AnyEntityWithScriptInRadiusXZ)
+    FUNCTION("FindEntitiesWithScriptInAABB", &EntityQueryWrappers::FindEntitiesWithScriptInAABB)
     FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)
     FUNCTION("GetEntityName", &EntityQueryWrappers::GetEntityName)
     FUNCTION("GetEntityTag", &EntityQueryWrappers::GetEntityTag)

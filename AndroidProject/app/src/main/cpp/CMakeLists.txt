@@ -8,8 +8,24 @@ set(ENGINE_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Project")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
-string(TOLOWER "${CMAKE_BUILD_TYPE}" _build_type_lower)
-set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-${_build_type_lower}")
+
+# Android Studio's Run button builds the "debug" variant. Nearly all frame
+# time is spent inside the engine, and an unoptimized (-O0) engine runs several
+# times slower than the shipped one, so frame rates measured from that variant
+# say nothing about the game. Build the engine with optimizations plus debug
+# symbols for debug APKs by default; the JNI bridge itself stays a normal debug
+# build. Set this cache entry to "Debug" to step through the engine at -O0.
+set(GAM300_ANDROID_DEBUG_ENGINE_CONFIG "RelWithDebInfo" CACHE STRING
+    "Engine CMAKE_BUILD_TYPE used when Android Studio builds the debug variant")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(ENGINE_BUILD_CONFIG "${GAM300_ANDROID_DEBUG_ENGINE_CONFIG}")
+else()
+    set(ENGINE_BUILD_CONFIG "${CMAKE_BUILD_TYPE}")
+endif()
+message(STATUS "Android ${CMAKE_BUILD_TYPE} variant uses engine configuration: ${ENGINE_BUILD_CONFIG}")
+
+string(TOLOWER "${ENGINE_BUILD_CONFIG}" _engine_config_lower)
+set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-${_engine_config_lower}")
 
 # Correct jniLibs path for Android Studio (arm64 only here; keep same layout as before)
 set(JNILIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a)
@@ -30,8 +46,8 @@ if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
             -DANDROID_ABI=arm64-v8a
             -DANDROID_PLATFORM=android-33
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-            -DCMAKE_ANDROID_STL_TYPE=c++_shared
+            -DCMAKE_BUILD_TYPE=${ENGINE_BUILD_CONFIG}
+            -DANDROID_STL=c++_shared
             RESULT_VARIABLE CONFIG_RESULT
             OUTPUT_VARIABLE CONFIG_OUTPUT
             ERROR_VARIABLE CONFIG_ERROR

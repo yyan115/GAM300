@@ -40,19 +40,9 @@ return Component {
 
     Awake = function(self)
         self._lastHit = {}     -- [entityId] = timeSec
-        self._enemyPos = {}    -- [entityId] = {x,y,z}
-        self._posSub = nil
     end,
 
     Start = function(self)
-        -- subscribe to enemy position broadcasts
-        if event_bus and event_bus.subscribe then
-            self._posSub = event_bus.subscribe("enemy_position", function(p)
-                if not p or not p.entityId then return end
-                self._enemyPos[p.entityId] = { x = p.x or 0, y = p.y or 0, z = p.z or 0 }
-            end)
-        end
-
         -- Try to read extents from ColliderComponent if your engine exposes it
         self._col = self:GetComponent("ColliderComponent")
         if self._col then
@@ -64,17 +54,6 @@ return Component {
                 self.HalfExtentsZ = he.z or self.HalfExtentsZ
             end
         end
-    end,
-
-    _IsInsideBox = function(self, ex, ey, ez)
-        local zx, zy, zz = self:GetPosition()
-        local hx, hy, hz = self.HalfExtentsX, self.HalfExtentsY, self.HalfExtentsZ
-
-        -- AABB check (world-aligned)
-        if math.abs(ex - zx) > hx then return false end
-        if math.abs(ey - zy) > hy then return false end
-        if math.abs(ez - zz) > hz then return false end
-        return true
     end,
 
     _TryDamageEntity = function(self, entityId)
@@ -99,23 +78,21 @@ return Component {
         end
     end,
 
-    Update = function(self, dt)
-        dt = toDtSec(dt)
-        if dt == 0 then return end
-        if not self._enemyPos then return end
-
-        -- Check all known enemies (supports multiple)
-        for eid, p in pairs(self._enemyPos) do
-            if self:_IsInsideBox(p.x, p.y, p.z) then
-                self:_TryDamageEntity(eid)
-            end
+    _DamageMatching = function(self, scriptName, x, y, z)
+        local entities = Engine.FindEntitiesWithScriptInAABB(
+            scriptName, x, y, z,
+            self.HalfExtentsX, self.HalfExtentsY, self.HalfExtentsZ)
+        for i = 1, #entities do
+            self:_TryDamageEntity(entities[i])
         end
     end,
 
-    OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._posSub then
-            event_bus.unsubscribe(self._posSub)
-            self._posSub = nil
-        end
+    Update = function(self, dt)
+        dt = toDtSec(dt)
+        if dt == 0 then return end
+
+        local x, y, z = self:GetPosition()
+        self:_DamageMatching("EnemyAI.lua", x, y, z)
+        self:_DamageMatching("MinibossAI.lua", x, y, z)
     end,
 }
