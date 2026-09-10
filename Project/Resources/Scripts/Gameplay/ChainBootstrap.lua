@@ -746,25 +746,6 @@ return Component {
                         -- Track the enemy ID exactly like you track the throwable ID
                         self._hookedEnemyEntityId     = (not self._hookedIsThrowable and (payload.rootTag == "Enemy" or payload.rootTag == "Boss")) and payload.rootEntityId or nil
 
-                        -- Tell the enemy it has been hooked, here, at contact.
-                        --
-                        -- The other three publishes of this event all sit
-                        -- inside tap-release branches. An aimed shot, which is
-                        -- how the chain is meant to be used at range, attaches
-                        -- through this handler instead and reached none of
-                        -- them. Measured over eleven aimed hooks on a grounded
-                        -- enemy: the chain reported locked, telemetry showed it
-                        -- had the right entity id and the Enemy tag, and the
-                        -- enemy entered Hooked zero times and carried on
-                        -- attacking. That is the chain landing and doing
-                        -- nothing, which is most of why it feels pointless.
-                        if self._hookedEnemyEntityId and _G.event_bus and _G.event_bus.publish then
-                            _G.event_bus.publish("chain.enemy_hooked", {
-                                entityId = self._hookedEnemyEntityId,
-                                duration = 2.0,
-                            })
-                        end
-
                         -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then
                             local ok, a, b, c = pcall(function()

@@ -1,12 +1,5 @@
 -- Resources/Scripts/GamePlay/GroundChaseState.lua
-local AttackDirector = require("Gameplay.AttackDirector")
-
 local ChaseState = {}
-
--- How far out a waiting enemy holds, as a multiple of its own melee range.
--- Far enough that it is not standing inside the player, close enough that it
--- is visibly part of the fight and can step in the moment a slot frees.
-local WAIT_STANDOFF = 1.8
 
 function ChaseState:Enter(ai)
     -- Optional: force first repath on enter
@@ -40,39 +33,24 @@ function ChaseState:Update(ai, dt)
         return
     end
 
-    local inRange = ai.IsMelee and (d2 < (meleeR * meleeR)) or
-                    ((not ai.IsMelee) and (d2 <= (attackR * attackR)))
-
-    if inRange then
-        ai:StopCC()
-        if ai.IsPassive then
-            ai.fsm:Change("Idle", ai.states.Idle)
-            return
-        end
-        -- Ask permission before committing. Without this every enemy that
-        -- reaches range attacks at once, and past two attackers the player is
-        -- in damage stun 72% of the time and their own inputs stop mattering.
-        if AttackDirector.TryAcquire(ai) then
-            ai.fsm:Change("Attack", ai.states.Attack)
-            return
-        end
-        -- Denied. Stay in Chase and wait for an opening rather than standing
-        -- in the player's face doing nothing, which is what a plain return
-        -- would look like.
-        ai._waitingForAttackSlot = true
-    else
-        ai._waitingForAttackSlot = false
-    end
-
-    -- A waiting enemy holds at stand-off and keeps facing the player. Letting
-    -- it keep closing would pile the whole group into the same spot, so the
-    -- fight would look identical to having no director at all even though
-    -- only two of them are swinging.
-    if ai._waitingForAttackSlot then
-        local standoff = meleeR * WAIT_STANDOFF
-        if d2 < (standoff * standoff) then
+    if ai.IsMelee then
+        if d2 < (meleeR * meleeR) then
             ai:StopCC()
-            ai:FacePlayer()
+            if not ai.IsPassive then
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
+            return
+        end
+    else
+        if d2 <= (attackR * attackR) then
+            ai:StopCC()
+            if not ai.IsPassive then
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
             return
         end
     end

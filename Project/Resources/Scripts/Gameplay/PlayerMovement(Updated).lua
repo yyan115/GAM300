@@ -234,9 +234,6 @@ return Component {
         -- every 1.2 seconds, and a single enemy, which lands a hit about every
         -- 1.4 seconds, is unaffected.
         DamageStunCooldown  = 1.2,
-        -- Fraction of normal speed the player may steer at during a grounded
-        -- attack whose state has canMove false. 0 is coast-only, the original.
-        AttackSteerScale    = 0.5,
         CinematicSettleTime = 0.8,    -- Seconds to settle before cinematic hard-freeze locks movement.
         footstepInterval    = 0.30,   -- Seconds between footstep SFX triggers while running.
         -- TO ADD new feel tuning: add field here.
@@ -968,35 +965,11 @@ return Component {
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
 
-            -- Let the player steer, slowly, during a swing they cannot cancel.
-            -- Applied at the Move call rather than into self._velX, because
-            -- AttackDecay is 6.0 and bleeds anything stored there away within
-            -- a frame or two.
-            local steerX, steerZ = 0, 0
-            local steer = self.AttackSteerScale or 0
-            if steer > 0 then
-                local sInterp = _G.InputInterpreter
-                local sAxis = (sInterp and sInterp:GetMovementAxis()) or { x = 0, y = 0 }
-                local sRawX, sRawZ = -sAxis.x, sAxis.y
-                if sRawX ~= 0 or sRawZ ~= 0 then
-                    local sYaw = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
-                    local sSin, sCos = math.sin(sYaw), math.cos(sYaw)
-                    local sX = sRawZ * (-sSin) - sRawX * sCos
-                    local sZ = sRawZ * (-sCos) + sRawX * sSin
-                    local sLen = math.sqrt(sX*sX + sZ*sZ)
-                    if sLen > 0.001 then
-                        local sp = (self.Speed or 4.0) * steer
-                        steerX, steerZ = (sX / sLen) * sp, (sZ / sLen) * sp
-                    end
-                end
-            end
-
             -- Don't double-write if a lunge already called Move this frame.
             if not (self._lungeTimer and self._lungeTimer > 0) then
-                local mvX, mvZ = self._velX + steerX, self._velZ + steerZ
-                local velMag = math.sqrt(mvX*mvX + mvZ*mvZ)
+                local velMag = math.sqrt(self._velX*self._velX + self._velZ*self._velZ)
                 if velMag > 0.01 then
-                    CharacterController.Move(self._controller, mvX, 0, mvZ)
+                    CharacterController.Move(self._controller, self._velX, 0, self._velZ)
                 else
                     self._velX, self._velZ = 0, 0
                 end

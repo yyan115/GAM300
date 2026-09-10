@@ -1,5 +1,4 @@
 -- Resources/Scripts/GamePlay/GroundAttackState.lua
-local AttackDirector = require("Gameplay.AttackDirector")
 local AttackState = {}
 
 local function stopCC(ai)
@@ -283,25 +282,6 @@ function AttackState:Update(ai, dt)
 
             -- Note: We DO NOT reset ai.attackTimer to 0 here. 
             -- We leave it >= cd so Phase 1 instantly sees it is ready to swing again!
-
-            -- A swing is finished, so hand the attack slot back and ask again
-            -- for the next one.
-            --
-            -- Holding it for the whole time in Attack was worse than not
-            -- capping at all in one respect: this state swings on a loop, so
-            -- the first two enemies to arrive kept both slots for the entire
-            -- fight and everyone else stood at stand-off doing nothing.
-            -- Measured that way the statue room had no attacker at all in 57%
-            -- of frames, against 0% uncapped. The cap was right and the unit
-            -- was wrong: a slot is one swing, not one fight.
-            --
-            -- Asking again immediately keeps this enemy attacking when nobody
-            -- is waiting, and yields to a waiting enemy when somebody is.
-            AttackDirector.Release(ai)
-            if not AttackDirector.TryAcquire(ai) then
-                ai.fsm:Change("Chase", ai.states.Chase)
-                return
-            end
         end
     -- Ranged
     else
@@ -383,25 +363,11 @@ function AttackState:Update(ai, dt)
 
             -- Note: We DO NOT reset ai.attackTimer to 0 here. 
             -- We leave it >= cd so Phase 1 instantly sees it is ready to swing again!
-
-            -- Same rotation as the melee branch above: a slot is one throw,
-            -- not the whole fight.
-            AttackDirector.Release(ai)
-            if not AttackDirector.TryAcquire(ai) then
-                ai.fsm:Change("Chase", ai.states.Chase)
-                return
-            end
         end
     end
 end
 
 function AttackState:Exit(ai)
-    -- Give the attack slot back. Every way out of this state goes through
-    -- here, because StateMachine:Change and :ForceChange both call Exit, so
-    -- this is the one place that cannot be bypassed by a hook, a hurt, a
-    -- disengage or a death that changes state.
-    AttackDirector.Release(ai)
-
     stopCC(ai)
     ai._currentAttackToken = nil
     ai._attackCancelled = false

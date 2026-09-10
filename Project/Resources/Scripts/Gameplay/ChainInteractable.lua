@@ -157,23 +157,6 @@ return Component {
         -- currently locked onto a static wall / in free-fall physics —
         -- in those states the chain is no longer travelling toward us.
         if self._hitFired then return end
-
-        -- Re-arm as soon as the endpoint is under control again. _detachDisarmed
-        -- is set by chain.detached, which fires on every flop, and the only
-        -- thing that cleared it was a retract event published on a single
-        -- transition in ChainBootstrap that can be skipped. Missing it left
-        -- this interactable permanently unhittable for the rest of the session,
-        -- with the chain visibly striking it and this handler returning below
-        -- before testing anything. The same defect was measured on the
-        -- breakable doors, where it cost one route run in three.
-        --
-        -- The state being guarded against is a flopping endpoint, which the
-        -- payload reports every frame from the flag the detach edge is derived
-        -- from, so a non-flopping move means the chain is under control again.
-        if self._detachDisarmed and not payload.isFlopping then
-            self._detachDisarmed = false
-        end
-
         if self._detachDisarmed then return end
         if payload.isFlopping    then return end
         if not self._endpointPos then return end

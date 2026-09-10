@@ -1,5 +1,4 @@
 -- Resources/Scripts/GamePlay/GroundHookedState.lua
-local AttackDirector = require("Gameplay.AttackDirector")
 local HookedState = {}
 
 local function toDtSec(dt)
@@ -95,15 +94,7 @@ function HookedState:Update(ai, dt)
 
         if ai:IsPlayerInRange(ai.config.DetectionRange) then
             if ai._animator then ai._animator:SetBool("PlayerInRange", true) end
-            -- Coming out of a hook goes through the same permission as every
-            -- other way into Attack. Otherwise hooking an enemy is a way of
-            -- getting an extra attacker past the cap, which is the opposite
-            -- of what the chain is for.
-            if AttackDirector.TryAcquire(ai) then
-                ai.fsm:Change("Attack", ai.states.Attack)
-            else
-                ai.fsm:Change("Chase", ai.states.Chase)
-            end
+            ai.fsm:Change("Attack", ai.states.Attack)
         else
             if ai._animator then ai._animator:SetBool("PlayerInRange", false) end
             ai.fsm:Change("Idle", ai.states.Idle)

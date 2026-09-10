@@ -1,5 +1,4 @@
 -- Resources/Scripts/GamePlay/FlyingChaseState.lua
-local AttackDirector = require("Gameplay.AttackDirector")
 local FlyingChase = {}
 
 function FlyingChase:Enter(ai)
@@ -48,17 +47,8 @@ function FlyingChase:Update(ai, dt)
 
     local attackR = ai.AttackRange or 3.0
     if ai:IsPlayerInRange(attackR) then
-        -- Flyers draw on the same budget as everyone else. Measured with only
-        -- the ground enemies gated, the statue room still reached four
-        -- attackers against a cap of two, because the two flyers were never
-        -- asking. A stun from above costs the player exactly as much as one
-        -- from in front.
-        if AttackDirector.TryAcquire(ai) then
-            ai.fsm:Change("Attack", ai.states.Attack)
-            return
-        end
-        -- No slot: keep circling. Falling through to the chase below is what
-        -- a flyer waiting its turn should look like anyway.
+        ai.fsm:Change("Attack", ai.states.Attack)
+        return
     end
 
     -- chase
