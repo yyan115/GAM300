@@ -67,3 +67,6 @@ Project/Scripting/x64/
 .github/copilot-instructions.md
 # AndroidProject/app/src/main/assets/asset_manifest.txt
 AndroidProject/.idea/misc.xml
+
+# Tracking notes, never shipped
+/.agents/
