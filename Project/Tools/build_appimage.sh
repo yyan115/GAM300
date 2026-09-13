@@ -55,6 +55,20 @@ mv "$STAGE/Kusane" "$APPDIR/usr/bin/"
 mv "$STAGE"/libEngine.so "$STAGE"/libfmod.so.* "$APPDIR/usr/lib/"
 mv "$STAGE/Resources" "$STAGE/ProjectSettings" "$APPDIR/usr/share/kusane/"
 
+# The build directory holds libfmod.so.14.9, but the engine was linked against
+# the SONAME, libfmod.so.14, and that is the name the loader asks for. Without
+# it the game starts only on a machine that happens to have FMOD at the absolute
+# path baked into libEngine.so's RUNPATH, which means the developer's own, and
+# fails everywhere else with "cannot open shared object file".
+for lib in "$APPDIR"/usr/lib/libfmod.so.*; do
+    [ -e "$lib" ] || continue
+    soname=$(objdump -p "$lib" 2>/dev/null | awk '/SONAME/{print $2; exit}')
+    if [ -n "$soname" ] && [ "$soname" != "$(basename "$lib")" ]; then
+        ln -sf "$(basename "$lib")" "$APPDIR/usr/lib/$soname"
+        echo "linked $soname -> $(basename "$lib")"
+    fi
+done
+
 # libGLU comes in through glfw3's vcpkg config and nothing in the engine calls
 # a glu function, but the binary hard-links it, so a machine without it cannot
 # start the game at all. It is a utility library over GL with no driver
@@ -123,9 +137,31 @@ for path in usr/bin/Kusane AppRun usr/share/kusane/Resources \
 done
 [ -x "$APPDIR/usr/bin/Kusane" ] || { echo "  usr/bin/Kusane is not executable" >&2; fail=1; }
 [ -x "$APPDIR/AppRun" ] || { echo "  AppRun is not executable" >&2; fail=1; }
-ls "$APPDIR"/usr/lib/libEngine.so >/dev/null 2>&1 || { echo "  missing libEngine.so" >&2; fail=1; }
-ls "$APPDIR"/usr/lib/libfmod.so.* >/dev/null 2>&1 || { echo "  missing libfmod" >&2; fail=1; }
-[ -e "$APPDIR/usr/lib/libGLU.so.1" ] || { echo "  missing libGLU.so.1" >&2; fail=1; }
+# Check the libraries the loader will actually ask for, by name, rather than
+# checking that something fmod-shaped is present. Globbing for libfmod.so.*
+# passed while the one name the loader wanted was absent.
+# Kept on several lines for reading. The unquoted expansion below re-joins it
+# with single spaces, because the pattern match tests for a space either side of
+# a name and a newline is not a space.
+allowed_from_host="libc.so.6 libm.so.6 libdl.so.2 librt.so.1 libpthread.so.0
+libstdc++.so.6 libgcc_s.so.1 ld-linux-x86-64.so.2 libGL.so.1 libGLX.so.0
+libOpenGL.so.0 libGLdispatch.so.0 libX11.so.6 libXext.so.6 libxcb.so.1
+libXau.so.6 libXdmcp.so.6 libXcursor.so.1 libXi.so.6 libXinerama.so.1
+libXrandr.so.2 libXrender.so.1 libXfixes.so.3 libxkbcommon.so.0 libwayland-client.so.0"
+
+for binary in "$APPDIR/usr/bin/Kusane" "$APPDIR"/usr/lib/*.so*; do
+    [ -f "$binary" ] || continue
+    for need in $(objdump -p "$binary" 2>/dev/null | awk '/NEEDED/{print $2}'); do
+        # Written as if-then because set -e treats a false "test && continue"
+        # as a failed statement and aborts the build.
+        if [ -e "$APPDIR/usr/lib/$need" ]; then continue; fi
+        case " $(echo $allowed_from_host) " in
+            *" $need "*) continue ;;
+        esac
+        echo "  $(basename "$binary") needs $need, which is neither bundled nor a standard system library" >&2
+        fail=1
+    done
+done
 
 for ext in dds mesh font; do
     count=$(find "$APPDIR/usr/share/kusane/Resources" -type f -name "*.$ext" 2>/dev/null | wc -l)
