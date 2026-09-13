@@ -293,6 +293,12 @@ jobs:
         Copy-Item "Installer\INSTALLER\Kusane_Setup.exe" $downloadDir
         $setup = Join-Path $downloadDir "Kusane_Setup.exe"
         $uninstaller = Join-Path $installDir "unins000.exe"
+
+        # The Gallery's Complete Uninstall requirement is "all files and all
+        # shortcuts of any kind", so these are the three places to look after.
+        $startMenuGroup = Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs\DigiPen\Kusane"
+        $desktopShortcut = Join-Path $env:PUBLIC "Desktop\Kusane.lnk"
+
         try {
             $arguments = @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-",
                            "/DIR=`"$installDir`"", "/LOG=`"$installLog`"")
@@ -317,17 +323,49 @@ jobs:
                 throw "Installation did not create an uninstaller."
             }
             Write-Host "Verified all $($sourceFiles.Count) installed files from Kusane_Setup.exe alone."
+
+            # Shortcuts have to exist before their removal can mean anything.
+            foreach ($shortcut in @((Join-Path $startMenuGroup "Kusane.lnk"), $desktopShortcut)) {
+                if (-not (Test-Path -LiteralPath $shortcut)) {
+                    throw "Installation did not create the shortcut $shortcut"
+                }
+            }
+            Write-Host "Verified the start menu and desktop shortcuts exist."
         } catch {
             if (Test-Path -LiteralPath $installLog) { Get-Content $installLog -Tail 80 }
             throw
-        } finally {
-            if (Test-Path -LiteralPath $uninstaller) {
-                $process = Start-Process -FilePath $uninstaller -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait -PassThru
-                if ($process.ExitCode -ne 0) {
-                    throw "Uninstaller failed with exit code $($process.ExitCode)."
-                }
-            }
         }
+
+        # ── Complete Uninstall ────────────────────────────────────────────
+        # unins000.exe copies itself into TEMP and relaunches so it can delete
+        # its own executable, which means the process we started returns long
+        # before the work is finished. Waiting on it proves nothing, so poll
+        # for the install directory to actually disappear.
+        $process = Start-Process -FilePath $uninstaller -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            throw "Uninstaller failed with exit code $($process.ExitCode)."
+        }
+        $deadline = (Get-Date).AddMinutes(2)
+        while ((Test-Path -LiteralPath $installDir) -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 2
+        }
+
+        $leftovers = @()
+        if (Test-Path -LiteralPath $installDir) {
+            $remaining = @(Get-ChildItem -LiteralPath $installDir -Recurse -Force -ErrorAction SilentlyContinue)
+            $leftovers += "install directory still exists with $($remaining.Count) entries"
+            $remaining | Select-Object -First 20 | ForEach-Object { Write-Host "  left behind: $($_.FullName)" }
+        }
+        if (Test-Path -LiteralPath $startMenuGroup) {
+            $leftovers += "start menu group $startMenuGroup still exists"
+        }
+        if (Test-Path -LiteralPath $desktopShortcut) {
+            $leftovers += "desktop shortcut $desktopShortcut still exists"
+        }
+        if ($leftovers.Count -gt 0) {
+            throw "Uninstall was not complete: $($leftovers -join '; ')"
+        }
+        Write-Host "Verified uninstall removed the install directory and every shortcut."
 
     - name: Upload installer artifact
       uses: actions/upload-artifact@v4
