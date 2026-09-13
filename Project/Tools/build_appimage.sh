@@ -78,20 +78,6 @@ for lib in "$APPDIR"/usr/lib/libfmod.so.*; do
     fi
 done
 
-# libGLU comes in through glfw3's vcpkg config and nothing in the engine calls
-# a glu function, but the binary hard-links it, so a machine without it cannot
-# start the game at all. It is a utility library over GL with no driver
-# coupling, so unlike libGLX and libGLdispatch it is safe to carry. Those stay
-# on the host, where they have to match the graphics driver.
-GLU=$(ldconfig -p 2>/dev/null | awk '/libGLU\.so\.1 /{print $NF; exit}')
-if [ -n "$GLU" ] && [ -e "$GLU" ]; then
-    cp -L "$GLU" "$APPDIR/usr/lib/libGLU.so.1"
-    echo "bundled $GLU"
-else
-    echo "libGLU.so.1 not found on this machine, the image will need it present" >&2
-    exit 1
-fi
-
 ICON="$APPDIR/usr/share/icons/hicolor/256x256/apps/kusane.png"
 ICO="$ROOT/Installer/INSTALLERFILES/SetupIcon.ico"
 # Pillow where it exists, ImageMagick otherwise. An AppImage without an icon
@@ -158,18 +144,37 @@ libOpenGL.so.0 libGLdispatch.so.0 libX11.so.6 libXext.so.6 libxcb.so.1
 libXau.so.6 libXdmcp.so.6 libXcursor.so.1 libXi.so.6 libXinerama.so.1
 libXrandr.so.2 libXrender.so.1 libXfixes.so.3 libxkbcommon.so.0 libwayland-client.so.0"
 
-for binary in "$APPDIR/usr/bin/Kusane" "$APPDIR"/usr/lib/*.so*; do
-    [ -f "$binary" ] || continue
-    for need in $(objdump -p "$binary" 2>/dev/null | awk '/NEEDED/{print $2}'); do
-        # Written as if-then because set -e treats a false "test && continue"
-        # as a failed statement and aborts the build.
-        if [ -e "$APPDIR/usr/lib/$need" ]; then continue; fi
-        case " $(echo $allowed_from_host) " in
-            *" $need "*) continue ;;
-        esac
-        echo "  $(basename "$binary") needs $need, which is neither bundled nor a standard system library" >&2
-        fail=1
+# Walk what the loader will ask for. Anything not already inside the image and
+# not on the list above is fetched from this machine and carried along, which is
+# how libGLU travels: the binary hard-links it through glfw3's package config
+# even though no engine code calls a glu function, and a machine without it
+# cannot start the game. Passes repeat until nothing new appears, since a
+# library pulled in this way brings its own dependencies.
+round=0
+while [ "$round" -lt 5 ]; do
+    round=$((round + 1))
+    added=0
+    for binary in "$APPDIR/usr/bin/Kusane" "$APPDIR"/usr/lib/*.so*; do
+        [ -f "$binary" ] || continue
+        for need in $(objdump -p "$binary" 2>/dev/null | awk '/NEEDED/{print $2}'); do
+            # Written as if-then because set -e treats a false "test && continue"
+            # as a failed statement and aborts the build.
+            if [ -e "$APPDIR/usr/lib/$need" ]; then continue; fi
+            case " $(echo $allowed_from_host) " in
+                *" $need "*) continue ;;
+            esac
+            found=$(ldconfig -p 2>/dev/null | awk -v n="$need" '$1 == n {print $NF; exit}')
+            if [ -n "$found" ] && [ -e "$found" ]; then
+                cp -L "$found" "$APPDIR/usr/lib/$need"
+                echo "  carried $need from $found"
+                added=1
+            else
+                echo "  $(basename "$binary") needs $need, which is neither bundled, a standard system library, nor present on this machine" >&2
+                fail=1
+            fi
+        done
     done
+    [ "$added" -eq 1 ] || break
 done
 
 for ext in dds mesh font; do
