@@ -145,8 +145,8 @@ namespace xcontainer::function
         constexpr buffer(const T_FUNC& Func) noexcept
             : m_pInvoker(&functor<std::decay_t<T_FUNC>>::Invoke)
             , m_pDestroyer(std::is_trivially_destructible_v<functor<std::decay_t<T_FUNC>>>
-                ? nullptr
-                : [](void* p) { static_cast<functor<std::decay_t<T_FUNC>>*>(p)->~functor(); })
+                ? static_cast<destroyer_fnptr>(nullptr)
+                : static_cast<destroyer_fnptr>([](void* p) { static_cast<functor<std::decay_t<T_FUNC>>*>(p)->~functor(); }))
         {
             using decayed_func = std::decay_t<T_FUNC>;
             static_assert(isSignatureCompatible<decayed_func>(), "Callable signature does not match");
@@ -160,8 +160,8 @@ namespace xcontainer::function
         template<typename T_FUNC>
         constexpr buffer(T_FUNC&& func) noexcept(std::is_nothrow_constructible_v<std::decay_t<T_FUNC>>)
             : m_pInvoker(&functor<std::decay_t<T_FUNC>>::Invoke)
-            , m_pDestroyer(std::is_trivially_destructible_v<functor<std::decay_t<T_FUNC>>> ? nullptr
-                : [](void* p) { std::launder(static_cast<functor<std::decay_t<T_FUNC>>*>(p))->~functor(); })
+            , m_pDestroyer(std::is_trivially_destructible_v<functor<std::decay_t<T_FUNC>>> ? static_cast<destroyer_fnptr>(nullptr)
+                : static_cast<destroyer_fnptr>([](void* p) { std::launder(static_cast<functor<std::decay_t<T_FUNC>>*>(p))->~functor(); }))
         {
             using F = std::decay_t<T_FUNC>;
             static_assert(isSignatureCompatible<F>(), "Signature mismatch");
@@ -189,8 +189,8 @@ namespace xcontainer::function
             if (m_pDestroyer) m_pDestroyer(static_cast<void*>(m_Storage));
 
             m_pInvoker = &functor<F>::Invoke;
-            m_pDestroyer = std::is_trivially_destructible_v<functor<F>> ? nullptr
-                : [](void* p) { std::launder(static_cast<functor<F>*>(p))->~functor(); };
+            m_pDestroyer = std::is_trivially_destructible_v<functor<F>> ? static_cast<destroyer_fnptr>(nullptr)
+                : static_cast<destroyer_fnptr>([](void* p) { std::launder(static_cast<functor<F>*>(p))->~functor(); });
 
             new (static_cast<void*>(m_Storage)) functor<F>(std::forward<T_FUNC>(func));
             return *this;
