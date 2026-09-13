@@ -55,6 +55,20 @@ mv "$STAGE/Kusane" "$APPDIR/usr/bin/"
 mv "$STAGE"/libEngine.so "$STAGE"/libfmod.so.* "$APPDIR/usr/lib/"
 mv "$STAGE/Resources" "$STAGE/ProjectSettings" "$APPDIR/usr/share/kusane/"
 
+# libGLU comes in through glfw3's vcpkg config and nothing in the engine calls
+# a glu function, but the binary hard-links it, so a machine without it cannot
+# start the game at all. It is a utility library over GL with no driver
+# coupling, so unlike libGLX and libGLdispatch it is safe to carry. Those stay
+# on the host, where they have to match the graphics driver.
+GLU=$(ldconfig -p 2>/dev/null | awk '/libGLU\.so\.1 /{print $NF; exit}')
+if [ -n "$GLU" ] && [ -e "$GLU" ]; then
+    cp -L "$GLU" "$APPDIR/usr/lib/libGLU.so.1"
+    echo "bundled $GLU"
+else
+    echo "libGLU.so.1 not found on this machine, the image will need it present" >&2
+    exit 1
+fi
+
 ICON="$APPDIR/usr/share/icons/hicolor/256x256/apps/kusane.png"
 ICO="$ROOT/Installer/INSTALLERFILES/SetupIcon.ico"
 # Pillow where it exists, ImageMagick otherwise. An AppImage without an icon
@@ -111,6 +125,7 @@ done
 [ -x "$APPDIR/AppRun" ] || { echo "  AppRun is not executable" >&2; fail=1; }
 ls "$APPDIR"/usr/lib/libEngine.so >/dev/null 2>&1 || { echo "  missing libEngine.so" >&2; fail=1; }
 ls "$APPDIR"/usr/lib/libfmod.so.* >/dev/null 2>&1 || { echo "  missing libfmod" >&2; fail=1; }
+[ -e "$APPDIR/usr/lib/libGLU.so.1" ] || { echo "  missing libGLU.so.1" >&2; fail=1; }
 
 for ext in dds mesh font; do
     count=$(find "$APPDIR/usr/share/kusane/Resources" -type f -name "*.$ext" 2>/dev/null | wc -l)
