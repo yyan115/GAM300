@@ -70,3 +70,6 @@ AndroidProject/.idea/misc.xml
 
 # Tracking notes, never shipped
 /.agents/
+
+# Python bytecode from the packaging tools
+__pycache__/
