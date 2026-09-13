@@ -5,7 +5,22 @@
 #ifdef ANDROID
 #include <android/log.h>
 #include <EGL/egl.h>
+#else
+#include "WindowManager.hpp"
 #endif
+
+namespace {
+#ifndef ANDROID
+    // Asking GLFW for the current context after glfwTerminate raises an error
+    // rather than answering, and these buffers outlive the window: the ECS
+    // managers are destroyed by static destructors, which run after main has
+    // already torn the platform down. The platform pointer is cleared at that
+    // point, so it answers the same question without touching GLFW.
+    bool HasGraphicsContext() {
+        return WindowManager::GetPlatform() != nullptr && glfwGetCurrentContext() != nullptr;
+    }
+#endif
+}
 
 EBO::EBO(std::vector<GLuint>& indices) : indices(indices), isSetup(false), ID(0)
 {
@@ -45,7 +60,7 @@ void EBO::Bind()
 		}
 #else
 		// On desktop (Windows/Linux), check if GLFW context is current
-		if (glfwGetCurrentContext() == NULL) {
+		if (!HasGraphicsContext()) {
 			return; // Context not current, skip setup
 		}
 #endif
@@ -92,7 +107,7 @@ void EBO::Delete()
 	}
 #else
 	// On desktop (Windows/Linux), check if GLFW context is current
-	if (glfwGetCurrentContext() == NULL) {
+	if (!HasGraphicsContext()) {
 		return; // Context not current, skip deletion
 	}
 #endif

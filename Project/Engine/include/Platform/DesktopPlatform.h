@@ -22,6 +22,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 class DesktopPlatform : public IPlatform {
 private:
+    // glfwTerminate is only valid once, and DestroyWindow runs twice on exit.
+    bool glfwInitialised = false;
     GLFWwindow* window;
     bool isFullscreen;
     int windowedWidth, windowedHeight;

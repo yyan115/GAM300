@@ -50,6 +50,7 @@ bool DesktopPlatform::InitializeWindow(int width, int height, const char* title)
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "Failed to initialize GLFW\n");
         return false;
     }
+    glfwInitialised = true;
 
     // Set GLFW error callback
     glfwSetErrorCallback(ErrorCallback);
@@ -98,7 +99,13 @@ void DesktopPlatform::DestroyWindow() {
         glfwDestroyWindow(window);
         window = nullptr;
     }
-    glfwTerminate();
+    // WindowManager::Exit calls this and then deletes the platform, whose
+    // destructor calls it again. Terminating twice makes GLFW raise an error
+    // for a teardown that already succeeded.
+    if (glfwInitialised) {
+        glfwTerminate();
+        glfwInitialised = false;
+    }
 }
 
 bool DesktopPlatform::ShouldClose() {
