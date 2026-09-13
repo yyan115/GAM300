@@ -13,6 +13,11 @@ on:
         description: 'Changelog / release notes (supports markdown)'
         required: false
         type: string
+      skip_publish:
+        description: 'Build everything but do not create a release'
+        required: false
+        default: false
+        type: boolean
 
 env:
   VCPKG_COMMIT: 2d6a6cf3ac9a7cc93942c3d289a2f9c661a6f4a7
@@ -510,6 +515,10 @@ jobs:
   # ── Create GitHub Release ──────────────────────────────────────────
   publish-release:
     needs: [windows-build, linux-build, android-build]
+    # Lets a branch prove the three builds without cutting a release that every
+    # teammate sees. Packaging faults have reached the artifact while the job
+    # itself stayed green, so the build has to be runnable on its own.
+    if: ${{ inputs.skip_publish != true }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
