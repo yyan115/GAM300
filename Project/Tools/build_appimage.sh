@@ -23,6 +23,15 @@ GAME="$BUILD/Kusane"
 
 [ -x "$GAME" ] || { echo "no game binary at $GAME" >&2; exit 1; }
 
+# objdump decides which library name the loader will ask for and whether every
+# dependency is satisfied. Without it the SONAME link is never made and the
+# dependency check reads an empty list and passes, which is the silent version
+# of shipping a package that does not start.
+command -v objdump >/dev/null || {
+    echo "objdump is required (install binutils)" >&2
+    exit 1
+}
+
 # Everything is built in a work directory that can be large: the staged payload
 # is over 3 GiB, so this must not land on a small tmpfs.
 WORK="$OUT/work"

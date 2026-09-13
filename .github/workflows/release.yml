@@ -388,7 +388,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
-          ninja-build pkg-config \
+          ninja-build pkg-config binutils \
           libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev libxi-dev \
           libxext-dev libxrender-dev libxfixes-dev libxxf86vm-dev \
           libgl1-mesa-dev libglu1-mesa-dev
