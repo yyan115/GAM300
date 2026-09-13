@@ -95,6 +95,30 @@ exec "$HERE/usr/bin/Kusane" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
 
+# The Windows job counts cooked assets before it builds the installer, because
+# the game has no raw-image fallback on desktop and a cook that silently did
+# nothing produces a package that looks the right size and renders untextured.
+# The same applies here, and this is the last moment the payload can be read,
+# since the work directory goes away below.
+echo "verifying the payload"
+fail=0
+for path in usr/bin/Kusane AppRun usr/share/kusane/Resources \
+            usr/share/kusane/ProjectSettings/TagsAndLayers.json \
+            usr/share/applications/kusane.desktop kusane.png; do
+    [ -e "$APPDIR/$path" ] || { echo "  missing $path" >&2; fail=1; }
+done
+[ -x "$APPDIR/usr/bin/Kusane" ] || { echo "  usr/bin/Kusane is not executable" >&2; fail=1; }
+[ -x "$APPDIR/AppRun" ] || { echo "  AppRun is not executable" >&2; fail=1; }
+ls "$APPDIR"/usr/lib/libEngine.so >/dev/null 2>&1 || { echo "  missing libEngine.so" >&2; fail=1; }
+ls "$APPDIR"/usr/lib/libfmod.so.* >/dev/null 2>&1 || { echo "  missing libfmod" >&2; fail=1; }
+
+for ext in dds mesh font; do
+    count=$(find "$APPDIR/usr/share/kusane/Resources" -type f -name "*.$ext" 2>/dev/null | wc -l)
+    echo "  .$ext files: $count"
+    [ "$count" -gt 0 ] || { echo "  no .$ext in the payload, the cook did not land" >&2; fail=1; }
+done
+[ "$fail" -eq 0 ] || { echo "payload is incomplete, refusing to package" >&2; exit 1; }
+
 TOOL="$WORK/appimagetool"
 curl -sL -o "$TOOL" \
   https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
