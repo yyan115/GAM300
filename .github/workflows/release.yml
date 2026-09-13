@@ -259,9 +259,12 @@ jobs:
       # The staged payload carries no VCRUNTIME140.dll or MSVCP140.dll, so the
       # game takes its C++ runtime from whatever the redistributable installs.
       # Microsoft's runtime is backward compatible and not forward compatible,
-      # so a binary built by a newer toolset can ask a older runtime for entry
+      # so a binary built by a newer toolset can ask an older runtime for entry
       # points it does not export, and the game fails to start on a clean
-      # machine with no hint as to why. The two versions were 14.44 and 14.36.
+      # machine with no hint as to why. The two were 14.44 and 14.36.
+      #
+      # The compiler reports 19.MM, which is toolset 14.MM, so its own output
+      # answers the question without searching the filesystem for a runtime DLL.
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
@@ -269,25 +272,20 @@ jobs:
         $redistVersion = [version]$redist.VersionInfo.ProductVersion
         Write-Host "bundled redistributable: $redistVersion"
 
-        $runtime = Get-ChildItem "$env:VCToolsRedistDir" -Recurse -Filter msvcp140.dll -ErrorAction SilentlyContinue |
-                   Select-Object -First 1
-        if (-not $runtime) {
-            $runtime = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter msvcp140.dll -ErrorAction SilentlyContinue |
-                       Sort-Object { [version]$_.VersionInfo.ProductVersion } -Descending |
-                       Select-Object -First 1
-        }
-        if (-not $runtime) {
-            Write-Host "could not locate the toolset's msvcp140.dll, skipping the comparison"
+        $banner = (& cl 2>&1 | Out-String)
+        if ($banner -notmatch "Version\s+(\d+)\.(\d+)\.") {
+            Write-Host "could not read the compiler version, skipping the comparison"
+            Write-Host $banner
             exit 0
         }
-        $toolVersion = [version]$runtime.VersionInfo.ProductVersion
-        Write-Host "toolset runtime:         $toolVersion  ($($runtime.FullName))"
+        $toolset = [version]"$([int]$Matches[1] - 5).$($Matches[2])"
+        Write-Host "compiler reports:        $($Matches[1]).$($Matches[2]), toolset $toolset"
 
-        if ($redistVersion.Major -ne $toolVersion.Major) {
-            throw "Redistributable major version $redistVersion does not match the toolset's $toolVersion."
+        if ($redistVersion.Major -ne $toolset.Major) {
+            throw "Redistributable major version $redistVersion does not match toolset $toolset."
         }
-        if ($redistVersion.Minor -lt $toolVersion.Minor) {
-            throw "Bundled redistributable $redistVersion is older than the toolset's runtime $toolVersion. Refresh Installer\REDIST\VC_redist.x64.exe from https://aka.ms/vs/17/release/vc_redist.x64.exe"
+        if ($redistVersion.Minor -lt $toolset.Minor) {
+            throw "Bundled redistributable $redistVersion is older than toolset $toolset. Refresh Installer\REDIST\VC_redist.x64.exe from https://aka.ms/vs/17/release/vc_redist.x64.exe"
         }
         Write-Host "The bundled runtime is new enough for the compiler that built the game."
 
