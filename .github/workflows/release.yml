@@ -323,6 +323,8 @@ jobs:
     - name: Test installation from the single executable
       shell: pwsh
       timeout-minutes: 10
+      env:
+        GAME_RELEASE_VERSION: ${{ github.event.inputs.version }}
       run: |
         $ErrorActionPreference = "Stop"
         $downloadDir = Join-Path $env:RUNNER_TEMP "kusane-download"
@@ -370,6 +372,34 @@ jobs:
                 }
             }
             Write-Host "Verified the start menu and desktop shortcuts exist."
+
+            # What a reviewer sees in Add or Remove Programs. Defined Publisher
+            # wants "DigiPen Institute of Technology" there, and Version Number
+            # wants the release version, so read what Inno actually registered
+            # rather than trusting the directives that asked for it.
+            $appId = "{02F9FA09-A74B-42DA-BB97-6558B0A32FF3}_is1"
+            $key = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$appId"
+            $wow = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$appId"
+            $entry = $null
+            foreach ($candidate in @($key, $wow)) {
+                if (Test-Path $candidate) { $entry = Get-ItemProperty $candidate; break }
+            }
+            if (-not $entry) {
+                throw "The installer registered no uninstall entry, so it would not appear in Add or Remove Programs."
+            }
+            Write-Host "  DisplayName:    $($entry.DisplayName)"
+            Write-Host "  Publisher:      $($entry.Publisher)"
+            Write-Host "  DisplayVersion: $($entry.DisplayVersion)"
+            if ($entry.Publisher -ne "DigiPen Institute of Technology") {
+                throw "Publisher is '$($entry.Publisher)', and the requirement is 'DigiPen Institute of Technology'."
+            }
+            $expected = $env:GAME_RELEASE_VERSION -replace '^[vV](?=\d)', ''
+            if ($entry.DisplayVersion -ne $expected) {
+                throw "DisplayVersion is '$($entry.DisplayVersion)' and the release version is '$expected'."
+            }
+            if (-not $entry.DisplayName) {
+                throw "The uninstall entry has no DisplayName."
+            }
         } catch {
             if (Test-Path -LiteralPath $installLog) { Get-Content $installLog -Tail 80 }
             throw
