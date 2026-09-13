@@ -31,6 +31,7 @@ public:
     static bool InitializeAssets(); // Android-specific delayed asset loading
     static bool InitializeGraphicsResources();
     static void Update();
+    static bool WaitWhileInactive();
 
     // Rendering phases
     static void StartDraw();

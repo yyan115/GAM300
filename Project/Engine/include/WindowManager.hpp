@@ -36,6 +36,7 @@ public:
     
     static void SwapBuffers();
     static void PollEvents();
+    static void WaitEvents(double timeout);
 
     static void error_cb(int error, char const* description);
     static void fbsize_cb(PlatformWindow ptr_win, int width, int height);

@@ -111,6 +111,7 @@ public:
     void ENGINE_API SetMasterVolume(float volume);
     float GetMasterVolume() const;
     void ENGINE_API SetGlobalPaused(bool paused);
+    void ENGINE_API SetWindowSuspended(bool suspended);
 
     // Resource management helpers
     FMOD_SOUND* CreateSound(const std::string& assetPath);

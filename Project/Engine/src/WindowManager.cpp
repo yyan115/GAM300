@@ -252,7 +252,7 @@ bool WindowManager::IsWindowMinimized() {
 }
 
 bool WindowManager::IsWindowFocused() {
-    return RunTimeVar::window.isFocused;
+    return platform && platform->IsWindowFocused();
 }
 
 // ============================================================================
@@ -318,7 +318,8 @@ bool WindowManager::IsCursorPausedByUser() {
 void WindowManager::UpdateCursorState() {
     if (!platform) return;
 
-    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser;
+    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser
+        && IsWindowFocused() && !IsWindowMinimized();
 
 #ifdef EDITOR
     // In Editor, only actually lock cursor if game is playing
@@ -328,11 +329,9 @@ void WindowManager::UpdateCursorState() {
     }
 #endif
 
-    // Only change state if needed
-    if (shouldLock != s_cursorActuallyLocked) {
-        platform->SetCursorLocked(shouldLock);
-        s_cursorActuallyLocked = shouldLock;
-    }
+    // Visible menu cursors also need their confinement restored after focus changes.
+    platform->SetCursorLocked(shouldLock);
+    s_cursorActuallyLocked = shouldLock;
 }
 
 // ============================================================================
@@ -348,6 +347,10 @@ void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
     }
+}
+
+void WindowManager::WaitEvents(double timeout) {
+    if (platform) platform->WaitEvents(timeout);
 }
 
 IPlatform* WindowManager::GetPlatform() {

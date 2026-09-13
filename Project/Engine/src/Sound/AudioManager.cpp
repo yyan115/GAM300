@@ -615,6 +615,16 @@ float AudioManager::GetMasterVolume() const {
     return MasterVolume.load();
 }
 
+void AudioManager::SetWindowSuspended(bool suspended) {
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    if (!System) return;
+    FMOD_CHANNELGROUP* master = nullptr;
+    if (FMOD_System_GetMasterChannelGroup(System, &master) == FMOD_OK) {
+        // Pausing the parent preserves the game's individual bus/channel pause states.
+        FMOD_ChannelGroup_SetPaused(master, suspended);
+    }
+}
+
 void AudioManager::SetGlobalPaused(bool paused) {
     GlobalPaused.store(paused);
     

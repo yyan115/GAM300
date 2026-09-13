@@ -5,6 +5,7 @@
 class ENGINE_API TimeManager {
 public:
 	static void UpdateDeltaTime();
+	static void ResetFrameClock();
 	static double GetDeltaTime();
 	static double GetUnscaledDeltaTime();
 	static double GetFps();

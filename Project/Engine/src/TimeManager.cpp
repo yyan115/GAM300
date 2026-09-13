@@ -5,6 +5,18 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 
+void TimeManager::ResetFrameClock() {
+    RunTimeVar::lastFrameTime = WindowManager::GetPlatform()
+        ? WindowManager::GetPlatform()->GetTime() : 0.0;
+    RunTimeVar::deltaTime = 0.0;
+    RunTimeVar::unscaledDeltaTime = 0.0;
+    dtHistoryIndex = 0;
+    dtHistoryFilled = false;
+    accumulator = 0.0;
+    frameCount = 0;
+    fpsUpdateTimer = 0.0;
+}
+
 void TimeManager::UpdateDeltaTime() {
     double currentTime = WindowManager::GetPlatform() ? WindowManager::GetPlatform()->GetTime() : 0.0;
 

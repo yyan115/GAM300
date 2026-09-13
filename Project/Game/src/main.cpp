@@ -55,6 +55,7 @@ int main(int argc, char* argv[]) {
     GameManager::Initialize();
 
     while (Engine::IsRunning()) {
+        if (Engine::WaitWhileInactive()) continue;
 
         Engine::Update();
         GameManager::Update();

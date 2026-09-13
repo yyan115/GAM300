@@ -121,6 +121,10 @@ void DesktopPlatform::PollEvents() {
     glfwPollEvents();
 }
 
+void DesktopPlatform::WaitEvents(double timeout) {
+    glfwWaitEventsTimeout(timeout);
+}
+
 int DesktopPlatform::GetWindowWidth() {
     if (window) {
         int width;
@@ -228,7 +232,16 @@ void DesktopPlatform::GetMousePosition(double* x, double* y) {
 
 void DesktopPlatform::SetCursorLocked(bool locked) {
     if (window) {
-        glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        int mode = GLFW_CURSOR_NORMAL;
+        if (IsWindowFocused() && !IsWindowMinimized()) {
+#ifndef EDITOR
+            mode = GLFW_CURSOR_CAPTURED;
+#endif
+            if (locked) mode = GLFW_CURSOR_DISABLED;
+        }
+        if (glfwGetInputMode(window, GLFW_CURSOR) != mode) {
+            glfwSetInputMode(window, GLFW_CURSOR, mode);
+        }
     }
 }
 
