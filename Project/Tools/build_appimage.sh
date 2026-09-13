@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# Package an already-built Linux game as a single-file AppImage.
+#
+# This does not build the game. Point it at a finished LinuxRelease directory
+# and it produces Kusane-x86_64.AppImage, which runs on any reasonably recent
+# x86_64 desktop without installation.
+#
+# Usage:
+#   Project/Tools/build_appimage.sh [build-dir] [output-dir]
+#
+# Defaults to Project/Build/LinuxRelease and a build/ directory alongside it.
+#
+# The payload is staged the same way the Windows installer stages it, so the
+# two ship identical content: source art whose cooked output exists is left
+# out, and audio is losslessly recompressed. That needs `soundfile`; without
+# it the audio step is skipped and the result is about 125 MiB larger.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+BUILD="${1:-$ROOT/Project/Build/LinuxRelease}"
+OUT="${2:-$ROOT/Project/Build/appimage}"
+GAME="$BUILD/Kusane"
+
+[ -x "$GAME" ] || { echo "no game binary at $GAME" >&2; exit 1; }
+
+# Everything is built in a work directory that can be large: the staged payload
+# is over 3 GiB, so this must not land on a small tmpfs.
+WORK="$OUT/work"
+STAGE="$WORK/stage"
+APPDIR="$WORK/AppDir"
+rm -rf "$WORK"
+mkdir -p "$STAGE" "$OUT"
+
+# Stage flat first, with the binary beside Resources, because
+# compress_audio.py checks for that shape before it will run. The AppDir
+# layout is built from it afterwards.
+echo "staging resources"
+python3 "$ROOT/Project/Tools/stage_resources.py" \
+    --resources "$ROOT/Project/Resources" \
+    --destination "$STAGE/Resources"
+cp "$GAME" "$BUILD"/libEngine.so "$BUILD"/libfmod.so.* "$STAGE/"
+mkdir -p "$STAGE/ProjectSettings"
+cp "$ROOT/Project/ProjectSettings/TagsAndLayers.json" "$STAGE/ProjectSettings/"
+
+if python3 -c "import soundfile" 2>/dev/null; then
+    echo "compressing audio"
+    python3 "$ROOT/Project/Tools/compress_audio.py" --game-directory "$STAGE"
+else
+    echo "soundfile not installed, skipping audio compression (~125 MiB larger)" >&2
+fi
+
+mkdir -p "$APPDIR"/usr/{bin,lib,share/applications,share/kusane} \
+         "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+mv "$STAGE/Kusane" "$APPDIR/usr/bin/"
+mv "$STAGE"/libEngine.so "$STAGE"/libfmod.so.* "$APPDIR/usr/lib/"
+mv "$STAGE/Resources" "$STAGE/ProjectSettings" "$APPDIR/usr/share/kusane/"
+
+ICON="$APPDIR/usr/share/icons/hicolor/256x256/apps/kusane.png"
+ICO="$ROOT/Installer/INSTALLERFILES/SetupIcon.ico"
+# Pillow where it exists, ImageMagick otherwise. An AppImage without an icon
+# still runs but shows a blank tile in every launcher, so this is not optional.
+if python3 -c "import PIL" 2>/dev/null; then
+    python3 -c "import sys; from PIL import Image; Image.open(sys.argv[1]).convert('RGBA').resize((256,256), Image.LANCZOS).save(sys.argv[2])" "$ICO" "$ICON"
+elif command -v magick >/dev/null; then
+    magick "${ICO}[0]" -resize 256x256 "$ICON"
+elif command -v convert >/dev/null; then
+    convert "${ICO}[0]" -resize 256x256 "$ICON"
+else
+    echo "need Pillow or ImageMagick to convert the icon" >&2; exit 1
+fi
+
+cat > "$APPDIR/usr/share/applications/kusane.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=Kusane
+Comment=A DigiPen student game by Team Marbles
+Exec=Kusane
+Icon=kusane
+Categories=Game;
+Terminal=false
+DESKTOP
+
+cp "$APPDIR/usr/share/icons/hicolor/256x256/apps/kusane.png" "$APPDIR/kusane.png"
+cp "$APPDIR/usr/share/applications/kusane.desktop" "$APPDIR/kusane.desktop"
+
+# The game resolves Resources and ProjectSettings against its working
+# directory, so this moves there before exec. Settings and logs go to the
+# user's profile, which is what lets the payload sit on a read-only mount.
+cat > "$APPDIR/AppRun" <<'APPRUN'
+#!/bin/sh
+HERE="$(dirname "$(readlink -f "$0")")"
+export LD_LIBRARY_PATH="$HERE/usr/lib:$LD_LIBRARY_PATH"
+cd "$HERE/usr/share/kusane" || exit 1
+exec "$HERE/usr/bin/Kusane" "$@"
+APPRUN
+chmod +x "$APPDIR/AppRun"
+
+TOOL="$WORK/appimagetool"
+curl -sL -o "$TOOL" \
+  https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+chmod +x "$TOOL"
+
+echo "building the image"
+ARCH=x86_64 "$TOOL" --comp zstd "$APPDIR" "$OUT/Kusane-x86_64.AppImage"
+rm -rf "$WORK"
+ls -la "$OUT/Kusane-x86_64.AppImage"

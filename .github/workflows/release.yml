@@ -338,6 +338,103 @@ jobs:
         retention-days: 1
 
   # ── Android APK Build ──────────────────────────────────────────────
+  linux-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Linux build dependencies
+      # The X11 and GLU development packages GLFW needs, matching the list
+      # .linuxscripts/setup-vcpkg.sh checks for on a developer machine.
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          ninja-build pkg-config \
+          libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev libxi-dev \
+          libxext-dev libxrender-dev libxfixes-dev libxxf86vm-dev \
+          libgl1-mesa-dev libglu1-mesa-dev
+
+    - name: Cache vcpkg
+      id: cache-vcpkg
+      uses: actions/cache@v4
+      with:
+        path: vcpkg
+        key: vcpkg-linux-exe-${{ env.VCPKG_COMMIT }}
+
+    - name: Cache vcpkg packages
+      id: cache-vcpkg-packages
+      uses: actions/cache@v4
+      with:
+        path: Project/Build/vcpkg_installed
+        key: vcpkg-linux-pkgs-${{ env.VCPKG_COMMIT }}-${{ hashFiles('Project/vcpkg.json') }}
+
+    - name: Bootstrap vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        git checkout ${{ env.VCPKG_COMMIT }}
+        ./bootstrap-vcpkg.sh -disableMetrics
+
+    - name: Configure and build the game
+      run: |
+        cmake --preset linux-release
+        cmake --build --preset linux-release --parallel
+      working-directory: Project
+
+    - name: Build AssetCooker
+      # Same reason as the Windows job: the game loads .dds and .mesh, which
+      # are build output, gitignored, and absent from a clean checkout. Without
+      # this the package ships a game that cannot load a texture.
+      run: |
+        cmake --preset linux-editor-release
+        cmake --build --preset linux-editor-release --target AssetCooker --parallel
+      working-directory: Project
+
+    - name: Verify authored materials survive cooking
+      run: python3 Tools/test_material_cooking.py --cooker Build/LinuxEditorRelease/AssetCooker
+      working-directory: Project
+
+    - name: Cook assets
+      # Run from the build directory: the .meta files store their source paths
+      # relative to one, so the cooker resolves ../../Resources the same way
+      # the editor does.
+      run: |
+        set -euo pipefail
+        cd Build/LinuxEditorRelease
+        test -x ./AssetCooker || { echo "AssetCooker was not built here"; ls -la; exit 1; }
+        ./AssetCooker --resources ../../Resources
+      working-directory: Project
+
+    - name: Install packaging dependencies
+      # soundfile recompresses the shipped audio, Pillow converts the installer
+      # icon. Without either the build still succeeds, just larger or iconless,
+      # so they are installed rather than left to chance.
+      run: python3 -m pip install --break-system-packages soundfile==0.13.1 Pillow
+
+    - name: Build the AppImage
+      run: Project/Tools/build_appimage.sh
+
+    - name: Verify the AppImage
+      # A single file that is executable, has the AppImage magic bytes, and is
+      # large enough to contain the game. A truncated or empty output has
+      # shipped from a packaging step before.
+      run: |
+        set -euo pipefail
+        IMG=Project/Build/appimage/Kusane-x86_64.AppImage
+        test -x "$IMG" || { echo "not executable or missing"; exit 1; }
+        size=$(stat -c%s "$IMG")
+        echo "AppImage is $((size / 1048576)) MiB"
+        test "$size" -gt 209715200 || { echo "under 200 MiB, the payload is missing"; exit 1; }
+        python3 -c "import sys;d=open(sys.argv[1],'rb').read(16);assert d[:4]==b'\x7fELF', d[:4].hex();assert d[8:11]==bytes([0x41,0x49,0x02]), d[8:11].hex();print('ELF with AppImage type 2 magic')" "$IMG"
+
+    - name: Upload AppImage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-release
+        path: Project/Build/appimage/Kusane-x86_64.AppImage
+
   android-build:
     runs-on: ubuntu-latest
     steps:
@@ -374,7 +471,7 @@ jobs:
 
   # ── Create GitHub Release ──────────────────────────────────────────
   publish-release:
-    needs: [windows-build, android-build]
+    needs: [windows-build, linux-build, android-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -384,6 +481,12 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: windows-release
+        path: release-files/
+
+    - name: Download Linux artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-release
         path: release-files/
 
     - name: Download Android artifact
