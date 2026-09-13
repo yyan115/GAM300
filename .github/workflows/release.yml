@@ -557,12 +557,14 @@ jobs:
 
           ### Downloads
           - **Windows** — download and run `Kusane_Setup.exe`.
+          - **Linux** — download `Kusane-x86_64.AppImage`, then `chmod +x` it and run it.
           - **Android** — `Kusane.apk`
 
           ---
           *Built automatically from `${{ github.sha }}` on `${{ github.ref_name }}`*
         files: |
           release-files/Kusane_Setup.exe
+          release-files/Kusane-x86_64.AppImage
           release-files/Kusane.apk
         fail_on_unmatched_files: true
         draft: false
