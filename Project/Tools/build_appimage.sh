@@ -184,6 +184,24 @@ for ext in dds mesh font; do
 done
 [ "$fail" -eq 0 ] || { echo "payload is incomplete, refusing to package" >&2; exit 1; }
 
+# The oldest machine this image can start on, stated rather than assumed.
+#
+# Everything the build links against leaves versioned symbol references behind,
+# and the loader refuses to start a binary asking for a version the host's
+# libc or libstdc++ does not define. That floor comes from whatever built it,
+# so an image built on a rolling distribution can be unusable everywhere else
+# while working perfectly on the machine that made it. Printing it here means a
+# runner upgrade that raises the floor shows up in the build log instead of in
+# somebody's bug report.
+echo "compatibility floor"
+for lib in GLIBC GLIBCXX; do
+    ver=$(for binary in "$APPDIR/usr/bin/Kusane" "$APPDIR/usr/lib"/*.so*; do
+              [ -f "$binary" ] || continue
+              objdump -T "$binary" 2>/dev/null | sed -n "s/.*${lib}_\([0-9.]*\).*/\1/p"
+          done | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+    echo "  needs ${lib}_${ver:-none} or newer"
+done
+
 TOOL="$WORK/appimagetool"
 curl -sL -o "$TOOL" \
   https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
