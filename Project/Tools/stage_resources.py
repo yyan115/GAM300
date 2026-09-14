@@ -30,7 +30,7 @@ def compiled_path(resources, value):
 
 def plan_resources(resources):
     """Validate cooked replacements before copying anything to the package."""
-    included, omitted = [], []
+    included, omitted, needed_cooked = [], [], set()
     for source in sorted(resources.rglob('*')):
         if not source.is_file():
             continue
@@ -56,10 +56,24 @@ def plan_resources(resources):
                     raise ValueError(f'cooked resource missing or empty: {cooked}')
             except (OSError, ValueError, KeyError, TypeError) as error:
                 raise ValueError(f'{relative}: {error}') from error
+            needed_cooked.add(cooked)
             omitted.append(source)
         else:
             included.append(source)
-    return included, omitted
+
+    # A cooked resource is only worth shipping when its source was left out.
+    # Model FBX are omitted, so their .mesh is the only copy of that geometry.
+    # Animation FBX ship whole because Assimp reads the clip out of them at
+    # runtime, and the .mesh the cooker wrote beside each one is never opened:
+    # animation clips resolve through the meta's source path, never its
+    # compiled path. That is 64 files and 407 MiB of the package.
+    kept = []
+    for source in included:
+        if source.suffix.lower() == '.mesh' and source.resolve() not in needed_cooked:
+            omitted.append(source)
+            continue
+        kept.append(source)
+    return kept, omitted
 
 
 def stage_resources(resources, destination):
@@ -78,7 +92,7 @@ def stage_resources(resources, destination):
     size = sum(path.stat().st_size for path in included)
     saved = sum(path.stat().st_size for path in omitted)
     print(f'Staged {len(included)} files ({size / 1048576:.1f} MiB); '
-          f'left out {len(omitted)} source/development files ({saved / 1048576:.1f} MiB).')
+          f'left out {len(omitted)} source and unused files ({saved / 1048576:.1f} MiB).')
 
 
 if __name__ == '__main__':

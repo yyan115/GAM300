@@ -44,6 +44,28 @@ class ResourceStagingTests(unittest.TestCase):
             self.assertEqual((self.destination / name).read_bytes(),
                              (self.resources / name).read_bytes())
 
+    def test_drops_cooked_meshes_whose_source_ships(self):
+        """A model FBX is replaced by its mesh. An animation FBX is not."""
+        self.texture()
+        self.put('Textures/test.dds', b'cooked texture')
+        self.put('Models/prop.fbx', b'model source')
+        self.put('Models/prop.fbx.meta', json.dumps({'AssetMetaData': {
+            'guid': '0000000000000003-0000000000000004',
+            'compiled': '..\\..\\Resources\\Models\\prop.mesh'
+        }}).encode())
+        self.put('Models/prop.mesh', b'cooked model')
+        self.put('Animations/run.fbx', b'runtime animation')
+        self.put('Animations/run.fbx.meta', json.dumps({'AssetMetaData': {
+            'guid': '0000000000000005-0000000000000006',
+            'compiled': '..\\..\\Resources\\Animations\\run.mesh'
+        }}).encode())
+        self.put('Animations/run.mesh', b'cooked animation geometry')
+        stage_resources(self.resources, self.destination)
+        self.assertFalse((self.destination / 'Models/prop.fbx').exists())
+        self.assertTrue((self.destination / 'Models/prop.mesh').exists())
+        self.assertTrue((self.destination / 'Animations/run.fbx').exists())
+        self.assertFalse((self.destination / 'Animations/run.mesh').exists())
+
     def test_missing_cooked_file_fails_before_copying(self):
         self.put('Configs/input_config.json')
         self.texture()
