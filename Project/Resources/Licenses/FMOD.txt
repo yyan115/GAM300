@@ -1,0 +1,20 @@
+FMOD Engine 2.03.09 (build 155273)
+
+Copyright (c), Firelight Technologies Pty, Ltd. 2004-2025.
+
+FMOD is proprietary software and is not open source. It is used here under
+the licence Firelight Technologies grants for its use, and the full terms are
+published by Firelight Technologies at:
+
+    https://www.fmod.com/legal
+
+That licence requires the product to carry a credit naming FMOD and Firelight
+Technologies. Kusane does so in two places:
+
+  - the startup sequence shows the FMOD logo on its own
+  - the credits screen, reachable from the main menu, reads
+    "Audio Engine: FMOD Studio By Firelight Technologies Pty Ltd"
+
+No FMOD source code is distributed with this game. What ships is the FMOD
+Core and FMOD Studio runtime libraries as supplied by Firelight Technologies,
+unmodified.
