@@ -282,6 +282,13 @@ return Component {
             if pauseComp then pauseComp.isActive = false end
         end
 
+        -- The same prompt is reused for Alt+F4, so put the wording back.
+        local textEntity = Engine.GetEntityByName("ConfirmationText")
+        if textEntity and textEntity ~= -1 then
+            local text = GetComponent(textEntity, "TextRenderComponent")
+            if text then text.text = "Return To Main Menu?" end
+        end
+
         local confirmUIEntity = Engine.GetEntityByName("ConfirmationPromptUI")
         if confirmUIEntity then
             local confirmComp = GetComponent(confirmUIEntity, "ActiveComponent")

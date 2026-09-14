@@ -381,13 +381,26 @@ void DesktopPlatform::KeyCallback(GLFWwindow* window, int key, int scancode, int
 }
 
 void DesktopPlatform::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    (void)mods,window;
+    (void)mods;
     Input::MouseButton engineButton = GLFWButtonToEngineButton(button);
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
     (void)engineAction;
 
-    if (engineButton != Input::MouseButton::UNKNOWN) {
+    // Remember a left click and where it landed. Every press arrives here
+    // during glfwPollEvents, so this catches one that begins and ends between
+    // two frames, which polling the button state cannot.
+    if (engineButton == Input::MouseButton::LEFT && action == GLFW_PRESS && s_instance) {
+        s_instance->m_clickLatched = true;
+        if (window) glfwGetCursorPos(window, &s_instance->m_clickX, &s_instance->m_clickY);
     }
+}
+
+bool DesktopPlatform::ConsumeClick(double& x, double& y) {
+    if (!m_clickLatched) return false;
+    m_clickLatched = false;
+    x = m_clickX;
+    y = m_clickY;
+    return true;
 }
 
 void DesktopPlatform::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {

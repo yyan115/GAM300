@@ -143,6 +143,13 @@ return Component {
             event_bus.publish("pause_menu.click", {})
         end
 
+        -- The same prompt answers for Alt+F4, where Yes leaves the game rather
+        -- than the level.
+        if Screen.IsClosePromptOpen() then
+            Screen.RequestClose()
+            return
+        end
+
         --print("[ConfirmationMenuHandler] Returning to main menu")
         Time.SetPaused(false)  -- Reset pause state before loading scene
         Time.SetTimeScale(1.0)  -- Reset time scale to normal
@@ -155,6 +162,15 @@ return Component {
         -- Publish click event for PauseMenuAudio
         if event_bus and event_bus.publish then
             event_bus.publish("pause_menu.click", {})
+        end
+
+        -- When the prompt is answering for Alt+F4, PauseListener owns putting
+        -- the game back the way it was, which is not always the pause menu.
+        if Screen.IsClosePromptOpen() then
+            if event_bus and event_bus.publish then
+                event_bus.publish("close_request_cancelled", {})
+            end
+            return
         end
 
         -- Close Confirmation UI, open Pause UI

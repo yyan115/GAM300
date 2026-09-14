@@ -112,6 +112,10 @@ return Component {
                 event_bus.publish("main_menu.click", {})
             end
 
+            -- If the prompt was opened by Alt+F4, tell the engine the player
+            -- said no, so the next Alt+F4 starts the question over.
+            Screen.CancelClose()
+
             -- Reset hover visuals so the next open starts clean (Update stops
             -- while QuitPromptUI is inactive, so stale state would linger).
             self._isHovered = false

@@ -33,6 +33,20 @@ public:
     static void SetWindowShouldClose();
 
     static bool ShouldClose();
+
+    // Closing the window from outside the game (Alt+F4, the title bar X, the
+    // taskbar) normally ends the loop on the spot. PollCloseRequest holds the
+    // first of those back so a scene can put its quit confirmation up, and lets
+    // the next one through so a second Alt+F4 always gets out.
+    //
+    // A scene opts in by calling KeepCloseHandler every frame. Without that
+    // heartbeat the request is passed straight through, so a scene with no
+    // confirmation to show behaves as it always has.
+    static void PollCloseRequest();
+    static void KeepCloseHandler();
+    static bool ConsumeCloseRequest();
+    static bool IsClosePromptOpen();
+    static void CancelClose();
     
     static void SwapBuffers();
     static void PollEvents();

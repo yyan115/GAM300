@@ -1,5 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+local QuitPrompt = require("UI.QuitPromptOverlay")
 
 return Component {
     fields = {
@@ -20,6 +21,7 @@ return Component {
     Start = function(self)
         self._progress = 0
         self._started  = false
+        QuitPrompt.Forget()
 
         -- Cache bar
         self._barEntity    = Engine.GetEntityByName(self.barFillName)
@@ -71,6 +73,12 @@ return Component {
     end,
 
     Update = function(self, dt)
+        -- Alt+F4 here used to close the game outright, because the loading
+        -- screen has no UI of its own to ask with. The load carries on behind
+        -- the prompt, which is what should happen: answering No leaves the
+        -- player where they would have been.
+        QuitPrompt.Update(dt)
+
         -- Kick off async load on the first Update frame
         if not self._started then
             --print("[Loading] Starting LoadAsync")

@@ -119,11 +119,95 @@ PlatformWindow WindowManager::getWindow() {
     return ptrWindow;
 }
 
+namespace {
+    // Close requests that came from the game itself are never intercepted.
+    bool s_closeApproved = false;
+    // Raised when an outside close request has been held back.
+    bool s_closeRequestPending = false;
+    // True from the moment a scene takes the request until it cancels or quits.
+    bool s_closePromptOpen = false;
+    // Frame counter, and the frame a scene last said it could show a prompt.
+    unsigned long long s_closeFrame = 0;
+    unsigned long long s_closeHandlerFrame = 0;
+    // Frames the held request has gone unclaimed.
+    int s_closeRequestAge = 0;
+
+    // A heartbeat this stale means the scene that was listening has gone.
+    constexpr unsigned long long kCloseHandlerLifetime = 5;
+    // Give up on a prompt that never opens rather than swallow Alt+F4 forever.
+    constexpr int kCloseRequestLifetime = 30;
+}
+
 void WindowManager::SetWindowShouldClose()
 {
+    s_closeApproved = true;
+    s_closeRequestPending = false;
+    s_closePromptOpen = false;
     if (platform) {
         platform->SetShouldClose(true);
     }
+}
+
+void WindowManager::PollCloseRequest()
+{
+#if !defined(EDITOR) && !defined(ANDROID)
+    if (!platform || s_closeApproved) return;
+
+    ++s_closeFrame;
+
+    const bool handlerAlive =
+        s_closeHandlerFrame != 0 &&
+        s_closeFrame - s_closeHandlerFrame <= kCloseHandlerLifetime;
+
+    if (platform->ShouldClose()) {
+        // Take the request off the platform so the loop keeps running, then
+        // decide what to do with it.
+        platform->SetShouldClose(false);
+
+        if (s_closePromptOpen || s_closeRequestPending) {
+            // The player has already been asked once.
+            SetWindowShouldClose();
+            return;
+        }
+        if (!handlerAlive || !IsWindowFocused()) {
+            // Nothing here can ask, or the window is not even in front.
+            SetWindowShouldClose();
+            return;
+        }
+        s_closeRequestPending = true;
+        s_closeRequestAge = 0;
+        return;
+    }
+
+    if (s_closeRequestPending && ++s_closeRequestAge > kCloseRequestLifetime) {
+        s_closeRequestPending = false;
+        SetWindowShouldClose();
+    }
+#endif
+}
+
+void WindowManager::KeepCloseHandler()
+{
+    s_closeHandlerFrame = s_closeFrame;
+}
+
+bool WindowManager::ConsumeCloseRequest()
+{
+    if (!s_closeRequestPending) return false;
+    s_closeRequestPending = false;
+    s_closePromptOpen = true;
+    return true;
+}
+
+bool WindowManager::IsClosePromptOpen()
+{
+    return s_closePromptOpen;
+}
+
+void WindowManager::CancelClose()
+{
+    s_closeRequestPending = false;
+    s_closePromptOpen = false;
 }
 
 bool WindowManager::ShouldClose() {
@@ -347,6 +431,7 @@ void WindowManager::SwapBuffers() {
 void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
+        PollCloseRequest();
     }
 }
 

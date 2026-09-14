@@ -16,6 +16,13 @@ public:
     virtual void ShowWindow() {}
     virtual bool ShouldClose() = 0;
     virtual void SetShouldClose(bool shouldClose) = 0;
+
+    // A click that is remembered from the moment the window system delivered
+    // it until something asks for it. Polling the button state once a frame
+    // misses a click entirely when the frame rate drops, and the loading
+    // screen runs at about six frames a second while it loads. Returns true
+    // once per click and writes where the pointer was when it happened.
+    virtual bool ConsumeClick(double& x, double& y) { (void)x; (void)y; return false; }
     virtual void SwapBuffers() = 0;
     virtual void PollEvents() = 0;
     virtual void WaitEvents(double timeout) { (void)timeout; PollEvents(); }

@@ -33,6 +33,7 @@ struct TouchInfo {
 // ============================================================================
 #include "Input/Keys.h"
 #include "Input/InputManager.h"
+#include "Platform/IPlatform.h"
 #include <unordered_map>
 #include <string>
 
@@ -90,6 +91,10 @@ namespace InputWrappers {
         return result;
     }
 
+    // Where the last consumed click landed, in window pixels.
+    inline float s_lastClickX = 0.0f;
+    inline float s_lastClickY = 0.0f;
+
     // Pointer abstraction (for UI)
     inline bool IsPointerPressed() {
         if (!g_inputManager) return false;
@@ -99,6 +104,25 @@ namespace InputWrappers {
     inline bool IsPointerJustPressed() {
         if (!g_inputManager) return false;
         return g_inputManager->IsPointerJustPressed();
+    }
+
+    // A click the window system delivered since this was last asked, and where
+    // the pointer was when it happened. IsPointerJustPressed compares the
+    // button state between two frames and so misses a click that begins and
+    // ends inside one of them, which is what the loading screen does at about
+    // six frames a second.
+    inline bool ConsumeClick() {
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return false;
+        double x = 0.0, y = 0.0;
+        if (!platform->ConsumeClick(x, y)) return false;
+        s_lastClickX = static_cast<float>(x);
+        s_lastClickY = static_cast<float>(y);
+        return true;
+    }
+
+    inline Vector2D GetClickPosition() {
+        return Vector2D(s_lastClickX, s_lastClickY);
     }
 
     inline Vector2D GetPointerPosition() {
@@ -789,6 +813,22 @@ namespace WindowWrappers {
 
     inline void RequestClose() {
         WindowManager::SetWindowShouldClose();
+    }
+
+    inline void KeepCloseHandler() {
+        WindowManager::KeepCloseHandler();
+    }
+
+    inline bool ConsumeCloseRequest() {
+        return WindowManager::ConsumeCloseRequest();
+    }
+
+    inline bool IsClosePromptOpen() {
+        return WindowManager::IsClosePromptOpen();
+    }
+
+    inline void CancelClose() {
+        WindowManager::CancelClose();
     }
 
     inline void SetCursorLocked(bool locked) {

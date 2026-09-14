@@ -10,6 +10,7 @@
 
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+local QuitPrompt = require("UI.QuitPromptOverlay")
 
 -- ── Easing helpers ─────────────────────────────────────────────────────────────
 local function clamp01(t) return math.max(0.0, math.min(1.0, t)) end
@@ -119,10 +120,16 @@ return Component {
 
         self._timer = 0.0
         self._done  = false
+        QuitPrompt.Forget()
     end,
 
     -- ──────────────────────────────────────────────────────────────────────────
     Update = function(self, dt)
+        -- Alt+F4 here used to close the game outright, because this scene has
+        -- no UI of its own to ask with.
+        QuitPrompt.Update(dt)
+        if QuitPrompt.IsShown() then return end
+
         if self._done then return end
         if Input.IsActionPressed("SkipIntro") or Input.IsPointerJustPressed() then
             self._done = true

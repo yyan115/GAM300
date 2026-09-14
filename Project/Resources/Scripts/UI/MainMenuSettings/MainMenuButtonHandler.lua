@@ -238,7 +238,40 @@ return Component {
         if _G.event_bus then _G.event_bus.publish("main_menu.click", {}) end
     end,
 
+    -- Alt+F4 and the title bar X are held by the engine for a few frames so the
+    -- quit prompt can answer for them instead of the window vanishing.
+    _showQuitPromptForClose = function(self)
+        if self._isFading then
+            -- Already fading out of the menu, so there is nothing to confirm.
+            Screen.RequestClose()
+            return
+        end
+
+        -- Leave any open sub page first, so answering No lands back on the menu.
+        if GameSettings then GameSettings.SaveIfDirty() end
+        for _, name in ipairs({"SettingsUI", "CreditsUI", "ControlsUI"}) do
+            local e = Engine.GetEntityByName(name)
+            if e and e ~= -1 then
+                local active = GetComponent(e, "ActiveComponent")
+                if active then active.isActive = false end
+            end
+        end
+        setTextsActive(true)
+
+        local prompt = Engine.GetEntityByName("QuitPromptUI")
+        if prompt and prompt ~= -1 then
+            local active = GetComponent(prompt, "ActiveComponent")
+            if active then active.isActive = true end
+        end
+        setButtonsInteractable(false)
+    end,
+
     Update = function(self, dt)
+        Screen.KeepCloseHandler()
+        if Screen.ConsumeCloseRequest() then
+            self:_showQuitPromptForClose()
+        end
+
         local controls = GetComponent(Engine.GetEntityByName("ControlsUI"), "ActiveComponent")
         if controls and controls.isActive and Input.IsActionPressed("Pause") then
             self:OnClickControlsBackButton()

@@ -96,11 +96,84 @@ return Component {
         self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
             self._playerDead = false
         end)
+
+        -- The No button on the Alt+F4 confirmation hands control back here,
+        -- because only this script knows what the game was doing beforehand.
+        self._quitWasPaused = false
+        self._quitFromPauseMenu = false
+        self._closeCancelSub = event_bus.subscribe("close_request_cancelled", function()
+            self:_cancelQuitConfirm()
+        end)
+    end,
+
+    -- Alt+F4 and the title bar X are held by the engine for a few frames so the
+    -- confirmation can answer for them instead of the window vanishing.
+    _openQuitConfirm = function(self)
+        -- Remember where to go back to if the player says no.
+        self._quitWasPaused = Time.IsPaused()
+        self._quitFromPauseMenu = self._pauseComp.isActive
+
+        if self._settingsComp and self._settingsComp.isActive then
+            if GameSettings then GameSettings.SaveIfDirty() end
+            self._settingsComp.isActive = false
+        end
+        if self._controlsComp then self._controlsComp.isActive = false end
+        self._pauseComp.isActive = false
+        for _, buttonComp in pairs(self._pauseButtons) do
+            if buttonComp then buttonComp.interactable = false end
+        end
+
+        if not self._quitWasPaused then
+            Time.SetPaused(true)
+            Audio.SetBusPaused("BGM", true)
+            Audio.SetBusPaused("SFX", true)
+            if event_bus and event_bus.publish then
+                event_bus.publish("game_paused", true)
+            end
+        end
+
+        local textEntity = Engine.GetEntityByName("ConfirmationText")
+        if textEntity and textEntity ~= -1 then
+            local text = GetComponent(textEntity, "TextRenderComponent")
+            if text then text.text = "Quit The Game?" end
+        end
+
+        self._confirmComp.isActive = true
+    end,
+
+    -- The player backed out of the Alt+F4 confirmation, so put the game back
+    -- the way it was before the window asked to close.
+    _cancelQuitConfirm = function(self)
+        Screen.CancelClose()
+        self._confirmComp.isActive = false
+
+        if self._quitFromPauseMenu or self._quitWasPaused then
+            self._pauseComp.isActive = true
+            for _, buttonComp in pairs(self._pauseButtons) do
+                if buttonComp then buttonComp.interactable = true end
+            end
+        else
+            Time.SetPaused(false)
+            Audio.SetBusPaused("BGM", false)
+            Audio.SetBusPaused("SFX", false)
+            if Screen then Screen.SetCursorLocked(true) end
+            if event_bus and event_bus.publish then
+                event_bus.publish("game_paused", false)
+            end
+        end
+
+        self._quitFromPauseMenu = false
+        self._quitWasPaused = false
     end,
 
     Update = function(self, dt)
         if not self._pauseComp or not self._settingsComp or not self._confirmComp then
             return
+        end
+
+        Screen.KeepCloseHandler()
+        if Screen.ConsumeCloseRequest() then
+            self:_openQuitConfirm()
         end
 
         -- Use unscaled delta time for the cooldown timer so it works even when paused
@@ -133,11 +206,15 @@ return Component {
             else
 
             if self._confirmComp.isActive then
-                self._confirmComp.isActive = false
-                self._pauseComp.isActive = true  -- Go back to Pause menu
-                -- Enable pause buttons immediately
-                for _, buttonComp in pairs(self._pauseButtons) do
-                    if buttonComp then buttonComp.interactable = true end
+                if Screen.IsClosePromptOpen() then
+                    self:_cancelQuitConfirm()
+                else
+                    self._confirmComp.isActive = false
+                    self._pauseComp.isActive = true  -- Go back to Pause menu
+                    -- Enable pause buttons immediately
+                    for _, buttonComp in pairs(self._pauseButtons) do
+                        if buttonComp then buttonComp.interactable = true end
+                    end
                 end
 
             elseif self._pauseComp.isActive then

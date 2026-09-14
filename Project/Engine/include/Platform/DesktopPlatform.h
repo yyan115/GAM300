@@ -29,6 +29,10 @@ private:
     int windowedWidth, windowedHeight;
     int windowedPosX, windowedPosY;
     float m_scrollY = 0.0f;  // Accumulated scroll this frame; reset after read
+    // Set by MouseButtonCallback, cleared by ConsumeClick. See IPlatform.
+    bool m_clickLatched = false;
+    double m_clickX = 0.0;
+    double m_clickY = 0.0;
     
     // Static callbacks for GLFW
     static void ErrorCallback(int error, const char* description);
@@ -58,6 +62,7 @@ public:
     void ShowWindow() override;
     bool ShouldClose() override;
     void SetShouldClose(bool shouldClose) override;
+    bool ConsumeClick(double& x, double& y) override;
     void SwapBuffers() override;
     void PollEvents() override;
     void WaitEvents(double timeout) override;
