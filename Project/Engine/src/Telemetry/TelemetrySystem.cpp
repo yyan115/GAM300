@@ -206,6 +206,58 @@ namespace {
         return present;
     }
 
+    // Reads instance[outer][inner] as a three number array, for
+    // controller.lockedEndPoint, which is where a shot came to rest.
+    bool FieldNestedVec3(lua_State* L, int instanceRef, const char* outer, const char* inner, double out[3]) {
+        if (!PushInstance(L, instanceRef)) return false;
+        lua_getfield(L, -1, outer);
+        if (!lua_istable(L, -1)) {
+            lua_pop(L, 2);
+            return false;
+        }
+        lua_getfield(L, -1, inner);
+        if (!lua_istable(L, -1)) {
+            lua_pop(L, 3);
+            return false;
+        }
+        bool ok = true;
+        for (int i = 0; i < 3; ++i) {
+            lua_rawgeti(L, -1, i + 1);
+            if (lua_isnumber(L, -1)) {
+                out[i] = static_cast<double>(lua_tonumber(L, -1));
+            } else {
+                ok = false;
+            }
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 3);
+        return ok;
+    }
+
+    // Reads instance[key] as an {x,y,z} table, for ChainBootstrap's
+    // _cameraAimWorldPoint, which is the point the chain is actually aimed at.
+    bool FieldXYZ(lua_State* L, int instanceRef, const char* key, double out[3]) {
+        if (!PushInstance(L, instanceRef)) return false;
+        lua_getfield(L, -1, key);
+        if (!lua_istable(L, -1)) {
+            lua_pop(L, 2);
+            return false;
+        }
+        const char* names[3] = {"x", "y", "z"};
+        bool ok = true;
+        for (int i = 0; i < 3; ++i) {
+            lua_getfield(L, -1, names[i]);
+            if (lua_isnumber(L, -1)) {
+                out[i] = static_cast<double>(lua_tonumber(L, -1));
+            } else {
+                ok = false;
+            }
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 2);
+        return ok;
+    }
+
     // Guards the crosshair cast: a zero or non-finite forward is meaningless
     // and Jolt will not thank us for it.
     bool phys_ok(double x, double y, double z) {
@@ -893,6 +945,52 @@ namespace Telemetry {
                 std::string hookedTag;
                 if (FieldNestedString(L, chainRef, "controller", "hookedTag", hookedTag)) {
                     line += ",\"hooked_tag\":"; AppendEscaped(line, hookedTag);
+                }
+
+                // Where the shot came to rest. Without this there is no way to
+                // ask from outside whether a throw went where the crosshair was
+                // pointing when the button came up, which is the whole of the
+                // aim-drift report.
+                double endPoint[3] = {0.0, 0.0, 0.0};
+                if (FieldNestedVec3(L, chainRef, "controller", "lockedEndPoint", endPoint)) {
+                    line += ",\"end\":[";
+                    AppendNumber(line, endPoint[0], 3); line += ",";
+                    AppendNumber(line, endPoint[1], 3); line += ",";
+                    AppendNumber(line, endPoint[2], 3); line += "]";
+                }
+
+                // Where the chain leaves the player, which is the hand bone and
+                // not the camera. Asking whether a throw went where the player
+                // was looking is a question about the angle at this point, and
+                // measuring it at the camera instead reads the metre between
+                // the two as aim error.
+                double startPoint[3] = {0.0, 0.0, 0.0};
+                if (FieldNestedVec3(L, chainRef, "controller", "startPos", startPoint)) {
+                    line += ",\"start\":[";
+                    AppendNumber(line, startPoint[0], 3); line += ",";
+                    AppendNumber(line, startPoint[1], 3); line += ",";
+                    AppendNumber(line, startPoint[2], 3); line += "]";
+                }
+
+                // The point the chain is aimed at, as the game has it rather
+                // than as an outside raycast reconstructs it. The crosshair
+                // field above casts from camera_pos, and during a chain aim the
+                // camera sits at an over the shoulder offset that field does
+                // not know about, so the two are not the same point and only
+                // this one decides where a throw goes.
+                double aimPoint[3] = {0.0, 0.0, 0.0};
+                if (FieldXYZ(L, chainRef, "_cameraAimWorldPoint", aimPoint)) {
+                    line += ",\"aim\":[";
+                    AppendNumber(line, aimPoint[0], 3); line += ",";
+                    AppendNumber(line, aimPoint[1], 3); line += ",";
+                    AppendNumber(line, aimPoint[2], 3); line += "]";
+                }
+                double heldAim[3] = {0.0, 0.0, 0.0};
+                if (FieldXYZ(L, chainRef, "_releaseAimWorldPoint", heldAim)) {
+                    line += ",\"aim_held\":[";
+                    AppendNumber(line, heldAim[0], 3); line += ",";
+                    AppendNumber(line, heldAim[1], 3); line += ",";
+                    AppendNumber(line, heldAim[2], 3); line += "]";
                 }
                 line += "}";
             }
