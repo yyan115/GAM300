@@ -76,7 +76,7 @@ return Component {
         -- Cache pause menu button components for direct control
         -- This ensures buttons are enabled in the same callback that opens the menu
         self._pauseButtons = {}
-        local pauseButtonNames = {"ContinueButton", "SettingsButton", "MainMenuButton"}
+        local pauseButtonNames = {"ContinueButton", "ControlsButton", "SettingsButton", "MainMenuButton"}
         for _, name in ipairs(pauseButtonNames) do
             local buttonEntity = Engine.GetEntityByName(name)
             if buttonEntity then
@@ -117,7 +117,20 @@ return Component {
             local onSubPage = self._settingsComp.isActive or
                               (self._controlsComp and self._controlsComp.isActive)
 
-            if not onSubPage then
+            if onSubPage then
+                if self._settingsComp.isActive then
+                    if GameSettings then GameSettings.SaveIfDirty() end
+                    self._settingsComp.isActive = false
+                end
+                if self._controlsComp then self._controlsComp.isActive = false end
+                self._pauseComp.isActive = true
+                for _, buttonComp in pairs(self._pauseButtons) do
+                    if buttonComp then buttonComp.interactable = true end
+                end
+                if event_bus and event_bus.publish then
+                    event_bus.publish("pause_menu.click", {})
+                end
+            else
 
             if self._confirmComp.isActive then
                 self._confirmComp.isActive = false

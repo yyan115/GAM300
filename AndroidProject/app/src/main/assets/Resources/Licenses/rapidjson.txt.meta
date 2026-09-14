@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ee5ef0f3a-00066faafc000033",
+        "source": "../../Resources/Licenses/rapidjson.txt",
+        "compiled": "../../Resources/Licenses/rapidjson.txt",
+        "android_compiled": "Resources/Licenses/rapidjson.txt"
+    }
+}

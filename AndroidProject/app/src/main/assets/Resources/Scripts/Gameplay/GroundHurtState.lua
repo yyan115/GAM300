@@ -15,9 +15,9 @@ function HurtState:Enter(ai)
     --     ai.particles.emissionRate = 180
     -- end
 
-    for i = 1, ai.NumFeathersSpawnedPerHit do
-        ai:SpawnFeather(i)
-    end
+    -- Hit feathers are spawned by EnemyAI:ApplyHit, which sees every landed hit.
+    -- Spawning them here missed every hit that does not enter this state
+    -- (juggle hits, feather-skill hits, and hits while hooked).
     --print("[GroundHurtState] SPAWNED FEATHERS")
 end
 

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ed1b1a012-00066faafc00001f",
+        "source": "../../Resources/Licenses/glm.txt",
+        "compiled": "../../Resources/Licenses/glm.txt",
+        "android_compiled": "Resources/Licenses/glm.txt"
+    }
+}

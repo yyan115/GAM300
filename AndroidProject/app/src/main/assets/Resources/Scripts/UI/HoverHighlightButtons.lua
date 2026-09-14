@@ -1,8 +1,8 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings"}
-local UI_MENUS       = {"SettingsUI", "CreditsUI", "QuitPromptUI"}
+local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
+local UI_MENUS       = {"SettingsUI", "CreditsUI", "QuitPromptUI", "ControlsUI"}
 
 local NORMAL_TEXT_COLOR  = {0.8, 0.8, 0.8}
 local HOVERED_TEXT_COLOR = {0.0, 0.0, 0.0}

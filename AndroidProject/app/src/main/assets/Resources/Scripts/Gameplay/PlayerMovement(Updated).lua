@@ -68,6 +68,7 @@ VERSION: 3.0
 --]]
 
 require("extension.engine_bootstrap")
+local debugControls = os and os.getenv and os.getenv("GAM300_DEBUG") == "1"
 _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component      = require("extension.mono_helper")
@@ -218,6 +219,22 @@ return Component {
 
         -- === Feel / timing ===
         DamageStunDuration  = 0.5,    -- Seconds of stun after being hit.
+        -- Minimum seconds between one stun starting and the next being allowed.
+        --
+        -- Damage stun returns from Update before movement and before the jump,
+        -- so while it is set the player has no control at all. Measured while
+        -- standing in melee range at the first fight, with godmode on so no
+        -- damage was actually taken: one enemy held the player stunned 35% of
+        -- the time, two enemies 72%, three 75%. Nothing coordinates which
+        -- enemy attacks, so a second attacker does not add damage so much as
+        -- it takes away the frames between stuns.
+        --
+        -- This does not shorten a stun or stop the damage; it stops a stun
+        -- being re-applied while the player has barely had the controls back.
+        -- At 1.2 against a 0.5 duration the worst case is locked for 0.5 of
+        -- every 1.2 seconds, and a single enemy, which lands a hit about every
+        -- 1.4 seconds, is unaffected.
+        DamageStunCooldown  = 1.2,
         CinematicSettleTime = 0.8,    -- Seconds to settle before cinematic hard-freeze locks movement.
         footstepInterval    = 0.30,   -- Seconds between footstep SFX triggers while running.
         -- TO ADD new feel tuning: add field here.
@@ -312,6 +329,16 @@ return Component {
 
         sub(self, "_playerHurtTriggeredSub", "playerHurtTriggered", function(hit)
             if hit then
+                -- Refuse to re-apply the control lock too soon after the last
+                -- one. See DamageStunCooldown for the measurements.
+                local now = self._stunClock or 0
+                local gap = self.DamageStunCooldown or 0
+                if gap > 0 and self._lastStunAt and (now - self._lastStunAt) < gap then
+                    -- Still play the reaction, just do not take control away.
+                    self:_squashTrigger("horizontal", 0.5)
+                    return
+                end
+                self._lastStunAt = now
                 self._isDamageStun = true
                 if self._animator then self._animator:SetBool("IsJumping", false) end
                 -- Hit reaction: horizontal squash (pushed-sideways feel)
@@ -609,6 +636,8 @@ return Component {
         self._rollDirX          = 0
         self._rollDirZ          = 0
         self._isDamageStun      = false
+        self._stunClock         = 0
+        self._lastStunAt        = nil
         self._playerDead        = false
         self._playerDeadPending = false
 
@@ -675,6 +704,10 @@ return Component {
         self._vaultAscentLock      = false   -- suppresses landing detection while player is still rising
         self._vaultReadyTimer      = 0       -- holds _vaultDetected alive briefly for forgiving timing
         self._prevAirY             = 0       -- previous frame Y; used to detect peak and start of descent
+        self._groundedFrames       = 0       -- consecutive grounded frames while jump+lock active; clears stuck lock
+        self._airborneFrames       = 0       -- consecutive airborne frames; debounces walk-off-ledge detection
+        self._jumpCycleComplete    = false   -- true after landing from a jump; blocks walk-off-ledge re-trigger
+        self._ascentLockTimer      = 0       -- counts up while ascent lock is active; safety timeout
 
         -- ── Spawn position ────────────────────────────────────────────────────
         local pos = self._transform.worldPosition
@@ -785,7 +818,7 @@ return Component {
         -- self._digitWasHeld = oneHeld
         -- ── [END KEYBOARD INPUT NUMBER TEST] ──────────────────────────────────
 
-        if Keyboard.IsDigitPressed(5) then
+        if debugControls and Keyboard.IsDigitPressed(5) then
             self:RespawnPlayer()
         end
 
@@ -839,6 +872,8 @@ return Component {
         end
 
         -- ── 6. Damage stun timer ──────────────────────────────────────────────
+        self._stunClock = (self._stunClock or 0) + dt
+
         if self._isDamageStun then
             self._damageStunDuration = self._damageStunDuration - dt
             if self._damageStunDuration <= 0 then
@@ -861,7 +896,9 @@ return Component {
         -- ── 8. Damage stun early-return (grounded only) ───────────────────────
         -- If airborne during stun, fall through so movement stays active.
         local isGroundedStun = CharacterController.IsGrounded(self._controller)
+        _G.player_is_damage_stun = self._isDamageStun or false
         if self._isDamageStun and isGroundedStun then
+            _G.player_jump_block = "damage_stun"
             self._animator:SetBool("IsGrounded", isGroundedStun)
             self._animator:SetBool("IsRunning",  self._isRunning)
             local position = CharacterController.GetPosition(self._controller)
@@ -905,6 +942,7 @@ return Component {
 
         -- ── 11. Skill cast lock (grounded only) ───────────────────────────────
         if _G.player_is_casting_skill and CharacterController.IsGrounded(self._controller) then
+            _G.player_jump_block = "casting_skill"
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             local position = CharacterController.GetPosition(self._controller)
@@ -916,13 +954,14 @@ return Component {
         end
 
         -- ── 12. Interactable lock ─────────────────────────────────────────────
-        if _G.playerNearInteractable then return end
+        if _G.playerNearInteractable then _G.player_jump_block = "interactable" return end
 
         -- ── 13. Combat movement lock (grounded only) ──────────────────────────
         -- Bypassed while airborne so air control stays responsive mid-combo.
         -- Velocity bleeds at AttackDecay (slow) so momentum carries into hits.
         local isGroundedForLock = CharacterController.IsGrounded(self._controller)
         if _G.player_is_attacking and not self._playerCanMove and isGroundedForLock then
+            _G.player_jump_block = "combat_lock"
             local decay = 1.0 - math.min(self.AttackDecay * dt, 1.0)
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
@@ -1096,6 +1135,10 @@ return Component {
         -- measured from the most recent takeoff point.
         -- _G.player_air_height is read by ComboManager to decide whether an airborne
         -- attack should auto-slam instead of starting the aerial combo.
+        -- Published for diagnosis: the jump in section 21 requires isGrounded,
+        -- so whether the player can jump at all is decided here.
+        _G.player_is_grounded = isGrounded
+
         if isGrounded then
             -- Don't overwrite _lastGroundedY on the landing frame (while _isJumping
             -- is still true) — the fall distance calculation needs the takeoff Y.
@@ -1376,9 +1419,36 @@ return Component {
         local isLiftAttack = self._liftAttackJump
         self._liftAttackJump = false
 
+        -- Read the buffered jump, not the one-frame edge. IsJumpJustPressed is
+        -- true for exactly the frame the key went down, and whether this Update
+        -- sees that frame depends on whether it runs before or after
+        -- InputInterpreter's. Measured on flat ground, grounded, not landing
+        -- and not attacking, only 3 of 12 presses produced any height. Attack,
+        -- chain and dash never showed this because all three are buffered.
+        --
+        -- The buffer also gives the jump the forgiveness the other actions
+        -- have: a press a few frames early, during the landing recovery or the
+        -- last of a fall, still fires when the player becomes able to jump,
+        -- instead of being thrown away.
+        local jumpBuffered = interp
+            and (interp.HasBufferedJump and interp:HasBufferedJump()
+                 or interp:IsJumpJustPressed())
+
+        if jumpBuffered and not (not self._isLanding and not self._freezePending
+            and not self._slamBuffering and isGrounded) then
+            _G.player_jump_block =
+                (self._isLanding and "landing")
+                or (self._freezePending and "freeze_pending")
+                or (self._slamBuffering and "slam_buffering")
+                or ((not isGrounded) and "not_grounded")
+                or "unknown"
+        end
+
         if not self._isLanding and not self._freezePending and not self._slamBuffering
-            and (isLiftAttack or (interp and interp:IsJumpJustPressed())) and isGrounded
+            and (isLiftAttack or jumpBuffered) and isGrounded
         then
+            _G.player_jump_block = "none"
+            if interp and interp.ConsumeBufferedJump then interp:ConsumeBufferedJump() end
             local jumpH
             if isLiftAttack then
                 jumpH = self.LiftAttackHeight or 6.0
@@ -1389,10 +1459,22 @@ return Component {
             end
             CharacterController.Jump(self._controller, jumpH)
             isJumping = true
+            self._isJumping = true
+            self._isRunning = false
             self._animator:SetBool("IsJumping", true)
+            self._animator:SetBool("IsRunning", false)
             if event_bus and event_bus.publish then event_bus.publish("player_jumped", {}) end
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
+
+            -- Arm ascent lock for ALL jumps — suppresses landing detection
+            -- until the player starts descending.  Prevents stair/ledge
+            -- clips during ascent from triggering false landings.
+            -- Vault jumps override with their own values below.
+            self._vaultAscentLock  = true
+            self._ascentLockTimer  = 0
+            self._prevAirY         = self._peakAirY
+            self._jumpCycleComplete = false
 
             if self._vaultDetected and not isLiftAttack then
                 -- Arm vault air control: starts full, tapers to normal as player reaches peak.
@@ -1573,6 +1655,12 @@ return Component {
                 self:_squashTrigger("vertical", 1.0)
                 if event_bus and event_bus.publish then
                     event_bus.publish("slam_landed", {})
+                    -- camera_slam_tilt subscribes to this and documents it in
+                    -- its own header as the thing to publish at it. Nothing
+                    -- did, so the slam's camera tilt never fired. The impact
+                    -- of the slam is the moment it exists for; every field is
+                    -- optional and the module has its own defaults.
+                    event_bus.publish("camera_slam", {})
                     event_bus.publish("camera_shake", {
                         intensity = self.SlamShakeIntensity or 0.6,
                         duration  = self.SlamShakeDuration  or 0.45,
@@ -1687,15 +1775,30 @@ return Component {
         local coastVelMag         = math.sqrt(self._velX*self._velX + self._velZ*self._velZ)
         local isEffectivelyMoving = isMoving or coastVelMag > 0.1
 
+        -- Safety timeout for ascent lock (ultimate fallback).
+        if self._vaultAscentLock then
+            self._ascentLockTimer = self._ascentLockTimer + dt
+            if self._ascentLockTimer > 0.75 then
+                self._vaultAscentLock = false
+            end
+        end
+
         if not isGrounded then
-            if not self._isJumping and not self._isLanding then
-                -- Became airborne without jump press (walked off a ledge).
-                self._isJumping = true
-                self._isRunning = false
-                self._animator:SetBool("IsRunning", false)
-                self._animator:SetBool("IsJumping", true)
-                local walkOffPos = CharacterController.GetPosition(self._controller)
-                self._peakAirY   = walkOffPos and walkOffPos.y or 0
+            self._groundedFrames = 0
+            self._airborneFrames = self._airborneFrames + 1
+
+            if not self._isJumping and not self._isLanding and not self._jumpCycleComplete then
+                if self._airborneFrames >= 3 then
+                    -- Airborne for 3+ frames without a jump press — walked off
+                    -- a ledge.  The frame requirement filters 1-2 frame airborne
+                    -- blips from stair bumps that aren't real falls.
+                    self._isJumping = true
+                    self._isRunning = false
+                    self._animator:SetBool("IsRunning", false)
+                    self._animator:SetBool("IsJumping", true)
+                    local walkOffPos = CharacterController.GetPosition(self._controller)
+                    self._peakAirY   = walkOffPos and walkOffPos.y or 0
+                end
             end
 
             -- Track Y each airborne frame to detect when ascent has peaked.
@@ -1710,10 +1813,25 @@ return Component {
                 self._prevAirY = curY
             end
         else
+            self._airborneFrames = 0
+
+            -- If grounded for 3+ frames with jump flag and ascent lock still
+            -- active, the lock is stuck (tiny hop on stairs where the character
+            -- never truly went airborne).  Clear it so landing can fire.
+            if self._isJumping and self._vaultAscentLock then
+                self._groundedFrames = self._groundedFrames + 1
+                if self._groundedFrames >= 3 then
+                    self._vaultAscentLock = false
+                end
+            else
+                self._groundedFrames = 0
+            end
+
             if self._isJumping and not self._vaultAscentLock then
                 -- Landed.
                 self._isJumping             = false
                 self._isLanding             = true
+                self._jumpCycleComplete     = true
                 self._vaultJumpActive       = false
                 self._vaultAscentLock       = false
                 self._airLiftCooldownTimer  = 0
@@ -1732,7 +1850,7 @@ return Component {
                 -- Set destination state BEFORE clearing IsJumping so the animator
                 -- sees the correct target condition when IsJumping flips to false.
                 self._animator:SetBool("IsLifting", false)
-                if fallDist >= (self.RollHeightThreshold or 2.5) then
+                if fallDist >= (self.RollHeightThreshold or 2.5) and fallDist < 8 then
                     -- High fall -> roll
                     self._isRolling  = true
                     self._rollDirX   = self._facingX or 0
@@ -1768,6 +1886,13 @@ return Component {
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 end
+            end
+
+            -- Clear jump-cycle flag once safely grounded with no pending
+            -- jump or landing state.  This re-enables walk-off-ledge
+            -- detection for future ledge falls.
+            if not self._isJumping and not self._isLanding then
+                self._jumpCycleComplete = false
             end
         end
 

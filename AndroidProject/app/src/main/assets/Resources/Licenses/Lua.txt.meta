@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ed6441c0a-00066faafc000009",
+        "source": "../../Resources/Licenses/Lua.txt",
+        "compiled": "../../Resources/Licenses/Lua.txt",
+        "android_compiled": "Resources/Licenses/Lua.txt"
+    }
+}

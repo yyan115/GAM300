@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471e8af2dd35-00066faafc000023",
+        "source": "../../Resources/Licenses/joltphysics.txt",
+        "compiled": "../../Resources/Licenses/joltphysics.txt",
+        "android_compiled": "Resources/Licenses/joltphysics.txt"
+    }
+}

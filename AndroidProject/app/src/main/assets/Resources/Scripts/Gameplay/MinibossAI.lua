@@ -1,5 +1,6 @@
 -- Resources/Scripts/Gameplay/MinibossAI.lua
 require("extension.engine_bootstrap")
+local debugControls = os and os.getenv and os.getenv("GAM300_DEBUG") == "1"
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -102,6 +103,12 @@ end
 -------------------------------------------------
 -- Move definitions (DATA-DRIVEN)
 -------------------------------------------------
+-- DEAD CODE, kept because it is the only written record of the intended
+-- weighting. Nothing calls ChooseMove or GetMoveWeightForPhase, so this table
+-- selects nothing: the moves the boss actually uses are driven by the scripted
+-- sequences in _UpdatePhase1/2/3. Death Lotus, for instance, is step 3 of the
+-- phase 3 loop, not a weighted roll, which is why it fires despite being
+-- weighted 0 in every phase this table can reach.
 local MOVES = {
     Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
     Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
@@ -351,9 +358,10 @@ return Component {
             local ok, ctrl = pcall(function()
                 return CharacterController.Create(self.entityId, self._collider, self._transform)
             end)
-            if ok then
+            if ok and ctrl then
                 self._controller = ctrl
                 pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+                pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             else
                 --print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
@@ -512,15 +520,15 @@ return Component {
             self:_ForceBackInsideArena(dtSec)
         end
 
-        if Keyboard.IsDigitPressed(2) then
+        if debugControls and Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
         end
 
-        if Keyboard.IsDigitPressed(4) then
+        if debugControls and Keyboard.IsDigitPressed(4) then
             self:ApplyHit(10)
         end
 
-        if Keyboard.IsDigitPressed(6) then
+        if debugControls and Keyboard.IsDigitPressed(6) then
             self:ForceNextPhase()
         end
 
@@ -578,6 +586,14 @@ return Component {
             self:EnsureController()
             self:ApplyGravity(dtSec)
         end
+
+        -- Diagnosis: the boss stayed dormant with the player four units away
+        -- and the aggro check below never ran once. The counter goes here,
+        -- above the first early return, so "Update is not running" can be told
+        -- apart from "Update runs and returns here".
+        _G.miniboss_ticks = (_G.miniboss_ticks or 0) + 1
+        _G.miniboss_frozen = self._frozenBycinematic or false
+        _G.miniboss_intro_done = self._introDone or false
 
         if self._frozenBycinematic then
             --print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
@@ -707,8 +723,17 @@ return Component {
             self:FacePlayer()
 
             local px, py, pz = self:GetPlayerPosForAI()
+            -- Diagnosis: the boss stayed dormant with the player standing four
+            -- units away. These say whether Update is running at all, and what
+            -- position the boss believes the player is at.
+            _G.miniboss_ticks = (_G.miniboss_ticks or 0) + 1
+            _G.miniboss_sees_player = (px ~= nil)
+            _G.miniboss_player_x = px or -999
+            _G.miniboss_player_z = pz or -999
             if px then
                 local ex, ez = self:GetEnemyPosXZ()
+                _G.miniboss_self_x = ex
+                _G.miniboss_self_z = ez
                 local dx, dz = px - ex, pz - ez
                 local r = self.AggroRange or 15.0
 
@@ -815,6 +840,7 @@ return Component {
         if ok and ctrl then
             self._controller = ctrl
             pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+            pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             -- Sync CC to current Transform position
             local x,y,z = self:GetPosition()
             if CharacterController.SetPosition then

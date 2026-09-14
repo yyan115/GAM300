@@ -102,6 +102,11 @@ return Component {
             return
         end
 
+        if Input.IsActionPressed("Pause") then
+            self:OnSkipClicked()
+            return
+        end
+
         -- GET GAME COORDINATE FOR MOUSE
         local mousePos = Input.GetPointerPosition()
         if not mousePos then return end

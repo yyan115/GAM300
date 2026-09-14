@@ -73,7 +73,7 @@ return Component {
                 --print("[CreditsHandler] _isScrolling set to: " .. tostring(self._isScrolling))
 
                 -- Hide main menu button highlight sprites while credits is open
-                local mainButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+                local mainButtons = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
                 for _, name in ipairs(mainButtons) do
                     local ent = Engine.GetEntityByName(name)
                     if ent then
@@ -162,7 +162,7 @@ return Component {
 
         -- Reset visual state for next open
         -- Re-enable main menu buttons
-        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
         for _, buttonName in ipairs(targetButtons) do
             local entity = Engine.GetEntityByName(buttonName)
             if entity then
@@ -174,7 +174,7 @@ return Component {
         end
 
         -- Re-enable button text entities
-        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText", "ControlsText"}
         for _, textName in ipairs(targetTexts) do
             local textEntity = Engine.GetEntityByName(textName)
             if textEntity then

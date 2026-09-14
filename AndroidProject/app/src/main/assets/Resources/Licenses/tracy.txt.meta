@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471efe18c357-00066faafc000039",
+        "source": "../../Resources/Licenses/tracy.txt",
+        "compiled": "../../Resources/Licenses/tracy.txt",
+        "android_compiled": "Resources/Licenses/tracy.txt"
+    }
+}

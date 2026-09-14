@@ -219,7 +219,25 @@ function AttackState:Update(ai, dt)
             end
 
             ai._damageDealt = true
-            
+
+            -- The moment of danger, announced so the player's dash i-frame can
+            -- register a dodge. PlayerHealth subscribes to melee_incoming and
+            -- nothing published it, so the melee half of the dodge reward has
+            -- never worked; the knife half does, through knife_incoming, and
+            -- this mirrors where that one fires: at contact, not at the start
+            -- of the wind-up, because checkDodge asks whether the player is
+            -- dashing right now.
+            --
+            -- Published whether or not the swing connects, exactly as the
+            -- knife's warning is published on proximity rather than on a hit.
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("melee_incoming", {
+                    dmg           = (ai.MeleeDamage or 1),
+                    src           = "GroundEnemy",
+                    enemyEntityId = ai.entityId,
+                })
+            end
+
             local d2check2 = ai:GetPlayerDistanceSq()
             local _, meleeRcheck2, _ = ai:GetRanges()
 

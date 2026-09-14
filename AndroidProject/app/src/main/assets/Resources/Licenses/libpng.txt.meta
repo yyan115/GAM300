@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ec6dbfdbc-00066faafc000027",
+        "source": "../../Resources/Licenses/libpng.txt",
+        "compiled": "../../Resources/Licenses/libpng.txt",
+        "android_compiled": "Resources/Licenses/libpng.txt"
+    }
+}

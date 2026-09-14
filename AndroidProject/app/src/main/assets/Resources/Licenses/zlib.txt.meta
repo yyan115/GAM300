@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ea4970c0c-00066faafc00003d",
+        "source": "../../Resources/Licenses/zlib.txt",
+        "compiled": "../../Resources/Licenses/zlib.txt",
+        "android_compiled": "Resources/Licenses/zlib.txt"
+    }
+}

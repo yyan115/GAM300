@@ -16,6 +16,7 @@
 --   EaseInOut       – apply smooth acceleration/deceleration
 
 require("extension.engine_bootstrap")
+local debugControls = os and os.getenv and os.getenv("GAM300_DEBUG") == "1"
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -144,8 +145,14 @@ return Component {
     fields = {
         TotalDuration = 10.0,
         Loop = false,
-        ToggleKey = "F5",
+        -- Which F-key triggers this flythrough (5 = F5, 6 = F6, ... 10 = F10)
+        FKey = 5,
         EaseInOut = true,
+        -- Roots whose sprites and text are faded out while the flythrough
+        -- runs, and restored when it stops. Trailer footage with a health bar
+        -- and a feather counter in the corner is not trailer footage. Set to
+        -- an empty string to keep the HUD visible.
+        HideRoots = "PlayerHUD,UI,TutorialUI",
     },
 
     Awake = function(self)
@@ -153,6 +160,13 @@ return Component {
         self._paused = false
         self._timer = 0.0
         self._waypoints = nil
+        self._keyEnum = nil
+        self._debugPrinted = false
+
+        print("========== [CameraFlythrough] AWAKE CALLED ==========")
+        print("[CameraFlythrough] entityId=" .. tostring(self.entityId) .. ", FKey=" .. tostring(self.FKey))
+        print("[CameraFlythrough] _G.Input = " .. tostring(_G.Input))
+        print("[CameraFlythrough] _G.Engine = " .. tostring(_G.Engine))
 
         -- Listen for other flythroughs starting so we auto-stop
         if event_bus and event_bus.subscribe then
@@ -166,7 +180,11 @@ return Component {
     end,
 
     Start = function(self)
+        if not debugControls then return end
         self:_buildWaypoints()
+        if self._waypoints then
+            print("[CameraFlythrough] Ready — " .. #self._waypoints .. " waypoints, F" .. self.FKey)
+        end
     end,
 
     _buildWaypoints = function(self)
@@ -187,9 +205,49 @@ return Component {
     end,
 
     Update = function(self, dt)
+        if not debugControls then return end
+        -- One-time debug dump
+        if not self._debugPrinted then
+            self._debugPrinted = true
+            print("========== [CameraFlythrough] FIRST UPDATE ==========")
+            print("[CameraFlythrough] Keyboard = " .. tostring(Keyboard))
+            if Keyboard then
+                print("[CameraFlythrough] Keyboard.Key = " .. tostring(Keyboard.Key))
+                if Keyboard.Key then
+                    print("[CameraFlythrough] Keyboard.Key.F5 = " .. tostring(Keyboard.Key.F5))
+                end
+                print("[CameraFlythrough] Keyboard.IsKeyPressed = " .. tostring(Keyboard.IsKeyPressed))
+            end
+            local childCount = Engine and Engine.GetChildCount and Engine.GetChildCount(self.entityId) or "N/A"
+            print("[CameraFlythrough] Child count = " .. tostring(childCount))
+        end
+
+        -- Lazy-resolve the key enum
+        if not self._keyEnum then
+            if Keyboard and Keyboard.Key then
+                local fkeyMap = {
+                    [5]  = Keyboard.Key.F5,
+                    [6]  = Keyboard.Key.F6,
+                    [7]  = Keyboard.Key.F7,
+                    [8]  = Keyboard.Key.F8,
+                    [9]  = Keyboard.Key.F9,
+                    [10] = Keyboard.Key.F10,
+                }
+                self._keyEnum = fkeyMap[self.FKey]
+                if self._keyEnum then
+                    print("[CameraFlythrough] Resolved F" .. tostring(self.FKey) .. " = " .. tostring(self._keyEnum))
+                else
+                    print("[CameraFlythrough] ERROR: No key enum for FKey=" .. tostring(self.FKey))
+                end
+            else
+                print("[CameraFlythrough] WARNING: Keyboard or Keyboard.Key not available!")
+            end
+        end
+
         -- Toggle on/off
-        if Input and Input.GetKeyTriggered then
-            if Input.GetKeyTriggered(self.ToggleKey) then
+        if self._keyEnum and Keyboard and Keyboard.IsKeyPressed then
+            if Keyboard.IsKeyPressed(self._keyEnum) then
+                print("========== [CameraFlythrough] F" .. tostring(self.FKey) .. " PRESSED! ==========")
                 if self._active then
                     self:_stop()
                 else
@@ -268,6 +326,49 @@ return Component {
         return pos, rot
     end,
 
+    -- Walk a subtree and apply `fn(entityId)` to every entity in it.
+    _forEachInTree = function(self, entityId, fn)
+        if not entityId or entityId < 0 then return end
+        fn(entityId)
+        local n = Engine.GetChildCount and Engine.GetChildCount(entityId) or 0
+        for i = 0, n - 1 do
+            local child = Engine.GetChildAtIndex(entityId, i)
+            if child then self:_forEachInTree(child, fn) end
+        end
+    end,
+
+    -- Fade the HUD out for the duration of a flythrough, remembering each
+    -- original alpha so stopping puts it back exactly as it was. There is no
+    -- SetActive binding in Lua, and alpha is how the rest of the UI code
+    -- hides things, so this follows that.
+    _setHudHidden = function(self, hidden)
+        if not self.HideRoots or self.HideRoots == "" then return end
+        self._hudAlphas = self._hudAlphas or {}
+        for name in string.gmatch(self.HideRoots, "([^,]+)") do
+            name = string.gsub(name, "^%s*(.-)%s*$", "%1")
+            local root = Engine.GetEntityByName and Engine.GetEntityByName(name)
+            if root then
+                self:_forEachInTree(root, function(id)
+                    for _, comp in ipairs({ "SpriteRenderComponent", "TextRenderComponent" }) do
+                        local c = GetComponent(id, comp)
+                        if c and c.alpha ~= nil then
+                            local key = tostring(id) .. ":" .. comp
+                            if hidden then
+                                if self._hudAlphas[key] == nil then
+                                    self._hudAlphas[key] = c.alpha
+                                end
+                                c.alpha = 0.0
+                            elseif self._hudAlphas[key] ~= nil then
+                                c.alpha = self._hudAlphas[key]
+                                self._hudAlphas[key] = nil
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end,
+
     _start = function(self)
         self:_buildWaypoints()
         if not self._waypoints or #self._waypoints < 2 then
@@ -285,8 +386,11 @@ return Component {
         self._timer = 0.0
 
         if event_bus and event_bus.publish then
-            event_bus.publish("cinematic.active", true)
+            event_bus.publish("flythrough.active", true)
             event_bus.publish("set_attacks_enabled", false)
+        end
+        pcall(function() self:_setHudHidden(true) end)
+        if event_bus and event_bus.publish then
         end
         print("[CameraFlythrough] Started — " .. #self._waypoints .. " waypoints, " .. self.TotalDuration .. "s")
     end,
@@ -296,8 +400,11 @@ return Component {
         self._paused = false
 
         if event_bus and event_bus.publish then
-            event_bus.publish("cinematic.active", false)
+            event_bus.publish("flythrough.active", false)
             event_bus.publish("set_attacks_enabled", true)
+        end
+        pcall(function() self:_setHudHidden(false) end)
+        if event_bus and event_bus.publish then
         end
         print("[CameraFlythrough] Stopped")
     end,

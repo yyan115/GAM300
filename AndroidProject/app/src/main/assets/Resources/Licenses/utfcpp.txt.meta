@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471e9ff7668a-00066faafc00003b",
+        "source": "../../Resources/Licenses/utfcpp.txt",
+        "compiled": "../../Resources/Licenses/utfcpp.txt",
+        "android_compiled": "Resources/Licenses/utfcpp.txt"
+    }
+}

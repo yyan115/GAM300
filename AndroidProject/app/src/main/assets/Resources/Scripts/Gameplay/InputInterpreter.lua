@@ -150,6 +150,14 @@ return Component {
             attack = 0,
             chain  = 0,
             dash   = 0,
+            -- Jump was the one action without a buffer: PlayerMovement read
+            -- IsJumpJustPressed, which is true for a single frame. Whether
+            -- that frame is seen depends on whether PlayerMovement's Update
+            -- runs before or after this one, so presses were dropped. Measured
+            -- with synthetic presses on flat ground, grounded, not landing and
+            -- not attacking, only 3 of 12 produced any height. Attack, chain
+            -- and dash never showed it because all three are buffered here.
+            jump   = 0,
         }
 
         self._frameCount = 0
@@ -242,10 +250,15 @@ return Component {
             table.insert(self._inputHistory.dash, self._frameCount)
         end
 
+        if jumpJustPressed then
+            self._bufferedInputs.jump = self.INPUT_BUFFER_FRAMES
+        end
+
         -- Decay buffered inputs by one frame each tick
         self._bufferedInputs.attack = math.max(0, self._bufferedInputs.attack - 1)
         self._bufferedInputs.chain  = math.max(0, self._bufferedInputs.chain  - 1)
         self._bufferedInputs.dash   = math.max(0, self._bufferedInputs.dash   - 1)
+        self._bufferedInputs.jump   = math.max(0, self._bufferedInputs.jump   - 1)
 
         -- ══════════════════════════════════════════════════════════════════
         -- HOLD TRACKING
@@ -285,6 +298,7 @@ return Component {
         self._bufferedInputs.attack = math.max(0, self._bufferedInputs.attack - 1)
         self._bufferedInputs.chain  = math.max(0, self._bufferedInputs.chain  - 1)
         self._bufferedInputs.dash   = math.max(0, self._bufferedInputs.dash   - 1)
+        self._bufferedInputs.jump   = math.max(0, self._bufferedInputs.jump   - 1)
     end,
 
     _cleanHistory = function(self, history)
@@ -328,6 +342,7 @@ return Component {
     HasBufferedAttack = function(self) return self._bufferedInputs.attack > 0 end,
     HasBufferedChain  = function(self) return self._bufferedInputs.chain  > 0 end,
     HasBufferedDash   = function(self) return self._bufferedInputs.dash   > 0 end,
+    HasBufferedJump   = function(self) return self._bufferedInputs.jump   > 0 end,
 
     ConsumeBufferedAttack = function(self)
         if self._bufferedInputs.attack > 0 then
@@ -348,6 +363,14 @@ return Component {
     ConsumeBufferedDash = function(self)
         if self._bufferedInputs.dash > 0 then
             self._bufferedInputs.dash = 0
+            return true
+        end
+        return false
+    end,
+
+    ConsumeBufferedJump = function(self)
+        if self._bufferedInputs.jump > 0 then
+            self._bufferedInputs.jump = 0
             return true
         end
         return false

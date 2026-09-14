@@ -135,7 +135,7 @@ return Component {
             end
 
             -- 2. Restore ONLY interactability
-            local mainMenuButtons = {"PlayGame", "Settings", "Credits", "ExitGame"}
+            local mainMenuButtons = {"PlayGame", "Settings", "Credits", "ExitGame", "Controls"}
             for _, name in ipairs(mainMenuButtons) do
                 local ent = Engine.GetEntityByName(name)
                 if ent and ent ~= -1 then

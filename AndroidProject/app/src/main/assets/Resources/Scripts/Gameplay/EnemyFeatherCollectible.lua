@@ -40,10 +40,13 @@ return Component {
 
         self._parentFeatherEntity = Engine.GetParentEntity(self.entityId)
         self._playerEntityId = Engine.GetEntityByName(self.PlayerEntityName)
-        
+
         self._onTriggerStayed = false
         self._isCollecting = false
         self._velocity = { x=0, y=0, z=0 }
+        print(string.format("[EnemyFeatherCollectible] Start entity=%d parent=%s player=%s transform=%s collider=%s",
+            self.entityId, tostring(self._parentFeatherEntity), tostring(self._playerEntityId),
+            tostring(self._transform ~= nil), tostring(self._collider ~= nil)))
     end,
 
     Update = function(self, dt)
@@ -307,6 +310,7 @@ return Component {
         if self._collected then return end
         self._collected = true
         self._isCollecting = false
+        print(string.format("[EnemyFeatherCollectible] OnCollected entity=%d — publishing featherCollected", self.entityId))
 
         if self._collider then
             self._collider.enabled = false
@@ -318,7 +322,7 @@ return Component {
 
         Engine.DestroyEntity(self._parentFeatherEntity)
 
-        if _G.ActiveFeatherCount then 
+        if _G.ActiveFeatherCount then
             _G.ActiveFeatherCount = math.max(0, _G.ActiveFeatherCount - 1)
         end
 

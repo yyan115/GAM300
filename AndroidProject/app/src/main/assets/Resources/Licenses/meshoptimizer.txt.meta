@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ebc6826a5-00066faafc000029",
+        "source": "../../Resources/Licenses/meshoptimizer.txt",
+        "compiled": "../../Resources/Licenses/meshoptimizer.txt",
+        "android_compiled": "Resources/Licenses/meshoptimizer.txt"
+    }
+}

@@ -8,6 +8,20 @@
   },
 
   "actions": {
+    "SkipIntro": {
+      "description": "Skip startup logos",
+      "desktop": {
+        "keys": ["ENTER", "SPACE", "ESC"],
+        "mouseButtons": ["LEFT", "RIGHT"]
+      }
+    },
+    "AdvanceCutscene": {
+      "description": "Advance a story screen",
+      "desktop": {
+        "keys": ["ENTER", "SPACE"],
+        "mouseButtons": ["RIGHT"]
+      }
+    },
     "Jump": {
       "description": "Player jump",
       "desktop": {
@@ -134,4 +148,3 @@
     }
   }
 }
-

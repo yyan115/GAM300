@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ecea666a7-00066faafc000017",
+        "source": "../../Resources/Licenses/freetype.txt",
+        "compiled": "../../Resources/Licenses/freetype.txt",
+        "android_compiled": "Resources/Licenses/freetype.txt"
+    }
+}

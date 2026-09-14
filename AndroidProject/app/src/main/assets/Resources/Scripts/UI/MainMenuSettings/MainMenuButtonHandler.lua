@@ -1,8 +1,8 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local MAIN_MENU_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings"}
-local MAIN_MENU_TEXTS   = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+local MAIN_MENU_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
+local MAIN_MENU_TEXTS   = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText", "ControlsText"}
 
 local function setButtonsInteractable(interactable)
     for _, name in ipairs(MAIN_MENU_BUTTONS) do
@@ -222,7 +222,27 @@ return Component {
         end
     end,
 
+    OnClickControlsButton = function(self)
+        local active = GetComponent(Engine.GetEntityByName("ControlsUI"), "ActiveComponent")
+        if active then active.isActive = true end
+        setButtonsInteractable(false)
+        setTextsActive(false)
+        if _G.event_bus then _G.event_bus.publish("main_menu.click", {}) end
+    end,
+
+    OnClickControlsBackButton = function(self)
+        local active = GetComponent(Engine.GetEntityByName("ControlsUI"), "ActiveComponent")
+        if active then active.isActive = false end
+        setButtonsInteractable(true)
+        setTextsActive(true)
+        if _G.event_bus then _G.event_bus.publish("main_menu.click", {}) end
+    end,
+
     Update = function(self, dt)
+        local controls = GetComponent(Engine.GetEntityByName("ControlsUI"), "ActiveComponent")
+        if controls and controls.isActive and Input.IsActionPressed("Pause") then
+            self:OnClickControlsBackButton()
+        end
         -- BGM fade in on scene start
         if self._isFadingIn and self._bgmAudio then
             self._fadeInTimer = self._fadeInTimer + dt

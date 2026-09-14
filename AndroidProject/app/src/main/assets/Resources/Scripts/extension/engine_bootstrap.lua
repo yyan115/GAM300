@@ -3,9 +3,10 @@
 -- Put this in Resources/Scripts and require it or let your main script require it.
 
 -- [NEW] GLOBAL SEEDING (Do this exactly once here)
--- We mix os.time (seconds) with os.clock (CPU time) to ensure
--- a unique seed even if you restart the game multiple times per second.
-math.randomseed(os.time() + os.clock() * 100000)
+-- Lua 5.4 requires an integer seed. Keep the os.clock component for quick
+-- restarts, but floor the mixed value so this works consistently on Linux,
+-- Windows, and Android runtimes.
+math.randomseed(math.floor(os.time() + os.clock() * 100000))
 
 -- Pop a few random numbers to flush the state (good practice in Lua)
 math.random(); math.random(); math.random()

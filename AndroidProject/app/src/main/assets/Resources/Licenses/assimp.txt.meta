@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471ed4bfa5b6-00066faafc00000b",
+        "source": "../../Resources/Licenses/assimp.txt",
+        "compiled": "../../Resources/Licenses/assimp.txt",
+        "android_compiled": "Resources/Licenses/assimp.txt"
+    }
+}

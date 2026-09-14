@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471e9a0d1b08-00066faafc000031",
+        "source": "../../Resources/Licenses/pugixml.txt",
+        "compiled": "../../Resources/Licenses/pugixml.txt",
+        "android_compiled": "Resources/Licenses/pugixml.txt"
+    }
+}

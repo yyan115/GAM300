@@ -1,5 +1,6 @@
 -- Resources/Scripts/GamePlay/EnemyAI.lua
 require("extension.engine_bootstrap")
+local debugControls = os and os.getenv and os.getenv("GAM300_DEBUG") == "1"
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -17,6 +18,7 @@ local FlyingPatrolState = require("Gameplay.FlyingPatrolState")
 local FlyingChaseState  = require("Gameplay.FlyingChaseState")
 local FlyingAttackState = require("Gameplay.FlyingAttackState")
 local FlyingHookedState = require("Gameplay.FlyingHookedState")
+local FlyingDeathState  = require("Gameplay.FlyingDeathState")
 
 local KnifePool     = require("Gameplay.KnifePool")
 local Input = _G.Input
@@ -180,6 +182,7 @@ return Component {
         HoverBobAmp      = 0.02,   -- Amplitude of the idle hover bob (world units). 0 = no bob.
         HoverBobFreq     = 0.9,    -- Frequency of the idle hover bob (Hz).
         SlamDownSpeed    = 16.0,   -- Descent speed during the chain-hook slam-down (world units/sec).
+        MaxChaseDistance = 10.0,   -- Max XZ distance from spawn before flying enemy deaggros and returns.
 
         -- === Squash & stretch ===
         -- SquashStrength : how dramatic the effect is. Start here.
@@ -228,7 +231,7 @@ return Component {
         -- === Abilities / skills ===
         FeatherSkillBufferDuration   = 0.2,   -- Window (seconds) after a feather hit during which further
                                               -- feather hits don't re-trigger Hurt FSM state.
-        FeatherPrefabPath            = "Resources/Prefabs/Feather.prefab",
+        FeatherPrefabPath            = "Resources/Prefabs/EnemyHurtFeather.prefab",
         NumFeathersSpawnedPerHit     = 5,     -- Feather particles spawned per hit from the feather skill.
 
         -- === Animation clips ===
@@ -500,7 +503,21 @@ return Component {
 
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if not payload then return end
-                if payload.rootName ~= self._entityName then return end
+                -- Match the entity, not its name. Every ground melee enemy in
+                -- 04_Level is named "V2FinalGroundMeleeEnemy", so matching on
+                -- rootName fired this on all eleven of them whenever any one
+                -- was hooked. They then all took Idle -> Hooked -> Melee
+                -- Attack, which the controllers have no transition out of, and
+                -- stood where they were looping the attack animation while
+                -- their AI stayed in Idle. The publisher sends rootEntityId
+                -- for exactly this, and the chain.enemy_hooked subscription
+                -- immediately below already matches that way.
+                local rootId = payload.rootEntityId or payload.entityId
+                if rootId ~= nil then
+                    if rootId ~= self.entityId then return end
+                elseif payload.rootName ~= self._entityName then
+                    return
+                end
                 self._animator:SetTrigger("Hooked")
                 -- Immediately tell chain button icon to show Pull (grounded) or Slam (flying)
                 if _G.event_bus and _G.event_bus.publish then
@@ -593,21 +610,21 @@ return Component {
 
         self._motionID = self._rb and self._rb.motionID or nil
 
-        if Input.IsActionPressed("Interact") then
+        if debugControls and Input.IsActionPressed("Interact") then
             self:ApplyHook(self.HookedDuration)
         end
 
-        if Keyboard.IsDigitPressed(1) then
+        if debugControls and Keyboard.IsDigitPressed(1) then
             self:ApplyHook(self.HookedDuration)
         end
-        if Keyboard.IsDigitPressed(3) then
+        if debugControls and Keyboard.IsDigitPressed(3) then
             self:ApplyHit(10)
         end
-        if Keyboard.IsDigitPressed(7) then
+        if debugControls and Keyboard.IsDigitPressed(7) then
             self.IsPassive = not self.IsPassive
         end
 
-        if Keyboard.IsDigitPressed(9) and not self:IsFlying() then
+        if debugControls and Keyboard.IsDigitPressed(9) and not self:IsFlying() then
             self:ApplyHit(1, "KNOCKUP", 0)
         end
 
@@ -903,8 +920,11 @@ return Component {
                     -- Should not reach here (CC is nil while juggling) but safe fallback.
                     self:SetPosition(pos.x, self._juggleY or pos.y, pos.z)
                 elseif not self:IsFlying() then
-                    local groundY = (Nav and Nav.GetGroundY) and Nav.GetGroundY(self.entityId) or pos.y
-                    self:SetPosition(pos.x, groundY, pos.z)
+                    -- Use CC's physics Y directly. CharacterControllerSystem::Update
+                    -- overwrites Transform with CC position anyway, so the old
+                    -- Nav.GetGroundY override was dead code.  Letting the CC own Y
+                    -- avoids the discrete cell-boundary jump that groundY causes.
+                    self:SetPosition(pos.x, pos.y, pos.z)
                 else
                     local x, y, z = self:GetPosition()
                     if x ~= nil then self:SetPosition(pos.x, y, pos.z) end
@@ -943,6 +963,12 @@ return Component {
 
             pcall(function()
                 CharacterController.SetImmovable(self.entityId, true)
+            end)
+
+            -- Reduce step-up for enemies. The CC system smooths Y for immovable
+            -- controllers, so even a moderate step-up won't pop visually.
+            pcall(function()
+                CharacterController.SetStepUp(ctrl, 0.15, 0.3)
             end)
 
             -- IMPORTANT: sync using explicit coordinates, not transform object
@@ -1437,7 +1463,7 @@ return Component {
 
                 -- reuse existing
                 Hurt   = GroundHurtState,
-                Death  = GroundDeathState,
+                Death  = FlyingDeathState,
             }
         else
             self.states = {
@@ -2062,6 +2088,20 @@ return Component {
         self.health = self.health - (dmg or 1)
         --print(string.format("[EnemyAI] Remaining health: %d", self.health))
 
+        -- Hit feathers are spawned HERE, for every landed hit, rather than from
+        -- GroundHurtState:Enter.
+        --
+        -- Entering the Hurt state is not the same thing as being hit, and
+        -- several hits deliberately never enter it: LIFT/AIR/SLAM/KNOCKUP are
+        -- owned by the juggle system and return before the hurt block below,
+        -- a FEATHER hit sets _hurtTriggeredByFeather which skips that block,
+        -- and a Hooked enemy returns early. Every one of those landed a hit and
+        -- spawned no feathers, which is why it looked random to the player.
+        -- A lethal hit is left alone: the Death states spawn their own.
+        if self.health > 0 then
+            self:SpawnHitFeathers()
+        end
+
         -- Juggle hit types: LIFT/AIR/SLAM are fully owned by the juggle system.
         -- They MUST return after their juggle call — the hurt FSM block below
         -- must NOT run for these types. Running it caused:
@@ -2368,16 +2408,28 @@ return Component {
         return dx / len, dy / len, dz / len
     end,
 
+    -- One burst of hit feathers. Called from ApplyHit for every landed,
+    -- non-lethal hit regardless of which reaction path the hit takes.
+    SpawnHitFeathers = function(self)
+        for i = 1, (self.NumFeathersSpawnedPerHit or 0) do
+            self:SpawnFeather(i)
+        end
+    end,
+
     SpawnFeather = function(self, featherIndex)
-        if not self.FeatherPrefabPath then return end
-        
+        if not self.FeatherPrefabPath then
+            print("[EnemyAI] SpawnFeather SKIP — no FeatherPrefabPath")
+            return
+        end
+
         -- Capture data NOW (before next frame)
         local spawnPos = { x=0, y=0, z=0 }
         local x,y,z = self:GetPosition()
         if x then spawnPos = {x=x, y=y, z=z} end
-        
+
         local hx, hy, hz = self:GetHitDirection()
-        --print("[EnemyAI] SpawnFeather - GOT HIT DIRECTION")
+        print(string.format("[EnemyAI] SpawnFeather #%d pos=(%.1f,%.1f,%.1f) hitDir=(%.2f,%.2f,%.2f)",
+            featherIndex, spawnPos.x, spawnPos.y, spawnPos.z, hx or 0, hy or 0, hz or 0))
 
         -- Stagger slightly
         local delay = featherIndex * 0.02
@@ -2392,24 +2444,29 @@ return Component {
                     -- This survives even if the engine resets the script instance 'self'
                     _G.PendingFeatherData = _G.PendingFeatherData or {}
                     _G.PendingFeatherData[ent] = { x = hx, y = hy, z = hz }
-        
+
                     local featherTr = GetComponent(ent, "Transform")
-                    
+
                     -- 2. Position [FIXED: Don't use a table!]
                     -- Get the existing Vector3D from the new feather
-                    local pos = featherTr.localPosition 
-                    
+                    local pos = featherTr.localPosition
+
                     -- Modify its values
                     pos.x = spawnPos.x
                     pos.y = spawnPos.y + 0.5
                     pos.z = spawnPos.z
-                    
+
                     -- Assign the Vector3D back to the transform
                     featherTr.localPosition = pos
                     featherTr.isDirty = true
+                    print(string.format("[EnemyAI] SpawnFeather OK — entity=%d at (%.1f,%.1f,%.1f)", ent, pos.x, pos.y, pos.z))
+                else
+                    print("[EnemyAI] SpawnFeather FAIL — InstantiatePrefab returned nil")
                 end
             end)
-        end    
+        else
+            print("[EnemyAI] SpawnFeather FAIL — no scheduler")
+        end
     end,
 
     OnDisable = function(self)

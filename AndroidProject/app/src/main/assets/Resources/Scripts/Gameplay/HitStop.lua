@@ -52,29 +52,72 @@ return Component {
         HeavyColorDurationMin = 0.12,
         HeavyColorDurationMax = 0.25,
 
-        -- === Slow-mo (heavy hits only) ===
+        -- === Slow-mo ===
         -- Brief camera_effects-managed time dilation — does NOT conflict with
         -- slam or dodge slow-mo since camera_effects resolves the highest caller.
+        --
+        -- Every hit that clears LightHitThreshold gets a dip, lerped from the
+        -- Light values to the Heavy ones across the damage range. The dip used
+        -- to be gated at t >= 0.5, meaning damage >= 20, so the 10, 12, 14 and
+        -- 15 damage hits — five of the nine attacks in the combo tree, and the
+        -- ones a player lands most — produced shake and colour and no pause at
+        -- all. A short pause on impact is the main thing that makes a hit read
+        -- as having connected with something solid, and it was switched off for
+        -- the majority of hits.
+        --
+        -- Durations are in frames at 60 Hz: 0.05 is three frames, 0.12 is seven.
+        -- Light hits want to be felt without interrupting the flow of a combo;
+        -- the heavy ones want to land.
+        LightTimeScale         = 0.55,
+        LightTimeScaleDuration = 0.05,
         HeavyTimeScale         = 0.25,
         HeavyTimeScaleDuration = 0.12,
     },
 
     Start = function(self)
         self._subDmg = nil
+        self._subDied = nil
+        self._subRespawn = nil
+        -- Entities that have already died. AttackHitbox tests the target's tag
+        -- and whether it was hit this swing, and nothing else, so a corpse
+        -- still carries the Enemy tag and its collider and still publishes
+        -- deal_damage_to_entity when the weapon passes through it. EnemyHealth
+        -- ignores that because it keeps its own _isDead; every other
+        -- subscriber, this one included, took it at face value and played the
+        -- full impact effect for a hit on a body lying on the floor.
+        self._dead = {}
 
         if event_bus and event_bus.subscribe then
+            self._subDied = event_bus.subscribe("enemy_died", function(payload)
+                if payload and payload.entityId then
+                    self._dead[payload.entityId] = true
+                end
+            end)
+
+            -- The table outlives a scene, so ids from the previous run would
+            -- suppress hitstop on whatever reused them.
+            self._subRespawn = event_bus.subscribe("respawnPlayer", function()
+                self._dead = {}
+            end)
+
             self._subDmg = event_bus.subscribe("deal_damage_to_entity", function(payload)
                 if not payload or not payload.damage or payload.damage <= 0 then return end
+                if payload.entityId and self._dead[payload.entityId] then return end
                 self:_trigger(payload.damage, payload.hitType)
             end)
         end
     end,
 
     OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._subDmg then
-            event_bus.unsubscribe(self._subDmg)
-            self._subDmg = nil
+        if event_bus and event_bus.unsubscribe then
+            for _, key in ipairs({"_subDmg", "_subDied", "_subRespawn"}) do
+                if self[key] then
+                    event_bus.unsubscribe(self[key])
+                    self[key] = nil
+                end
+            end
         end
+        self._dead = {}
     end,
 
     -- No Update needed — all effects are owned by camera_effects and the shake system.
@@ -123,6 +166,17 @@ return Component {
                 tonumber(self.VignetteDurationMax) or 0.50, t),
         })
 
+        -- ── Time dip, on every hit, scaled with damage ───────────────────────
+        -- Unscaled timer inside camera_effects, so it survives its own dilation.
+        eb.publish("fx_time_scale", {
+            scale    = lerp(
+                tonumber(self.LightTimeScale)         or 0.55,
+                tonumber(self.HeavyTimeScale)         or 0.25, t),
+            duration = lerp(
+                tonumber(self.LightTimeScaleDuration) or 0.05,
+                tonumber(self.HeavyTimeScaleDuration) or 0.12, t),
+        })
+
         -- ── Heavy-hit extras (past the halfway point between thresholds) ─────
         if t >= 0.5 then
             -- Colour desaturation snap
@@ -132,12 +186,6 @@ return Component {
                     tonumber(self.HeavyColorDurationMin) or 0.12,
                     tonumber(self.HeavyColorDurationMax) or 0.25,
                     (t - 0.5) * 2.0),
-            })
-
-            -- Slow-mo dip via camera_effects (unscaled timer, survives its own dilation)
-            eb.publish("fx_time_scale", {
-                scale    = tonumber(self.HeavyTimeScale)         or 0.25,
-                duration = tonumber(self.HeavyTimeScaleDuration) or 0.12,
             })
         end
     end,

@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0051471eebe7d8f6-00066faafc000015",
+        "source": "../../Resources/Licenses/fmt.txt",
+        "compiled": "../../Resources/Licenses/fmt.txt",
+        "android_compiled": "Resources/Licenses/fmt.txt"
+    }
+}

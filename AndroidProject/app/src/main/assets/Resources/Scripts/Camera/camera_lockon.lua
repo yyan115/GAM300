@@ -71,6 +71,16 @@ function M.init(self)
     self._lockonLOSLostTimer = 0.0
     self._deadEnemies    = {}  -- track dead entity IDs to prevent re-locking
 
+    -- Hits are queued here and resolved once per frame in M.update.
+    -- deal_damage_to_entity is published once PER ENEMY per swing, so a swing
+    -- that clips two enemies fires two events back to back. Assigning the
+    -- target inside the subscriber made the last event through the bus win,
+    -- which is why the camera snapped back and forth while fighting a group.
+    self._lockonPending    = {}
+    self._lockonHitCounts  = {}   -- entityId -> { count, firstHitAt }
+    self._lockonEngagedAt  = 0.0  -- time of the last hit on the locked enemy
+    self._lockonClock      = 0.0
+
     if event_bus and event_bus.subscribe then
         self._lockonDeathSub = event_bus.subscribe("enemy_died", function(data)
             if data and data.entityId then
@@ -111,12 +121,18 @@ function M.init(self)
                 local dx = ex - self._targetPos.x
                 local dz = ez - self._targetPos.z
                 local dist = math.sqrt(dx * dx + dz * dz)
-                if dist > (self.lockOnBreakDistance or 15.0) then return end
+                -- Acquire inside a TIGHTER radius than the one that breaks
+                -- the lock. If both used the same distance an enemy sitting on
+                -- the boundary would acquire and release repeatedly.
+                if dist > (self.lockOnAcquireDistance or 12.0) then return end
                 if not hasLineOfSight(self, ex, ey, ez) then return end
             end
-            self._lockonEntityId     = data.entityId
-            self._lockonActive       = true
-            self._lockonLOSLostTimer = 0.0
+            -- Queue the candidate; M.update decides. See M.init.
+            -- Capped because M.update is skipped in some camera modes (chain
+            -- aim, cinematics, cursor unlocked) and the queue would otherwise
+            -- grow without bound while the player keeps swinging.
+            local q = self._lockonPending
+            if #q < 8 then q[#q + 1] = data.entityId end
         end)
     end
 end
@@ -124,7 +140,99 @@ end
 -- Call each frame BEFORE updateMouseLook.
 -- When returning true the caller should skip normal mouse look (the lock-on
 -- consumes the mouse axis to detect intentional camera movement).
+-- Is this entity still a legal lock-on target RIGHT NOW?
+--
+-- Queued hits are resolved a frame after the event, so everything the
+-- subscriber checked can have changed in between - most importantly the enemy
+-- can have died from that very hit. Without re-checking here the camera locked
+-- onto a corpse, or onto an entity already being torn down, which read as the
+-- camera swinging to face nothing.
+local function isLockable(self, id)
+    if not id then return false end
+    if self._deadEnemies[id] then return false end
+    if not (Engine and Engine.GetEntityPosition) then return false end
+    local ex, ey, ez = Engine.GetEntityPosition(id)
+    if not ex then return false end
+    local dx = ex - self._targetPos.x
+    local dz = ez - self._targetPos.z
+    if math.sqrt(dx * dx + dz * dz) > (self.lockOnAcquireDistance or 12.0) then return false end
+    return hasLineOfSight(self, ex, ey, ez)
+end
+
+-- Resolve this frame's queued hits into at most one target change.
+--
+-- Policy, in order:
+--   1. A hit on the enemy already engaged always wins and refreshes the
+--      engagement. This is what stops a swing that clips a bystander from
+--      stealing the camera.
+--   2. Otherwise another enemy takes over only if the player means it: either
+--      the current engagement has gone quiet for lockOnSwitchDelay, or that
+--      enemy has been hit lockOnSwitchHits times inside lockOnSwitchWindow.
+--   3. With no lock at all, any valid hit acquires immediately.
+local function resolvePendingHits(self, dt)
+    self._lockonClock = (self._lockonClock or 0.0) + dt
+
+    local pending = self._lockonPending
+    if #pending == 0 then return end
+
+    local now          = self._lockonClock
+    local switchWindow = self.lockOnSwitchWindow or 2.0
+    local switchHits   = self.lockOnSwitchHits or 2
+    local switchDelay  = self.lockOnSwitchDelay or 0.75
+    local engaged      = self._lockonEntityId
+
+    -- 1. engaged enemy hit again -> refresh, ignore everyone else this frame
+    if engaged and not self._deadEnemies[engaged] then
+        for i = 1, #pending do
+            if pending[i] == engaged then
+                self._lockonEngagedAt = now
+                self._lockonPending   = {}
+                return
+            end
+        end
+    end
+
+    -- Count hits per candidate inside the switch window.
+    local counts = self._lockonHitCounts
+    local candidate
+    for i = 1, #pending do
+        local id = pending[i]
+        if not isLockable(self, id) then goto continue end
+        local rec = counts[id]
+        if not rec or (now - rec.firstHitAt) > switchWindow then
+            rec = { count = 0, firstHitAt = now }
+            counts[id] = rec
+        end
+        rec.count = rec.count + 1
+        candidate = candidate or id
+        ::continue::
+    end
+    self._lockonPending = {}
+    if not candidate then return end
+
+    if not engaged then
+        self._lockonEntityId     = candidate
+        self._lockonActive       = true
+        self._lockonLOSLostTimer = 0.0
+        self._lockonEngagedAt    = now
+        return
+    end
+
+    -- 2. deliberate switch: stale engagement, or repeated hits on the new one
+    local stale   = (now - (self._lockonEngagedAt or 0.0)) >= switchDelay
+    local insists = (counts[candidate] and counts[candidate].count or 0) >= switchHits
+    if stale or insists then
+        self._lockonEntityId     = candidate
+        self._lockonActive       = true
+        self._lockonLOSLostTimer = 0.0
+        self._lockonEngagedAt    = now
+        counts[candidate]        = nil
+    end
+end
+
 function M.update(self, dt)
+    resolvePendingHits(self, dt)
+
     if not self._lockonActive or not self._lockonEntityId then
         return false
     end
@@ -201,6 +309,9 @@ function M.breakLock(self)
     self._lockonActive       = false
     self._lockonEntityId     = nil
     self._lockonLOSLostTimer = 0.0
+    self._lockonEngagedAt    = 0.0
+    self._lockonPending      = {}
+    self._lockonHitCounts    = {}
 end
 
 -- Call from CameraFollow.OnDisable
@@ -219,6 +330,9 @@ function M.cleanup(self)
     self._lockonEntityId     = nil
     self._lockonLOSLostTimer = 0.0
     self._deadEnemies        = {}
+    self._lockonPending      = {}
+    self._lockonHitCounts    = {}
+    self._lockonEngagedAt    = 0.0
 end
 
 return M
