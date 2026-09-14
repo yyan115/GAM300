@@ -239,16 +239,7 @@ void DesktopPlatform::GetMousePosition(double* x, double* y) {
 
 void DesktopPlatform::SetCursorLocked(bool locked) {
     if (window) {
-        int mode = GLFW_CURSOR_NORMAL;
-        if (IsWindowFocused() && !IsWindowMinimized()) {
-#ifndef EDITOR
-            mode = GLFW_CURSOR_CAPTURED;
-#endif
-            if (locked) mode = GLFW_CURSOR_DISABLED;
-        }
-        if (glfwGetInputMode(window, GLFW_CURSOR) != mode) {
-            glfwSetInputMode(window, GLFW_CURSOR, mode);
-        }
+        glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 }
 

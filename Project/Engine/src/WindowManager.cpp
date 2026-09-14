@@ -318,8 +318,7 @@ bool WindowManager::IsCursorPausedByUser() {
 void WindowManager::UpdateCursorState() {
     if (!platform) return;
 
-    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser
-        && IsWindowFocused() && !IsWindowMinimized();
+    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser;
 
 #ifdef EDITOR
     // In Editor, only actually lock cursor if game is playing
@@ -329,9 +328,11 @@ void WindowManager::UpdateCursorState() {
     }
 #endif
 
-    // Visible menu cursors also need their confinement restored after focus changes.
-    platform->SetCursorLocked(shouldLock);
-    s_cursorActuallyLocked = shouldLock;
+    // Only change state if needed
+    if (shouldLock != s_cursorActuallyLocked) {
+        platform->SetCursorLocked(shouldLock);
+        s_cursorActuallyLocked = shouldLock;
+    }
 }
 
 // ============================================================================
