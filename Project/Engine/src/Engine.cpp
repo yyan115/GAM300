@@ -59,9 +59,13 @@ namespace {
 #if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
 namespace {
     void UpdateStandaloneWindowTitleWithFps() {
+        // Off unless asked for. The Game Gallery requires that a submitted
+        // build show no debug information by default, and the title is the
+        // only place the game puts any. GAM300_SHOW_FPS=1 brings it back for
+        // measuring a frame rate on a machine that has no profiler.
         static const bool enabled = [] {
             const char* value = std::getenv("GAM300_SHOW_FPS");
-            return !value || std::string(value) != "0";
+            return value && std::string(value) == "1";
         }();
         if (!enabled) return;
         static double titleUpdateTimer = 0.0;
