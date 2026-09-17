@@ -38,6 +38,11 @@ public:
     void Stop(Entity entity);                     // reset to start
     void SetLooping(bool v);
     void SetSpeed(float s);
+
+    // Move the playhead inside the current clip, 0 at the first frame and 1 at
+    // the last. The counterpart of GetNormalizedTime, and the way to start a
+    // swing part way in so its wind up never plays.
+    void SetNormalizedTime(float t, Entity entity);
     void SetClip(size_t index, Entity entity);      // choose a different clip
 
 	// Load Animation from file and add to clips

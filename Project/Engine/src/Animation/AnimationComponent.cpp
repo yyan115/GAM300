@@ -601,6 +601,18 @@ std::string AnimationComponent::GetCurrentState() const
     return "";
 }
 
+void AnimationComponent::SetNormalizedTime(float t, Entity entity)
+{
+    if (!animator || clips.empty() || activeClip >= clips.size() || !clips[activeClip]) {
+        return;
+    }
+    const float duration = clips[activeClip]->GetDuration();
+    if (duration <= 0.0f) return;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    animator->SetCurrentTime(t * duration, entity);
+}
+
 float AnimationComponent::GetNormalizedTime() const
 {
     if (!animator || clips.empty() || activeClip >= clips.size() || !clips[activeClip]) {

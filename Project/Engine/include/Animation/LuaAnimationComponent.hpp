@@ -96,6 +96,13 @@ struct LuaAnimationComponent
         return "";
     }
 
+    void SetNormalizedTime(float t)
+    {
+        if (auto* comp = GetInternal()) {
+            comp->SetNormalizedTime(t, entityID);
+        }
+    }
+
     float GetNormalizedTime() const
     {
         if (auto* comp = GetInternal()) {

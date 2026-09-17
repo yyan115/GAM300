@@ -55,11 +55,65 @@ local Component = require("extension.mono_helper")
 
 local event_bus = _G.event_bus
 
+-- ══════════════════════════════════════════════════════════════════════════
+-- SWING TUNING (item 8)
+-- ══════════════════════════════════════════════════════════════════════════
+-- One table per variant so a swing can be reshaped without touching the clips
+-- or the animator file, and so two variants can be compared by changing one
+-- word. Per combo step:
+--
+--   start   normalized time the swing starts at, so a wind up can be skipped
+--   finish  normalized time it ends at, so a recovery can be cut short
+--   ramp    { {at, speed}, ... } in normalized time, held between points, so
+--           one part of a swing can be fast and another normal
+--
+-- "off" is the shipped behaviour and is what every variant is measured against.
+_G.SWING_TRACE = _G.SWING_TRACE or false
+
+local SWING_VARIANTS = {
+    off = {},
+
+    -- A. the blunt version: the third hit simply plays faster
+    flat_fast_3 = {
+        light_3 = { ramp = { {0.0, 1.6} } },
+    },
+
+    -- B. his example on the first hit, fast on the way down and normal at the
+    -- end, and the same shape on the third
+    ramp_all = {
+        light_1 = { ramp = { {0.0, 1.8}, {0.45, 1.0} } },
+        light_2 = { ramp = { {0.0, 1.6}, {0.45, 1.0} } },
+        light_3 = { ramp = { {0.0, 2.2}, {0.30, 1.0}, {0.70, 2.0} } },
+    },
+
+    -- C. cut the front of the third hit only
+    cut_front_3 = {
+        light_3 = { start = 0.22 },
+    },
+
+    -- D. cut the end of the third hit only
+    cut_end_3 = {
+        light_3 = { finish = 0.80 },
+    },
+
+    -- E. cut both, which is the horizontal swing he described
+    horizontal_3 = {
+        light_3 = { start = 0.22, finish = 0.78 },
+    },
+
+    -- E+B. the same cut with a ramp through what is left
+    horizontal_3_ramped = {
+        light_3 = { start = 0.22, finish = 0.78, ramp = { {0.0, 1.5}, {0.5, 1.0} } },
+    },
+}
+
 return Component {
     fields = {
         DefaultComboWindow  = 0.5,
         HeavyChargeTime     = 0.8,
         MaxComboAnimSpeed   = 2.0,
+        -- Which entry of SWING_VARIANTS above is live. "off" is what ships.
+        SwingVariant        = "off",
         -- Minimum seconds between chain attacks. The tap-fire (ChainBootstrap)
         -- still fires every press; only the attack animation is gated.
         ChainAttackCooldown = 0.6,
@@ -398,6 +452,10 @@ return Component {
         --print("[ComboManager] Player entity found (ID: " .. tostring(playerEntityId) .. ")")
 
         self._animator = Engine.FindAnimatorByName("Player")
+        -- SetNormalizedTime moves bone transforms, so it needs the entity that
+        -- owns them. The animator here is a raw AnimationComponent rather than
+        -- the wrapper that injects it, so it has to be passed.
+        self._animatorEntity = Engine.GetEntityByName("Player")
         if not self._animator then
             --print("[ComboManager] ERROR: Player AnimationComponent not found!")
             return
@@ -600,6 +658,7 @@ return Component {
         end
         self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
+        self:_applySwingTuning(state)
 
         local stateObj = {
             id           = state.id,
@@ -625,7 +684,7 @@ return Component {
         -- Falls back to state.duration - stateTimer if clipDuration is nil.
         -- ══════════════════════════════════════════════════════════════════
         local timeRemaining = nil
-        local refDuration = state.clipDuration or state.duration
+        local refDuration = self:_swingDuration(state)
         if refDuration and refDuration > 0 then
             timeRemaining = math.max(0, refDuration - self._stateTimer)
         end
@@ -801,7 +860,8 @@ return Component {
 
         -- No valid transition — check for auto-idle at end of animation
         if not candidateStateId then
-            if self._stateTimer >= state.duration and state.id ~= "idle" then
+            if self._stateTimer >= self:_swingEnd(state) and state.id ~= "idle" then
+                self:_swingTrace(state)
                 self:_transitionTo("idle")
             end
             return
@@ -851,7 +911,8 @@ return Component {
         end
 
         -- Check for auto-idle at end of animation (in case nothing queued fires)
-        if self._stateTimer >= state.duration and state.id ~= "idle" then
+        if self._stateTimer >= self:_swingEnd(state) and state.id ~= "idle" then
+            self:_swingTrace(state)
             self:_transitionTo("idle")
         end
     end,
@@ -859,6 +920,117 @@ return Component {
     -- ══════════════════════════════════════════════════════════════════════
     -- STATE TRANSITION
     -- ══════════════════════════════════════════════════════════════════════
+    -- Reshape a swing without touching its clip. See SWING_VARIANTS at the top.
+    _swingTuningFor = function(self, stateId)
+        local variant = SWING_VARIANTS[self.SwingVariant or "off"]
+        if not variant then return nil end
+        return variant[stateId]
+    end,
+
+    -- The clip length a variant leaves behind, which is what the combo window
+    -- is measured against.
+    _swingDuration = function(self, state)
+        local ref = state.clipDuration or state.duration
+        local tune = self:_swingTuningFor(state.id)
+        if tune and tune.finish and ref and ref > 0 then
+            ref = ref * math.max(0.05, math.min(1.0, tune.finish))
+        end
+        return ref
+    end,
+
+    -- Where the state stops. Separate from the above because the exit has
+    -- always compared against state.duration, and only one of the two is
+    -- allowed to be nil.
+    -- Set true to trace each swing's real length to stderr. Off in a shipped
+    -- build; this is how the variant numbers in .agents/item8 were measured.
+    _swingTrace = function(self, state)
+        if not _G.SWING_TRACE then return end
+        local tune = self:_swingTuningFor(state.id) or {}
+        local clip = state.clipDuration or state.duration or 0
+        local from = (tune.start or 0) * clip
+        local ran = (self._stateTimer or 0) - from
+        io.stderr:write(string.format(
+            "[swing] variant=%s state=%s from=%.3f to=%.3f ran=%.3f clipsec "
+            .. "animspeed=%.2f\n",
+            tostring(self.SwingVariant), tostring(state.id), from,
+            self._stateTimer or -1, ran,
+            (self._animator and self._animator.speed) or -1))
+    end,
+
+    _swingEnd = function(self, state)
+        local tune = self:_swingTuningFor(state.id)
+        if tune and tune.finish and state.duration and state.duration > 0 then
+            return state.duration * math.max(0.05, math.min(1.0, tune.finish))
+        end
+        return state.duration
+    end,
+
+    _applySwingTuning = function(self, state)
+        if not (state and state.id and self._animator) then return end
+        local tune = self:_swingTuningFor(state.id)
+        if not tune then return end
+
+        local clip = state.clipDuration or state.duration or 0
+        if clip <= 0 then return end
+
+        -- Captured on entry, before any ramp has touched it.
+        if self._swingBaseSpeed == nil then
+            self._swingBaseSpeed = self._animator.speed or 1.0
+        end
+
+        -- Skip the wind up. The animator switches clips on its own update, so
+        -- the first tick after the transition can still be showing the previous
+        -- one; this keeps trying for a few ticks and stops as soon as the
+        -- playhead it moved is the one it meant to move.
+        local startAt = tune.start or 0
+        if self._swingStartPending == state.id then
+            if startAt <= 0 then
+                self._swingStartPending = nil
+            else
+                self._swingStartTries = (self._swingStartTries or 0) + 1
+                local now = self._animator.GetNormalizedTime
+                          and self._animator:GetNormalizedTime() or 0
+                if now < startAt or self._swingStartTries >= 5 then
+                    local ok, err = pcall(function()
+                        self._animator:SetNormalizedTime(startAt,
+                                                         self._animatorEntity)
+                    end)
+                    if not ok and _G.SWING_TRACE then
+                        io.stderr:write("[swing] SetNormalizedTime error: "
+                                        .. tostring(err) .. "\n")
+                    end
+                    if _G.SWING_TRACE then
+                        io.stderr:write(string.format(
+                            "[swing] start-trim %s at %.2f applied=%s tries=%d was=%.3f\n",
+                            tostring(state.id), startAt, tostring(ok),
+                            self._swingStartTries, now))
+                    end
+                    -- The state timer measures the same clip, so it starts
+                    -- there too and the combo window still lands where it does.
+                    self._stateTimer = startAt * clip
+                    self._swingStartPending = nil
+                    self._swingStartTries = 0
+                end
+            end
+        end
+
+        if not tune.ramp then return end
+
+        -- Held between points: the last point at or before now wins.
+        local at = math.min(self._stateTimer / clip, 1.0)
+        local speed = nil
+        for _, point in ipairs(tune.ramp) do
+            if at >= point[1] then speed = point[2] else break end
+        end
+        -- Relative to the speed the animator state already runs at, which for
+        -- every light hit is 2.0. Treating these as absolute made "1.8" a
+        -- slowdown and the first measured ramp came out slower than baseline.
+        if speed and speed ~= self._swingRampApplied then
+            self._swingRampApplied = speed
+            self._animator:SetSpeed(speed * (self._swingBaseSpeed or 1.0))
+        end
+    end,
+
     _transitionTo = function(self, stateId, data)
         local newState = self.COMBO_TREE[stateId]
         if not newState then
@@ -883,6 +1055,10 @@ return Component {
         self._currentStateId   = stateId
         self._currentStateData = newState
         self._stateTimer       = 0
+        self._swingRampApplied = nil
+        self._swingStartPending = stateId
+        self._swingStartTries = 0
+        self._swingBaseSpeed = nil
 
         -- ── Update global combat flags ────────────────────────────────────
         _G.player_is_attacking = (stateId ~= "idle" and stateId ~= "dash")

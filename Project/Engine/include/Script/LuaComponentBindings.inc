@@ -82,6 +82,10 @@ BEGIN_COMPONENT(AnimationComponent, "AnimationComponent")
     METHOD("GetCurrentState", &AnimationComponent::GetCurrentState) 
     METHOD("GetStateTime", &AnimationComponent::GetStateTime)
     METHOD("GetNormalizedTime", &AnimationComponent::GetNormalizedTime )
+    // The counterpart of the line above. Scripts reach the animator through
+    // this table, not through LuaAnimationComponent, so a method registered
+    // only there is not callable from Lua at all.
+    METHOD("SetNormalizedTime", &AnimationComponent::SetNormalizedTime)
     METHOD("ResetSM", &AnimationComponent::ResetSM)
 END_COMPONENT()
 
