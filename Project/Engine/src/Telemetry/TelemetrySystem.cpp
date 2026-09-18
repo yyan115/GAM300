@@ -52,6 +52,24 @@ namespace {
     // second, so its apex falls between two 0.25s samples more often than not,
     // and reading the value at sample time understates how high the jump got.
     double g_airHeightPeak = 0.0;
+
+    // ComboManager's state changes and early presses, watched every frame. A
+    // light swing lasts under half a second, about two samples, so the state
+    // read at sample time cannot say when a swing began or ended. Each change
+    // is kept with its frame and the monotonic clock, which on Linux is the
+    // clock another process reads with time.monotonic(), so input sent from
+    // outside can be placed against the swing it landed in. A press made
+    // before the combo window opens is queued, and queued_frames counts the
+    // frames one was waiting.
+    struct ComboEntry {
+        std::string state;
+        unsigned long long frame;
+        double mono;
+    };
+    int g_comboRef = LUA_NOREF;
+    std::string g_comboState;
+    std::vector<ComboEntry> g_comboEntered;
+    int g_comboQueuedFrames = 0;
     std::string g_lastScene;
     double g_walkmapPeriod = 0.0;   // seconds; 0 disables
     double g_walkmapAccum = 0.0;
@@ -623,6 +641,19 @@ namespace Telemetry {
             if (Lp && GlobalNumber(Lp, "player_air_height", ah) && ah > g_airHeightPeak) {
                 g_airHeightPeak = ah;
             }
+            std::string comboState;
+            if (Lp && FieldString(Lp, g_comboRef, "_currentStateId", comboState)) {
+                if (comboState != g_comboState) {
+                    g_comboState = comboState;
+                    const double mono = std::chrono::duration<double>(
+                        std::chrono::steady_clock::now().time_since_epoch()).count();
+                    g_comboEntered.push_back({comboState, g_frame, mono});
+                }
+                bool queuedIsNil = true;
+                if (FieldIsNil(Lp, g_comboRef, "_queuedCombo", queuedIsNil) && !queuedIsNil) {
+                    ++g_comboQueuedFrames;
+                }
+            }
         }
         g_accumulator += TimeManager::GetUnscaledDeltaTime();
         if (g_accumulator < kSampleInterval) return;
@@ -746,6 +777,10 @@ namespace Telemetry {
                 enemies.emplace_back(a, kind);
             }
         }
+
+        // Found again on every sample, so a scene change that replaces the
+        // player is picked up within one sample.
+        g_comboRef = comboRef;
 
         std::string line;
         line.reserve(2048);
@@ -1127,6 +1162,26 @@ namespace Telemetry {
                 line += "\"state_t\":"; AppendNumber(line, stateTimer, 2);
                 wrote = true;
             }
+            // Which of ComboManager's swing variants is live, so a recording
+            // can confirm it is of the variant it asked for.
+            std::string variant;
+            if (FieldString(L, comboRef, "SwingVariant", variant)) {
+                if (wrote) line += ",";
+                line += "\"variant\":"; AppendEscaped(line, variant);
+                wrote = true;
+            }
+            if (wrote) line += ",";
+            line += "\"entered\":[";
+            for (std::size_t i = 0; i < g_comboEntered.size(); ++i) {
+                const ComboEntry& e = g_comboEntered[i];
+                if (i) line += ",";
+                line += "{\"state\":"; AppendEscaped(line, e.state);
+                line += ",\"frame\":"; line += std::to_string(e.frame);
+                line += ",\"mono\":"; AppendNumber(line, e.mono, 4);
+                line += "}";
+            }
+            line += "],\"queued_frames\":"; line += std::to_string(g_comboQueuedFrames);
+            wrote = true;
             if (GlobalBool(L, "player_can_move", canMove)) {
                 if (wrote) line += ",";
                 line += "\"can_move\":"; line += canMove ? "true" : "false";
@@ -1195,6 +1250,8 @@ namespace Telemetry {
             line += "}";
             g_airHeightPeak = 0.0;
         }
+        g_comboEntered.clear();
+        g_comboQueuedFrames = 0;
 
         line += ",\"enemies\":[";
         bool first = true;
