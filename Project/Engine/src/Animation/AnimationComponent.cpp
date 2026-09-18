@@ -601,6 +601,18 @@ std::string AnimationComponent::GetCurrentState() const
     return "";
 }
 
+void AnimationComponent::SetNormalizedTime(float t, Entity entity)
+{
+    if (!animator || clips.empty() || activeClip >= clips.size() || !clips[activeClip]) {
+        return;
+    }
+    const float duration = clips[activeClip]->GetDuration();
+    if (duration <= 0.0f) return;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    animator->SetCurrentTime(t * duration, entity);
+}
+
 float AnimationComponent::GetNormalizedTime() const
 {
     if (!animator || clips.empty() || activeClip >= clips.size() || !clips[activeClip]) {
@@ -653,5 +665,21 @@ void AnimationComponent::ResetSM(Entity entity)
 
 float AnimationComponent::GetClipDuration(size_t clipIndex) const {
     if (clipIndex >= clips.size() || !clips[clipIndex]) return 0.0f;
-    return clips[clipIndex]->GetDuration();
+    // Animation keeps its length in ticks.
+    const float ticksPerSecond = clips[clipIndex]->GetTicksPerSecond();
+    if (ticksPerSecond <= 0.0f) return 0.0f;
+    return clips[clipIndex]->GetDuration() / ticksPerSecond;
+}
+
+bool AnimationComponent::SetTransitionDuration(const std::string& from, const std::string& to, float seconds)
+{
+    if (!stateMachine) return false;
+    bool found = false;
+    for (AnimTransition& t : stateMachine->GetAllTransitions()) {
+        if (!t.anyState && t.from == from && t.to == to) {
+            t.transitionDuration = std::max(0.0f, seconds);
+            found = true;
+        }
+    }
+    return found;
 }
