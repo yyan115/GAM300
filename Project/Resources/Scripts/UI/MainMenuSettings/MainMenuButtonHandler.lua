@@ -116,13 +116,10 @@ return Component {
             self._pendingScene = self.targetScene
         end)
 
+        -- The same prompt Alt+F4 brings up. The engine shows it and holds the
+        -- menu still underneath, so the menu's own buttons need no change.
         self._quitSub = eb.subscribe("quit_clicked", function()
-            local e = Engine.GetEntityByName("QuitPromptUI")
-            if e then
-                local active = GetComponent(e, "ActiveComponent")
-                if active then active.isActive = true end
-            end
-            setButtonsInteractable(false)
+            Screen.RequestQuit()
         end)
 
         self._settingsSub = eb.subscribe("settings_clicked", function()

@@ -25,6 +25,9 @@ public:
 	void ENGINE_API LoadScene(const std::string& scenePath, bool callingFromLua = false);
 
 	void UpdateScene(double dt);
+	// Runs only the modal prompt rooted at modalRoot. A deferred scene load
+	// waits, since UpdateScene is what carries it out.
+	void UpdateSceneModal(Entity modalRoot, bool acceptPresses);
 
 	void DrawScene();
 

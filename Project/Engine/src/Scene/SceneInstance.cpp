@@ -190,6 +190,37 @@ void SceneInstance::Update(double dt)
 	updateSynchronized = true;
 }
 
+void SceneInstance::UpdateModal(Entity modalRoot, bool acceptPresses)
+{
+	ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(scenePath);
+
+	updateSynchronized = false;
+
+	// The prompt's own scripts: created, started and updated like any others.
+	ecs.scriptSystem->Update(modalRoot);
+	ecs.ClearActiveHierarchyCache();
+	ecs.PreWarmActiveHierarchyCache();
+
+	// Layout, so the prompt is placed for the window it is in.
+	ecs.uiAnchorSystem->Update();
+	ecs.transformSystem->Update();
+
+	// Its sounds. Everything else is on the paused game group.
+	if (ecs.audioSystem) {
+		ecs.audioSystem->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+	}
+
+	if (acceptPresses) {
+		ecs.buttonSystem->Update(modalRoot);
+	}
+
+	// A button can hide the prompt, so draw from what it left.
+	ecs.ClearActiveHierarchyCache();
+	ecs.PreWarmActiveHierarchyCache();
+
+	updateSynchronized = true;
+}
+
 void SceneInstance::Draw()
 {
 	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);

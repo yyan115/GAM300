@@ -55,13 +55,20 @@ void TimeManager::UpdateDeltaTime() {
     RunTimeVar::unscaledDeltaTime = RunTimeVar::deltaTime; //Store for pause usage
 
     //IF PAUSED, SET DELTATIME TO 0
-    if (isPaused)
+    if (isPaused || isFrozen)
     {
         RunTimeVar::deltaTime = 0;
     }
     else if (timeScale != 1.0f)
     {
         RunTimeVar::deltaTime *= timeScale;
+    }
+}
+
+void TimeManager::SetFrozen(bool frozen) {
+    isFrozen = frozen;
+    if (frozen) {
+        RunTimeVar::deltaTime = 0;
     }
 }
 

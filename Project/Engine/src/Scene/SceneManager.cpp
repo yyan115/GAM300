@@ -302,6 +302,12 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 
 
 
+void SceneManager::UpdateSceneModal(Entity modalRoot, bool acceptPresses) {
+    if (currentScene && modalRoot != INVALID_ENTITY) {
+        currentScene->UpdateModal(modalRoot, acceptPresses);
+    }
+}
+
 void SceneManager::UpdateScene(double dt) {
     if (loadSceneNextFrame && currentScene && currentScene->updateSynchronized && currentScene->drawSynchronized) {
         if (loadState != SceneLoadState::IDLE) {

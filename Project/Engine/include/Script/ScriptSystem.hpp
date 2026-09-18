@@ -22,7 +22,10 @@ public:
     ~ScriptSystem(); // DECLARE only. definition goes in .cpp
 
     void Initialise(ECSManager& ecsManager);
-    void Update();
+    // With a scope, only scripts on that entity and its descendants run, and
+    // coroutines hold still: the rest of the scene is frozen under a modal
+    // prompt.
+    void Update(Entity scope = INVALID_ENTITY);
     void Shutdown();
     void ReloadScriptForEntity(Entity e, ECSManager& ecsManager);
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);

@@ -139,6 +139,9 @@ public:
 	 */
 	bool ENGINE_API IsEntityActiveInHierarchy(Entity entity);
 
+	/** Whether entity is root itself or sits anywhere below it in the hierarchy. */
+	bool ENGINE_API IsInSubtree(Entity entity, Entity root);
+
 	/** Clear the per-frame active-hierarchy cache. Call once at the start of each frame. */
 	void ClearActiveHierarchyCache() {
 		// Epochs are always even; the low bit in each cache entry stores the
