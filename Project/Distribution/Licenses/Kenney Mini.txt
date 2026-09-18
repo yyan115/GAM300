@@ -1,11 +1,19 @@
 Kenney Mini
 Copyright Kenney 2011  (http://fontstruct.com/fontstructions/show/504844)
+Kenney, www.kenney.nl
 
-Licensed under Creative Commons Attribution-ShareAlike 3.0 Unported.
-https://creativecommons.org/licenses/by-sa/3.0/
+This font came from Kenney's free font package, which Kenney distributes under
+Creative Commons Zero (CC0 1.0 Universal):
+https://creativecommons.org/publicdomain/zero/1.0/
+The package's own licence file ships in this folder as
+Kenney Font Package.txt.
 
-Both the copyright and the licence above are taken from the font file's
-own name table, not assumed.
+The font file's name table carries an earlier statement from the same author,
+Creative Commons Attribution-ShareAlike 3.0 Unported, from its 2011 FontStruct
+release. That licence text is reproduced below so both statements are on
+record, and the author is credited above.
+
+The font is in the game's resources, but no screen in the game uses it.
 
 ----
 

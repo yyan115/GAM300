@@ -16,5 +16,6 @@ Technologies. Kusane does so in two places:
     "Audio Engine: FMOD Studio By Firelight Technologies Pty Ltd"
 
 No FMOD source code is distributed with this game. What ships is the FMOD
-Core and FMOD Studio runtime libraries as supplied by Firelight Technologies,
-unmodified.
+Core runtime library as supplied by Firelight Technologies, unmodified:
+fmod.dll on Windows, libfmod.so on Linux, and libfmod.so with fmod.jar on
+Android. The FMOD Studio runtime is not used or shipped.
