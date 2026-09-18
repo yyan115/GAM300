@@ -55,11 +55,57 @@ local Component = require("extension.mono_helper")
 
 local event_bus = _G.event_bus
 
+-- ══════════════════════════════════════════════════════════════════════════
+-- SWING VARIANTS
+-- ══════════════════════════════════════════════════════════════════════════
+-- Ways of reshaping the three ground hits without editing their clips, kept
+-- side by side so they can be compared. SwingVariant picks one, and the
+-- environment variable GAM300_SWING_VARIANT overrides it. "off" is the
+-- shipped behaviour. Per combo step, every key is optional:
+--
+--   start        where in the clip the swing starts, so the wind up is skipped
+--   finish       where in the clip it ends, so the recovery is cut short
+--   ramp         { {at, factor}, ... }: from each point on, the clip plays at
+--                factor times its animator state's speed, until the next point
+--   comboWindow  seconds before the end in which the next press is taken
+--   lunge        { speed, duration } of the step forward on the swing
+--
+-- start, finish and the ramp points are fractions of the clip the animator
+-- plays for that step, 0 at its first frame and 1 at its last, read from the
+-- animator every frame. A value therefore names the same pose whatever the
+-- clip's length or speed.
+--
+-- A variant can also set blends, { {from, to, seconds}, ... }: the crossfade
+-- of the animator transition from one state to another, applied to the
+-- player's animator when the scene starts.
+
+-- The animator state each shaped step plays, from PlayerAC.animator. Shaping
+-- waits until the animator is in this state, because the animator changes
+-- state on its own update, which runs after scripts.
+local SWING_ANIM_STATES = {
+    light_1 = "NA1",
+    light_2 = "NA2",
+    light_3 = "NA3",
+}
+
+local SWING_VARIANTS = {
+    off = {},
+
+    -- Every hit plays its whole clip. The reference the others are cut from.
+    full = {
+        light_1 = { finish = 1.0 },
+        light_2 = { finish = 1.0 },
+        light_3 = { finish = 1.0 },
+    },
+}
+
 return Component {
     fields = {
         DefaultComboWindow  = 0.5,
         HeavyChargeTime     = 0.8,
         MaxComboAnimSpeed   = 2.0,
+        -- Which entry of SWING_VARIANTS is live. "off" is what ships.
+        SwingVariant        = "off",
         -- Minimum seconds between chain attacks. The tap-fire (ChainBootstrap)
         -- still fires every press; only the attack animation is gated.
         ChainAttackCooldown = 0.6,
@@ -403,6 +449,15 @@ return Component {
             return
         end
 
+        local variantFromEnv = os and os.getenv and os.getenv("GAM300_SWING_VARIANT")
+        if variantFromEnv and SWING_VARIANTS[variantFromEnv] then
+            self.SwingVariant = variantFromEnv
+        end
+        local variant = SWING_VARIANTS[self.SwingVariant or "off"] or {}
+        for _, blend in ipairs(variant.blends or {}) do
+            self._animator:SetTransitionDuration(blend[1], blend[2], blend[3])
+        end
+
         self._inputInterpreter = _G.InputInterpreter
         if not self._inputInterpreter then
             --print("[ComboManager] ERROR: InputInterpreter not found!")
@@ -505,7 +560,8 @@ return Component {
                 -- Block new chain extension during committed attacks (before 80%)
                 local attackLocked = false
                 if not chainIsOut and self._currentStateId ~= "idle" and self._currentStateId ~= "dash" then
-                    local dur = self._currentStateData.clipDuration or self._currentStateData.duration or 0
+                    local current = self._currentStateData
+                    local dur = self:_tunedEnd(current, current.clipDuration or current.duration) or 0
                     local prog = (dur > 0) and math.min(self._stateTimer / dur, 1.0) or 1.0
                     attackLocked = (prog < 0.6)
                 end
@@ -600,6 +656,7 @@ return Component {
         end
         self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
+        self:_updateSwing(state)
 
         local stateObj = {
             id           = state.id,
@@ -625,13 +682,13 @@ return Component {
         -- Falls back to state.duration - stateTimer if clipDuration is nil.
         -- ══════════════════════════════════════════════════════════════════
         local timeRemaining = nil
-        local refDuration = state.clipDuration or state.duration
+        local refDuration = self:_tunedEnd(state, state.clipDuration or state.duration)
         if refDuration and refDuration > 0 then
             timeRemaining = math.max(0, refDuration - self._stateTimer)
         end
 
         -- Combo window scaled to real-time (constant regardless of anim speed)
-        local window = state.comboWindow
+        local window = self:_tuned(state, "comboWindow")
         if window ~= nil then
             window = window * animSpeed
         end
@@ -801,7 +858,7 @@ return Component {
 
         -- No valid transition — check for auto-idle at end of animation
         if not candidateStateId then
-            if self._stateTimer >= state.duration and state.id ~= "idle" then
+            if self._stateTimer >= self:_tunedEnd(state, state.duration) and state.id ~= "idle" then
                 self:_transitionTo("idle")
             end
             return
@@ -843,17 +900,92 @@ return Component {
         }
 
         if timeRemaining and state.duration and state.duration > 0 and self._animator then
+            local length      = self:_tunedEnd(state, state.duration)
             local earlyTime   = math.max(0, timeRemaining - (window or 0))
-            local earlyFactor = math.min(1.0, earlyTime / math.max(0.001, state.duration - (window or 0)))
-            local base        = self._animator.speed
-            local speedMult   = base * (1.0 + (self.MaxComboAnimSpeed - 1.0) * earlyFactor)
-            self._animator:SetSpeed(speedMult)
+            local earlyFactor = math.min(1.0, earlyTime / math.max(0.001, length - (window or 0)))
+            local factor      = 1.0 + (self.MaxComboAnimSpeed - 1.0) * earlyFactor
+            if self._swing then
+                -- A shaped swing sets the animator's speed every frame, so the
+                -- speed-up goes through it instead of being overwritten.
+                self._queueSpeedFactor = factor
+            else
+                self._animator:SetSpeed(self._animator.speed * factor)
+            end
         end
 
         -- Check for auto-idle at end of animation (in case nothing queued fires)
-        if self._stateTimer >= state.duration and state.id ~= "idle" then
+        if self._stateTimer >= self:_tunedEnd(state, state.duration) and state.id ~= "idle" then
             self:_transitionTo("idle")
         end
+    end,
+
+    -- ══════════════════════════════════════════════════════════════════════
+    -- SWING VARIANTS (see the table at the top)
+    -- ══════════════════════════════════════════════════════════════════════
+    _swingTuningFor = function(self, stateId)
+        if not SWING_ANIM_STATES[stateId] then return nil end
+        local variant = SWING_VARIANTS[self.SwingVariant or "off"]
+        return variant and variant[stateId]
+    end,
+
+    -- A combo tree value, or the live variant's replacement for it.
+    _tuned = function(self, state, key)
+        local swing = self._swing
+        if swing and swing.stateId == state.id and swing.tune[key] ~= nil then
+            return swing.tune[key]
+        end
+        return state[key]
+    end,
+
+    -- Where the step ends, in the units of _stateTimer. A variant's finish is
+    -- only known once the animator has reported the clip it plays.
+    _tunedEnd = function(self, state, default)
+        local swing = self._swing
+        if swing and swing.stateId == state.id and swing.live and swing.tune.finish then
+            return swing.tune.finish * swing.clipSeconds
+        end
+        return default
+    end,
+
+    -- Shapes the current step on the animator's own clock. Once the animator
+    -- is playing the step's state, _stateTimer is the clip position in
+    -- seconds rather than a count of its own, so everything that reads it,
+    -- the combo window included, sees where the clip really is.
+    _updateSwing = function(self, state)
+        local swing = self._swing
+        if not (swing and swing.stateId == state.id) then return end
+        local anim = self._animator
+
+        if not swing.live then
+            if anim:GetCurrentState() ~= SWING_ANIM_STATES[state.id] then return end
+            local clipSeconds = anim:GetClipDuration(anim:GetActiveClipIndex())
+            if not clipSeconds or clipSeconds <= 0 then
+                self._swing = nil
+                return
+            end
+            swing.live = true
+            swing.clipSeconds = clipSeconds
+            -- Entering the state set the animator to the state's own speed.
+            swing.baseSpeed = anim.speed
+            local start = swing.tune.start
+            if start and start > anim:GetNormalizedTime() then
+                anim:SetNormalizedTime(start, self._playerEntityId)
+            end
+        end
+
+        -- The looping states wrap back to 0 at the end of the clip. A swing
+        -- never moves backwards otherwise, so a smaller value means the end
+        -- has been passed.
+        local pos = anim:GetNormalizedTime()
+        if swing.pos and pos < swing.pos then pos = 1.0 end
+        swing.pos = pos
+        self._stateTimer = pos * swing.clipSeconds
+
+        local factor = 1.0
+        for _, point in ipairs(swing.tune.ramp or {}) do
+            if pos >= point[1] then factor = point[2] else break end
+        end
+        anim:SetSpeed(swing.baseSpeed * factor * (self._queueSpeedFactor or 1.0))
     end,
 
     -- ══════════════════════════════════════════════════════════════════════
@@ -883,6 +1015,10 @@ return Component {
         self._currentStateId   = stateId
         self._currentStateData = newState
         self._stateTimer       = 0
+
+        local tune = self:_swingTuningFor(stateId)
+        self._swing = tune and { stateId = stateId, tune = tune, live = false } or nil
+        self._queueSpeedFactor = 1.0
 
         -- ── Update global combat flags ────────────────────────────────────
         _G.player_is_attacking = (stateId ~= "idle" and stateId ~= "dash")
@@ -976,7 +1112,7 @@ return Component {
                     state     = stateId,
                     damage    = newState.damage,
                     knockback = newState.knockback or 0,
-                    lunge     = newState.lunge,
+                    lunge     = self:_tuned(newState, "lunge"),
                     isAerial  = newState.isAerial or false,
                     isSlam    = newState.isSlam or false,
                     isLift    = newState.isLift  or false,
