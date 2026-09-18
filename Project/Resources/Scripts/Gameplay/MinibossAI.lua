@@ -12,6 +12,11 @@ local BattlecryState = require("Gameplay.MinibossBattlecryState")
 
 local KnifePool = require("Gameplay.KnifePool")
 
+-- Hit types AttackHitbox sends for the player's weapon swings. AttackHitbox
+-- already lets each swing hit a target only once, so these do not need the
+-- long HitIFrame to stop one swing counting twice.
+local SWING_HIT_TYPES = { COMBO = true, LIFT = true, AIR = true, SLAM = true }
+
 -------------------------------------------------
 -- Helpers
 -------------------------------------------------
@@ -139,6 +144,12 @@ return Component {
 
         -- Damage / Hook / Death
         HitIFrame      = 0.2,
+        -- The player's three hit chain lands about half a second apart, inside
+        -- HitIFrame (1.0 on the boss in 04_Level), so without a window of its
+        -- own only the first hit of a chain would count. Weapon swings, on the
+        -- ground or in the air, use this one. Everything else keeps HitIFrame,
+        -- which stops a single explosion registering once per tick.
+        ComboHitIFrame = 0.25,
         HookedDuration = 4.0,
 
         -- "Transformation" (phase transition) lock
@@ -173,6 +184,9 @@ return Component {
         P1_RangedCharge = 0.75,
         -- Duration in melee range before firing the feather bomb punisher move in phase 1
         P1_MeleePunishTime = 5.0,
+        -- Damage the player's feather skill does to this boss: three times a
+        -- first hit, which ComboManager puts at 10.
+        FeatherSkillDamage = 30,
 
         -- Shout AOE
         ShoutRadius = 4.0,
@@ -414,7 +428,15 @@ return Component {
                 end
 
                 local damage = payload.damage or 10
-                self:ApplyHit(damage, "COMBO")
+                local hitType = payload.hitType or "COMBO"
+
+                -- The feather skill names its own damage here rather than
+                -- through the explosion prefab, which every enemy shares.
+                if hitType == "FEATHER" then
+                    damage = self.FeatherSkillDamage or damage
+                end
+
+                self:ApplyHit(damage, hitType)
             end)
         end
 
@@ -1513,7 +1535,11 @@ return Component {
 
         --print("[MinibossAI] ApplyHit called", dmg, hitType)
 
-        self._hitLockTimer = self.HitIFrame or 0.2
+        if SWING_HIT_TYPES[hitType] then
+            self._hitLockTimer = self.ComboHitIFrame or 0.25
+        else
+            self._hitLockTimer = self.HitIFrame or 0.2
+        end
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
 
         self:_publishBossHealth()
