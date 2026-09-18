@@ -204,6 +204,10 @@ jobs:
         New-Item -ItemType Directory -Force -Path "$gamedir\ProjectSettings" | Out-Null
         Copy-Item -Path "Project\ProjectSettings\TagsAndLayers.json" -Destination "$gamedir\ProjectSettings" -Force
 
+        # Files that ship beside the game unchanged, such as the licence notices.
+        # They are not assets the game loads, so they live outside Resources.
+        Copy-Item -Path "Project\Distribution\*" -Destination "$gamedir" -Recurse -Force
+
         # Verification — fail fast if something looks wrong so we catch it in CI, not in the wild.
         Write-Host "=== Staged top-level files ==="
         Get-ChildItem $gamedir -File | Select-Object Name, @{N='Size(KB)';E={[int]($_.Length/1KB)}} | Format-Table -AutoSize
@@ -219,6 +223,7 @@ jobs:
         $modelOk = Test-Path "$gamedir\Resources\Models"
         $configOk = Test-Path "$gamedir\Resources\Configs\input_config.json"
         $tagsOk = Test-Path "$gamedir\ProjectSettings\TagsAndLayers.json"
+        $licOk = @(Get-ChildItem "$gamedir\Licenses" -File -ErrorAction SilentlyContinue).Count -gt 0
 
         Write-Host "Kusane.exe:                 $exeOk"
         Write-Host "Engine.dll:                 $engineOk"
@@ -228,8 +233,9 @@ jobs:
         Write-Host "Resources\Models:           $modelOk"
         Write-Host "Resources\Configs\...json:  $configOk"
         Write-Host "ProjectSettings\Tags...json: $tagsOk"
+        Write-Host "Licenses:                   $licOk"
 
-        if (-not ($exeOk -and $engineOk -and $fmodOk -and $resOk -and $shaderOk -and $modelOk -and $configOk -and $tagsOk)) {
+        if (-not ($exeOk -and $engineOk -and $fmodOk -and $resOk -and $shaderOk -and $modelOk -and $configOk -and $tagsOk -and $licOk)) {
             Write-Error "Staging is missing required files — installer would produce a broken game."
             exit 1
         }
@@ -568,6 +574,15 @@ jobs:
     - name: Build APK
       run: ./gradlew assembleRelease
       working-directory: AndroidProject
+
+    - name: Check the APK carries the licence notices
+      # They reach the APK through Gradle from Project/Distribution, not through
+      # the asset export, so the APK itself is the only place to prove it.
+      run: |
+        apk=$(ls AndroidProject/app/build/outputs/apk/release/*.apk | head -1)
+        count=$(unzip -l "$apk" | grep -c ' assets/Licenses/' || true)
+        echo "licence files in $apk: $count"
+        [ "$count" -gt 0 ] || { echo "the APK has no assets/Licenses" >&2; exit 1; }
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4

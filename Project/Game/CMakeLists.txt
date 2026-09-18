@@ -112,6 +112,10 @@ else()
     # Install Resources folder
     install(DIRECTORY "${CMAKE_SOURCE_DIR}/Resources" DESTINATION .)
 
+    # Install the files that ship beside the game unchanged, such as the
+    # licence notices. They are not assets, so they live outside Resources.
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/Distribution/" DESTINATION .)
+
     # Install FMOD DLL
     if(WIN32)
         install(FILES "${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll" DESTINATION .)

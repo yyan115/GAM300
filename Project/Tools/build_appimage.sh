@@ -63,6 +63,9 @@ mkdir -p "$APPDIR"/usr/{bin,lib,share/applications,share/kusane} \
 mv "$STAGE/Kusane" "$APPDIR/usr/bin/"
 mv "$STAGE"/libEngine.so "$STAGE"/libfmod.so.* "$APPDIR/usr/lib/"
 mv "$STAGE/Resources" "$STAGE/ProjectSettings" "$APPDIR/usr/share/kusane/"
+# Files that ship beside the game unchanged, such as the licence notices. They
+# are not assets the game loads, so they live outside Resources.
+cp -r "$ROOT/Project/Distribution/." "$APPDIR/usr/share/kusane/"
 
 # The build directory holds libfmod.so.14.9, but the engine was linked against
 # the SONAME, libfmod.so.14, and that is the name the loader asks for. Without
@@ -130,6 +133,8 @@ for path in usr/bin/Kusane AppRun usr/share/kusane/Resources \
             usr/share/applications/kusane.desktop kusane.png; do
     [ -e "$APPDIR/$path" ] || { echo "  missing $path" >&2; fail=1; }
 done
+[ -n "$(ls -A "$APPDIR/usr/share/kusane/Licenses" 2>/dev/null)" ] \
+    || { echo "  usr/share/kusane/Licenses is missing or empty" >&2; fail=1; }
 [ -x "$APPDIR/usr/bin/Kusane" ] || { echo "  usr/bin/Kusane is not executable" >&2; fail=1; }
 [ -x "$APPDIR/AppRun" ] || { echo "  AppRun is not executable" >&2; fail=1; }
 # Check the libraries the loader will actually ask for, by name, rather than

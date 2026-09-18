@@ -65,6 +65,17 @@ android {
 
 }
 
+// Files that ship beside the game unchanged, such as the licence notices. They
+// are not assets the game loads, so they live in Project/Distribution rather
+// than in Resources, and the asset export never sees them. They reach the APK
+// here, under assets/Licenses.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.assets?.addStaticSourceDirectory(
+            file('../../Project/Distribution').path)
+    }
+}
+
 // Task to copy resources directly via Gradle (more reliable than CMake)
 //task copyResources(type: Copy) {
     //description 'Copy resources from main project to Android assets'
