@@ -182,8 +182,16 @@ return Component {
 
         -- Ranged charge (phase 1 Move1)
         P1_RangedCharge = 0.75,
-        -- Duration in melee range before firing the feather bomb punisher move in phase 1
+        -- Seconds the player can stay inside melee range before the boss answers
+        -- with its big attack, the charged cross-room slash.
         P1_MeleePunishTime = 5.0,
+        -- Seconds before the charged slash can be used again. Wind up, dash and
+        -- recovery take about four seconds, so a short cooldown turns it into
+        -- most of the phase instead of an occasional big attack.
+        P1_ChargedSlashCooldown = 18.0,
+        -- Charge time for the phase 1 charged slash. Longer than phase 3's so
+        -- the telegraph is readable the first time a player meets it.
+        P1_ChargedSlashCharge = 1.10,
         -- Damage the player's feather skill does to this boss: three times a
         -- first hit, which ComboManager puts at 10.
         FeatherSkillDamage = 30,
@@ -204,6 +212,18 @@ return Component {
         ShoutFxBlurIntensity      = 0.35,
         ShoutFxBlurRadius         = 2.5,
         ShoutFxBlurDuration       = 0.25,
+
+        -- The charged slash crosses the room, so its wind up shakes the camera
+        -- for as long as the wind up lasts. camera_follow fades a shake out over
+        -- its duration, so it is strongest as the charge begins. Intensity is in
+        -- degrees: 0.55 sits above the small hit shakes and below the phase
+        -- transition shake.
+        ChargeShakeIntensity      = 0.55,
+        ChargeShakeFrequency      = 18.0,
+        -- The slam is the opposite: one short hard jolt on impact.
+        SlamShakeIntensity        = 0.70,
+        SlamShakeDuration         = 0.35,
+        SlamShakeFrequency        = 40.0,
 
         PhaseShakeIntensity       = 0.85,
         PhaseShakeDuration        = 2.55,
@@ -245,6 +265,13 @@ return Component {
 
         P2_BurstRounds = 3,
         P2_BurstGap = 1.25, -- small pause between bursts
+        -- Attacks the boss takes on the ground after being hooked down, before
+        -- it lifts off again. This is the window the player earned with the hook.
+        P2_GroundAttacksAfterSlam = 2,
+        -- Least time it stays down after a hook. A player who keeps hitting it
+        -- cancels its ground attacks, and without a floor that would shorten
+        -- the very window the hook was meant to open.
+        P2_MinGroundTime = 3.0,
 
         -- Phase 3 tuning
         P3_FeatherCellsPerRound = 5,
@@ -1311,6 +1338,22 @@ return Component {
                 end
             end
 
+            -- Dust and rock at the point of impact. This is its own event rather
+            -- than SlammedDown, which the flying enemies use: GroundSlamVFX also
+            -- listens to that one and shows a crack decal it only hides on the
+            -- flying enemy's Stand Up state.
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("miniboss_slammed", {
+                    targetId = self.entityId,
+                    posX = x, posY = newY, posZ = z,
+                })
+                _G.event_bus.publish("camera_shake", {
+                    intensity = self.SlamShakeIntensity or 0.70,
+                    duration  = self.SlamShakeDuration or 0.35,
+                    frequency = self.SlamShakeFrequency or 40.0,
+                })
+            end
+
             return true
         end
 
@@ -1561,7 +1604,10 @@ return Component {
         end
 
         -- [NEW] Check for Super Armor!
-        local isUninterruptible = self:IsInMove("P1FeatherBombPunish")
+        -- The charged slash is the big attack in phase 1 and the answer to a
+        -- hook in phase 3, and it is only a big attack if the player cannot
+        -- cancel it by swinging during the wind up. It still takes damage.
+        local isUninterruptible = self:IsInMove("FateSealed")
 
         -- Only play hurt animations and interrupt moves if NOT in super armor
         if not isUninterruptible then
@@ -1644,6 +1690,18 @@ return Component {
             self:BeginSlamDown("Pulldown")
 
             --print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            return
+        end
+
+        -- phase 3: hooked out of the air while it is throwing bombs. Same as
+        -- phase 2, it comes down, and what it does on the ground is one charged
+        -- slash before it goes back up to throw again.
+        if self._phase == 3 and self._inAir then
+            self._hooked = true
+            self._hookedDownRequested = true
+            self._p3AirHooked = true
+            self:_EndMove()
+            self:BeginSlamDown("Pulldown")
             return
         end
 
@@ -2349,66 +2407,6 @@ return Component {
             return
         end
 
-        -------------------------------------------------
-        -- Phase 1: Melee Punish (Single Feather Bomb)
-        -------------------------------------------------
-        if m.kind == "P1FeatherBombPunish" then
-            if m.step == 0 then
-                self:FacePlayer()
-                if self._animator then self._animator:SetTrigger("FeatherBomb") end
-                self:_publishSFX("rangedAttack")
-                
-                m.step = 1
-                m.fireAt = (m.charge or 0.5)
-            end
-
-            if not m.didFire and m.t >= m.fireAt then
-                m.didFire = true
-                
-                -- Find the specific grid cell the player is standing on
-                local cellNum = self:_GetPlayerGridNumpad()
-                local yOff = self.P3_FeatherTargetYOffset or 0.25
-                local gx, gz = self:_GetGridXZ(cellNum)
-                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
-                local sx, sy, sz = self:_GetSpawnPos()
-                
-                -- 1. Spawn the new smart projectile
-                local bombId = Prefab.InstantiatePrefab(self.FeatherBombProjectilePrefab)
-                
-                -- 2. Leave a note on the Global Blackboard
-                _G.PendingFeatherBombs = _G.PendingFeatherBombs or {}
-                _G.PendingFeatherBombs[bombId] = {
-                    sx = sx, sy = sy, sz = sz,
-                    tx = gx, ty = gy + yOff, tz = gz,
-                    targetCell = cellNum
-                }
-                
-                -- -- Shoot the knife to that exact cell
-                -- self:SpawnKnifeSingleAtWorld(gx, gy + (self.P3_FeatherTargetYOffset or 0.25), gz, "P3F_Punish")
-
-                -- -- Queue the explosion when the knife "lands"
-                -- local delay = self.P3_FeatherActivateDelay or 0.90
-                -- self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
-                --     t = delay,
-                --     payload = {
-                --         entityId = self.entityId,
-                --         cells = { cellNum }, -- Targets only the player's cell
-                --         dmg = 2,
-                --         step = self.GridStep or 4.0,
-                --         cx = self.GridCenterX or 0.0,
-                --         cz = self.GridCenterZ or 0.0,
-                --     }
-                -- }
-                
-                m.doneAt = m.t + (m.postDelay or 0.75)
-            end
-
-            if m.doneAt and m.t >= m.doneAt then
-                self:_EndMove()
-            end
-            return
-        end
-
         if m.kind == "P1RangedCharged" then
             if m.step == 0 then
                 self:FacePlayer()
@@ -2509,6 +2507,26 @@ return Component {
                     m.chargeStarted = true
                     --print("[Miniboss] FateSealed: SetTrigger(Melee)")
                     self._animator:SetTrigger("Melee")
+
+                    -- Dust and rock at its feet while it winds up. This attack
+                    -- crosses the room, so the player needs to know it is
+                    -- coming while there is still time to be somewhere else.
+                    if _G.event_bus and _G.event_bus.publish then
+                        local cx, cy, cz = self:GetPosition()
+                        -- Placed at ground height, the same way the dive
+                        -- warning is.
+                        local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or cy
+                        _G.event_bus.publish("miniboss_charge_warning", {
+                            targetId = self.entityId,
+                            posX = cx, posY = gy, posZ = cz,
+                            seconds = chargeDur,
+                        })
+                        _G.event_bus.publish("camera_shake", {
+                            intensity = self.ChargeShakeIntensity or 0.55,
+                            duration  = chargeDur,
+                            frequency = self.ChargeShakeFrequency or 18.0,
+                        })
+                    end
                 end
 
                 if m.chargeT >= chargeDur then
@@ -2705,6 +2723,12 @@ return Component {
             self._p1MeleeTimer = 0 -- Reset instantly if they run away
         end
 
+        -- Ticked before the move guards below so it keeps counting while the
+        -- boss is mid-attack. It does not count while the boss is action locked,
+        -- recovering from the intro or disengaged, because Update returns before
+        -- reaching this function in those states.
+        self._p1ChargedSlashCd = math.max(0, (self._p1ChargedSlashCd or 0) - dtSec)
+
         -- =========================================================
         -- 2. GUARDS: Stop here if the boss is mid-attack or locked
         -- =========================================================
@@ -2718,15 +2742,16 @@ return Component {
         -- 3. CHOOSE NEXT MOVE (Boss is idle and ready)
         -- =========================================================
         
-        -- PRIORITY 1: Anti-Camper Punish
-        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0) then
+        -- PRIORITY 1: the big attack. The player has stood inside melee range
+        -- long enough to be punished for it, and the charged slash crosses the
+        -- room, so standing still is the wrong answer to it.
+        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0)
+           and self._p1ChargedSlashCd <= 0 then
             self._p1MeleeTimer = 0 -- Reset so it doesn't chain-cast
             self._meleeCdT = self.BossMeleeCooldown or 2.5 -- Reset normal melee cooldown so it doesn't chain cast
-            
-            self:_BeginMove("P1FeatherBombPunish", {
-                charge = 1.0,
-                postDelay = 0.75
-            })
+            self._p1ChargedSlashCd = self.P1_ChargedSlashCooldown or 18.0
+
+            self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
             return
         end
 
@@ -2764,6 +2789,10 @@ return Component {
         self._phase2State = "MOVE"
         self._phase2AfterAttackT = 0
         self._phase2BurstStarted = false
+        -- Only the hook path sets this, so anything else that puts the boss on
+        -- the ground would otherwise inherit whatever the last hook left.
+        self._phase2GroundAttacksLeft = 0
+        self._phase2GroundT = 0
     end,
 
     _UpdatePhase2 = function(self, dtSec)
@@ -2780,24 +2809,53 @@ return Component {
             -- brief hooked lock on landing
             self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
 
-            -- queue FateSealed after hook lock ends (your existing design)
-            self._phase2QueuedFate = true
+            -- Stay on the ground for a couple of attacks before lifting off.
+            -- Being hooked down is the player's reward for landing the hook. The
+            -- charged slash is not used here, because it carries the boss across
+            -- the room and away from the player.
+            self._phase2GroundAttacksLeft = self.P2_GroundAttacksAfterSlam or 2
+            self._phase2GroundT = 0
             self._phase2State = "GROUND"
             return
         end
 
-        -- Ground handling: run queued FateSealed, then go back to air
+        -- Ground handling: take the queued attacks, then go back to air
         if not self._inAir then
             self._phase2State = "GROUND"
+            self._phase2GroundT = (self._phase2GroundT or 0) + dtSec
 
-            if self._phase2QueuedFate and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
-                self._phase2QueuedFate = false
-                self:FateSealed(2.0)
+            if (self._phase2GroundAttacksLeft or 0) > 0
+               and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+                self._phase2GroundAttacksLeft = self._phase2GroundAttacksLeft - 1
+
+                -- Melee if the player stayed to trade, a throw if they backed
+                -- off. Either way the boss spends the time on the ground.
+                local px, _, pz = self:GetPlayerPosForAI()
+                local inRange = false
+                if px then
+                    local ex, ez = self:GetEnemyPosXZ()
+                    local dx, dz = px - ex, pz - ez
+                    local r = self.BossMeleeRange or 2.2
+                    inRange = (dx*dx + dz*dz) <= (r*r)
+                end
+
+                if inRange then
+                    self:_DoMeleeAttack()
+                else
+                    self:_BeginMove("P1RangedCharged", {
+                        charge = self.P1_RangedCharge or 0.75,
+                        spread = 0.6,
+                        postDelay = 0.35
+                    })
+                end
                 return
             end
 
-            -- Once FateSealed ends (or nothing queued), lift back into air and pick a new point
-            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) and (not self._phase2QueuedFate) then
+            -- Attacks done and the minimum time served: lift back into the air
+            -- and pick a new point
+            if self:IsCurrentMoveFinished() and (not self:IsActionLocked())
+               and (self._phase2GroundAttacksLeft or 0) <= 0
+               and (self._phase2GroundT or 0) >= (self.P2_MinGroundTime or 3.0) then
                 self:_SetInAir(true)
                 self._phase2Numpad = self:_PickRandomAirNumpad(self._phase2Numpad)
                 self._phase2State = "MOVE"
@@ -2959,26 +3017,6 @@ return Component {
         end
     end,
 
-    _GetPlayerGridNumpad = function(self)
-        local px,py,pz = self:GetPlayerPosForAI()
-        if not px then return 5 end
-        local cx = self.GridCenterX or 0
-        local cz = self.GridCenterZ or 0
-        local step = self.GridStep or 4.0
-
-        local ix = math.floor((px - cx)/step + 0.5)
-        local iz = math.floor((pz - cz)/step + 0.5)
-        ix = math.max(-1, math.min(1, ix))
-        iz = math.max(-1, math.min(1, iz))
-
-        local map = {
-            ["-1,-1"]=1, ["0,-1"]=2, ["1,-1"]=3,
-            ["-1,0"]=4,  ["0,0"]=5,  ["1,0"]=6,
-            ["-1,1"]=7,  ["0,1"]=8,  ["1,1"]=9,
-        }
-        return map[tostring(ix)..","..tostring(iz)] or 5
-    end,
-
     _DoDiveToPlayerGrid = function(self, dtSec)
         dtSec = toDtSec(dtSec)
         if dtSec <= 0 then return false end
@@ -3082,6 +3120,22 @@ return Component {
                 self._p3_dive_predelay = self.P3_DivePreDelay or 0.5
             end
 
+            -- Mark the ground it is about to come down on, and move the mark
+            -- when the landing spot moves. The boss keeps tracking the player
+            -- until it drops, so a mark placed once on first arrival can end up
+            -- somewhere the slam never lands.
+            local moved = (d.markX == nil)
+                or ((d.gx - d.markX)^2 + (d.gz - d.markZ)^2 > 0.25)
+            if moved and _G.event_bus and _G.event_bus.publish then
+                d.markX, d.markZ = d.gx, d.gz
+                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or 0
+                _G.event_bus.publish("miniboss_slam_warning", {
+                    targetId = self.entityId,
+                    posX = d.gx, posY = gy, posZ = d.gz,
+                    seconds = math.max(0.2, self._p3_dive_predelay),
+                })
+            end
+
             -- wait in air above player
             if self._p3_dive_predelay > 0 then
                 self._p3_dive_predelay = self._p3_dive_predelay - dtSec
@@ -3099,11 +3153,51 @@ return Component {
     end,
 
     _UpdatePhase3 = function(self, dtSec)
+        -- Pulled out of the air by the chain: fall, land, then step 5.
+        if self._p3AirHooked and not self._slamActive and not self._inAir then
+            -- The fall ended some way other than landing. Treat it as landed
+            -- rather than leaving the loop stuck where it was.
+            self._p3AirHooked = false
+            self._p3HookedSlashDone = false
+            self._immuneChain = false
+            self._phase3Step = 5
+            return
+        end
+
+        if self._p3AirHooked and self._slamActive then
+            local landed = self:UpdateSlamDown(dtSec, "hook_slam")
+            if not landed then return end
+
+            self:_SetInAir(false)
+            self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
+            self._immuneChain = false
+            self._p3AirHooked = false
+            self._p3HookedSlashDone = false
+            self._phase3Step = 5
+            return
+        end
+
+        -- step 5: the answer to being hooked down, one charged slash across the
+        -- room, then back to the top of the loop to throw again.
+        if self._phase3Step == 5 then
+            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+                if not self._p3HookedSlashDone then
+                    self._p3HookedSlashDone = true
+                    self:FateSealed(1.0)
+                    return
+                end
+                self._phase3Step = 0
+            end
+            return
+        end
+
         -- step 0: go to center in air
         if self._phase3Step == 0 then
             self:_SetInAir(true)
             self._immuneChain = true
             self._p3WasHooked = false
+            self._p3AirHooked = false
+            self._p3HookedSlashDone = false
             self._p3LotusInterrupted = false
             self._p3PendingFate = false
             self._p3FateDelayT = nil
@@ -3118,12 +3212,19 @@ return Component {
                 self._phase3RainCount = 0
                 self._phase3Step = 1
                 self._phase3RainT = nil
+                -- A hook can land mid-cast and leave this set, and step 1 only
+                -- plays the throw animation when it starts a cast from nothing.
+                self._phase3FeatherCastT = nil
             end
             return
         end
 
         -- step 1: shoot feathers to 5 random grids twice (with cast + cooldown)
         if self._phase3Step == 1 then
+            -- Hookable while it throws, so the player has an answer to the bombs
+            -- other than waiting out both rounds and then dodging the dive.
+            self._immuneChain = false
+
             -- Start casting if not already
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
@@ -3160,6 +3261,7 @@ return Component {
                 self._phase3RainT = nil
 
                 if (self._phase3RainCount or 0) >= (self.P3_FeatherRounds or 2) then
+                    self._immuneChain = true
                     self._phase3Step = 2
                 end
                 return

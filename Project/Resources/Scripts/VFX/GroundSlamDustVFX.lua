@@ -36,6 +36,32 @@ return Component {
     end,
 
 
+    -- A warning rather than an impact: the same dust and rock the slam uses,
+    -- held for as long as the warning lasts instead of a single burst. Calling
+    -- it again moves the effect, which is how the dive mark follows the boss.
+    WarnAt = function(self, x, y, z, seconds)
+        if not (self._transform and self._dustParticle) then return end
+
+        self._transform.localPosition.x = x
+        self._transform.localPosition.y = y
+        self._transform.localPosition.z = z
+        self._transform.isDirty = true
+
+        if self._rockTransform then
+            self._rockTransform.localPosition.x = x
+            self._rockTransform.localPosition.y = y
+            self._rockTransform.localPosition.z = z
+            self._rockTransform.isDirty = true
+        end
+
+        self._dustParticle.isEmitting = true
+        if self._rockParticle then
+            self._rockParticle.isEmitting = true
+        end
+        local hold = tonumber(seconds) or 0.6
+        self._emitTimer = math.max(hold, self._emitTimer or 0)
+    end,
+
     Start = function(self)
 
         self._transform = self:GetComponent("Transform")    
@@ -55,6 +81,31 @@ return Component {
                 self:SpawnGroundDustVFX(payload.posX, payload.posY, payload.posZ)       
             end
         end)
+
+        -- The miniboss's own landing. It does not publish SlammedDown, because
+        -- GroundSlamVFX listens to that too and would put down its crack decal.
+        self._minibossSlamSub = event_bus.subscribe("miniboss_slammed", function(payload)
+            if payload and payload.targetId then
+                self:SpawnGroundDustVFX(payload.posX, payload.posY, payload.posZ)
+            end
+        end)
+
+        -- The miniboss hovers above the player for about a second before it
+        -- drops, and that second reads as nothing without a mark. Dust and rock
+        -- mark the ground it is coming down on for as long as the wait lasts.
+        self._slamWarningSub = event_bus.subscribe("miniboss_slam_warning", function(payload)
+            if payload and payload.targetId then
+                self:WarnAt(payload.posX, payload.posY, payload.posZ, payload.seconds)
+            end
+        end)
+
+        -- Its charged slash crosses the room. Dust and rock at its feet while it
+        -- winds up are the difference between a surprise and an attack dodged.
+        self._chargeWarningSub = event_bus.subscribe("miniboss_charge_warning", function(payload)
+            if payload and payload.targetId then
+                self:WarnAt(payload.posX, payload.posY, payload.posZ, payload.seconds)
+            end
+        end)
     end,
     Update = function(self, dt)
         if self._emitTimer then
@@ -68,11 +119,11 @@ return Component {
     end,
     OnDisable = function(self)
         if _G.event_bus and _G.event_bus.unsubscribe then
-            if self._BeginSlamDownSub then
-                pcall(function()
-                    _G.event_bus.unsubscribe(self._BeginSlamDownSub)
-                end)
-                self._BeginSlamDownSub = nil
+            for _, key in ipairs({"_BeginSlamDownSub", "_minibossSlamSub", "_slamWarningSub", "_chargeWarningSub"}) do
+                if self[key] then
+                    pcall(function() _G.event_bus.unsubscribe(self[key]) end)
+                    self[key] = nil
+                end
             end
         end
         self._trackedEnemyAnim = nil
