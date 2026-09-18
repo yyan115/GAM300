@@ -1045,9 +1045,10 @@ return Component {
         local d2 = dx*dx + dz*dz
         if d2 < 1e-6 then return end
 
-        local yaw = math.deg(atan2(dx, dz))
-        local q = eulerToQuat(0, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+        local q = { yawQuatFromDir(dx, dz) }
+        if #q >= 4 then
+            self:ApplyRotation(q[1], q[2], q[3], q[4])
+        end
     end,
 
     GetEnemyPosXZ = function(self)
