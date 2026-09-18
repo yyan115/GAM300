@@ -948,9 +948,8 @@ namespace Telemetry {
                 }
 
                 // Where the shot came to rest. Without this there is no way to
-                // ask from outside whether a throw went where the crosshair was
-                // pointing when the button came up, which is the whole of the
-                // aim-drift report.
+                // check from outside whether a throw went where the crosshair
+                // was pointing when the button came up.
                 double endPoint[3] = {0.0, 0.0, 0.0};
                 if (FieldNestedVec3(L, chainRef, "controller", "lockedEndPoint", endPoint)) {
                     line += ",\"end\":[";
