@@ -1,0 +1,28 @@
+Sound effects from Freesound (https://freesound.org)
+
+Six recordings from Freesound are mixed, edited and layered into the cutscene
+audio of Kusane. They are not distributed as separate files.
+
+Two are licensed under Creative Commons Attribution, which requires a credit,
+and are credited here:
+
+  "Dragon_Wing.wav" by Brsjak
+  https://freesound.org/s/483095/
+  Licensed under Creative Commons Attribution 4.0 International
+  https://creativecommons.org/licenses/by/4.0/
+  Edited and mixed into the ending cutscene audio.
+
+  "game_vocalizations.wav" by montblanccandies
+  https://freesound.org/s/273200/
+  Licensed under Creative Commons Attribution 3.0 Unported
+  https://creativecommons.org/licenses/by/3.0/
+  Edited and mixed into the opening cutscene audio.
+
+Four are dedicated to the public domain under Creative Commons Zero, which
+requires no credit. They are listed so the sources are on record:
+
+  "Swoop" by sin6sixty6, https://freesound.org/s/177931/
+  "Woman Panting Painfully" by mvVoiceActing, https://freesound.org/s/218183/
+  "swoop2g.flac" by Streety, https://freesound.org/s/30241/
+  "fabric rubbing / pulling" by dynamique, https://freesound.org/s/554561/
+  CC0 1.0 Universal, https://creativecommons.org/publicdomain/zero/1.0/
