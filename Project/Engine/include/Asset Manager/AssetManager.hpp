@@ -164,7 +164,7 @@ public:
 	void ENGINE_API RunEventQueue();
 	void ENGINE_API SetShouldRunEventQueue(bool shouldRun) { shouldRunEventQueue = shouldRun; }
 
-	const std::filesystem::path& GetAndroidResourcesPath();
+	ENGINE_API const std::filesystem::path& GetAndroidResourcesPath();
 	std::string ExtractRelativeAndroidPath(const std::string& fullAndroidPath);
 
 	// Handle 'Compile All Assets'

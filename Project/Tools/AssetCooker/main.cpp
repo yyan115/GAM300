@@ -109,25 +109,29 @@ int main(int argc, char** argv) {
     for (const std::string& f : failures) std::cerr << "  failed: " << f << "\n";
 
     // Count what actually landed on disk, because "the call returned true" and
-    // "the file exists" are not the same claim.
-    size_t dds = 0, mesh = 0, font = 0;
-    for (const auto& entry : fs::recursive_directory_iterator(root)) {
-        if (!entry.is_regular_file()) continue;
-        const std::string ext = entry.path().extension().generic_string();
-        if (ext == ".dds") ++dds;
+    // "the file exists" are not the same claim. An Android cook writes into the
+    // Android project, as .ktx textures, rather than next to its sources.
+    const fs::path outputRoot = android ? assets.GetAndroidResourcesPath() : root;
+    const std::string textureExt = android ? ".ktx" : ".dds";
+    size_t textures = 0, mesh = 0, font = 0;
+    std::error_code walkError;
+    for (fs::recursive_directory_iterator it(outputRoot, walkError), end; it != end; it.increment(walkError)) {
+        if (walkError) break;
+        if (!it->is_regular_file()) continue;
+        const std::string ext = it->path().extension().generic_string();
+        if (ext == textureExt) ++textures;
         else if (ext == ".mesh") ++mesh;
         else if (ext == ".font") ++font;
     }
 
-
-    std::cout << "AssetCooker: on disk now - " << dds << " .dds, " << mesh
+    std::cout << "AssetCooker: on disk now - " << textures << " " << textureExt << ", " << mesh
               << " .mesh, " << font << " .font\n";
 
     // The compile calls happen inside InitializeAssetMetaFiles and it reports no
     // tally, so the check is what landed on disk. Zero of anything means the
     // cook did not work, and shipping that produces a game with no textures.
-    if (dds == 0 || mesh == 0) {
-        std::cerr << "AssetCooker: nothing was produced (.dds=" << dds
+    if (textures == 0 || mesh == 0) {
+        std::cerr << "AssetCooker: nothing was produced (" << textureExt << "=" << textures
                   << ", .mesh=" << mesh << ")\n";
         return 1;
     }

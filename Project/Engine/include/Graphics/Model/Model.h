@@ -149,13 +149,21 @@ private:
 	bool flipUVs = false;
 
 	//void loadModel(const std::string& path);
-	void ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene);
-	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene);
+	// forAndroid: the mesh is being cooked for Android, which reads the source
+	// assets and writes nothing but its own outputs. Materials and textures
+	// are left alone, since Android gets those from their own export stages.
+	void ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene, bool forAndroid);
+	Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene, bool forAndroid);
+
+	// The name of the material file a model's material is imported to. The
+	// existence check, the write and the name stored in the .mesh all use it,
+	// so they always agree on which file that is.
+	static std::string ImportedMaterialStem(const std::string& modelName, const std::string& materialName);
 
 	void WriteModelNode(std::ofstream& meshFile, const ModelNode& node);
 	void ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, ModelNode& node);
 
-    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, Material::TextureType targetType = Material::TextureType::NONE);
+    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, bool forAndroid, Material::TextureType targetType = Material::TextureType::NONE);
     AABB modelBoundingBox;
 
     // Whenever CompileToResource is called, store a set of processed textures to prevent duplicate texture compilation.

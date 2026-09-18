@@ -28,6 +28,11 @@ public:
 
 	static std::filesystem::path SanitizePathForAndroid(const std::filesystem::path& input);
 	static std::string SanitizeFileName(const std::string& name);
+	// The file name at the end of a path written on any OS. Model files keep
+	// texture paths in the convention of the machine they were authored on,
+	// so backslashes and a drive's colon separate as well as '/', whatever
+	// this OS is.
+	static std::string FileNameFromAuthoredPath(const std::string& path);
 	static std::string SanitizeFilePath(const std::string& fullPath);
 
 	static bool StrictExists(const std::filesystem::path& p);
