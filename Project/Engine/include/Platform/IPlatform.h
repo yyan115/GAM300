@@ -38,8 +38,12 @@ public:
     virtual void GetMousePosition(double* x, double* y) = 0;
     virtual float GetScrollY() { return 0.0f; }
 
-    // Cursor control
-    virtual void SetCursorLocked(bool locked) = 0;
+    // Cursor control. Free is shown and can leave the window, Confined is
+    // shown and kept inside the window, and Locked is hidden and held for
+    // mouse look.
+    enum class CursorMode { Free, Confined, Locked };
+    virtual void SetCursorMode(CursorMode mode) = 0;
+    // True only in the Locked mode
     virtual bool IsCursorLocked() = 0;
     
     // Time

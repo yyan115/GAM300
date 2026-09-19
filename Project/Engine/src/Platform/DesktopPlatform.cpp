@@ -237,10 +237,17 @@ void DesktopPlatform::GetMousePosition(double* x, double* y) {
     }
 }
 
-void DesktopPlatform::SetCursorLocked(bool locked) {
-    if (window) {
-        glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+void DesktopPlatform::SetCursorMode(CursorMode mode) {
+    if (!window) return;
+    // GLFW holds a captured or disabled cursor only while the window has
+    // focus, and lets it go and takes it back as focus leaves and returns.
+    int glfwMode = GLFW_CURSOR_NORMAL;
+    switch (mode) {
+        case CursorMode::Free:     glfwMode = GLFW_CURSOR_NORMAL;   break;
+        case CursorMode::Confined: glfwMode = GLFW_CURSOR_CAPTURED; break;
+        case CursorMode::Locked:   glfwMode = GLFW_CURSOR_DISABLED; break;
     }
+    glfwSetInputMode(window, GLFW_CURSOR, glfwMode);
 }
 
 bool DesktopPlatform::IsCursorLocked() {

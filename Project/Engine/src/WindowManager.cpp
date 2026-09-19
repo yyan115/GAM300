@@ -267,10 +267,39 @@ bool WindowManager::IsWindowFocused() {
 // CURSOR MANAGEMENT - Robust system that works with ImGui
 // ============================================================================
 
+using CursorMode = IPlatform::CursorMode;
+
 // Static state tracking
 static bool s_cursorLockRequested = false;   // What game code wants
-static bool s_cursorActuallyLocked = false;  // Current actual state
+static CursorMode s_appliedCursorMode = CursorMode::Free;  // Current actual state
 static bool s_cursorPausedByUser = false;    // User pressed ESC to temporarily unlock
+
+// The cursor mode the current state calls for
+static CursorMode DesiredCursorMode() {
+    // The quit prompt needs the cursor. The game's own request is left as it
+    // is, so the lock comes back by itself when the prompt goes.
+    bool lock = s_cursorLockRequested && !s_cursorPausedByUser
+        && !QuitConfirmation::IsPrompting();
+#ifdef EDITOR
+    // In Editor, only actually lock cursor if game is playing. ImGui sets the
+    // cursor itself every frame unless it is locked, so it is never confined.
+    if (!Engine::ShouldRunGameLogic()) lock = false;
+    return lock ? CursorMode::Locked : CursorMode::Free;
+#else
+    if (lock) return CursorMode::Locked;
+    // A fullscreen game keeps the pointer on its own screen. A window leaves
+    // it free to go to other programs.
+    return WindowManager::IsFullscreen() ? CursorMode::Confined : CursorMode::Free;
+#endif
+}
+
+// Hands the platform the mode the current state calls for, when it changes
+static void ApplyCursorMode(IPlatform* platform) {
+    const CursorMode mode = DesiredCursorMode();
+    if (!platform || mode == s_appliedCursorMode) return;
+    platform->SetCursorMode(mode);
+    s_appliedCursorMode = mode;
+}
 
 void WindowManager::SetCursorLocked(bool locked) {
     s_cursorLockRequested = locked;
@@ -283,7 +312,7 @@ void WindowManager::SetCursorLocked(bool locked) {
 }
 
 bool WindowManager::IsCursorLocked() {
-    return s_cursorActuallyLocked;
+    return s_appliedCursorMode == CursorMode::Locked;
 }
 
 bool WindowManager::IsCursorLockRequested() {
@@ -292,30 +321,21 @@ bool WindowManager::IsCursorLockRequested() {
 
 void WindowManager::ForceUnlockCursor() {
     s_cursorLockRequested = false;
-    s_cursorActuallyLocked = false;
     s_cursorPausedByUser = false;
-    if (platform) {
-        platform->SetCursorLocked(false);
-    }
+    ApplyCursorMode(platform);
 }
 
 void WindowManager::PauseCursorLock() {
     // User temporarily paused cursor lock (e.g., pressed ESC in Editor)
     s_cursorPausedByUser = true;
-    s_cursorActuallyLocked = false;
-    if (platform) {
-        platform->SetCursorLocked(false);
-    }
+    ApplyCursorMode(platform);
 }
 
 void WindowManager::ResumeCursorLock() {
     // User clicked back in game panel to resume cursor lock
     if (s_cursorLockRequested) {
         s_cursorPausedByUser = false;
-        s_cursorActuallyLocked = true;
-        if (platform) {
-            platform->SetCursorLocked(true);
-        }
+        ApplyCursorMode(platform);
     }
 }
 
@@ -326,24 +346,14 @@ bool WindowManager::IsCursorPausedByUser() {
 void WindowManager::UpdateCursorState() {
     if (!platform) return;
 
-    // The quit prompt needs the cursor. The game's own request is left as it
-    // is, so the lock comes back by itself when the prompt goes.
-    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser
-        && !QuitConfirmation::IsPrompting();
-
 #ifdef EDITOR
-    // In Editor, only actually lock cursor if game is playing
     if (!Engine::ShouldRunGameLogic()) {
-        shouldLock = false;
         s_cursorPausedByUser = false; // Reset pause when game stops
     }
 #endif
 
-    // Only change state if needed
-    if (shouldLock != s_cursorActuallyLocked) {
-        platform->SetCursorLocked(shouldLock);
-        s_cursorActuallyLocked = shouldLock;
-    }
+    // Also picks up a switch between fullscreen and windowed, within a frame
+    ApplyCursorMode(platform);
 }
 
 // ============================================================================
