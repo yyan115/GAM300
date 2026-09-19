@@ -3520,6 +3520,10 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
         readVec3Generic(d[startIdx + 11], particleComp.gravity);
         particleComp.velocityRandomness = Serializer::GetFloat(d, startIdx + 12);
         readVec3Generic(d[startIdx + 13], particleComp.initialVelocity);
+        // Written after initialVelocity. It was never read back, so every
+        // additive emitter loaded as alpha blended. Files saved before the
+        // field existed do not have it and keep the default.
+        particleComp.additiveBlending = Serializer::GetBool(d, startIdx + 14, false);
     }
 }
 
