@@ -53,6 +53,10 @@ end
 function AttackState:Enter(ai)
     ai._currentAttackToken = ai:BeginAttackWindow()
 
+    -- No path may carry a hurt pose into the attack: the attack animation
+    -- only starts once every hurt bool is false.
+    ai:_ClearHurtAnims()
+
     ai._animator:SetBool("PlayerInAttackRange", true)
     ai._animator:SetBool("PlayerInDetectionRange", false)
     ai._animator:SetBool("PatrolEnabled", false)
@@ -173,8 +177,16 @@ function AttackState:Update(ai, dt)
 
     -- Melee
     if ai.IsMelee then
-        ai.attackTimer = (ai.attackTimer or 0) + dtSec
-        
+        -- The wind-up is timed from the swing animation. After a hit the
+        -- swing waits for the hurt animation to finish, and the claw then
+        -- lands when the swing does, never from the hurt pose.
+        if ai.meleeAnimTriggered and not ai._damageDealt
+           and not ai:IsPlayingAttackAnim("Melee Attack") then
+            ai.attackTimer = 0
+        else
+            ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        end
+
         local impactWait = ai.MeleeAnimDelay or 0.5
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
 
@@ -285,7 +297,13 @@ function AttackState:Update(ai, dt)
         end
     -- Ranged
     else
-        ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        -- Timed from the throw animation, for the same reason as the swing
+        if ai.rangedAnimTriggered and not ai._damageDealt
+           and not ai:IsPlayingAttackAnim("Ranged Attack") then
+            ai.attackTimer = 0
+        else
+            ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        end
 
         local spawnFeatherDelay = ai.RangedAnimDelay or 0.5
         local cd = ai.AttackCooldown

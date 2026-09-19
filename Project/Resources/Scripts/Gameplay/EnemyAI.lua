@@ -1029,6 +1029,16 @@ return Component {
         self._animator:SetBool("Hurt3", false)
     end,
 
+    -- Whether the animator is playing the given attack state. Attack damage
+    -- is timed from this, so an attack held up by a hurt animation lands
+    -- when the swing does. An animator with no controller reports no state,
+    -- and then there is nothing to wait for.
+    IsPlayingAttackAnim = function(self, stateName)
+        if not self._animator then return true end
+        local current = self._animator:GetCurrentState()
+        return current == "" or current == stateName
+    end,
+
     _ResetCombatAnimatorParams = function(self)
         if not self._animator then return end
 
@@ -2207,6 +2217,16 @@ return Component {
         self:_squashTrigger("horizontal", 0.6)
 
         if not self._hurtTriggeredByFeather then
+            -- Play hurt SFX (only if not dead)
+            self:_publishSFX("hurt")
+
+            -- A hooked enemy stays hooked. The hurt state is what clears a
+            -- hurt bool, so setting one here would hold the enemy in the
+            -- hurt pose after the hook, attacking from it.
+            if self.fsm.currentName == "Hooked" then
+                return
+            end
+
             local myRandomValue = math.random(1, 3)
             if myRandomValue == 1 then
                 --print("[EnemyAI] Animator:SetBool(Hurt1, true)")
@@ -2219,12 +2239,6 @@ return Component {
                 self._animator:SetBool("Hurt3", true)
             end
 
-            -- Play hurt SFX (only if not dead)
-            self:_publishSFX("hurt")
-
-            if self.fsm.currentName == "Hooked" then
-                return
-            end
             self.fsm:ForceChange("Hurt", self.states.Hurt)
         end
 
