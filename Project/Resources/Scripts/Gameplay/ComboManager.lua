@@ -180,6 +180,19 @@ local SWING_VARIANTS = {
         light_3 = { start = 0.40, finish = 0.62 },
         blends = { { "NA2", "NA3", 0.05 }, { "NA3", "Idle", 0.2 } },
     },
+
+    -- F on the first two hits and H on the third: hits one and two start
+    -- sharply and settle quickly if the combo stops there, and the third
+    -- swing plays as shipped with the longer step forward. The blends into
+    -- hit one cover starting it from standing, running and landing.
+    snap_12_lunge_3 = {
+        light_3 = { lunge = { speed = 8.0, duration = 0.22 } },
+        blends = {
+            { "Idle", "NA1", 0.05 }, { "Run", "NA1", 0.05 }, { "Land", "NA1", 0.05 },
+            { "NA1", "NA2", 0.05 },
+            { "NA1", "Idle", 0.2 }, { "NA2", "Idle", 0.2 },
+        },
+    },
 }
 
 return Component {
