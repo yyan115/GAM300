@@ -177,8 +177,10 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
-        // Handle 'P' key to open selected prefab in Prefab Editor.
-        if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_P)) {
+        // Handle 'P' key to open selected prefab in Prefab Editor. Not while
+        // typing: the search box is in this window, and a name with a P in it
+        // opened the selected entity's prefab.
+        if (ImGui::IsWindowFocused() && !ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_P)) {
             Entity selectedEntity = GUIManager::GetSelectedEntity();
             if (selectedEntity != static_cast<Entity>(-1)) {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
