@@ -683,3 +683,10 @@ bool AnimationComponent::SetTransitionDuration(const std::string& from, const st
     }
     return found;
 }
+
+bool AnimationComponent::SetStateStartTime(const std::string& state, float normalized)
+{
+    if (!stateMachine || !stateMachine->HasState(state)) return false;
+    stateMachine->SetStartTime(state, normalized);
+    return true;
+}

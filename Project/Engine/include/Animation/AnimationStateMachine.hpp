@@ -70,6 +70,11 @@ public:
 	AnimStateConfig* GetState(const AnimStateID& id);
 	const AnimStateConfig* GetState(const AnimStateID& id) const;
 
+	// Where in its clip a state starts playing when it is entered, 0 at the
+	// first frame and 1 at the last. Not part of the controller file: it is for
+	// trying a different entry point at runtime. 0 goes back to the start.
+	void SetStartTime(const AnimStateID& id, float normalized);
+
 	// Transition management
 	void AddTransition(const AnimTransition& transition) { mTransitions.push_back(transition); }
 	void RemoveTransition(size_t index);
@@ -121,4 +126,5 @@ private:
 	AnimParamSet mParam;
 	std::unordered_map<AnimStateID, AnimStateConfig> mStates;
 	std::vector<AnimTransition> mTransitions;
+	std::unordered_map<AnimStateID, float> mStartTimes;
 };

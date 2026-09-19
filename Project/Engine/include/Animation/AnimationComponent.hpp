@@ -116,6 +116,11 @@ public:
     // false if the controller has no such transition.
     bool SetTransitionDuration(const std::string& from, const std::string& to, float seconds);
 
+    // Where a state starts playing its clip when entered, 0 at the first frame
+    // and 1 at the last, for trying a different value at runtime. The
+    // controller file is unchanged. Returns false if there is no such state.
+    bool SetStateStartTime(const std::string& state, float normalized);
+
     // Get normalized animation progress (0.0 to 1.0) for current clip
     float GetNormalizedTime() const;
 

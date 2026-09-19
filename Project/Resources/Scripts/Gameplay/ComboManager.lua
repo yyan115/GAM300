@@ -63,7 +63,9 @@ local event_bus = _G.event_bus
 -- environment variable GAM300_SWING_VARIANT overrides it. "off" is the
 -- shipped behaviour. Per combo step, every key is optional:
 --
---   start        where in the clip the swing starts, so the wind up is skipped
+--   start        where in the clip the swing starts, so the wind up is skipped.
+--                The animator state itself starts there, so the part skipped
+--                is never drawn
 --   finish       where in the clip it ends, so the recovery is cut short
 --   ramp         { {at, factor}, ... }: from each point on, the clip plays at
 --                factor times its animator state's speed, until the next point
@@ -76,8 +78,8 @@ local event_bus = _G.event_bus
 -- clip's length or speed.
 --
 -- A variant can also set blends, { {from, to, seconds}, ... }: the crossfade
--- of the animator transition from one state to another, applied to the
--- player's animator when the scene starts.
+-- of the animator transition from one state to another. Blends and starts are
+-- applied to the player's animator when the scene starts.
 
 -- The animator state each shaped step plays, from PlayerAC.animator. Shaping
 -- waits until the animator is in this state, because the animator changes
@@ -528,10 +530,7 @@ return Component {
         if variantFromEnv and SWING_VARIANTS[variantFromEnv] then
             self.SwingVariant = variantFromEnv
         end
-        local variant = SWING_VARIANTS[self.SwingVariant or "off"] or {}
-        for _, blend in ipairs(variant.blends or {}) do
-            self._animator:SetTransitionDuration(blend[1], blend[2], blend[3])
-        end
+        self:_applySwingVariantToAnimator(SWING_VARIANTS[self.SwingVariant or "off"] or {})
 
         self._inputInterpreter = _G.InputInterpreter
         if not self._inputInterpreter then
@@ -997,6 +996,31 @@ return Component {
     -- ══════════════════════════════════════════════════════════════════════
     -- SWING VARIANTS (see the table at the top)
     -- ══════════════════════════════════════════════════════════════════════
+    -- The parts of a variant that live on the animator rather than in the
+    -- combo step. A name the controller does not have would leave the variant
+    -- doing nothing without a sign, so it is reported.
+    _applySwingVariantToAnimator = function(self, variant)
+        local function report(what)
+            if io and io.stderr then
+                io.stderr:write("[ComboManager] swing variant " .. tostring(self.SwingVariant)
+                    .. ": the player's animator has no " .. what .. "\n")
+            end
+        end
+        for _, blend in ipairs(variant.blends or {}) do
+            if not self._animator:SetTransitionDuration(blend[1], blend[2], blend[3]) then
+                report("transition " .. blend[1] .. " -> " .. blend[2])
+            end
+        end
+        for stepId, animState in pairs(SWING_ANIM_STATES) do
+            local tune = variant[stepId]
+            if tune and tune.start then
+                if not self._animator:SetStateStartTime(animState, tune.start) then
+                    report("state " .. animState)
+                end
+            end
+        end
+    end,
+
     _swingTuningFor = function(self, stateId)
         if not SWING_ANIM_STATES[stateId] then return nil end
         local variant = SWING_VARIANTS[self.SwingVariant or "off"]
@@ -1040,12 +1064,9 @@ return Component {
             end
             swing.live = true
             swing.clipSeconds = clipSeconds
-            -- Entering the state set the animator to the state's own speed.
+            -- Entering the state set the animator to the state's own speed,
+            -- and to the variant's start in the clip.
             swing.baseSpeed = anim.speed
-            local start = swing.tune.start
-            if start and start > anim:GetNormalizedTime() then
-                anim:SetNormalizedTime(start, self._playerEntityId)
-            end
         end
 
         -- The looping states wrap back to 0 at the end of the clip. A swing
