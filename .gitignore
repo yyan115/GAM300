@@ -73,3 +73,6 @@ AndroidProject/.idea/misc.xml
 
 # Python bytecode from the packaging tools
 __pycache__/
+
+# The snapshot the editor saves beside a scene when Play is pressed
+*.scene.temp
