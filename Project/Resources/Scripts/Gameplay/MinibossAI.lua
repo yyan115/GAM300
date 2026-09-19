@@ -212,13 +212,23 @@ return Component {
         -- Seconds the player can stay inside melee range before the boss answers
         -- with its big attack, the charged cross-room slash.
         P1_MeleePunishTime = 5.0,
-        -- Seconds before the charged slash can be used again. Wind up, dash and
-        -- recovery take about four seconds, so a short cooldown turns it into
-        -- most of the phase instead of an occasional big attack.
+        -- Seconds before the charged slash can answer a player standing in
+        -- melee range again. Wind up, dash and recovery take about four
+        -- seconds, so a short cooldown turns it into most of the phase instead
+        -- of an occasional big attack. A player who keeps away meets it after
+        -- the throws below instead, whatever this cooldown says.
         P1_ChargedSlashCooldown = 18.0,
         -- Charge time for the phase 1 charged slash. Longer than phase 3's so
         -- the telegraph is readable the first time a player meets it.
         P1_ChargedSlashCharge = 1.10,
+        -- Knife throws at a player who keeps out of melee range before the
+        -- boss answers with the charged slash. Rolled again after each slash.
+        P1_ThrowsBeforeLungeMin = 1,
+        P1_ThrowsBeforeLungeMax = 2,
+        -- Speed of the charged slash's dash, in units per second, in every
+        -- phase. The claw lands 0.36 s into the dash, and at this speed the
+        -- boss crosses the arena (about 14 units) by then.
+        LungeSpeed = 40.0,
         -- Seconds the boss has to wait after a hit stops one of its attacks
         -- before a hit can stop another. Hits in between still do damage, but
         -- the attack carries on and lands.
@@ -419,6 +429,8 @@ return Component {
         self._p1DidShout90 = false
         self._p1DidShout75 = false
         self._meleeCdT = 0
+        self._p1ThrowsAway = 0
+        self._p1ThrowTarget = self:_RollP1ThrowTarget()
 
         self._p3_dive_postdelay = self.P3_DivePostDelay
         self._p3_dive_predelay = self.P3_DivePreDelay
@@ -970,6 +982,21 @@ return Component {
         local dx = x - cx
         local dz = z - cz
         return (dx*dx + dz*dz) <= (r*r)
+    end,
+
+    -- How far (x, z) can travel along the unit direction (dx, dz) before it
+    -- leaves the arena circle. From outside, travel inward still counts. Zero
+    -- if the line misses the circle or the circle is behind.
+    _ArenaTravelLimit = function(self, x, z, dx, dz)
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+        local r  = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+        local ox, oz = x - cx, z - cz
+        -- The far root of |o + t*d| = r, with |d| = 1
+        local b = ox * dx + oz * dz
+        local disc = b * b - (ox * ox + oz * oz - r * r)
+        if disc < 0 then return 0 end
+        return math.max(0, -b + math.sqrt(disc))
     end,
 
     _ClampToArenaXZ = function(self, x, z)
@@ -2545,6 +2572,11 @@ return Component {
                 m.didFire = true
                 self:SpawnKnifeVolley3(m.spread or 0.6)
                 m.doneAt = m.t + (m.postDelay or 0.35)
+                -- Counted when the knives leave, so a throw a hit cancelled
+                -- does not bring the charged slash closer
+                if m.countForLunge then
+                    self._p1ThrowsAway = (self._p1ThrowsAway or 0) + 1
+                end
             end
             if m.doneAt and m.t >= m.doneAt then self:_EndMove() end
             return
@@ -2620,24 +2652,24 @@ return Component {
         -- Move4: Fate Sealed (charge-up -> dash -> slash -> recover)
         -------------------------------------------------
         if m.kind == "FateSealed" then
+            local dashDur = m.dashDur or 0.4
+            -- Seconds into the dash when the claw connects
+            local contactT = dashDur * (m.slashAt or 0.9)
 
             -- Step 0: charge-up (telegraph)
             if m.step == 0 then
                 -- face player during charge (feels intentional)
                 self:FacePlayer()
-                
+
                 m.chargeT = (m.chargeT or 0) + dtSec
                 local chargeDur = m.chargeDur or 0.45
-                
-                -- OPTIONAL: play charge animation / VFX / SFX once
+
                 if not m.chargeStarted then
                     m.chargeStarted = true
-                    --print("[Miniboss] FateSealed: SetTrigger(Melee)")
-                    self._animator:SetTrigger("Melee")
 
-                    -- Dust and rock at its feet while it winds up. This attack
-                    -- crosses the room, so the player needs to know it is
-                    -- coming while there is still time to be somewhere else.
+                    -- The wind up warning. This attack crosses the room, so
+                    -- the player needs to know it is coming while there is
+                    -- still time to be somewhere else.
                     if _G.event_bus and _G.event_bus.publish then
                         local cx, cy, cz = self:GetPosition()
                         -- Placed at ground height, the same way the dive
@@ -2656,11 +2688,21 @@ return Component {
                     end
                 end
 
+                -- The swing is the same clip as the ordinary melee attack,
+                -- whose claw connects BossMeleeWindup seconds in. It starts
+                -- that long before the dash's contact time so the claw lands
+                -- with the damage.
+                if not m.swingTriggered
+                   and m.chargeT >= chargeDur + contactT - (self.BossMeleeWindup or 1.1) then
+                    m.swingTriggered = true
+                    if self._animator then self._animator:SetTrigger("Melee") end
+                end
+
                 if m.chargeT >= chargeDur then
                     -- lock dash direction at the END of charge (fair + readable)
                     local dx, dz = self:_DirToPlayerXZ()
                     if not dx then
-                        self:_EndMove()
+                        self:_CancelCurrentAttackMove("NO_TARGET")
                         return
                     end
 
@@ -2671,6 +2713,11 @@ return Component {
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
 
+                    -- The dash stays inside the arena
+                    local ex, ez = self:GetEnemyPosXZ()
+                    m.maxTravel = self:_ArenaTravelLimit(ex, ez, dx, dz)
+                    m.travelled = 0
+
                     m.step = 1
                     m.chargeT = 0
                 end
@@ -2678,53 +2725,60 @@ return Component {
                 return
             end
 
-            -- Step 1: dash phase (stop early if we reach player, but keep timer for slash)
-            local dashDur   = m.dashDur or 0.22
-            local dashSpeed = m.dashSpeed or 18.0
-            local stopDist  = m.stopDist or 1.8
-
+            -- Step 1: dash along the locked direction until level with the
+            -- player, then the claw lands at the contact time. A player who
+            -- steps off the line during the dash is missed.
             if m.step == 1 then
                 m.dashT = (m.dashT or 0) + dtSec
 
-                -- Check distance to player in XZ
-                local px, _, pz = self:GetPlayerPosForAI()
-                if px then
+                local speed = 0
+                if not m.reached then
+                    local px, _, pz = self:GetPlayerPosForAI()
                     local ex, ez = self:GetEnemyPosXZ()
-                    local ddx, ddz = px - ex, pz - ez
-                    if (ddx*ddx + ddz*ddz) <= (stopDist*stopDist) then
+                    if px and ex then
+                        -- How far ahead of the boss the player is along the dash
+                        local along = (px - ex) * m.dx + (pz - ez) * m.dz
+                        local room = math.min(along - (m.stopDist or 0.8),
+                                              (m.maxTravel or 0) - m.travelled)
+                        if room <= 0 or m.dashT > contactT then
+                            m.reached = true
+                        else
+                            -- Units per second, and never past the stop point
+                            -- within this frame
+                            speed = math.min(m.dashSpeed or 40.0, room / math.max(dtSec, 1e-4))
+                        end
+                    else
                         m.reached = true
                     end
                 end
 
-                -- Only move if not reached yet
-                if (not m.reached) then
+                if speed > 0 then
+                    m.travelled = m.travelled + speed * dtSec
                     if self._controller then
-                        CharacterController.Move(
-                            self._controller,
-                            m.dx * dashSpeed * dtSec,
-                            0,
-                            m.dz * dashSpeed * dtSec
-                        )
+                        CharacterController.Move(self._controller, m.dx * speed, 0, m.dz * speed)
                     else
-                        -- fallback (just in case CC is missing)
                         local x, y, z = self:GetPosition()
                         if x then
-                            self:SetPosition(x + m.dx * dashSpeed * dtSec, y, z + m.dz * dashSpeed * dtSec)
+                            self:SetPosition(x + m.dx * speed * dtSec, y, z + m.dz * speed * dtSec)
                         end
                     end
                 else
-                    -- reached player: stop moving, just wait out slash timing
+                    -- Stopped: face the player while the claw comes down
                     self:FacePlayer()
                 end
 
-                -- slash timing: keep as-is (it will now happen while standing still if reached early)
-                local slashAt = m.slashAt or 0.85 -- fraction of dash
-                if not m.slashed and m.dashT >= (dashDur * slashAt) then
+                if not m.slashed and m.dashT >= contactT then
                     m.slashed = true
                     self:_publishSFX("meleeAttack")
 
                     if _G.event_bus and _G.event_bus.publish then
                         local ex, ey, ez = self:GetPosition()
+                        local qW, qX, qY, qZ = self:GetRotation()
+                        _G.event_bus.publish("miniboss_vfx", {
+                            pos = { x = ex, y = ey, z = ez },
+                            rot = { w = qW, x = qX, y = qY, z = qZ },
+                            entityId = self.entityId,
+                        })
                         _G.event_bus.publish("miniboss_slash", {
                             entityId = self.entityId,
                             x = ex, y = ey, z = ez,
@@ -2846,6 +2900,8 @@ return Component {
 
         if inMeleeRange then
             self._p1MeleeTimer = (self._p1MeleeTimer or 0) + dtSec
+            -- Only throws in a row at a player who keeps away count
+            self._p1ThrowsAway = 0
         else
             self._p1MeleeTimer = 0 -- Reset instantly if they run away
         end
@@ -2882,6 +2938,21 @@ return Component {
             return
         end
 
+        -- PRIORITY 1b: the player keeps away. After one or two throws the boss
+        -- charges and crosses the room, so walking away is not a safe answer.
+        -- The throws set the pace here, and the slash also restarts the
+        -- melee range cooldown, since it leaves the boss beside the player.
+        if (not inMeleeRange)
+           and (self._p1ThrowsAway or 0) >= (self._p1ThrowTarget or 1) then
+            self._p1ThrowsAway = 0
+            self._p1ThrowTarget = self:_RollP1ThrowTarget()
+            self._p1ChargedSlashCd = self.P1_ChargedSlashCooldown or 18.0
+            self._meleeCdT = self.BossMeleeCooldown or 2.5
+
+            self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
+            return
+        end
+
         -- PRIORITY 2: Normal Melee
         if inMeleeRange then
             if (self._meleeCdT or 0) <= 0 then
@@ -2895,8 +2966,17 @@ return Component {
         self:_BeginMove("P1RangedCharged", {
             charge = self.P1_RangedCharge or 0.75,
             spread = 0.6,
-            postDelay = 0.35
+            postDelay = 0.35,
+            countForLunge = true,
         })
+    end,
+
+    -- How many throws at a player who keeps away come before the next charged
+    -- slash. Scene values are stored as floats, so they are floored.
+    _RollP1ThrowTarget = function(self)
+        local lo = math.max(1, math.floor(self.P1_ThrowsBeforeLungeMin or 1))
+        local hi = math.max(lo, math.floor(self.P1_ThrowsBeforeLungeMax or 2))
+        return math.random(lo, hi)
     end,
 
     EnterPhase2_Air = function(self)
@@ -3534,10 +3614,15 @@ return Component {
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,
-            dashSpeed = 700.0,
-            stopDist = 0.8,
+            dashSpeed = self.LungeSpeed or 40.0,
+            -- A dashing boss carries the player along if it reaches them: the
+            -- player's controller takes the boss's speed from the contact,
+            -- and was thrown about 2 units clear of the claw. The capsules
+            -- meet between 0.8 and 1.3 units apart, so the dash stops at 1.3
+            -- and the claw reaches 1.8, a stride further.
+            stopDist = 1.3,
             slashAt = 0.90,
-            slashRadius = 1.4,
+            slashRadius = 1.8,
             dmg = 4,
             kbStrength = 8.0,
             postDelay = 2.60
