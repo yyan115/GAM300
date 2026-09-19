@@ -603,11 +603,13 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		for (auto& f : futures) f.get();
 	}
 
-	// Copy scenes to Android resources.
+	// Copy scenes to Android resources. Only the scenes themselves: pressing
+	// Play in the editor saves a .scene.temp beside the scene and leaves it
+	// there, and nothing on Android reads one.
 	if (std::filesystem::exists("../../Resources/Scenes")) {
 		for (auto p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Scenes")) {
 			std::string extension = p.path().extension().generic_string();
-			if (std::filesystem::is_regular_file(p)) {
+			if (std::filesystem::is_regular_file(p) && extension == ".scene") {
 				std::string path = p.path().generic_string();
 				path = path.substr(path.find("Resources"));
 				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
