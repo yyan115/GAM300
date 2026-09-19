@@ -508,6 +508,7 @@ BEGIN_COMPONENT(BloomComponent, "BloomComponent")
     PROPERTY("enabled", &BloomComponent::enabled)
     PROPERTY("bloomColor", &BloomComponent::bloomColor)
     PROPERTY("bloomIntensity", &BloomComponent::bloomIntensity)
+    METHOD("SetColor", &BloomComponent::SetColor)
 END_COMPONENT()
 
 // Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... METHOD(...) ... END_COMPONENT() blocks here.
