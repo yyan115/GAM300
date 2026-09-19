@@ -68,7 +68,7 @@ local event_bus = _G.event_bus
 --   ramp         { {at, factor}, ... }: from each point on, the clip plays at
 --                factor times its animator state's speed, until the next point
 --   comboWindow  seconds before the end in which the next press is taken
---   lunge        { speed, duration } of the step forward on the swing
+--   lunge        { speed = , duration = } of the step forward on the swing
 --
 -- start, finish and the ramp points are fractions of the clip the animator
 -- plays for that step, 0 at its first frame and 1 at its last, read from the
@@ -96,6 +96,81 @@ local SWING_VARIANTS = {
         light_1 = { finish = 1.0 },
         light_2 = { finish = 1.0 },
         light_3 = { finish = 1.0 },
+    },
+
+    -- The fractions below were read off contact sheets of "full". Hit one
+    -- raises the blade until about 0.35 and brings it down by 0.45. Hit two
+    -- winds up until about 0.45 and swings up by 0.6. Hit three winds up
+    -- until 0.27, spins the blade from behind the player round to the front
+    -- by 0.55, and settles into a crouch by 0.64. The shipped third hit ends
+    -- at 0.67, where the animator's one second blend back to idle takes over.
+
+    -- A. The whole third hit faster.
+    flat_fast_3 = {
+        light_3 = { ramp = { { 0.0, 1.6 } } },
+    },
+
+    -- B. Speed that changes through the swing: fast through the wind up,
+    -- normal while the blade moves, and on the third hit fast again after it.
+    -- ramp_1 is the example in the brief, the first hit alone.
+    ramp_1 = {
+        light_1 = { ramp = { { 0.0, 1.8 }, { 0.35, 1.0 } } },
+    },
+    ramp_3 = {
+        light_3 = { ramp = { { 0.0, 2.0 }, { 0.27, 1.0 }, { 0.55, 1.6 } } },
+    },
+    ramp_all = {
+        light_1 = { ramp = { { 0.0, 1.8 }, { 0.35, 1.0 } } },
+        light_2 = { ramp = { { 0.0, 1.8 }, { 0.45, 1.0 } } },
+        light_3 = { ramp = { { 0.0, 2.0 }, { 0.27, 1.0 }, { 0.55, 1.6 } } },
+    },
+
+    -- C. The third hit starts as the blade sets off, without the wind up.
+    cut_front_3 = {
+        light_3 = { start = 0.27 },
+    },
+
+    -- D. The third hit ends as the blade passes in front of the player.
+    cut_end_3 = {
+        light_3 = { finish = 0.58 },
+    },
+
+    -- E. Both cuts, keeping only the middle of the arc: the horizontal
+    -- swing. Three widths, widest first.
+    horizontal_3_a = {
+        light_3 = { start = 0.33, finish = 0.64 },
+    },
+    horizontal_3_b = {
+        light_3 = { start = 0.40, finish = 0.62 },
+    },
+    horizontal_3_c = {
+        light_3 = { start = 0.45, finish = 0.60 },
+    },
+
+    -- F. Shorter crossfades. There is none into a hit already. Out of each
+    -- hit the animator blends back to idle over a whole second.
+    snap_out_3 = {
+        blends = { { "NA3", "Idle", 0.2 } },
+    },
+    snap_out_all = {
+        blends = { { "NA1", "Idle", 0.2 }, { "NA2", "Idle", 0.2 }, { "NA3", "Idle", 0.2 } },
+    },
+
+    -- G. A wider window for the next press on the first two hits. 0.25 s ships.
+    wide_window = {
+        light_1 = { comboWindow = 0.45 },
+        light_2 = { comboWindow = 0.45 },
+    },
+
+    -- H. A longer step forward on the third hit. Speed 5.0 for 0.18 s ships.
+    lunge_3 = {
+        light_3 = { lunge = { speed = 8.0, duration = 0.22 } },
+    },
+
+    -- E and F together: the horizontal swing, and a short blend out of it.
+    horizontal_3_snap = {
+        light_3 = { start = 0.40, finish = 0.62 },
+        blends = { { "NA3", "Idle", 0.2 } },
     },
 }
 
