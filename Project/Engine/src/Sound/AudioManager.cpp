@@ -49,7 +49,18 @@ bool AudioManager::Initialise() {
     }
     #endif
 
-    result = FMOD_System_Init(System, 512, FMOD_INIT_NORMAL, nullptr);
+    // The name the desktop's volume mixer lists the game under. FMOD's
+    // PulseAudio output, which PipeWire also serves, reads it from the init
+    // call and says "FMOD Audio" without it. No other output FMOD picks by
+    // itself reads this argument, and Windows names the stream after the
+    // executable.
+    void* extraDriverData = nullptr;
+#if defined(__linux__) && !defined(ANDROID)
+    static char mixerName[] = "Kusane";
+    extraDriverData = mixerName;
+#endif
+
+    result = FMOD_System_Init(System, 512, FMOD_INIT_NORMAL, extraDriverData);
     if (result != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: FMOD_System_Init failed: ", FMOD_ErrorString(result), "\n");
         FMOD_System_Release(System);
