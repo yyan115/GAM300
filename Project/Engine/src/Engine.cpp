@@ -753,30 +753,6 @@ bool Engine::InitializeAssets() {
     return true;
 }
 
-bool Engine::WaitWhileInactive() {
-#if !defined(EDITOR) && !defined(ANDROID)
-    static bool suspended = false;
-    WindowManager::PollEvents();
-    if (WindowManager::ShouldClose()) return true;
-    const bool inactive = !WindowManager::IsWindowFocused() || WindowManager::IsWindowMinimized();
-    if (inactive != suspended) {
-        AudioManager::GetInstance().SetWindowSuspended(inactive);
-        WindowManager::UpdateCursorState();
-        if (inactive && g_inputManager) g_inputManager->Update(0.0f);
-        if (!inactive) {
-            RebaselineInput();
-            TimeManager::ResetFrameClock();
-        }
-        suspended = inactive;
-    }
-    if (inactive) {
-        WindowManager::WaitEvents(0.1);
-        return true;
-    }
-#endif
-    return false;
-}
-
 void Engine::Update() {
     PROFILE_FUNCTION();
 

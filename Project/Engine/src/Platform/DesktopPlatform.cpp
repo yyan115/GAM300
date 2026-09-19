@@ -128,10 +128,6 @@ void DesktopPlatform::PollEvents() {
     glfwPollEvents();
 }
 
-void DesktopPlatform::WaitEvents(double timeout) {
-    glfwWaitEventsTimeout(timeout);
-}
-
 int DesktopPlatform::GetWindowWidth() {
     if (window) {
         int width;

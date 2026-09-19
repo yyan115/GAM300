@@ -18,7 +18,6 @@ public:
     virtual void SetShouldClose(bool shouldClose) = 0;
     virtual void SwapBuffers() = 0;
     virtual void PollEvents() = 0;
-    virtual void WaitEvents(double timeout) { (void)timeout; PollEvents(); }
     
     // Window properties
     virtual int GetWindowWidth() = 0;

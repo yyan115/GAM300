@@ -386,13 +386,6 @@ void WindowManager::PollEvents() {
     }
 }
 
-void WindowManager::WaitEvents(double timeout) {
-    if (platform) {
-        platform->WaitEvents(timeout);
-        RouteWindowCloseRequest(platform);
-    }
-}
-
 IPlatform* WindowManager::GetPlatform() {
     return platform;
 }
