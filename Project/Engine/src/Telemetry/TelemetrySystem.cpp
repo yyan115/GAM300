@@ -58,8 +58,12 @@ namespace {
     std::chrono::steady_clock::time_point g_start;
 
     // Sample rate. Fast enough to close a movement loop, slow enough that
-    // the file stays readable over a long run.
-    constexpr double kSampleInterval = 0.25;
+    // the file stays readable over a long run. GAM300_TELEMETRY_INTERVAL
+    // overrides it, down to every frame, for questions about what happened
+    // on one frame, such as which animation an attacker was playing when the
+    // player lost health.
+    constexpr double kDefaultSampleInterval = 0.25;
+    double g_sampleInterval = kDefaultSampleInterval;
 
     // Script basenames we care about. Entities are identified by which
     // script is attached rather than by name or tag, because enemies are
@@ -583,6 +587,11 @@ namespace Telemetry {
             if (g_walkmapPeriod < 0.0) g_walkmapPeriod = 0.0;
         }
 
+        if (const char* iv = std::getenv("GAM300_TELEMETRY_INTERVAL")) {
+            g_sampleInterval = std::atof(iv);
+            if (g_sampleInterval < 0.0) g_sampleInterval = kDefaultSampleInterval;
+        }
+
         const char* path = std::getenv("GAM300_TELEMETRY_PATH");
         g_path = (path && *path) ? path : "telemetry.jsonl";
 
@@ -625,7 +634,8 @@ namespace Telemetry {
             }
         }
         g_accumulator += TimeManager::GetUnscaledDeltaTime();
-        if (g_accumulator < kSampleInterval) return;
+        if (g_accumulator < g_sampleInterval) return;
+        const double sinceLastSample = g_accumulator;
         g_accumulator = 0.0;
 
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -1220,6 +1230,26 @@ namespace Telemetry {
                 if (FieldTableEntryString(L, a.instanceRef, "_move", "kind", moveKind)) {
                     line += ",\"move\":"; AppendEscaped(line, moveKind);
                 }
+                // How far into its move the boss is, whether the move's
+                // damage has gone out yet, and the stagger cooldown. A hit
+                // may stop an attack before its damage at most once per
+                // cooldown, and these are what show whether it did.
+                double moveStep = 0.0;
+                if (FieldNestedNumber(L, a.instanceRef, "_move", "step", moveStep)) {
+                    line += ",\"move_step\":"; AppendNumber(line, moveStep, 0);
+                }
+                bool landed = false, flag = false;
+                for (const char* key : { "didHit", "slashed", "didFire" }) {
+                    if (FieldNestedBool(L, a.instanceRef, "_move", key, flag) && flag) landed = true;
+                }
+                line += ",\"move_landed\":"; line += landed ? "true" : "false";
+                double staggerCd = 0.0, throwsAway = 0.0;
+                if (FieldNumber(L, a.instanceRef, "_staggerCdT", staggerCd)) {
+                    line += ",\"stagger_cd\":"; AppendNumber(line, staggerCd, 2);
+                }
+                if (FieldNumber(L, a.instanceRef, "_p1ThrowsAway", throwsAway)) {
+                    line += ",\"throws_away\":"; AppendNumber(line, throwsAway, 0);
+                }
                 double ticks = 0.0, seenX = 0.0, seenZ = 0.0, selfX = 0.0, selfZ = 0.0;
                 bool sees = false;
                 if (GlobalNumber(L, "miniboss_ticks", ticks)) {
@@ -1279,6 +1309,13 @@ namespace Telemetry {
             double stateAge = 0.0;
             if (FieldNestedNumber(L, a.instanceRef, "fsm", "timeInState", stateAge)) {
                 line += ",\"state_age\":"; AppendNumber(line, stateAge, 2);
+            }
+            // Whether the current attack's hit has gone out. It turns true on
+            // the frame a claw lands or a knife leaves, so the animation on
+            // that frame is the one the hit came from.
+            bool damageDealt = false;
+            if (FieldBool(L, a.instanceRef, "_damageDealt", damageDealt)) {
+                line += ",\"damage_dealt\":"; line += damageDealt ? "true" : "false";
             }
             if (a.haveAnim) {
                 line += ",\"anim\":";
@@ -1345,7 +1382,7 @@ namespace Telemetry {
         g_out.flush();  // the reader is another process tailing the file
 
         if (g_walkmapPeriod > 0.0 && havePlayer) {
-            g_walkmapAccum += kSampleInterval;
+            g_walkmapAccum += sinceLastSample;
             if (g_walkmapAccum >= g_walkmapPeriod) {
                 g_walkmapAccum = 0.0;
                 WriteWalkmap(player.pos);
