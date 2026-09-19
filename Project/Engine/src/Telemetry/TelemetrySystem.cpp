@@ -523,6 +523,7 @@ namespace {
         // both it can only be judged by eye from a screenshot.
         bool haveAnim = false;
         std::string animState;
+        float animSpeed = 1.0f;
         long long animClip = -1;
         // Which animation FILE each clip slot actually resolves to.
         //
@@ -741,6 +742,7 @@ namespace Telemetry {
                 AnimationComponent& anim = animOpt.value().get();
                 a.haveAnim = true;
                 a.animState = anim.GetCurrentState();
+                a.animSpeed = anim.speed;
                 const size_t active = anim.GetActiveClipIndex();
                 a.animClip = static_cast<long long>(active);
                 a.animAsset = ResolvedClipFile(anim, active);
@@ -924,6 +926,17 @@ namespace Telemetry {
             double featherCost = 0.0;
             if (GlobalNumber(L, "_featherSkillRequirement", featherCost)) {
                 line += ",\"feather_skill_cost\":"; AppendNumber(line, featherCost, 0);
+            }
+            // The player's animator state and playback speed, and whether a
+            // dash is under way. PlayerMovement times the dash and plays its
+            // animation to fit it, and these show both.
+            if (player.haveAnim) {
+                line += ",\"anim\":"; AppendEscaped(line, player.animState);
+                line += ",\"anim_speed\":"; AppendNumber(line, player.animSpeed, 2);
+            }
+            bool dashing = false;
+            if (GlobalBool(L, "player_is_dashing", dashing)) {
+                line += ",\"dashing\":"; line += dashing ? "true" : "false";
             }
             line += "}";
         } else {
@@ -1287,10 +1300,8 @@ namespace Telemetry {
                 if (FieldTableEntryString(L, a.instanceRef, "_move", "kind", moveKind)) {
                     line += ",\"move\":"; AppendEscaped(line, moveKind);
                 }
-                // How far into its move the boss is, whether the move's
-                // damage has gone out yet, and the stagger cooldown. A hit
-                // may stop an attack before its damage at most once per
-                // cooldown, and these are what show whether it did.
+                // How far into its move the boss is, and whether the move's
+                // damage has gone out yet.
                 double moveStep = 0.0;
                 if (FieldNestedNumber(L, a.instanceRef, "_move", "step", moveStep)) {
                     line += ",\"move_step\":"; AppendNumber(line, moveStep, 0);
@@ -1300,10 +1311,30 @@ namespace Telemetry {
                     if (FieldNestedBool(L, a.instanceRef, "_move", key, flag) && flag) landed = true;
                 }
                 line += ",\"move_landed\":"; line += landed ? "true" : "false";
-                double staggerCd = 0.0, throwsAway = 0.0;
-                if (FieldNumber(L, a.instanceRef, "_staggerCdT", staggerCd)) {
-                    line += ",\"stagger_cd\":"; AppendNumber(line, staggerCd, 2);
+                // Feathers thrown so far in the current move, which is how the
+                // flurry's pace and its gating on the throw animation show
+                double shots = 0.0;
+                if (FieldNestedNumber(L, a.instanceRef, "_move", "shotsDone", shots)) {
+                    line += ",\"move_shots\":"; AppendNumber(line, shots, 0);
                 }
+                // Where the boss is in its phase 2 and phase 3 loops, whether it
+                // is in the air, and whether the chain can take hold of it
+                bool inAir = false, chainImmune = false;
+                if (FieldBool(L, a.instanceRef, "_inAir", inAir)) {
+                    line += ",\"in_air\":"; line += inAir ? "true" : "false";
+                }
+                if (FieldBool(L, a.instanceRef, "_immuneChain", chainImmune)) {
+                    line += ",\"chain_immune\":"; line += chainImmune ? "true" : "false";
+                }
+                std::string p2State;
+                if (FieldString(L, a.instanceRef, "_phase2State", p2State)) {
+                    line += ",\"p2_state\":"; AppendEscaped(line, p2State);
+                }
+                double p3Step = 0.0;
+                if (FieldNumber(L, a.instanceRef, "_phase3Step", p3Step)) {
+                    line += ",\"p3_step\":"; AppendNumber(line, p3Step, 0);
+                }
+                double throwsAway = 0.0;
                 if (FieldNumber(L, a.instanceRef, "_p1ThrowsAway", throwsAway)) {
                     line += ",\"throws_away\":"; AppendNumber(line, throwsAway, 0);
                 }
