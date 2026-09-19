@@ -91,6 +91,15 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
 {
 	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
+    // Opening a prefab clears the scene, so there must be one to open
+    if (_prefabPath.empty()) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PrefabEditor] No prefab path to open\n");
+        return;
+    }
+
+    const bool wasEditingPrefab = IsInPrefabEditorMode();
+    const std::string previousPrefabPath = prefabPath;
+
     // Save the current scene state to a temp file. It will be restored back when we stop editing the prefab.
     if (!IsInPrefabEditorMode()) {
         SceneManager::GetInstance().SaveTempScene();
@@ -108,6 +117,21 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
 
     // Instantiate the prefab to edit.
     Entity prefab = InstantiatePrefabFromFile(_prefabPath, false, true);
+    if (prefab == static_cast<Entity>(-1)) {
+        // It could not be read. Put back what was open, rather than leave an
+        // empty prefab view whose way out saves and destroys an entity that
+        // does not exist.
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PrefabEditor] Could not open prefab: ", _prefabPath, "\n");
+        if (wasEditingPrefab) {
+            sandboxEntity = InstantiatePrefabFromFile(previousPrefabPath, false, true);
+            GUIManager::SetSelectedEntity(sandboxEntity);
+        }
+        else {
+            SceneManager::GetInstance().ReloadTempScene();
+            GUIManager::ClearSelectedEntities();
+        }
+        return;
+    }
     GUIManager::SetSelectedEntity(prefab);
 
     //if (sandboxEntity != static_cast<Entity>(-1)) {
@@ -198,9 +222,10 @@ void PrefabEditor::StopEditingPrefab() {
         prefabPreviewLight = static_cast<Entity>(-1);
     }
 
-    SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), sandboxEntity, prefabPath);
-
-	ecs.DestroyEntity(sandboxEntity);
+    if (sandboxEntity != static_cast<Entity>(-1)) {
+        SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), sandboxEntity, prefabPath);
+        ecs.DestroyEntity(sandboxEntity);
+    }
 
 	sandboxEntity = static_cast<Entity>(-1);
     prefabPath = "";
