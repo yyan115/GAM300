@@ -926,7 +926,7 @@ void Engine::EndDraw() {
 	// Update cursor state at end of frame (enforces lock state, handles ImGui interference)
 	WindowManager::UpdateCursorState();
 
-	// The cursor was free while the quit prompt was up. Now it is locked
+	// The cursor was shown while the quit prompt was up. Now it is locked
 	// again, start the next frame from where it is.
 	if (QuitConfirmation::ConsumeInputRebaseline()) {
 		RebaselineInput();

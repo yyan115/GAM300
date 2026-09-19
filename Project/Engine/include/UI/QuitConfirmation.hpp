@@ -9,7 +9,7 @@
 // confirmation prompt. The prompt is a prefab, instantiated into whichever
 // scene is running. While it is up the engine updates only the prompt: the rest
 // of the scene, scene loads, game audio and scaled time stay where they were,
-// and the cursor is free. Yes, or a second close request from the window,
+// and the cursor is shown. Yes, or a second close request from the window,
 // closes the game. No removes the prompt and the game carries on.
 //
 // A held Alt+F4 repeats the request, and a repeat is not an answer to the
@@ -47,7 +47,7 @@ public:
     static void BeginFrame();
 
     // True once after the prompt is dismissed, when input should drop what it
-    // accumulated while the cursor was free.
+    // accumulated while the cursor was shown.
     static bool ConsumeInputRebaseline();
 
     // Back to no prompt, with nothing held: when play stops in the editor, and

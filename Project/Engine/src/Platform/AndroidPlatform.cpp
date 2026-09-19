@@ -164,9 +164,9 @@ void AndroidPlatform::GetMousePosition(double* x, double* y) {
     if (y) *y = mouseY;
 }
 
-void AndroidPlatform::SetCursorLocked(bool locked) {
+void AndroidPlatform::SetCursorMode(CursorMode mode) {
     // No-op on Android - no cursor to lock
-    (void)locked;
+    (void)mode;
 }
 
 bool AndroidPlatform::IsCursorLocked() {

@@ -70,7 +70,7 @@ public:
     bool IsMouseButtonPressed(Input::MouseButton button) override;
     void GetMousePosition(double* x, double* y) override;
 
-    void SetCursorLocked(bool locked) override;
+    void SetCursorMode(CursorMode mode) override;
     bool IsCursorLocked() override;
     
     double GetTime() override;
