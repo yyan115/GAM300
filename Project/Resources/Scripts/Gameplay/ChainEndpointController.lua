@@ -116,6 +116,18 @@ return Component {
                     end
                 end)
             end)
+            -- Enemies that have died, so the chain never takes hold of one
+            -- playing its death or lying on the floor. Cleared on respawn,
+            -- since the ids come back when the level resets.
+            self._deadEnemies = {}
+            self._subEnemyDied = _G.event_bus.subscribe("enemy_died", function(payload)
+                if payload and payload.entityId then
+                    self._deadEnemies[payload.entityId] = true
+                end
+            end)
+            self._subRespawn = _G.event_bus.subscribe("respawnPlayer", function()
+                self._deadEnemies = {}
+            end)
         else
             dbg("[ChainEndpointController] WARNING: event_bus not available")
         end
@@ -330,9 +342,9 @@ return Component {
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
         dbg(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
 
-        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable") or (tag == "Interactable")
+        local isHookable = self:_isHookable(rootId, tag)
         if not isHookable then
-            dbg("[ChainEndpointController][TRIGGER] REJECTED -- tag='" .. tostring(tag) .. "' not hookable")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED -- tag='" .. tostring(tag) .. "' not hookable, or dead")
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored -- root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
@@ -383,6 +395,15 @@ return Component {
         self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapImpactX, snapImpactY, snapImpactZ, snapPartId)
     end,
 
+    -- Whether the chain may take hold of this entity: by its root's tag, and
+    -- for an enemy, only while it is alive.
+    _isHookable = function(self, rootId, tag)
+        if tag == "Enemy" or tag == "Boss" then
+            return not (self._deadEnemies and self._deadEnemies[rootId])
+        end
+        return tag == "Throwable" or tag == "Interactable"
+    end,
+
     -- Sweep hit from LockOnPoint
     _onSweepHit = function(self, payload)
         local rbActive = self._rb and self._rb:IsEnabled()
@@ -403,8 +424,7 @@ return Component {
             if ok then tag = t end
         end
 
-        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable") or (tag == "Interactable")
-        if not isHookable then return end
+        if not self:_isHookable(rootId, tag) then return end
 
         dbg("[ChainEndpointController] Sweep hit confirmed — hooking entity='" .. otherName .. "' root='" .. rootName .. "'")
 
@@ -533,6 +553,8 @@ return Component {
             if self._subCheckCollision   then pcall(function() _G.event_bus.unsubscribe(self._subCheckCollision)   end) end
             if self._subSweepHit         then pcall(function() _G.event_bus.unsubscribe(self._subSweepHit)         end) end
             if self._subThrowableThrow   then pcall(function() _G.event_bus.unsubscribe(self._subThrowableThrow)   end) end
+            if self._subEnemyDied        then pcall(function() _G.event_bus.unsubscribe(self._subEnemyDied)        end) end
+            if self._subRespawn          then pcall(function() _G.event_bus.unsubscribe(self._subRespawn)          end) end
         end
     end,
 }

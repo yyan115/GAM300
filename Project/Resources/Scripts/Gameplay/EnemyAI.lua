@@ -518,6 +518,9 @@ return Component {
                 elseif payload.rootName ~= self._entityName then
                     return
                 end
+                -- Dead, or dying this frame: health reaches 0 a frame before
+                -- self.dead is set. A hooked corpse used to replay its death.
+                if self.dead or (self.health or 1) <= 0 then return end
                 self._animator:SetTrigger("Hooked")
                 -- Immediately tell chain button icon to show Pull (grounded) or Slam (flying)
                 if _G.event_bus and _G.event_bus.publish then
