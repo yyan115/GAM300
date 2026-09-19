@@ -158949,7 +158949,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -164504,7 +164504,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -168504,7 +168504,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundRangedAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundRangedAC.animator"
                             }
                         ]
                     }
@@ -171417,7 +171417,7 @@
                                                                                                                                     },
                                                                                                                                     {
                                                                                                                                         "type": "float",
-                                                                                                                                        "data": -0.385512
+                                                                                                                                        "data": -0.385513
                                                                                                                                     }
                                                                                                                                 ]
                                                                                                                             }
@@ -174798,7 +174798,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundRangedAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundRangedAC.animator"
                             }
                         ]
                     }
@@ -177696,7 +177696,7 @@
                                                                                                                                     },
                                                                                                                                     {
                                                                                                                                         "type": "float",
-                                                                                                                                        "data": -0.385512
+                                                                                                                                        "data": -0.385513
                                                                                                                                     }
                                                                                                                                 ]
                                                                                                                             }
@@ -179812,7 +179812,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundMeleeAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundMeleeAC.animator"
                             }
                         ]
                     }
@@ -181293,7 +181293,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -185293,7 +185293,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundMeleeAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundMeleeAC.animator"
                             }
                         ]
                     }
@@ -186763,7 +186763,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -190763,7 +190763,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundMeleeAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundMeleeAC.animator"
                             }
                         ]
                     }
@@ -192233,7 +192233,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -196243,7 +196243,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\FlyingEnemyAC.animator"
+                                "data": "Resources/Animations/Enemy/FlyingEnemyAC.animator"
                             }
                         ]
                     }
@@ -201221,7 +201221,7 @@
                                                                                                                     },
                                                                                                                     {
                                                                                                                         "type": "float",
-                                                                                                                        "data": 0.0795405
+                                                                                                                        "data": 0.0795406
                                                                                                                     },
                                                                                                                     {
                                                                                                                         "type": "float",
@@ -203874,7 +203874,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -208025,7 +208025,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\MinibossAC.animator"
+                                "data": "Resources/Animations/MinibossAC.animator"
                             }
                         ]
                     }
@@ -209885,6 +209885,70 @@
                                                                     "0057a3827f676988-00047cf78c01477d"
                                                                 ]
                                                             },
+                                                            "ComponentOverrides": [
+                                                                {
+                                                                    "Transform": {
+                                                                        "type": "Transform",
+                                                                        "data": [
+                                                                            {
+                                                                                "type": "Vector3D",
+                                                                                "data": [
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 0.111674
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 2.95448e-8
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": -2.24939e-17
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            {
+                                                                                "type": "Vector3D",
+                                                                                "data": [
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 1
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 1
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 1
+                                                                                    }
+                                                                                ]
+                                                                            },
+                                                                            {
+                                                                                "type": "Quaternion",
+                                                                                "data": [
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 0.999919
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": -0.0112271
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 0.00137777
+                                                                                    },
+                                                                                    {
+                                                                                        "type": "float",
+                                                                                        "data": 0.00577369
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                }
+                                                            ],
                                                             "Children": [
                                                                 {
                                                                     "id": 2180,
@@ -211548,7 +211612,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Player\\PlayerAC.animator"
+                                "data": "Resources/Animations/Player/PlayerAC.animator"
                             }
                         ]
                     }
@@ -215778,7 +215842,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundRangedAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundRangedAC.animator"
                             }
                         ]
                     }
@@ -218765,7 +218829,7 @@
                                                                                                                                     },
                                                                                                                                     {
                                                                                                                                         "type": "float",
-                                                                                                                                        "data": -0.385512
+                                                                                                                                        "data": -0.385513
                                                                                                                                     }
                                                                                                                                 ]
                                                                                                                             }
@@ -220899,7 +220963,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\FlyingEnemyAC.animator"
+                                "data": "Resources/Animations/Enemy/FlyingEnemyAC.animator"
                             }
                         ]
                     }
@@ -225827,7 +225891,7 @@
                                                                                                                     },
                                                                                                                     {
                                                                                                                         "type": "float",
-                                                                                                                        "data": 0.0795405
+                                                                                                                        "data": 0.0795406
                                                                                                                     },
                                                                                                                     {
                                                                                                                         "type": "float",
@@ -228477,7 +228541,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -233971,7 +234035,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -241069,7 +241133,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\FlyingEnemyAC.animator"
+                                "data": "Resources/Animations/Enemy/FlyingEnemyAC.animator"
                             }
                         ]
                     }
@@ -246060,7 +246124,7 @@
                                                                                                                     },
                                                                                                                     {
                                                                                                                         "type": "float",
-                                                                                                                        "data": 0.0795405
+                                                                                                                        "data": 0.0795406
                                                                                                                     },
                                                                                                                     {
                                                                                                                         "type": "float",
@@ -248264,7 +248328,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundMeleeAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundMeleeAC.animator"
                             }
                         ]
                     }
@@ -249734,7 +249798,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -253698,7 +253762,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundMeleeAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundMeleeAC.animator"
                             }
                         ]
                     }
@@ -255168,7 +255232,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -259132,7 +259196,7 @@
                             },
                             {
                                 "type": "std::string",
-                                "data": "Resources\\Animations\\Enemy\\GroundMeleeAC.animator"
+                                "data": "Resources/Animations/Enemy/GroundMeleeAC.animator"
                             }
                         ]
                     }
@@ -260679,7 +260743,7 @@
                                                                             },
                                                                             {
                                                                                 "type": "float",
-                                                                                "data": -0.0483179
+                                                                                "data": -0.0483178
                                                                             },
                                                                             {
                                                                                 "type": "float",
@@ -264965,6 +265029,201 @@
                     ]
                 }
             }
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/MinibossChargeVFX.prefab",
+            "id": 3312,
+            "guid": "000c068cc230c2a9-0006737aaa0014c5",
+            "Name": "MinibossChargeVFX",
+            "SiblingIndex": 106,
+            "Children": [
+                {
+                    "id": 3313,
+                    "guid": "000c068ca1218ce5-0006737bd00014c7",
+                    "Name": "ChargeGather",
+                    "SiblingIndex": 107,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "000c068cc230c2a9-0006737aaa0014c5"
+                        ]
+                    }
+                },
+                {
+                    "id": 3314,
+                    "guid": "000c068cdcebdcff-0006737e8c0014cf",
+                    "Name": "ChargeFeathers",
+                    "SiblingIndex": 107,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "000c068cc230c2a9-0006737aaa0014c5"
+                        ]
+                    }
+                },
+                {
+                    "id": 3315,
+                    "guid": "000c068cc2e8b9c5-0006737ff80014d1",
+                    "Name": "ChargeGlints",
+                    "SiblingIndex": 107,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "000c068cc230c2a9-0006737aaa0014c5"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/MinibossDiveMarkVFX.prefab",
+            "id": 3316,
+            "guid": "000c068ca9e7c86e-000673aef40014d3",
+            "Name": "MinibossDiveMarkVFX",
+            "SiblingIndex": 107,
+            "Children": [
+                {
+                    "id": 3317,
+                    "guid": "000c068cef2ae985-000673af880014d5",
+                    "Name": "DiveMarkMotes",
+                    "SiblingIndex": 108,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "000c068ca9e7c86e-000673aef40014d3"
+                        ]
+                    }
+                },
+                {
+                    "id": 3318,
+                    "guid": "000c068ce454508d-000673b0840014dd",
+                    "Name": "DiveMarkCore",
+                    "SiblingIndex": 108,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "000c068ca9e7c86e-000673aef40014d3"
+                        ]
+                    }
+                },
+                {
+                    "id": 3319,
+                    "guid": "000c068c8f57477b-000673b2ea0014e3",
+                    "Name": "DiveMarkDisc",
+                    "SiblingIndex": 108,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "000c068ca9e7c86e-000673aef40014d3"
+                        ]
+                    },
+                    "ComponentOverrides": [
+                        {
+                            "ModelRenderComponent": {
+                                "type": "ModelRenderComponent",
+                                "data": [
+                                    "005834d7a31b6c55-0004a0b488008c0d",
+                                    "0060f444e1e8808c-000337e664000011",
+                                    "000c068c882313f5-000673b1fe0014e1",
+                                    {
+                                        "type": "Matrix4x4",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": -1
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": -1
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 1
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "layers": [
