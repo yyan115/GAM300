@@ -82,6 +82,8 @@ BEGIN_COMPONENT(AnimationComponent, "AnimationComponent")
     METHOD("GetCurrentState", &AnimationComponent::GetCurrentState) 
     METHOD("GetStateTime", &AnimationComponent::GetStateTime)
     METHOD("GetNormalizedTime", &AnimationComponent::GetNormalizedTime )
+    METHOD("SetTransitionDuration", &AnimationComponent::SetTransitionDuration)
+    METHOD("SetStateStartTime", &AnimationComponent::SetStateStartTime)
     METHOD("ResetSM", &AnimationComponent::ResetSM)
 END_COMPONENT()
 

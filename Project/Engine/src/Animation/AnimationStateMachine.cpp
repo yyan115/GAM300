@@ -1,5 +1,6 @@
 #include "Animation/AnimationStateMachine.hpp"
 #include "Animation/AnimationComponent.hpp"
+#include <algorithm>
 
 void AnimationStateMachine::Update(float dt, Entity entity)
 {
@@ -153,11 +154,27 @@ void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity, flo
 		else
 			mOwner->PlayOnce(config.clipIndex, entity);
 	}
+
+	// Set before the clip is first posed, which happens after this in the
+	// same update, so the skipped part of the clip is never drawn.
+	auto start = mStartTimes.find(id);
+	if (start != mStartTimes.end())
+		mOwner->SetNormalizedTime(start->second, entity);
+}
+
+void AnimationStateMachine::SetStartTime(const AnimStateID& id, float normalized)
+{
+	normalized = std::clamp(normalized, 0.0f, 1.0f);
+	if (normalized > 0.0f)
+		mStartTimes[id] = normalized;
+	else
+		mStartTimes.erase(id);
 }
 
 void AnimationStateMachine::RemoveState(const AnimStateID& id)
 {
 	mStates.erase(id);
+	mStartTimes.erase(id);
 
 	// Remove transitions involving this state
 	mTransitions.erase(
@@ -182,6 +199,14 @@ void AnimationStateMachine::RenameState(const AnimStateID& oldId, const AnimStat
 	AnimStateConfig config = it->second;
 	mStates.erase(it);
 	mStates[newId] = config;
+
+	auto start = mStartTimes.find(oldId);
+	if (start != mStartTimes.end())
+	{
+		const float t = start->second;
+		mStartTimes.erase(start);
+		mStartTimes[newId] = t;
+	}
 
 	// Update transitions
 	for (auto& t : mTransitions)
@@ -242,6 +267,7 @@ void AnimationStateMachine::Clear()
 {
 	mStates.clear();
 	mTransitions.clear();
+	mStartTimes.clear();
 	mParam = AnimParamSet();
 	mCurrentState = "";
 	mEntryState = "";

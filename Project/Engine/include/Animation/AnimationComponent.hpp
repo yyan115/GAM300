@@ -38,6 +38,10 @@ public:
     void Stop(Entity entity);                     // reset to start
     void SetLooping(bool v);
     void SetSpeed(float s);
+
+    // Move the playhead inside the current clip, 0 at the first frame and 1 at
+    // the last. The counterpart of GetNormalizedTime.
+    void SetNormalizedTime(float t, Entity entity);
     void SetClip(size_t index, Entity entity);      // choose a different clip
 
 	// Load Animation from file and add to clips
@@ -104,7 +108,18 @@ public:
     // Get current state name from state machine
     std::string GetCurrentState() const;
 
+    // Length of a clip in seconds at speed 1.0.
     float GetClipDuration(size_t clipIndex) const;
+
+    // Blend time of every transition from one state to another, for trying a
+    // different value at runtime. The controller file is unchanged. Returns
+    // false if the controller has no such transition.
+    bool SetTransitionDuration(const std::string& from, const std::string& to, float seconds);
+
+    // Where a state starts playing its clip when entered, 0 at the first frame
+    // and 1 at the last, for trying a different value at runtime. The
+    // controller file is unchanged. Returns false if there is no such state.
+    bool SetStateStartTime(const std::string& state, float normalized);
 
     // Get normalized animation progress (0.0 to 1.0) for current clip
     float GetNormalizedTime() const;
