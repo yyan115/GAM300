@@ -100,6 +100,9 @@ return Component {
                 self._hitThisSwing = {}
                 self._currentDamage    = (data and data.damage)    or 10
                 self._currentKnockback = (data and data.knockback) or 0
+                -- Which combo step this swing is, such as light_2, for a target
+                -- that takes some steps differently from others.
+                self._currentState     = data and data.state
 
                 if data and data.isSlam then
                     self._currentHitType = "SLAM"
@@ -284,6 +287,7 @@ return Component {
                 damage    = self._currentDamage,
                 hitType   = self._currentHitType or "COMBO",
                 knockback = self._currentKnockback or 0,
+                state     = self._currentState,
             })
             print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f",
                 tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))

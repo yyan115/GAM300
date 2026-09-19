@@ -195,6 +195,15 @@ return Component {
         -- Damage the player's feather skill does to this boss: three times a
         -- first hit, which ComboManager puts at 10.
         FeatherSkillDamage = 30,
+        -- Damage the ground combo's three hits do to this boss, weak to strong.
+        -- All three land now, where one hit in a combo used to, 10 damage, so
+        -- together they come to a little more than that one hit did.
+        ComboHit1Damage = 3,
+        ComboHit2Damage = 4,
+        ComboHit3Damage = 6,
+        -- Seconds before the hurt sound can play again. Every landed hit counts
+        -- now, and a sound for each was far too often.
+        HurtSoundCooldown = 3.5,
 
         -- Shout AOE
         ShoutRadius = 4.0,
@@ -463,6 +472,17 @@ return Component {
                     damage = self.FeatherSkillDamage or damage
                 end
 
+                -- So do the ground combo's hits, which other enemies take at
+                -- ComboManager's own figures.
+                if hitType == "COMBO" then
+                    local byStep = {
+                        light_1 = self.ComboHit1Damage,
+                        light_2 = self.ComboHit2Damage,
+                        light_3 = self.ComboHit3Damage,
+                    }
+                    damage = byStep[payload.state] or damage
+                end
+
                 self:ApplyHit(damage, hitType)
             end)
         end
@@ -654,6 +674,7 @@ return Component {
 
         -- 2) Tick timers always
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
+        self._hurtSoundCd = math.max(0, (self._hurtSoundCd or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
         end
@@ -1651,8 +1672,11 @@ return Component {
             end
         end
 
-        -- Play hurt SFX
-        self:_publishSFX("hurt")
+        -- Play hurt SFX, at most once every HurtSoundCooldown seconds
+        if (self._hurtSoundCd or 0) <= 0 then
+            self:_publishSFX("hurt")
+            self._hurtSoundCd = self.HurtSoundCooldown or 3.5
+        end
 
         -- If we crossed a phase threshold, start NEW transition immediately
         local computed = self:_ComputePhase()
