@@ -90,6 +90,23 @@ namespace {
 }
 #endif
 
+#ifdef ANDROID
+namespace {
+    // The frame rate once a second, straight to logcat under the tag GAM300,
+    // for reading a phone's frame rate with `adb logcat -s GAM300`. The
+    // engine's own log does not reach logcat, and a player never sees it.
+    void LogAndroidFps() {
+        static double logTimer = 0.0;
+        logTimer += TimeManager::GetUnscaledDeltaTime();
+        if (logTimer < 1.0) {
+            return;
+        }
+        logTimer = 0.0;
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "FPS %.1f", TimeManager::GetFps());
+    }
+}
+#endif
+
 namespace {
     // Drops the mouse travel and button presses input gathered while the game
     // was not reading it, so the camera does not jump when play resumes.
@@ -763,6 +780,9 @@ void Engine::Update() {
 
 #if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
     UpdateStandaloneWindowTitleWithFps();
+#endif
+#ifdef ANDROID
+    LogAndroidFps();
 #endif
 
     // Update input FIRST so systems have fresh input state this frame
