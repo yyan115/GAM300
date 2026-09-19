@@ -295,12 +295,12 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
     modelName = p.stem().generic_string();
 
 	// Recursive function to process and copy Assimp nodes.
-	ProcessNode(scene->mRootNode, rootNode, scene);
+	ProcessNode(scene->mRootNode, rootNode, scene, forAndroid);
 
 	return CompileToMesh(assetPath, meshes, forAndroid);
 }
 
-void Model::ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene)
+void Model::ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene, bool forAndroid)
 {
 //#ifdef __ANDROID__
 //    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] ProcessNode called - node:%s meshCount:%u childrenCount:%u",
@@ -310,7 +310,7 @@ void Model::ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene)
 	for (unsigned int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.emplace_back(ProcessMesh(mesh, scene));
+		meshes.emplace_back(ProcessMesh(mesh, scene, forAndroid));
 	}
 
     // Store node info
@@ -321,12 +321,12 @@ void Model::ProcessNode(aiNode* node, ModelNode& dest, const aiScene* scene)
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
 	{
         ModelNode newChild;
-		ProcessNode(node->mChildren[i], newChild, scene);
+		ProcessNode(node->mChildren[i], newChild, scene, forAndroid);
         dest.children.push_back(newChild);
 	}
 }
 
-Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
+Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene, bool forAndroid)
 {
 //#ifdef __ANDROID__
 //    __android_log_print(ANDROID_LOG_INFO, "GAM300", "[MODEL] ProcessMesh called - mesh:%s materialIndex:%u",
@@ -461,27 +461,27 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
         // Load textures and assign to material
         if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE, "diffuse", forAndroid);
         if (assimpMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular", forAndroid);
         if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal", forAndroid);
         if (assimpMaterial->GetTextureCount(aiTextureType_EMISSIVE) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_EMISSIVE, "emissive");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_EMISSIVE, "emissive", forAndroid);
         if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_HEIGHT, "height");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_HEIGHT, "height", forAndroid);
         // Metallic map (aiTextureType_METALNESS = 15 matches Material::TextureType::METALLIC = 15)
         if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_METALNESS, "metallic");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_METALNESS, "metallic", forAndroid);
         // Roughness map (aiTextureType_DIFFUSE_ROUGHNESS = 16 matches Material::TextureType::ROUGHNESS = 16)
         if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE_ROUGHNESS, "roughness");
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE_ROUGHNESS, "roughness", forAndroid);
         // AO map (aiTextureType_AMBIENT_OCCLUSION = 17, but Material::TextureType::AMBIENT_OCCLUSION = 3)
         if (assimpMaterial->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_AMBIENT_OCCLUSION, "ao", Material::TextureType::AMBIENT_OCCLUSION);
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_AMBIENT_OCCLUSION, "ao", forAndroid, Material::TextureType::AMBIENT_OCCLUSION);
         // Some FBX files store PBR textures under BASE_COLOR instead of DIFFUSE
         if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 && assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) == 0)
-            LoadMaterialTexture(material, assimpMaterial, aiTextureType_BASE_COLOR, "diffuse", Material::TextureType::DIFFUSE);
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_BASE_COLOR, "diffuse", forAndroid, Material::TextureType::DIFFUSE);
 
     }
 
@@ -495,20 +495,18 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     // Compile the material for the mesh if it hasn't been compiled before yet.
-    // Sanitize material name - replace invalid filename characters (like ':') with '_'
-    std::string sanitizedMatName = material->GetName();
-    std::replace(sanitizedMatName.begin(), sanitizedMatName.end(), ':', '_');
-    std::replace(sanitizedMatName.begin(), sanitizedMatName.end(), '/', '_');
-    std::replace(sanitizedMatName.begin(), sanitizedMatName.end(), '\\', '_');
-
-    std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + sanitizedMatName + ".mat";
-    material->SetName(modelName + "_" + sanitizedMatName);
+    const std::string materialStem = ImportedMaterialStem(modelName, material->GetName());
+    material->SetName(materialStem);
     // Existing material files contain the artist's texture assignments and
     // tuned properties. The asset registry may still be incomplete during a
     // clean cook, and its saved paths may be relative to another build folder.
     // Only create missing materials unless a reimport was explicitly requested.
-    if (forceReimportMaterials || !std::filesystem::exists(materialPath)) {
-        AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
+    // Never while cooking for Android, which must not write source assets.
+    if (!forAndroid) {
+        const std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + materialStem + ".mat";
+        if (forceReimportMaterials || !std::filesystem::exists(materialPath)) {
+            AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
+        }
     }
 
     Mesh newMesh(vertices, indices, material);
@@ -516,23 +514,28 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     return newMesh;
 }
 
-void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, Material::TextureType targetType) {
+std::string Model::ImportedMaterialStem(const std::string& modelName, const std::string& materialName) {
+    // The same sanitising the material writer applies to the file it writes.
+    return FileUtilities::SanitizeFileName(modelName + "_" + materialName);
+}
+
+void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, bool forAndroid, Material::TextureType targetType) {
     unsigned int textureCount = mat->GetTextureCount(type);
     for (unsigned int i = 0; i < textureCount; i++) {
         aiString str;
         mat->GetTexture(type, i, &str);
-		std::filesystem::path texPathObj(str.C_Str());
-		texPathObj = texPathObj.stem().generic_string() + texPathObj.extension().generic_string(); // Sanitize path
+        const std::string textureFileName = FileUtilities::FileNameFromAuthoredPath(str.C_Str());
 
-        std::string texturePath = AssetManager::GetInstance().GetAssetPathFromAssetName(texPathObj.generic_string());
-		texPathObj = texturePath;
-        if (!std::filesystem::exists(texPathObj)) {
+        std::string texturePath = AssetManager::GetInstance().GetAssetPathFromAssetName(textureFileName);
+        if (!std::filesystem::exists(std::filesystem::path(texturePath))) {
             ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: " + texturePath + "\n");
             continue;
 		}
 
-        // Only compile the texture if we haven't seen it yet!
-        if (m_ProcessedTextures.find(texturePath) == m_ProcessedTextures.end()) {
+        // Only compile the texture if we haven't seen it yet! Android gets its
+        // textures from its own texture stage, and this would write the
+        // desktop output and the texture's .meta.
+        if (!forAndroid && m_ProcessedTextures.find(texturePath) == m_ProcessedTextures.end()) {
             AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1, flipUVs, true);
             // Add it to the memory bank so we never compile it again for this FBX
             m_ProcessedTextures.insert(texturePath);
@@ -629,12 +632,9 @@ std::string Model::CompileToMesh(const std::string& modelPathParam, std::vector<
 		    // Write index data to the file as binary data.
             meshFile.write(reinterpret_cast<const char*>(mesh.indices.data()), indexCount * sizeof(GLuint));
 
-            // Write material properties to a separate .mat file as binary data.
-            // Sanitize material name before writing to mesh file
-            std::string meshName = mesh.material->GetName();
-            std::replace(meshName.begin(), meshName.end(), ':', '_');
-            std::replace(meshName.begin(), meshName.end(), '/', '_');
-            std::replace(meshName.begin(), meshName.end(), '\\', '_');
+            // The material's name, which ProcessMesh set to the stem of the
+            // material file, so the loader finds the file the import wrote.
+            const std::string& meshName = mesh.material->GetName();
 			size_t nameLength = meshName.size();
 			meshFile.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
             meshFile.write(meshName.data(), nameLength); // Writes actual characters

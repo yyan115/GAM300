@@ -92,6 +92,11 @@ std::string FileUtilities::SanitizeFileName(const std::string& name) {
     return safeName.empty() ? "unnamed_file" : safeName;
 }
 
+std::string FileUtilities::FileNameFromAuthoredPath(const std::string& path) {
+    const std::size_t lastSeparator = path.find_last_of("/\\:");
+    return lastSeparator == std::string::npos ? path : path.substr(lastSeparator + 1);
+}
+
 // Helper to sanitize only the filename portion of a full absolute/relative path
 std::string FileUtilities::SanitizeFilePath(const std::string& fullPath) {
     std::filesystem::path pathObj(fullPath);
