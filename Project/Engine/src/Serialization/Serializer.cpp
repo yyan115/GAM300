@@ -9,6 +9,7 @@
 #include "Graphics/Lights/LightingSystem.hpp"
 #include "Scene/SceneManager.hpp"
 #include <algorithm>
+#include <unordered_set>
 #include <Graphics/Model/ModelFactory.hpp>
 #include <Prefab/PrefabIO.hpp>
 #include "Video/VideoComponent.hpp"
@@ -3884,6 +3885,41 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         cameraComp.chromaticAberrationPadding = cameraJSON["chromaticAberrationPadding"].GetFloat();
 }
 
+// A script's stored state can hold the same key twice: older saves wrote
+// duplicates, and keeping the loaded text as it was carried them into every
+// save after. A script reads the keys in order, so the last one is the value in
+// play. Keeping only that one means an edit in the inspector changes the value
+// in play, rather than whichever copy the editor reached first.
+static void KeepLastOfDuplicateKeys(rapidjson::Value& v) {
+    if (v.IsObject()) {
+        std::unordered_set<std::string> seen;
+        for (auto it = v.MemberEnd(); it != v.MemberBegin();) {
+            --it;
+            std::string key(it->name.GetString(), it->name.GetStringLength());
+            if (!seen.insert(key).second) {
+                it = v.EraseMember(it);
+            }
+            else {
+                KeepLastOfDuplicateKeys(it->value);
+            }
+        }
+    }
+    else if (v.IsArray()) {
+        for (auto& element : v.GetArray()) KeepLastOfDuplicateKeys(element);
+    }
+}
+
+// A script's stored state as JSON text, with one value per key
+static std::string InstanceStateToJson(const rapidjson::Value& state) {
+    rapidjson::Document doc;
+    doc.CopyFrom(state, doc.GetAllocator());
+    KeepLastOfDuplicateKeys(doc);
+    rapidjson::StringBuffer buf;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
+    doc.Accept(writer);
+    return buf.GetString();
+}
+
 // Helper function to deserialize a single script instance
 static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson) {
     // 1. DO NOT touch the Lua state or Scripting:: namespace here!
@@ -3986,10 +4022,7 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             // Extract instanceState
             std::string instJson;
             if (scriptData.HasMember("instanceState")) {
-                rapidjson::StringBuffer buf;
-                rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
-                scriptData["instanceState"].Accept(writer);
-                instJson = buf.GetString();
+                instJson = InstanceStateToJson(scriptData["instanceState"]);
             }
             else if (scriptData.HasMember("instanceStateRaw") && scriptData["instanceStateRaw"].IsString()) {
                 instJson = scriptData["instanceStateRaw"].GetString();
@@ -4044,10 +4077,7 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
         // Extract instanceState
         std::string instJson;
         if (scriptJSON.HasMember("instanceState")) {
-            rapidjson::StringBuffer buf;
-            rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buf);
-            scriptJSON["instanceState"].Accept(writer);
-            instJson = buf.GetString();
+            instJson = InstanceStateToJson(scriptJSON["instanceState"]);
         }
         else if (scriptJSON.HasMember("instanceStateRaw") && scriptJSON["instanceStateRaw"].IsString()) {
             instJson = scriptJSON["instanceStateRaw"].GetString();
