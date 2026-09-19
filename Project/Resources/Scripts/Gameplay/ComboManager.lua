@@ -90,6 +90,14 @@ local SWING_ANIM_STATES = {
     light_3 = "NA3",
 }
 
+-- Shared by the variants built on snap_12_lunge_3 below.
+local SNAP_12_BLENDS = {
+    { "Idle", "NA1", 0.05 }, { "Run", "NA1", 0.05 }, { "Land", "NA1", 0.05 },
+    { "NA1", "NA2", 0.05 },
+    { "NA1", "Idle", 0.2 }, { "NA2", "Idle", 0.2 },
+}
+local LONG_LUNGE = { speed = 8.0, duration = 0.22 }
+
 local SWING_VARIANTS = {
     off = {},
 
@@ -186,12 +194,37 @@ local SWING_VARIANTS = {
     -- swing plays as shipped with the longer step forward. The blends into
     -- hit one cover starting it from standing, running and landing.
     snap_12_lunge_3 = {
-        light_3 = { lunge = { speed = 8.0, duration = 0.22 } },
-        blends = {
-            { "Idle", "NA1", 0.05 }, { "Run", "NA1", 0.05 }, { "Land", "NA1", 0.05 },
-            { "NA1", "NA2", 0.05 },
-            { "NA1", "Idle", 0.2 }, { "NA2", "Idle", 0.2 },
-        },
+        light_3 = { lunge = LONG_LUNGE },
+        blends = SNAP_12_BLENDS,
+    },
+
+    -- snap_12_lunge_3 with hits one and two made quicker, three ways. On the
+    -- whole clips, hit one stands still until about 0.1, raises the blade
+    -- until 0.36 and has it down by 0.6. Hit two winds up until about 0.45 and
+    -- swings up between 0.55 and 0.64. After that each is recovery.
+
+    -- Both ends cut: no standing start, most of hit two's wind up gone, and
+    -- each hit ends just after its swing instead of playing the recovery.
+    quick12_cut = {
+        light_1 = { start = 0.10, finish = 0.65 },
+        light_2 = { start = 0.25, finish = 0.70 },
+        light_3 = { lunge = LONG_LUNGE },
+        blends = SNAP_12_BLENDS,
+    },
+    -- Fast through each wind up, normal speed through the swing, and ending
+    -- just after it.
+    quick12_ramp = {
+        light_1 = { ramp = { { 0.0, 1.8 }, { 0.40, 1.0 } }, finish = 0.65 },
+        light_2 = { ramp = { { 0.0, 1.8 }, { 0.50, 1.0 } }, finish = 0.70 },
+        light_3 = { lunge = LONG_LUNGE },
+        blends = SNAP_12_BLENDS,
+    },
+    -- The same two swings, nothing cut, 1.4 times as fast.
+    quick12_fast = {
+        light_1 = { ramp = { { 0.0, 1.4 } } },
+        light_2 = { ramp = { { 0.0, 1.4 } } },
+        light_3 = { lunge = LONG_LUNGE },
+        blends = SNAP_12_BLENDS,
     },
 }
 
