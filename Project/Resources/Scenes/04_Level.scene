@@ -149595,7 +149595,8 @@
                                 "PitchOffset": 0.0,
                                 "StartRot": 60.0,
                                 "_subscriptions": {},
-                                "SideOffset": 0.0
+                                "SideOffset": 0.0,
+                                "CenterOnPlayer": true
                             }
                         }
                     ]
