@@ -17,6 +17,33 @@ local KnifePool = require("Gameplay.KnifePool")
 -- long HitIFrame to stop one swing counting twice.
 local SWING_HIT_TYPES = { COMBO = true, LIFT = true, AIR = true, SLAM = true }
 
+-- Moves that deal damage. A hit can cancel these, and the stagger cooldown
+-- decides how often it may.
+local ATTACK_MOVE_KINDS = {
+    BossMelee = true, P1RangedCharged = true, ShoutAOE = true, Basic = true,
+    BurstFire = true, AntiDodge = true, FateSealed = true, DeathLotus = true,
+}
+
+-- The animator trigger an attack move sets to start its animation. A trigger
+-- stays set until a transition uses it, so a cancelled move clears its own,
+-- or the animation would play later with no attack behind it.
+local ATTACK_MOVE_TRIGGER = {
+    BossMelee = "Melee", FateSealed = "Melee",
+    P1RangedCharged = "Ranged", Basic = "Ranged", BurstFire = "Ranged", AntiDodge = "Ranged",
+    DeathLotus = "Ranged", ShoutAOE = "Taunt",
+}
+
+local HURT_TRIGGERS = { "Hurt1", "Hurt2", "Hurt3" }
+
+-- The MinibossAC states that have a transition on Hurt1/2/3. A hurt trigger
+-- set in any other state waits, and later pulls an unrelated attack into Hurt.
+local TAKES_HURT = {
+    ["Recovery"] = true, ["Taunt"] = true, ["Melee Attack"] = true, ["Ranged Attack"] = true,
+}
+
+-- The MinibossAC state that plays the claw swing
+local SWING_STATE = "Melee Attack"
+
 -------------------------------------------------
 -- Helpers
 -------------------------------------------------
@@ -192,6 +219,14 @@ return Component {
         -- Charge time for the phase 1 charged slash. Longer than phase 3's so
         -- the telegraph is readable the first time a player meets it.
         P1_ChargedSlashCharge = 1.10,
+        -- Seconds the boss has to wait after a hit stops one of its attacks
+        -- before a hit can stop another. Hits in between still do damage, but
+        -- the attack carries on and lands.
+        StaggerCooldown = 5.5,
+        -- Seconds a melee attack waits for its swing animation to start. The
+        -- swing can be held up by a hurt animation that is still playing, and
+        -- the attack is dropped if it does not start in this time.
+        BossMeleeStartTimeout = 1.0,
         -- Damage the player's feather skill does to this boss: three times a
         -- first hit, which ComboManager puts at 10.
         FeatherSkillDamage = 30,
@@ -326,6 +361,7 @@ return Component {
         self.currentMoveDef = nil
         self._recoverTimer = 0
         self._hitLockTimer = 0
+        self._staggerCdT = 0
 
         self._moveQueue = {}
 
@@ -675,6 +711,7 @@ return Component {
         -- 2) Tick timers always
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         self._hurtSoundCd = math.max(0, (self._hurtSoundCd or 0) - dtSec)
+        self._staggerCdT = math.max(0, (self._staggerCdT or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
         end
@@ -1608,15 +1645,6 @@ return Component {
 
         self:_publishBossHealth()
 
-        local myRandomValue = math.random(1, 3)
-        if myRandomValue == 1 then
-            self._animator:SetTrigger("Hurt1")
-        elseif myRandomValue == 2 then
-            self._animator:SetTrigger("Hurt2")
-        else
-            self._animator:SetTrigger("Hurt3")
-        end
-
         --print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
 
         if self.health <= 0 then
@@ -1624,28 +1652,22 @@ return Component {
             return
         end
 
-        -- [NEW] Check for Super Armor!
-        -- The charged slash is the big attack in phase 1 and the answer to a
-        -- hook in phase 3, and it is only a big attack if the player cannot
-        -- cancel it by swinging during the wind up. It still takes damage.
-        local isUninterruptible = self:IsInMove("FateSealed")
-
-        -- Only play hurt animations and interrupt moves if NOT in super armor
-        if not isUninterruptible then
-            local myRandomValue = math.random(1, 3)
-            if myRandomValue == 1 then
-                self._animator:SetTrigger("Hurt1")
-            elseif myRandomValue == 2 then
-                self._animator:SetTrigger("Hurt2")
-            else
-                self._animator:SetTrigger("Hurt3")
-            end
-
-            -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
-            self:_CancelCurrentAttackMove("HURT")
-
-            -- Always queue a short “hurt reaction window”
-            self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+        -- Whether this hit stops the boss. An attack whose damage has not
+        -- landed yet is stopped at most once every StaggerCooldown seconds,
+        -- otherwise it carries on and lands. Any other hit staggers it.
+        local pending = self:_IsAttackPending()
+        local stagger = false
+        if self:IsInMove("FateSealed") then
+            -- Super armour. The charged slash is the big attack in phase 1 and
+            -- the answer to a hook in phase 3, and it is only a big attack if
+            -- the player cannot cancel it by swinging during the wind up. Once
+            -- the slash has landed the boss flinches, but keeps its recovery,
+            -- which is the player's window to punish it.
+            if not pending then self:_PlayHurtAnim() end
+        elseif (not pending) or (self._staggerCdT or 0) <= 0 then
+            if pending then self._staggerCdT = self.StaggerCooldown or 5.5 end
+            self:_Stagger()
+            stagger = true
         end
 
         -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
@@ -1689,8 +1711,10 @@ return Component {
             return
         end
 
-        -- Optional: tiny hit-stun lock
-        self:LockActions("HIT_STUN", 0.15)
+        -- Tiny hit-stun lock, only when the hit stopped the boss
+        if stagger then
+            self:LockActions("HIT_STUN", 0.15)
+        end
 
         -- if self.ClipHurt and self.ClipHurt >= 0 and self.PlayClip then
         --     self:PlayClip(self.ClipHurt, false)
@@ -2274,15 +2298,22 @@ return Component {
     end,
 
     _DoMeleeAttack = function(self)
-
-        -- longer windup + further range
-        --print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
-        if self._animator then self._animator:SetTrigger("Melee") end
+        -- The animator state before the trigger is set. The animator takes
+        -- the trigger later in the frame, so the move can tell a swing that
+        -- starts from this one from a swing that was already playing.
+        local lastState, lastStateTime
+        if self._animator then
+            lastState = self._animator:GetCurrentState()
+            lastStateTime = self._animator:GetStateTime()
+            self._animator:SetTrigger("Melee")
+        end
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
             range  = self.BossMeleeRange or 2.95,
             dmg    = 4,
-            postDelay = 1.0
+            postDelay = 1.0,
+            lastState = lastState,
+            lastStateTime = lastStateTime,
         })
     end,
 
@@ -2295,6 +2326,12 @@ return Component {
         self._move.t = 0
         self._move.step = 0
         self._moveFinished = false
+
+        -- A hurt trigger left by an earlier hit must not pull this attack
+        -- into a hurt animation. Only a hit during the attack may stop it.
+        if ATTACK_MOVE_KINDS[kind] then
+            self:_ClearTriggers(HURT_TRIGGERS)
+        end
     end,
 
     _EndMove = function(self)
@@ -2311,22 +2348,53 @@ return Component {
         if not kind then return end
 
         -- Only cancel actual attack/cast moves, not passive hurt react
-        local cancelKinds = {
-            BossMelee       = true,
-            P1RangedCharged = true,
-            ShoutAOE        = true,
-            Basic           = true,
-            BurstFire       = true,
-            AntiDodge       = true,
-            FateSealed      = true,
-            DeathLotus      = true,
-        }
-
-        if cancelKinds[kind] then
+        if ATTACK_MOVE_KINDS[kind] then
             self._move.cancelled = true
             self._move.cancelReason = reason or "INTERRUPTED"
+            if ATTACK_MOVE_TRIGGER[kind] then
+                self:_ClearTriggers({ ATTACK_MOVE_TRIGGER[kind] })
+            end
             self:_EndMove()
         end
+    end,
+
+    -- True while the current move is an attack whose damage has not landed
+    _IsAttackPending = function(self)
+        local m = self._move
+        if self._moveFinished or not m or not ATTACK_MOVE_KINDS[m.kind] then return false end
+        if m.kind == "BossMelee" then return not m.didHit end
+        if m.kind == "FateSealed" then return not m.slashed end
+        if m.kind == "P1RangedCharged" or m.kind == "ShoutAOE" then return not m.didFire end
+        if m.kind == "Basic" or m.kind == "AntiDodge" then return m.step == 0 end
+        -- BurstFire and DeathLotus fire across the whole move
+        return true
+    end,
+
+    -- Clears animator triggers. SetBool on a Trigger parameter keeps its
+    -- Trigger type and stores false, and a false trigger never fires.
+    _ClearTriggers = function(self, names)
+        if not self._animator then return end
+        for _, name in ipairs(names) do
+            self._animator:SetBool(name, false)
+        end
+    end,
+
+    -- Plays one random hurt animation, if the animator is in a state that
+    -- can take it. In any other state the trigger would wait and pull a later
+    -- attack into the hurt animation, so none is set.
+    _PlayHurtAnim = function(self)
+        if not self._animator then return end
+        if not TAKES_HURT[self._animator:GetCurrentState()] then return end
+        self:_ClearTriggers(HURT_TRIGGERS)
+        self._animator:SetTrigger(HURT_TRIGGERS[math.random(1, #HURT_TRIGGERS)])
+    end,
+
+    -- A hit that stops the boss: the attack in progress is cancelled so its
+    -- damage never lands, and the boss plays a short hurt reaction.
+    _Stagger = function(self)
+        self:_CancelCurrentAttackMove("HURT")
+        self:_PlayHurtAnim()
+        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
     end,
 
     TickMove = function(self, dtSec)
@@ -2387,14 +2455,49 @@ return Component {
         end
 
         if m.kind == "BossMelee" then
+            -- The slash is timed from the start of the swing animation and
+            -- lands only while that swing is playing. A swing held up by a
+            -- hurt animation lands later, and a swing the animator leaves
+            -- before the claw connects deals no damage.
             if m.step == 0 then
                 self:FacePlayer()
                 m.step = 1
                 m.hitAt = (m.windup or 0.85)
+                m.swingWaitT = 0
             end
 
-            if not m.didHit and m.t >= (m.hitAt or 0) then
+            local swingTime = m.t
+            if self._animator then
+                local state = self._animator:GetCurrentState()
+                local stateTime = self._animator:GetStateTime()
+                if m.step == 1 then
+                    -- Entered fresh: from another state, or from the end of an
+                    -- earlier swing, which restarts the state time.
+                    local entered = state == SWING_STATE
+                        and (m.lastState ~= SWING_STATE or stateTime < m.lastStateTime)
+                    if entered then
+                        m.step = 2
+                    else
+                        m.swingWaitT = m.swingWaitT + dtSec
+                        if m.swingWaitT >= (self.BossMeleeStartTimeout or 1.0) then
+                            self:_CancelCurrentAttackMove("SWING_NOT_STARTED")
+                            return
+                        end
+                    end
+                end
+                m.lastState, m.lastStateTime = state, stateTime
+
+                if m.step == 1 then return end
+                if not m.didHit and state ~= SWING_STATE then
+                    self:_CancelCurrentAttackMove("SWING_LEFT")
+                    return
+                end
+                swingTime = stateTime
+            end
+
+            if not m.didHit and swingTime >= (m.hitAt or 0) then
                 m.didHit = true
+                m.hitT = m.t
 
                 --print("Do u see this?")
                 -- CLAW VFX HERE
@@ -2425,7 +2528,7 @@ return Component {
                 self:_publishSFX("meleeAttack")
             end
 
-            if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
+            if m.didHit and m.t >= (m.hitT + (m.postDelay or 0.4)) then
                 self:_EndMove()
             end
             return
@@ -3387,10 +3490,8 @@ return Component {
             pcall(function() self._animator:SetBool("PlayerInDetectionRange", false) end)
             pcall(function() self._animator:SetBool("PlayerInAttackRange", false) end)
             pcall(function() self._animator:SetBool("ReadyToAttack", false) end)
-            pcall(function() self._animator:ResetTrigger("Melee") end)
-            pcall(function() self._animator:ResetTrigger("Ranged") end)
-            pcall(function() self._animator:ResetTrigger("Taunt") end)
-            pcall(function() self._animator:ResetTrigger("Hooked") end)
+            self:_ClearTriggers({ "Melee", "Ranged", "Taunt", "Hooked" })
+            self:_ClearTriggers(HURT_TRIGGERS)
         end
 
         self:_publishBossHealth()
