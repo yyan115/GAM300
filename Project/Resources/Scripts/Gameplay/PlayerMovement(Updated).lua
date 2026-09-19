@@ -156,7 +156,7 @@ return Component {
 
         -- === Dash ===
         DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
-        DashDuration           = 0.7,   -- Seconds dash lasts. Match to dash animation.
+        DashDuration           = 0.7,   -- Seconds dash lasts. The dash animation is played to fit it.
         DashCooldown           = 2.5,   -- Seconds before a consumed use regenerates.
         DashMaxUses            = 2,     -- Max consecutive dashes. Uses regenerate one at a time.
         DashEarlyCancelRatio   = 0.5,   -- Fraction of dash elapsed before early-cancel fires (0=instant, 1=no cancel).
@@ -165,6 +165,9 @@ return Component {
         DashSteerSpeed         = 135.0, -- Degrees/sec the player can steer mid-dash. Forward only — no braking.
         PostDashRecoveryTime   = 0.25,  -- Seconds after dash ends before full reverse steering is restored. 0 = no restriction.
         -- TO ADD dash variants (dodge roll, air dive): add fields here.
+
+        -- The animator state the dash plays
+        DashAnimState          = "Dash",
 
         -- === Combat / lunge ===
         -- Fallback values — real values come from ComboManager's lunge table.
@@ -714,6 +717,29 @@ return Component {
         self._initialSpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     end,
 
+    -- Plays the dash animation over the dash, whatever the clip's length, so
+    -- the roll and the movement finish together however the dash is tuned.
+    -- The animator leaves the dash state when the dash ends, so a roll played
+    -- slower than the dash is cut off part way. Done once the animator has
+    -- entered the dash state afresh, since entering it sets the state's own
+    -- speed. That is a frame or so into the dash, so what is left of the clip
+    -- is fitted to what is left of the dash.
+    _FitDashAnimToDuration = function(self)
+        if self._dashAnimFitted or not self._animator then return end
+        if self._animator:GetCurrentState() ~= self.DashAnimState then return end
+        local stateTime = self._animator:GetStateTime()
+        if self._dashAnimPrevTime and stateTime >= self._dashAnimPrevTime then
+            self._dashAnimPrevTime = stateTime
+            return
+        end
+        self._dashAnimFitted = true
+        local clipSeconds = self._animator:GetClipDuration(self._animator:GetActiveClipIndex())
+        local clipLeft = clipSeconds * (1 - self._animator:GetNormalizedTime())
+        if clipLeft > 0 and (self._dashTimer or 0) > 0 then
+            self._animator:SetSpeed(clipLeft / self._dashTimer)
+        end
+    end,
+
     -- ==========================================================================
     -- SQUASH TRIGGER HELPER
     -- Starts a squash/stretch effect. Call from any trigger site.
@@ -1216,6 +1242,13 @@ return Component {
             self._dashRequested   = false
             self._isDashing       = true
             self._dashTimer       = self.DashDuration
+            self._dashAnimFitted  = false
+            -- An early cancel starts a dash from inside the last one's state.
+            -- Its state time, noted here, tells the two apart.
+            self._dashAnimPrevTime = nil
+            if self._animator and self._animator:GetCurrentState() == self.DashAnimState then
+                self._dashAnimPrevTime = self._animator:GetStateTime()
+            end
             _G.player_is_dashing  = true
             self._wasDashingInAir = not isGrounded
             self:_squashTrigger("dashstart", 0.7)
@@ -1266,6 +1299,7 @@ return Component {
 
         if self._isDashing then
             self._dashTimer = self._dashTimer - dt
+            self:_FitDashAnimToDuration()
 
             if self._dashTimer <= 0 then
                 -- Dash ended: carry speed into normal movement for a natural momentum arc.

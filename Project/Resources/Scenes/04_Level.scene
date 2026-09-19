@@ -211633,7 +211633,7 @@
                                 "entryFunction": "OnInit",
                                 "autoInvokeEntry": true,
                                 "instanceState": {
-                                    "DashDuration": 0.7,
+                                    "DashSpeed": 7.5,
                                     "_dashExitBoost": 0.0,
                                     "playerJumpSFX": [
                                         "00612e339f2a542c-0004202e3600007d",
@@ -211656,7 +211656,7 @@
                                         "00612e33af395ef5-0004202e36000091",
                                         "006cb5ca4332c9da-00047d6524000021"
                                     ],
-                                    "PostDashRecoveryTime": 0.6,
+                                    "DashDuration": 0.45,
                                     "_kbZ": 0.0,
                                     "_chainAimActive": false,
                                     "_lungeDirX": 0.0,
@@ -211803,7 +211803,7 @@
                                         "id": 13.0,
                                         "event": "dash_performed"
                                     },
-                                    "DashSpeed": 5.0,
+                                    "SlamLateralMultiplier": 3.0,
                                     "_currentRotW": 1.0,
                                     "DashMaxUses": 1.0,
                                     "_facingX": 0.0,
@@ -211835,7 +211835,7 @@
                                     "Deceleration": 16.0,
                                     "_freezePending": false,
                                     "AirSlamAcceleration": 80.0,
-                                    "SlamLateralMultiplier": 3.0
+                                    "PostDashRecoveryTime": 0.3
                                 }
                             },
                             {
@@ -211846,7 +211846,7 @@
                                 "entryFunction": "OnInit",
                                 "autoInvokeEntry": true,
                                 "instanceState": {
-                                    "DashIFrameDuration": 0.7,
+                                    "YDeathThreshold": -15.0,
                                     "__meta": {},
                                     "CurrentHealth": 30.0,
                                     "MaxHealth": 30.0,
@@ -211867,7 +211867,7 @@
                                     "_subscriptions": {},
                                     "IFrameDuration": 0.5,
                                     "_transform_fetched": false,
-                                    "YDeathThreshold": -15.0
+                                    "DashIFrameDuration": 0.45
                                 }
                             },
                             {
