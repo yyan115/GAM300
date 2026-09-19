@@ -100,8 +100,8 @@ return Component {
         -- Spawn the feather remnant
         local featherRemnantPrefab = Prefab.InstantiatePrefab(self.FeatherRemnantPrefabPath)
         local parentId = Engine.GetParentEntity(self.entityId)
-        local fwdX, fwdY, fwdZ = 0, 0, -1 
-        
+        local fwdX, fwdY, fwdZ = 0, 0, -1
+
         if parentId and parentId >= 0 then
             local parentTr = GetComponent(parentId, "Transform")
             if parentTr then
@@ -114,16 +114,19 @@ return Component {
         end
 
         local wPos, wRot = getWorldTransform(self.entityId)
-        local impactPos = self._raycastHitPos or wPos 
+        local impactPos = self._raycastHitPos or wPos
+
+        print(string.format("[FeatherProjectile] HandleCollision entity=%d impact=(%.1f,%.1f,%.1f) remnant=%s",
+            self.entityId, impactPos.x, impactPos.y, impactPos.z, tostring(featherRemnantPrefab)))
 
         -- Set the feather remnant transform
-        local featherRemnantPrefabTr = GetComponent(featherRemnantPrefab, "Transform")            
+        local featherRemnantPrefabTr = GetComponent(featherRemnantPrefab, "Transform")
         if featherRemnantPrefabTr then
             -- Spawn it slightly behind the impact point so it looks stuck in the wall
             featherRemnantPrefabTr.localPosition.x = impactPos.x - (fwdX * self.SpawnRemnantOffset)
             featherRemnantPrefabTr.localPosition.y = impactPos.y - (fwdY * self.SpawnRemnantOffset)
             featherRemnantPrefabTr.localPosition.z = impactPos.z - (fwdZ * self.SpawnRemnantOffset)
-            
+
             featherRemnantPrefabTr.localRotation.w = wRot.w
             featherRemnantPrefabTr.localRotation.x = wRot.x
             featherRemnantPrefabTr.localRotation.y = wRot.y
@@ -134,14 +137,17 @@ return Component {
 
         -- Spawn the feather skill explosion
         local featherExplosionPrefab = Prefab.InstantiatePrefab(self.FeatherSkillExplosionPrefabPath)
+        print(string.format("[FeatherProjectile] Explosion prefab spawned entity=%s", tostring(featherExplosionPrefab)))
 
         -- Set the feather skill explosion transform
-        local featherExplosionTr = GetComponent(featherExplosionPrefab, "Transform")            
+        local featherExplosionTr = GetComponent(featherExplosionPrefab, "Transform")
         if featherExplosionTr then
             featherExplosionTr.localPosition.x = impactPos.x
             featherExplosionTr.localPosition.y = impactPos.y
             featherExplosionTr.localPosition.z = impactPos.z
             featherExplosionTr.isDirty = true
+        else
+            print("[FeatherProjectile] WARNING — explosion has no Transform")
         end
 
         if Engine.DestroyEntity then

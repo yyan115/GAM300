@@ -298,6 +298,11 @@
                     "paramName": "Melee",
                     "mode": "Equals",
                     "threshold": 1.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -342,6 +347,11 @@
                     "paramName": "Melee",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -1272,6 +1282,36 @@
                     "paramName": "ReadyToAttack",
                     "mode": "Equals",
                     "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.9300000071525574,
+            "transitionDuration": 0.949999988079071,
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         }

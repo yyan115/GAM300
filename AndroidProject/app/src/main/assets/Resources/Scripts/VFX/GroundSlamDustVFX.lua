@@ -55,6 +55,14 @@ return Component {
                 self:SpawnGroundDustVFX(payload.posX, payload.posY, payload.posZ)       
             end
         end)
+
+        -- The miniboss's own landing. It does not publish SlammedDown, because
+        -- GroundSlamVFX listens to that too and would put down its crack decal.
+        self._minibossSlamSub = event_bus.subscribe("miniboss_slammed", function(payload)
+            if payload and payload.targetId then
+                self:SpawnGroundDustVFX(payload.posX, payload.posY, payload.posZ)
+            end
+        end)
     end,
     Update = function(self, dt)
         if self._emitTimer then
@@ -68,11 +76,11 @@ return Component {
     end,
     OnDisable = function(self)
         if _G.event_bus and _G.event_bus.unsubscribe then
-            if self._BeginSlamDownSub then
-                pcall(function()
-                    _G.event_bus.unsubscribe(self._BeginSlamDownSub)
-                end)
-                self._BeginSlamDownSub = nil
+            for _, key in ipairs({"_BeginSlamDownSub", "_minibossSlamSub"}) do
+                if self[key] then
+                    pcall(function() _G.event_bus.unsubscribe(self[key]) end)
+                    self[key] = nil
+                end
             end
         end
         self._trackedEnemyAnim = nil

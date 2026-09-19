@@ -1,4 +1,5 @@
 require("extension.engine_bootstrap")
+local debugControls = os and os.getenv and os.getenv("GAM300_DEBUG") == "1"
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -388,11 +389,11 @@ return Component {
             end
         end
 
-        if Keyboard.IsDigitPressed(5) then
+        if debugControls and Keyboard.IsDigitPressed(5) then
             self:RespawnPlayer()
         end
 
-        if Keyboard.IsDigitPressed(8) then
+        if debugControls and Keyboard.IsDigitPressed(8) then
             self.GodMode = not self.GodMode
         end
 

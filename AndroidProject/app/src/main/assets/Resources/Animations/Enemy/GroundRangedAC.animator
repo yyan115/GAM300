@@ -288,7 +288,13 @@
             "hasExitTime": false,
             "exitTime": 1.0,
             "transitionDuration": 0.0,
-            "conditions": []
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         },
         {
             "from": "Hooked",
@@ -326,7 +332,13 @@
             "hasExitTime": false,
             "exitTime": 1.0,
             "transitionDuration": 0.0,
-            "conditions": []
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         },
         {
             "from": "Ranged Attack",
@@ -1245,6 +1257,36 @@
                     "paramName": "ReadyToAttack",
                     "mode": "Equals",
                     "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.9100000262260437,
+            "transitionDuration": 0.8999999761581421,
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         }

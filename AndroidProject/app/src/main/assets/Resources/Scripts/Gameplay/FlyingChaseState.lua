@@ -13,6 +13,28 @@ end
 function FlyingChase:Update(ai, dt)
     ai:MaintainHover(dt)
 
+    -- Leash check: if too far from spawn, deaggro and fly home
+    local maxDist = ai.MaxChaseDistance or 10.0
+    if ai._spawnX and ai._spawnZ then
+        local ex, _, ez = ai:GetPosition()
+        if ex then
+            local dx = ex - ai._spawnX
+            local dz = ez - ai._spawnZ
+            if (dx*dx + dz*dz) > (maxDist * maxDist) then
+                ai.aggressive = false
+                -- Point patrol target at spawn so the enemy flies home
+                ai._patrolTarget = { x = ai._spawnX, z = ai._spawnZ }
+                ai._isPatrolWait = false
+                if ai.EnablePatrol then
+                    ai.fsm:Change("Patrol", ai.states.Patrol)
+                else
+                    ai.fsm:Change("Idle", ai.states.Idle)
+                end
+                return
+            end
+        end
+    end
+
     local detR = ai.DetectionRange or 4.0
     if not ai:IsPlayerInRange(detR) and not ai.aggressive then
         if ai.EnablePatrol then

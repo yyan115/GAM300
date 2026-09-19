@@ -100,6 +100,9 @@ return Component {
                 self._hitThisSwing = {}
                 self._currentDamage    = (data and data.damage)    or 10
                 self._currentKnockback = (data and data.knockback) or 0
+                -- Which combo step this swing is, such as light_2, for a target
+                -- that takes some steps differently from others.
+                self._currentState     = data and data.state
 
                 if data and data.isSlam then
                     self._currentHitType = "SLAM"
@@ -284,9 +287,32 @@ return Component {
                 damage    = self._currentDamage,
                 hitType   = self._currentHitType or "COMBO",
                 knockback = self._currentKnockback or 0,
+                state     = self._currentState,
             })
             print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f",
                 tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))
+
+            -- The hit confirm ComboManager has always been waiting for.
+            --
+            -- ComboManager subscribes to attack_hit_confirmed and branches
+            -- air_light_2 on it: confirmed means loop back to air_light_1 and
+            -- stay airborne, unconfirmed means route to air_slam as a whiff
+            -- punish. Nothing published the event, so the flag it reads was
+            -- permanently false and every aerial string ended in a committed
+            -- dive whether it connected or not. The comment above that
+            -- subscription says to match the name to whatever this file
+            -- publishes; this is that.
+            --
+            -- Enemies only. The branch means "you connected with something
+            -- that was fighting back", so a breakable prop should not buy
+            -- another loop in the air.
+            if isEnemy then
+                event_bus.publish("attack_hit_confirmed", {
+                    entityId = targetId,
+                    damage   = self._currentDamage,
+                    hitType  = self._currentHitType or "COMBO",
+                })
+            end
         end
     end,
 }

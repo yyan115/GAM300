@@ -280,6 +280,12 @@ return Component {
             -- Held from retracted: fire toward crosshair world point on release.
             local dir = self:_directionToAimPoint()
             local wt  = self._cameraAimWorldPoint  -- pass world target for per-frame tracking
+            -- Keep the aim the player let go on. The spin keeps turning for up
+            -- to half a second after this, and the shot that counts is the one
+            -- the release window fires; without this it would take a fresh aim
+            -- then, which is a different place if the player is still moving.
+            self._releaseAimDir = { dir[1], dir[2], dir[3] }
+            self._releaseAimWorldPoint = wt and { x = wt.x, y = wt.y, z = wt.z } or nil
             dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance, wt)
             if _G.event_bus and _G.event_bus.publish then
@@ -833,7 +839,30 @@ return Component {
         local ok, entities = pcall(function()
             return Engine.GetEntitiesByTag("LockOn", 32)
         end)
-        if not ok or type(entities) ~= "table" then return nil end
+        if not ok or type(entities) ~= "table" then entities = nil end
+
+        -- Nothing in the project carries the LockOn tag. It is defined in
+        -- TagsAndLayers.json at index 16 and applied to no entity, so this
+        -- lookup has always come back empty and every tap-fire aimed at raw
+        -- player forward: the aim assist has never once run.
+        --
+        -- Enemy and Boss are tagged, and are what the assist is for, so they
+        -- stand in when no LockOn point exists. Tagging the LockOnTarget child
+        -- the enemies already carry would give a better aim point than the
+        -- root, and would take precedence here automatically, but that is
+        -- scene data and belongs to the editor.
+        if not entities or #entities == 0 then
+            entities = {}
+            for _, tag in ipairs({ "Enemy", "Boss" }) do
+                local tok, found = pcall(function()
+                    return Engine.GetEntitiesByTag(tag, 32)
+                end)
+                if tok and type(found) == "table" then
+                    for _, id in ipairs(found) do entities[#entities + 1] = id end
+                end
+            end
+        end
+        if #entities == 0 then return nil end
 
         local bestDist = math.huge
         local bestDX, bestDY, bestDZ = nil, nil, nil
@@ -982,6 +1011,8 @@ return Component {
         self._spinVerletBlend    = 1.0
         self._pendingSpinRelease = false
         self._spinReleaseTimer   = 0
+        self._releaseAimDir      = nil
+        self._releaseAimWorldPoint = nil
         self._spinFacingX        = 0
         self._spinFacingZ        = 1
         self._spinFacingLocked   = false
@@ -1284,8 +1315,15 @@ return Component {
 
                 if math.abs(a) <= extendedTol or self._spinReleaseTimer > 0.5 then
                     --dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f timeout=%s", a, extendedTol, tostring(self._spinReleaseTimer > 0.5)))
-                    local cf = self:_directionToAimPoint()
-                    local wt = self._cameraAimWorldPoint
+                    -- Aim as of the release, not as of now. Reading the camera
+                    -- again here is what made the throw land away from where the
+                    -- crosshair was when the button came up.
+                    local wt = self._releaseAimWorldPoint
+                    local cf = self._releaseAimDir
+                    if not cf then
+                        cf = self:_directionToAimPoint()
+                        wt = self._cameraAimWorldPoint
+                    end
                     self:_resetSpin()
                     self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance, wt)
                 end

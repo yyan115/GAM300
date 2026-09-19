@@ -26,6 +26,22 @@ return Component {
     Start = function(self)
         self._pageWasActive = false
 
+        -- Subscribe to click event so we can reset hover sprites BEFORE the popup
+        -- is deactivated. Without this, the hover sprite persists during dormancy
+        -- and flashes for one frame when the popup reopens.
+        if event_bus and event_bus.subscribe then
+            self._clickResetSub = event_bus.subscribe("pause_menu.click", function()
+                if not self._buttonData then return end
+                for _, data in pairs(self._buttonData) do
+                    if data.sprite and data.spriteGUIDs and data.spriteGUIDs[1] then
+                        data.sprite:SetTextureFromGUID(data.spriteGUIDs[1])
+                    end
+                    data.wasHovered = false
+                end
+                self._pageWasActive = false
+            end)
+        end
+
         -- Detect platform
         local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
 

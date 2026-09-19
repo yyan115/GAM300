@@ -63,8 +63,12 @@ return Component {
             -- Subscribe deal_damage BEFORE attack_performed so the flag is set first
             -- when both events are published in the same frame (melee hit case).
             self._hitSub = _G.event_bus.subscribe("deal_damage_to_entity", function(data)
+                -- Only play one hit sound per frame — prevents stacking when
+                -- AOE attacks (feather explosion) damage multiple enemies at once.
+                if not self._hitThisFrame then
+                    AudioHelper.PlayRandomSFXPitched(self._audio, self.SlashHitSFX, self.PitchVariation, self.BaseVolume)
+                end
                 self._hitThisFrame = true
-                AudioHelper.PlayRandomSFXPitched(self._audio, self.SlashHitSFX, self.PitchVariation, self.BaseVolume)
             end)
 
             self._attackSub = _G.event_bus.subscribe("attack_performed", function(data)

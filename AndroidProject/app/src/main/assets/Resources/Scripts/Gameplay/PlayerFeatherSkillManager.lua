@@ -76,6 +76,8 @@ return Component {
                                 not _G.player_is_casting_skill
 
                 if canCast then
+                    print(string.format("[PlayerFeatherSkillManager] CASTING — feathers=%d cooldown=%.1f",
+                        _G._numFeathers, self._featherSkillCooldown))
                     _G._numFeathers = _G._numFeathers - self.FeatherSkillRequirement
 
                     _G.player_is_casting_skill = true
@@ -96,6 +98,7 @@ return Component {
                     end
 
                     local featherSkillPrefab = Prefab.InstantiatePrefab(self.FeatherSkillPrefabPath)
+                    print(string.format("[PlayerFeatherSkillManager] Spawned FeatherSkill prefab entity=%s", tostring(featherSkillPrefab)))
 
                     if Engine.SetParentEntity then
                         Engine.SetParentEntity(featherSkillPrefab, self.entityId)
@@ -113,6 +116,8 @@ return Component {
                         featherSkillPrefabTr.localRotation.z = 0
 
                         featherSkillPrefabTr.isDirty = true
+                    else
+                        print("[PlayerFeatherSkillManager] WARNING — no Transform on FeatherSkill prefab")
                     end
                     self._featherSkillCooldown = self.FeatherSkillCooldown
                 end

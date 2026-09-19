@@ -59,11 +59,27 @@ return Component {
         enemyGroundSlamSFX       = {},
         ExplosionSkillStartSFX   = {},
         ExplosionSkillReleaseSFX = {},
+        -- Seconds during which a second explosion will not retrigger the sound.
+        -- The phase-3 feather bomb attack spawns a VOLLEY - one bomb per grid
+        -- cell (MinibossAI, the "for i = 1, #cells" loop) - and every explosion
+        -- publishes explosionSkillRelease from its own Start. Landing together,
+        -- they stacked that many copies of the same clip on one AudioComponent,
+        -- which is why the explosion was deafening next to every other sound.
+        -- A volley should read as one blast, not one per bomb.
+        ExplosionSFXRetrigger    = 0.15,
     },
 
     Start = function(self)
         local bossId = Engine.GetEntityByName("Miniboss")
         self._bossAudio = bossId and GetComponent(bossId, "AudioComponent") or nil
+        self._lastExplosionSFX = nil
+    end,
+
+    Update = function(self, dt)
+        if self._explosionCooldown then
+            self._explosionCooldown = self._explosionCooldown - dt
+            if self._explosionCooldown <= 0 then self._explosionCooldown = nil end
+        end
     end,
 
     Awake = function(self)
@@ -105,7 +121,11 @@ return Component {
             elseif t == "explosionSkillStart" then
                 AudioHelper.PlayRandomSFX(self._bossAudio, self.ExplosionSkillStartSFX)
             elseif t == "explosionSkillRelease" then
-                AudioHelper.PlayRandomSFX(self._bossAudio, self.ExplosionSkillReleaseSFX)
+                -- Collapse a simultaneous volley into a single blast.
+                if not self._explosionCooldown then
+                    self._explosionCooldown = self.ExplosionSFXRetrigger or 0.15
+                    AudioHelper.PlayRandomSFX(self._bossAudio, self.ExplosionSkillReleaseSFX)
+                end
             end
         end)
     end,

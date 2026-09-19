@@ -89,7 +89,19 @@ return Component {
         ShakeFrequency     = 25.0,
 
         -- === Lock-On ===
+        -- Acquire inside a tighter radius than the one that breaks the lock, so
+        -- an enemy hovering at the boundary cannot acquire/release repeatedly.
+        lockOnAcquireDistance = 12.0,
         lockOnBreakDistance   = 15.0,
+        -- Target switching. A hit on the enemy already engaged always wins;
+        -- another enemy takes over only once the engagement has been quiet for
+        -- lockOnSwitchDelay seconds, or after lockOnSwitchHits hits on that
+        -- enemy inside lockOnSwitchWindow seconds. This is what keeps the
+        -- camera from flipping between enemies mid-fight while still allowing a
+        -- deliberate switch.
+        lockOnSwitchDelay     = 0.75,
+        lockOnSwitchHits      = 2,
+        lockOnSwitchWindow    = 2.0,
         lockOnRotSpeed        = 20.0,
         lockOnSnapFraction    = 0.85,
         lockOnMouseThreshold  = 2.0,
@@ -260,6 +272,15 @@ return Component {
                 end
             end)
 
+            self._flythroughActiveSub = event_bus.subscribe("flythrough.active", function(active)
+                self._cinematicActive = active
+                if not active then
+                    self._cinematicTarget    = nil
+                    self._cinematicStartPosX = nil
+                    self._cinematicStartRotW = nil
+                end
+            end)
+
             self._cinematicTargetSub = event_bus.subscribe("cinematic.target", function(payload)
                 if payload then self._cinematicTarget = payload end
             end)
@@ -295,7 +316,7 @@ return Component {
         if event_bus and event_bus.unsubscribe then
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
-                "_cinematicActiveSub", "_cinematicTargetSub",
+                "_cinematicActiveSub", "_flythroughActiveSub", "_cinematicTargetSub",
                 "_playerRespawnedSub", "_cameraShakeSub",
             }) do
                 if self[sub] then

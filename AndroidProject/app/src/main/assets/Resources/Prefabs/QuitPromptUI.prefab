@@ -1,11 +1,20 @@
 {
-    "entities": [
+    "prefab_entities": [
         {
             "id": 0,
-            "guid": "004cb7ca506c5df0-0004713a040001bf",
+            "guid": "004790c748313326-00047cb8e40001bb",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/QuitPromptUI.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
-                    "name": "Main Camera"
+                    "name": "QuitPromptUI"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -14,7 +23,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 0
+                    "siblingIndex": 14
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32,7 +41,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 5
+                                    "data": 0
                                 }
                             ]
                         },
@@ -76,80 +85,27 @@
                         }
                     ]
                 },
-                "CameraComponent": {
-                    "type": "CameraComponent",
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "00344b360d44f976-0004b8948a07b92d",
+                                "006a1317f7523f1b-00047ca992000079",
+                                "006a1317aa69a9fc-00047cae8600031b",
+                                "006a13179db3b60d-00047cae22000317",
+                                "006a1317f85ad776-00047cae7a000319"
+                            ]
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": -90
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 45
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1000
-                        },
-                        {
-                            "type": "float",
-                            "data": 5
-                        },
-                        {
-                            "type": "float",
-                            "data": 2.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 90
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
                         },
                         "0000000000000000-0000000000000000",
                         {
@@ -157,64 +113,36 @@
                             "data": false
                         },
                         {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 2
-                        },
-                        {
-                            "type": "int",
-                            "data": 2
+                            "type": "bool",
+                            "data": false
                         },
                         {
                             "type": "bool",
                             "data": false
                         },
                         {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 8
-                        },
-                        {
                             "type": "bool",
                             "data": false
                         },
                         {
-                            "type": "float",
-                            "data": 5
-                        },
-                        {
-                            "type": "float",
-                            "data": 4.06
+                            "type": "int",
+                            "data": 128
                         },
                         {
                             "type": "float",
                             "data": 1
                         },
                         {
-                            "type": "bool",
-                            "data": false
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -233,117 +161,33 @@
                             "data": 1
                         },
                         {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
                             "type": "float",
-                            "data": 0.5
+                            "data": 100
                         },
                         {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
+                            "type": "std::string",
+                            "data": "UI"
                         }
-                    ],
-                    "target": {
-                        "type": "glm::vec3",
-                        "data": [
-                            0.0,
-                            0.0,
-                            -1.0
-                        ]
-                    },
-                    "up": {
-                        "type": "glm::vec3",
-                        "data": [
-                            0.0,
-                            1.0,
-                            0.0
-                        ]
-                    },
-                    "backgroundColor": {
-                        "type": "glm::vec3",
-                        "data": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ]
-                    },
-                    "clearFlags": 0,
-                    "projectionType": 0,
-                    "useSkybox": true,
-                    "skyboxTexturePath": "",
-                    "blurEnabled": false,
-                    "blurIntensity": 0.5,
-                    "blurRadius": 2.0,
-                    "blurPasses": 2,
-                    "blurLayerMask": 4294967295,
-                    "dirBlurEnabled": false,
-                    "dirBlurIntensity": 0.5,
-                    "dirBlurStrength": 5.0,
-                    "dirBlurAngle": 0.0,
-                    "dirBlurSamples": 8,
-                    "bloomEnabled": false,
-                    "bloomThreshold": 5.0,
-                    "bloomIntensity": 4.059999942779541,
-                    "bloomSpread": 1.0,
-                    "vignetteEnabled": false,
-                    "vignetteIntensity": 0.5,
-                    "vignetteSmoothness": 0.5,
-                    "vignetteColor": {
-                        "type": "glm::vec3",
-                        "data": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ]
-                    },
-                    "colorGradingEnabled": false,
-                    "cgBrightness": 0.0,
-                    "cgContrast": 1.0,
-                    "cgSaturation": 1.0,
-                    "cgTint": {
-                        "type": "glm::vec3",
-                        "data": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "chromaticAberrationEnabled": false,
-                    "chromaticAberrationIntensity": 0.5,
-                    "chromaticAberrationPadding": 0.5
+                    ]
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
                             "data": false
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "006d9728b583f1fe-0006723cda000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/QuitPrompt.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
@@ -351,10 +195,10 @@
         },
         {
             "id": 1,
-            "guid": "0038c4c3a4cf8377-0004713cac000005",
+            "guid": "00344b360d44f976-0004b8948a07b92d",
             "components": {
                 "NameComponent": {
-                    "name": "Digipen"
+                    "name": "BlackTint"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -363,7 +207,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 1
+                    "siblingIndex": 19
                 },
                 "Transform": {
                     "type": "Transform",
@@ -373,77 +217,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 960
+                                    "data": 1250
                                 },
                                 {
                                     "type": "float",
-                                    "data": 540
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 762.5
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 222.5
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0038c4c3fbfcb30d-0004713c9e000001",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
+                                    "data": 550
                                 },
                                 {
                                     "type": "float",
@@ -456,385 +234,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 2,
-            "guid": "0038c4c3f2fbbfeb-0004713e20000009",
-            "components": {
-                "NameComponent": {
-                    "name": "TeamLogo"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 3
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 960
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 540
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 960
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 540
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0057a382112bceb8-00047ce338001c47",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 3,
-            "guid": "00ffaa0000000001-00ffaa0000000001",
-            "components": {
-                "NameComponent": {
-                    "name": "SplashFadeScreen"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 2
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 960
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 540
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 2200
+                                    "data": 3000
                                 },
                                 {
                                     "type": "float",
@@ -874,9 +274,233 @@
                     "data": [
                         {
                             "type": "bool",
+                            "data": true
+                        },
+                        "003514c13e543018-00040b1292000001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.686275
+                        },
+                        {
+                            "type": "bool",
                             "data": false
                         },
-                        "006ff4898d32d305-000405d112000003",
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 5
+                        },
+                        {
+                            "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "004790c748313326-00047cb8e40001bb"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 2,
+            "guid": "006a1317f7523f1b-00047ca992000079",
+            "components": {
+                "NameComponent": {
+                    "name": "QuitPromptBG"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 50003
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1005
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 500
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1189
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 318
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "00344b3678d60384-0004b893e807b92b",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -943,15 +567,15 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "int",
-                            "data": 0
+                            "data": 5
                         },
                         {
                             "type": "int",
-                            "data": 0
+                            "data": 3
                         },
                         {
                             "type": "Vector3D",
@@ -980,24 +604,30 @@
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 1
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 1
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 0.5
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 0.165
                         },
                         {
                             "type": "bool",
                             "data": false
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "004790c748313326-00047cb8e40001bb"
                     ]
                 },
                 "ActiveComponent": {
@@ -1006,21 +636,17 @@
                         {
                             "type": "bool",
                             "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
                         }
                     ]
                 }
             }
         },
         {
-            "id": 4,
-            "guid": "00ffaa0000000002-00ffaa0000000002",
+            "id": 3,
+            "guid": "006a1317aa69a9fc-00047cae8600031b",
             "components": {
                 "NameComponent": {
-                    "name": "SplashScreenController"
+                    "name": "QuitPromptText"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -1029,7 +655,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 3
+                    "siblingIndex": 50006
                 },
                 "Transform": {
                     "type": "Transform",
@@ -1039,11 +665,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1005
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 540
                                 },
                                 {
                                     "type": "float",
@@ -1091,58 +717,29 @@
                         }
                     ]
                 },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
+                "TextRenderComponent": {
+                    "type": "TextRenderComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
                         },
                         {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
+                            "type": "std::string",
+                            "data": "Are you sure you want to quit the game?"
+                        },
                         {
-                            "scriptGuidStr": "0000000000000000-0000000000000000",
-                            "scriptPath": "../../Resources/Scripts/UI/SplashScreenAnimator.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 5,
-            "guid": "0000423836337a39-00049bff6e000f29",
-            "components": {
-                "NameComponent": {
-                    "name": "FmodLogo"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 4
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
+                            "type": "unsigned",
+                            "data": 32
+                        },
+                        "005d9401210da764-0004777c0a00ade7",
+                        "00374a2171ad928d-000331fc8200006d",
                         {
                             "type": "Vector3D",
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 960
+                                    "data": 1005
                                 },
                                 {
                                     "type": "float",
@@ -1159,11 +756,184 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 732
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 196
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 5
+                        },
+                        {
+                            "type": "int",
+                            "data": 4
+                        },
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1.2
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "004790c748313326-00047cb8e40001bb"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 4,
+            "guid": "006a13179db3b60d-00047cae22000317",
+            "components": {
+                "NameComponent": {
+                    "name": "YesButton"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 50004
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1170
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 450
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 300
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 85
                                 },
                                 {
                                     "type": "float",
@@ -1201,7 +971,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "000042387e9e2c8c-00049bfe26000007",
+                        "007c7b810cab88f7-00047d15de00b1fb",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -1272,11 +1042,11 @@
                         },
                         {
                             "type": "int",
-                            "data": 0
+                            "data": 5
                         },
                         {
                             "type": "int",
-                            "data": 0
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -1305,24 +1075,30 @@
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 1
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 1
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 0.5
                         },
                         {
                             "type": "float",
-                            "data": 0
+                            "data": 0.165
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "004790c748313326-00047cb8e40001bb"
                     ]
                 },
                 "ActiveComponent": {
@@ -1331,6 +1107,456 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "00083a6467f9551d-00047cb30c000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_subscriptions": {},
+                                "Subscribe": null,
+                                "_isHovered": false,
+                                "SFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "Destroy": null,
+                                "SerializeFields": null,
+                                "_updateHoverState": null,
+                                "AwakeSafe": null,
+                                "DeserializeFields": null,
+                                "_ScreenRequestClose": false,
+                                "_transform": null,
+                                "_audio": null,
+                                "DisableSafe": null,
+                                "entityId": 186.0,
+                                "__created_at": 1774731292.0,
+                                "Every": null,
+                                "GetComponent": null,
+                                "_promptActive": null,
+                                "_sprite": null,
+                                "_private": {},
+                                "Update": null,
+                                "ClosePrompt": null,
+                                "_QuitPromptEntity": 183.0,
+                                "Unsubscribe": null,
+                                "StartSafe": null,
+                                "__meta": {},
+                                "spriteGUIDs": [
+                                    "007c7b811bd2e089-00047d15be00b1f5",
+                                    "007c7b810cab88f7-00047d15de00b1fb"
+                                ],
+                                "Start": null,
+                                "_call_lifecycle": null,
+                                "ExitGame": null,
+                                "__field_list": {
+                                    "SFX": {},
+                                    "spriteGUIDs": {}
+                                },
+                                "UpdateSafe": null,
+                                "After": null,
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__created_at": 1773331362.0,
+                                    "__meta": {},
+                                    "ButtonType": "Yes",
+                                    "SFX": [
+                                        "0037d81b0c6c0a46-000400f740000005",
+                                        "0037d81b07b695ee-000400f740000007"
+                                    ],
+                                    "spriteGUIDs": [
+                                        "007c7b811bd2e089-00047d15be00b1f5",
+                                        "007c7b810cab88f7-00047d15de00b1fb"
+                                    ],
+                                    "__field_list": {
+                                        "SFX": {},
+                                        "spriteGUIDs": {},
+                                        "ButtonType": "Yes"
+                                    },
+                                    "_private": {}
+                                }
+                            }
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "00083a6467f9551d-00047cb30c000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "ExitGame"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 5,
+            "guid": "006a1317f85ad776-00047cae7a000319",
+            "components": {
+                "NameComponent": {
+                    "name": "NoButton"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 50005
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 830
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 450
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 300
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 85
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "007c7b815635396f-00047d170800b201",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 5
+                        },
+                        {
+                            "type": "int",
+                            "data": 4
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.165
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "004790c748313326-00047cb8e40001bb"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "00083a6467f9551d-00047cb30c000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_subscriptions": {},
+                                "Subscribe": null,
+                                "_isHovered": true,
+                                "SFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "Destroy": null,
+                                "SerializeFields": null,
+                                "_updateHoverState": null,
+                                "AwakeSafe": null,
+                                "DeserializeFields": null,
+                                "_ScreenRequestClose": false,
+                                "_transform": null,
+                                "_audio": null,
+                                "DisableSafe": null,
+                                "entityId": 187.0,
+                                "__created_at": 1774731292.0,
+                                "Every": null,
+                                "GetComponent": null,
+                                "_promptActive": null,
+                                "_sprite": null,
+                                "_private": {},
+                                "Update": null,
+                                "ClosePrompt": null,
+                                "_QuitPromptEntity": 183.0,
+                                "Unsubscribe": null,
+                                "StartSafe": null,
+                                "__meta": {},
+                                "spriteGUIDs": [
+                                    "007c7b815635396f-00047d170800b201",
+                                    "007c7b817820b87f-00047d16ec00b1fd"
+                                ],
+                                "Start": null,
+                                "_call_lifecycle": null,
+                                "ExitGame": null,
+                                "__field_list": {
+                                    "SFX": {},
+                                    "spriteGUIDs": {}
+                                },
+                                "UpdateSafe": null,
+                                "After": null,
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__created_at": 1773331017.0,
+                                    "__meta": {},
+                                    "ButtonType": "\"\"",
+                                    "SFX": [
+                                        "0037d81b0c6c0a46-000400f740000005",
+                                        "0037d81b07b695ee-000400f740000007"
+                                    ],
+                                    "spriteGUIDs": [
+                                        "007c7b815635396f-00047d170800b201",
+                                        "007c7b817820b87f-00047d16ec00b1fd"
+                                    ],
+                                    "__field_list": {
+                                        "SFX": {},
+                                        "spriteGUIDs": {},
+                                        "ButtonType": "Yes"
+                                    },
+                                    "_private": {}
+                                }
+                            }
+                        }
+                    ]
+                },
+                "ButtonComponent": {
+                    "type": "ButtonComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<ButtonBinding>",
+                            "data": [
+                                {
+                                    "type": "ButtonBinding",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "00083a6467f9551d-00047cb30c000001"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "ClosePrompt"
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                }
+                            ]
                         },
                         {
                             "type": "bool",
@@ -1340,70 +1566,5 @@
                 }
             }
         }
-    ],
-    "layers": [
-        {
-            "index": 0,
-            "name": "Default"
-        },
-        {
-            "index": 1,
-            "name": "TransparentFX"
-        },
-        {
-            "index": 2,
-            "name": "Ignore Raycast"
-        },
-        {
-            "index": 3,
-            "name": "Water"
-        },
-        {
-            "index": 4,
-            "name": "UI"
-        },
-        {
-            "index": 5,
-            "name": "Player"
-        },
-        {
-            "index": 6,
-            "name": "Enemy"
-        },
-        {
-            "index": 7,
-            "name": "Ground"
-        },
-        {
-            "index": 8,
-            "name": "Obstacle"
-        },
-        {
-            "index": 9,
-            "name": "Collectible"
-        },
-        {
-            "index": 10,
-            "name": "test"
-        }
-    ],
-    "lightingSystem": {
-        "ambientMode": 0,
-        "ambientSky": [
-            0.699999988079071,
-            0.699999988079071,
-            0.699999988079071
-        ],
-        "ambientEquator": [
-            0.5,
-            0.5,
-            0.5
-        ],
-        "ambientGround": [
-            0.30000001192092896,
-            0.30000001192092896,
-            0.30000001192092896
-        ],
-        "ambientIntensity": 0.30000001192092896
-    }
+    ]
 }

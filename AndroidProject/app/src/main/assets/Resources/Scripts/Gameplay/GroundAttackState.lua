@@ -53,6 +53,10 @@ end
 function AttackState:Enter(ai)
     ai._currentAttackToken = ai:BeginAttackWindow()
 
+    -- No path may carry a hurt pose into the attack: the attack animation
+    -- only starts once every hurt bool is false.
+    ai:_ClearHurtAnims()
+
     ai._animator:SetBool("PlayerInAttackRange", true)
     ai._animator:SetBool("PlayerInDetectionRange", false)
     ai._animator:SetBool("PatrolEnabled", false)
@@ -173,8 +177,16 @@ function AttackState:Update(ai, dt)
 
     -- Melee
     if ai.IsMelee then
-        ai.attackTimer = (ai.attackTimer or 0) + dtSec
-        
+        -- The wind-up is timed from the swing animation. After a hit the
+        -- swing waits for the hurt animation to finish, and the claw then
+        -- lands when the swing does, never from the hurt pose.
+        if ai.meleeAnimTriggered and not ai._damageDealt
+           and not ai:IsPlayingAttackAnim("Melee Attack") then
+            ai.attackTimer = 0
+        else
+            ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        end
+
         local impactWait = ai.MeleeAnimDelay or 0.5
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
 
@@ -219,7 +231,25 @@ function AttackState:Update(ai, dt)
             end
 
             ai._damageDealt = true
-            
+
+            -- The moment of danger, announced so the player's dash i-frame can
+            -- register a dodge. PlayerHealth subscribes to melee_incoming and
+            -- nothing published it, so the melee half of the dodge reward has
+            -- never worked; the knife half does, through knife_incoming, and
+            -- this mirrors where that one fires: at contact, not at the start
+            -- of the wind-up, because checkDodge asks whether the player is
+            -- dashing right now.
+            --
+            -- Published whether or not the swing connects, exactly as the
+            -- knife's warning is published on proximity rather than on a hit.
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("melee_incoming", {
+                    dmg           = (ai.MeleeDamage or 1),
+                    src           = "GroundEnemy",
+                    enemyEntityId = ai.entityId,
+                })
+            end
+
             local d2check2 = ai:GetPlayerDistanceSq()
             local _, meleeRcheck2, _ = ai:GetRanges()
 
@@ -267,7 +297,13 @@ function AttackState:Update(ai, dt)
         end
     -- Ranged
     else
-        ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        -- Timed from the throw animation, for the same reason as the swing
+        if ai.rangedAnimTriggered and not ai._damageDealt
+           and not ai:IsPlayingAttackAnim("Ranged Attack") then
+            ai.attackTimer = 0
+        else
+            ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        end
 
         local spawnFeatherDelay = ai.RangedAnimDelay or 0.5
         local cd = ai.AttackCooldown

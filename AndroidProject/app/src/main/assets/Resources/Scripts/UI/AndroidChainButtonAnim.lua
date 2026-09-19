@@ -73,6 +73,7 @@ return Component {
         -- actually pull/slam, so the button shows the right next-action hint.
         self._subHookedType = _G.event_bus.subscribe("chain.hooked_target_type", function(p)
             if not p then return end
+            print("[AndroidChainButtonAnim] hooked_target_type received: isFlying=" .. tostring(p.isFlying))
             if p.isFlying then
                 self:_setState(SLAM_FRAMES)
             else
@@ -85,9 +86,15 @@ return Component {
         self._current = frames
         self._playing = false
         self._frame   = 1
+        -- Refresh sprite pointer to guard against stale LuaBridge pointers
+        local entity = Engine.GetEntityByName("ChainIcon")
+        if entity then
+            self._sprite = GetComponent(entity, "SpriteRenderComponent")
+        end
         if self._sprite then
             self._sprite:SetTextureFromPath(frames[1])
         end
+        print("[AndroidChainButtonAnim] _setState -> " .. tostring(frames[1]) .. " sprite=" .. tostring(self._sprite ~= nil))
     end,
 
     Update = function(self, dt)

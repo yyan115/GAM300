@@ -240,7 +240,8 @@ return Component {
         local posZ = 0.0
 
         local newFeatherId = Prefab.InstantiatePrefab(self.FeatherProjectilePrefabPath)
-        
+        print(string.format("[FeatherSkillManager] SpawnFeather #%d entity=%s angle=%.0f", index, tostring(newFeatherId), angleDeg))
+
         -- [NEW] Cache the pure prefab scale BEFORE the engine tries to modify it during parenting
         local childTransform = GetComponent(newFeatherId, "Transform")
         local origScaleX, origScaleY, origScaleZ = 1.0, 1.0, 1.0
@@ -380,6 +381,7 @@ return Component {
 
             if self._windupTimer <= 0.0 then
                 self._state = 3
+                print(string.format("[FeatherSkillManager] LAUNCHED — %d projectiles, speed=%.0f", self._feathersSpawned, self.ProjectileSpeed))
 
                 if event_bus and event_bus.publish then
                     event_bus.publish("feather_skill_release", {})
@@ -435,7 +437,7 @@ return Component {
 
             if not anyFeathersAlive then
                 if Engine and Engine.DestroyEntity then
-                    --print("[FeatherSkillManager] All feathers destroyed. Cleaning up parent entity: " .. tostring(self.entityId))
+                    print("[FeatherSkillManager] All projectiles destroyed — cleaning up skill entity=" .. tostring(self.entityId))
                     Engine.DestroyEntity(self.entityId)
                 end
             end

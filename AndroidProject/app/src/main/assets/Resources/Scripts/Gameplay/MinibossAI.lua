@@ -1,5 +1,6 @@
 -- Resources/Scripts/Gameplay/MinibossAI.lua
 require("extension.engine_bootstrap")
+local debugControls = os and os.getenv and os.getenv("GAM300_DEBUG") == "1"
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -10,6 +11,38 @@ local RecoverState = require("Gameplay.MinibossRecoverState")
 local BattlecryState = require("Gameplay.MinibossBattlecryState")
 
 local KnifePool = require("Gameplay.KnifePool")
+
+-- Hit types AttackHitbox sends for the player's weapon swings. AttackHitbox
+-- already lets each swing hit a target only once, so these do not need the
+-- long HitIFrame to stop one swing counting twice.
+local SWING_HIT_TYPES = { COMBO = true, LIFT = true, AIR = true, SLAM = true }
+
+-- Moves that deal damage. A hit can cancel these, and the stagger cooldown
+-- decides how often it may.
+local ATTACK_MOVE_KINDS = {
+    BossMelee = true, P1RangedCharged = true, ShoutAOE = true, Basic = true,
+    BurstFire = true, AntiDodge = true, FateSealed = true, DeathLotus = true,
+}
+
+-- The animator trigger an attack move sets to start its animation. A trigger
+-- stays set until a transition uses it, so a cancelled move clears its own,
+-- or the animation would play later with no attack behind it.
+local ATTACK_MOVE_TRIGGER = {
+    BossMelee = "Melee", FateSealed = "Melee",
+    P1RangedCharged = "Ranged", Basic = "Ranged", BurstFire = "Ranged", AntiDodge = "Ranged",
+    DeathLotus = "Ranged", ShoutAOE = "Taunt",
+}
+
+local HURT_TRIGGERS = { "Hurt1", "Hurt2", "Hurt3" }
+
+-- The MinibossAC states that have a transition on Hurt1/2/3. A hurt trigger
+-- set in any other state waits, and later pulls an unrelated attack into Hurt.
+local TAKES_HURT = {
+    ["Recovery"] = true, ["Taunt"] = true, ["Melee Attack"] = true, ["Ranged Attack"] = true,
+}
+
+-- The MinibossAC state that plays the claw swing
+local SWING_STATE = "Melee Attack"
 
 -------------------------------------------------
 -- Helpers
@@ -102,6 +135,12 @@ end
 -------------------------------------------------
 -- Move definitions (DATA-DRIVEN)
 -------------------------------------------------
+-- DEAD CODE, kept because it is the only written record of the intended
+-- weighting. Nothing calls ChooseMove or GetMoveWeightForPhase, so this table
+-- selects nothing: the moves the boss actually uses are driven by the scripted
+-- sequences in _UpdatePhase1/2/3. Death Lotus, for instance, is step 3 of the
+-- phase 3 loop, not a weighted roll, which is why it fires despite being
+-- weighted 0 in every phase this table can reach.
 local MOVES = {
     Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
     Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
@@ -132,6 +171,12 @@ return Component {
 
         -- Damage / Hook / Death
         HitIFrame      = 0.2,
+        -- The player's three hit chain lands about half a second apart, inside
+        -- HitIFrame (1.0 on the boss in 04_Level), so without a window of its
+        -- own only the first hit of a chain would count. Weapon swings, on the
+        -- ground or in the air, use this one. Everything else keeps HitIFrame,
+        -- which stops a single explosion registering once per tick.
+        ComboHitIFrame = 0.25,
         HookedDuration = 4.0,
 
         -- "Transformation" (phase transition) lock
@@ -164,8 +209,46 @@ return Component {
 
         -- Ranged charge (phase 1 Move1)
         P1_RangedCharge = 0.75,
-        -- Duration in melee range before firing the feather bomb punisher move in phase 1
+        -- Seconds the player can stay inside melee range before the boss answers
+        -- with its big attack, the charged cross-room slash.
         P1_MeleePunishTime = 5.0,
+        -- Seconds before the charged slash can answer a player standing in
+        -- melee range again. Wind up, dash and recovery take about four
+        -- seconds, so a short cooldown turns it into most of the phase instead
+        -- of an occasional big attack. A player who keeps away meets it after
+        -- the throws below instead, whatever this cooldown says.
+        P1_ChargedSlashCooldown = 18.0,
+        -- Charge time for the phase 1 charged slash. Longer than phase 3's so
+        -- the telegraph is readable the first time a player meets it.
+        P1_ChargedSlashCharge = 1.10,
+        -- Knife throws at a player who keeps out of melee range before the
+        -- boss answers with the charged slash. Rolled again after each slash.
+        P1_ThrowsBeforeLungeMin = 1,
+        P1_ThrowsBeforeLungeMax = 2,
+        -- Speed of the charged slash's dash, in units per second, in every
+        -- phase. The claw lands 0.36 s into the dash, and at this speed the
+        -- boss crosses the arena (about 14 units) by then.
+        LungeSpeed = 40.0,
+        -- Seconds the boss has to wait after a hit stops one of its attacks
+        -- before a hit can stop another. Hits in between still do damage, but
+        -- the attack carries on and lands.
+        StaggerCooldown = 5.5,
+        -- Seconds a melee attack waits for its swing animation to start. The
+        -- swing can be held up by a hurt animation that is still playing, and
+        -- the attack is dropped if it does not start in this time.
+        BossMeleeStartTimeout = 1.0,
+        -- Damage the player's feather skill does to this boss: three times a
+        -- first hit, which ComboManager puts at 10.
+        FeatherSkillDamage = 30,
+        -- Damage the ground combo's three hits do to this boss, weak to strong.
+        -- All three land now, where one hit in a combo used to, 10 damage, so
+        -- together they come to a little more than that one hit did.
+        ComboHit1Damage = 3,
+        ComboHit2Damage = 4,
+        ComboHit3Damage = 6,
+        -- Seconds before the hurt sound can play again. Every landed hit counts
+        -- now, and a sound for each was far too often.
+        HurtSoundCooldown = 3.5,
 
         -- Shout AOE
         ShoutRadius = 4.0,
@@ -183,6 +266,18 @@ return Component {
         ShoutFxBlurIntensity      = 0.35,
         ShoutFxBlurRadius         = 2.5,
         ShoutFxBlurDuration       = 0.25,
+
+        -- The charged slash crosses the room, so its wind up shakes the camera
+        -- for as long as the wind up lasts. camera_follow fades a shake out over
+        -- its duration, so it is strongest as the charge begins. Intensity is in
+        -- degrees: 0.55 sits above the small hit shakes and below the phase
+        -- transition shake.
+        ChargeShakeIntensity      = 0.55,
+        ChargeShakeFrequency      = 18.0,
+        -- The slam is the opposite: one short hard jolt on impact.
+        SlamShakeIntensity        = 0.70,
+        SlamShakeDuration         = 0.35,
+        SlamShakeFrequency        = 40.0,
 
         PhaseShakeIntensity       = 0.85,
         PhaseShakeDuration        = 2.55,
@@ -224,6 +319,13 @@ return Component {
 
         P2_BurstRounds = 3,
         P2_BurstGap = 1.25, -- small pause between bursts
+        -- Attacks the boss takes on the ground after being hooked down, before
+        -- it lifts off again. This is the window the player earned with the hook.
+        P2_GroundAttacksAfterSlam = 2,
+        -- Least time it stays down after a hook. A player who keeps hitting it
+        -- cancels its ground attacks, and without a floor that would shorten
+        -- the very window the hook was meant to open.
+        P2_MinGroundTime = 3.0,
 
         -- Phase 3 tuning
         P3_FeatherCellsPerRound = 5,
@@ -269,6 +371,7 @@ return Component {
         self.currentMoveDef = nil
         self._recoverTimer = 0
         self._hitLockTimer = 0
+        self._staggerCdT = 0
 
         self._moveQueue = {}
 
@@ -326,6 +429,8 @@ return Component {
         self._p1DidShout90 = false
         self._p1DidShout75 = false
         self._meleeCdT = 0
+        self._p1ThrowsAway = 0
+        self._p1ThrowTarget = self:_RollP1ThrowTarget()
 
         self._p3_dive_postdelay = self.P3_DivePostDelay
         self._p3_dive_predelay = self.P3_DivePreDelay
@@ -351,9 +456,10 @@ return Component {
             local ok, ctrl = pcall(function()
                 return CharacterController.Create(self.entityId, self._collider, self._transform)
             end)
-            if ok then
+            if ok and ctrl then
                 self._controller = ctrl
                 pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+                pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             else
                 --print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
@@ -406,7 +512,26 @@ return Component {
                 end
 
                 local damage = payload.damage or 10
-                self:ApplyHit(damage, "COMBO")
+                local hitType = payload.hitType or "COMBO"
+
+                -- The feather skill names its own damage here rather than
+                -- through the explosion prefab, which every enemy shares.
+                if hitType == "FEATHER" then
+                    damage = self.FeatherSkillDamage or damage
+                end
+
+                -- So do the ground combo's hits, which other enemies take at
+                -- ComboManager's own figures.
+                if hitType == "COMBO" then
+                    local byStep = {
+                        light_1 = self.ComboHit1Damage,
+                        light_2 = self.ComboHit2Damage,
+                        light_3 = self.ComboHit3Damage,
+                    }
+                    damage = byStep[payload.state] or damage
+                end
+
+                self:ApplyHit(damage, hitType)
             end)
         end
 
@@ -512,15 +637,15 @@ return Component {
             self:_ForceBackInsideArena(dtSec)
         end
 
-        if Keyboard.IsDigitPressed(2) then
+        if debugControls and Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
         end
 
-        if Keyboard.IsDigitPressed(4) then
+        if debugControls and Keyboard.IsDigitPressed(4) then
             self:ApplyHit(10)
         end
 
-        if Keyboard.IsDigitPressed(6) then
+        if debugControls and Keyboard.IsDigitPressed(6) then
             self:ForceNextPhase()
         end
 
@@ -579,6 +704,14 @@ return Component {
             self:ApplyGravity(dtSec)
         end
 
+        -- Diagnosis: the boss stayed dormant with the player four units away
+        -- and the aggro check below never ran once. The counter goes here,
+        -- above the first early return, so "Update is not running" can be told
+        -- apart from "Update runs and returns here".
+        _G.miniboss_ticks = (_G.miniboss_ticks or 0) + 1
+        _G.miniboss_frozen = self._frozenBycinematic or false
+        _G.miniboss_intro_done = self._introDone or false
+
         if self._frozenBycinematic then
             --print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
             return
@@ -589,6 +722,8 @@ return Component {
 
         -- 2) Tick timers always
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
+        self._hurtSoundCd = math.max(0, (self._hurtSoundCd or 0) - dtSec)
+        self._staggerCdT = math.max(0, (self._staggerCdT or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
         end
@@ -707,8 +842,17 @@ return Component {
             self:FacePlayer()
 
             local px, py, pz = self:GetPlayerPosForAI()
+            -- Diagnosis: the boss stayed dormant with the player standing four
+            -- units away. These say whether Update is running at all, and what
+            -- position the boss believes the player is at.
+            _G.miniboss_ticks = (_G.miniboss_ticks or 0) + 1
+            _G.miniboss_sees_player = (px ~= nil)
+            _G.miniboss_player_x = px or -999
+            _G.miniboss_player_z = pz or -999
             if px then
                 local ex, ez = self:GetEnemyPosXZ()
+                _G.miniboss_self_x = ex
+                _G.miniboss_self_z = ez
                 local dx, dz = px - ex, pz - ez
                 local r = self.AggroRange or 15.0
 
@@ -815,6 +959,7 @@ return Component {
         if ok and ctrl then
             self._controller = ctrl
             pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
+            pcall(function() CharacterController.SetStepUp(ctrl, 0.15, 0.3) end)
             -- Sync CC to current Transform position
             local x,y,z = self:GetPosition()
             if CharacterController.SetPosition then
@@ -837,6 +982,21 @@ return Component {
         local dx = x - cx
         local dz = z - cz
         return (dx*dx + dz*dz) <= (r*r)
+    end,
+
+    -- How far (x, z) can travel along the unit direction (dx, dz) before it
+    -- leaves the arena circle. From outside, travel inward still counts. Zero
+    -- if the line misses the circle or the circle is behind.
+    _ArenaTravelLimit = function(self, x, z, dx, dz)
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+        local r  = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+        local ox, oz = x - cx, z - cz
+        -- The far root of |o + t*d| = r, with |d| = 1
+        local b = ox * dx + oz * dz
+        local disc = b * b - (ox * ox + oz * oz - r * r)
+        if disc < 0 then return 0 end
+        return math.max(0, -b + math.sqrt(disc))
     end,
 
     _ClampToArenaXZ = function(self, x, z)
@@ -1019,9 +1179,10 @@ return Component {
         local d2 = dx*dx + dz*dz
         if d2 < 1e-6 then return end
 
-        local yaw = math.deg(atan2(dx, dz))
-        local q = eulerToQuat(0, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+        local q = { yawQuatFromDir(dx, dz) }
+        if #q >= 4 then
+            self:ApplyRotation(q[1], q[2], q[3], q[4])
+        end
     end,
 
     GetEnemyPosXZ = function(self)
@@ -1262,6 +1423,22 @@ return Component {
                 end
             end
 
+            -- Dust and rock at the point of impact. This is its own event rather
+            -- than SlammedDown, which the flying enemies use: GroundSlamVFX also
+            -- listens to that one and shows a crack decal it only hides on the
+            -- flying enemy's Stand Up state.
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("miniboss_slammed", {
+                    targetId = self.entityId,
+                    posX = x, posY = newY, posZ = z,
+                })
+                _G.event_bus.publish("camera_shake", {
+                    intensity = self.SlamShakeIntensity or 0.70,
+                    duration  = self.SlamShakeDuration or 0.35,
+                    frequency = self.SlamShakeFrequency or 40.0,
+                })
+            end
+
             return true
         end
 
@@ -1486,19 +1663,14 @@ return Component {
 
         --print("[MinibossAI] ApplyHit called", dmg, hitType)
 
-        self._hitLockTimer = self.HitIFrame or 0.2
+        if SWING_HIT_TYPES[hitType] then
+            self._hitLockTimer = self.ComboHitIFrame or 0.25
+        else
+            self._hitLockTimer = self.HitIFrame or 0.2
+        end
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
 
         self:_publishBossHealth()
-
-        local myRandomValue = math.random(1, 3)
-        if myRandomValue == 1 then
-            self._animator:SetTrigger("Hurt1")
-        elseif myRandomValue == 2 then
-            self._animator:SetTrigger("Hurt2")
-        else
-            self._animator:SetTrigger("Hurt3")
-        end
 
         --print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
 
@@ -1507,25 +1679,22 @@ return Component {
             return
         end
 
-        -- [NEW] Check for Super Armor!
-        local isUninterruptible = self:IsInMove("P1FeatherBombPunish")
-
-        -- Only play hurt animations and interrupt moves if NOT in super armor
-        if not isUninterruptible then
-            local myRandomValue = math.random(1, 3)
-            if myRandomValue == 1 then
-                self._animator:SetTrigger("Hurt1")
-            elseif myRandomValue == 2 then
-                self._animator:SetTrigger("Hurt2")
-            else
-                self._animator:SetTrigger("Hurt3")
-            end
-
-            -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
-            self:_CancelCurrentAttackMove("HURT")
-
-            -- Always queue a short “hurt reaction window”
-            self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+        -- Whether this hit stops the boss. An attack whose damage has not
+        -- landed yet is stopped at most once every StaggerCooldown seconds,
+        -- otherwise it carries on and lands. Any other hit staggers it.
+        local pending = self:_IsAttackPending()
+        local stagger = false
+        if self:IsInMove("FateSealed") then
+            -- Super armour. The charged slash is the big attack in phase 1 and
+            -- the answer to a hook in phase 3, and it is only a big attack if
+            -- the player cannot cancel it by swinging during the wind up. Once
+            -- the slash has landed the boss flinches, but keeps its recovery,
+            -- which is the player's window to punish it.
+            if not pending then self:_PlayHurtAnim() end
+        elseif (not pending) or (self._staggerCdT or 0) <= 0 then
+            if pending then self._staggerCdT = self.StaggerCooldown or 5.5 end
+            self:_Stagger()
+            stagger = true
         end
 
         -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
@@ -1552,8 +1721,11 @@ return Component {
             end
         end
 
-        -- Play hurt SFX
-        self:_publishSFX("hurt")
+        -- Play hurt SFX, at most once every HurtSoundCooldown seconds
+        if (self._hurtSoundCd or 0) <= 0 then
+            self:_publishSFX("hurt")
+            self._hurtSoundCd = self.HurtSoundCooldown or 3.5
+        end
 
         -- If we crossed a phase threshold, start NEW transition immediately
         local computed = self:_ComputePhase()
@@ -1566,8 +1738,10 @@ return Component {
             return
         end
 
-        -- Optional: tiny hit-stun lock
-        self:LockActions("HIT_STUN", 0.15)
+        -- Tiny hit-stun lock, only when the hit stopped the boss
+        if stagger then
+            self:LockActions("HIT_STUN", 0.15)
+        end
 
         -- if self.ClipHurt and self.ClipHurt >= 0 and self.PlayClip then
         --     self:PlayClip(self.ClipHurt, false)
@@ -1591,6 +1765,18 @@ return Component {
             self:BeginSlamDown("Pulldown")
 
             --print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            return
+        end
+
+        -- phase 3: hooked out of the air while it is throwing bombs. Same as
+        -- phase 2, it comes down, and what it does on the ground is one charged
+        -- slash before it goes back up to throw again.
+        if self._phase == 3 and self._inAir then
+            self._hooked = true
+            self._hookedDownRequested = true
+            self._p3AirHooked = true
+            self:_EndMove()
+            self:BeginSlamDown("Pulldown")
             return
         end
 
@@ -2139,15 +2325,22 @@ return Component {
     end,
 
     _DoMeleeAttack = function(self)
-
-        -- longer windup + further range
-        --print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
-        if self._animator then self._animator:SetTrigger("Melee") end
+        -- The animator state before the trigger is set. The animator takes
+        -- the trigger later in the frame, so the move can tell a swing that
+        -- starts from this one from a swing that was already playing.
+        local lastState, lastStateTime
+        if self._animator then
+            lastState = self._animator:GetCurrentState()
+            lastStateTime = self._animator:GetStateTime()
+            self._animator:SetTrigger("Melee")
+        end
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
             range  = self.BossMeleeRange or 2.95,
             dmg    = 4,
-            postDelay = 1.0
+            postDelay = 1.0,
+            lastState = lastState,
+            lastStateTime = lastStateTime,
         })
     end,
 
@@ -2160,6 +2353,12 @@ return Component {
         self._move.t = 0
         self._move.step = 0
         self._moveFinished = false
+
+        -- A hurt trigger left by an earlier hit must not pull this attack
+        -- into a hurt animation. Only a hit during the attack may stop it.
+        if ATTACK_MOVE_KINDS[kind] then
+            self:_ClearTriggers(HURT_TRIGGERS)
+        end
     end,
 
     _EndMove = function(self)
@@ -2176,22 +2375,53 @@ return Component {
         if not kind then return end
 
         -- Only cancel actual attack/cast moves, not passive hurt react
-        local cancelKinds = {
-            BossMelee       = true,
-            P1RangedCharged = true,
-            ShoutAOE        = true,
-            Basic           = true,
-            BurstFire       = true,
-            AntiDodge       = true,
-            FateSealed      = true,
-            DeathLotus      = true,
-        }
-
-        if cancelKinds[kind] then
+        if ATTACK_MOVE_KINDS[kind] then
             self._move.cancelled = true
             self._move.cancelReason = reason or "INTERRUPTED"
+            if ATTACK_MOVE_TRIGGER[kind] then
+                self:_ClearTriggers({ ATTACK_MOVE_TRIGGER[kind] })
+            end
             self:_EndMove()
         end
+    end,
+
+    -- True while the current move is an attack whose damage has not landed
+    _IsAttackPending = function(self)
+        local m = self._move
+        if self._moveFinished or not m or not ATTACK_MOVE_KINDS[m.kind] then return false end
+        if m.kind == "BossMelee" then return not m.didHit end
+        if m.kind == "FateSealed" then return not m.slashed end
+        if m.kind == "P1RangedCharged" or m.kind == "ShoutAOE" then return not m.didFire end
+        if m.kind == "Basic" or m.kind == "AntiDodge" then return m.step == 0 end
+        -- BurstFire and DeathLotus fire across the whole move
+        return true
+    end,
+
+    -- Clears animator triggers. SetBool on a Trigger parameter keeps its
+    -- Trigger type and stores false, and a false trigger never fires.
+    _ClearTriggers = function(self, names)
+        if not self._animator then return end
+        for _, name in ipairs(names) do
+            self._animator:SetBool(name, false)
+        end
+    end,
+
+    -- Plays one random hurt animation, if the animator is in a state that
+    -- can take it. In any other state the trigger would wait and pull a later
+    -- attack into the hurt animation, so none is set.
+    _PlayHurtAnim = function(self)
+        if not self._animator then return end
+        if not TAKES_HURT[self._animator:GetCurrentState()] then return end
+        self:_ClearTriggers(HURT_TRIGGERS)
+        self._animator:SetTrigger(HURT_TRIGGERS[math.random(1, #HURT_TRIGGERS)])
+    end,
+
+    -- A hit that stops the boss: the attack in progress is cancelled so its
+    -- damage never lands, and the boss plays a short hurt reaction.
+    _Stagger = function(self)
+        self:_CancelCurrentAttackMove("HURT")
+        self:_PlayHurtAnim()
+        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
     end,
 
     TickMove = function(self, dtSec)
@@ -2252,14 +2482,49 @@ return Component {
         end
 
         if m.kind == "BossMelee" then
+            -- The slash is timed from the start of the swing animation and
+            -- lands only while that swing is playing. A swing held up by a
+            -- hurt animation lands later, and a swing the animator leaves
+            -- before the claw connects deals no damage.
             if m.step == 0 then
                 self:FacePlayer()
                 m.step = 1
                 m.hitAt = (m.windup or 0.85)
+                m.swingWaitT = 0
             end
 
-            if not m.didHit and m.t >= (m.hitAt or 0) then
+            local swingTime = m.t
+            if self._animator then
+                local state = self._animator:GetCurrentState()
+                local stateTime = self._animator:GetStateTime()
+                if m.step == 1 then
+                    -- Entered fresh: from another state, or from the end of an
+                    -- earlier swing, which restarts the state time.
+                    local entered = state == SWING_STATE
+                        and (m.lastState ~= SWING_STATE or stateTime < m.lastStateTime)
+                    if entered then
+                        m.step = 2
+                    else
+                        m.swingWaitT = m.swingWaitT + dtSec
+                        if m.swingWaitT >= (self.BossMeleeStartTimeout or 1.0) then
+                            self:_CancelCurrentAttackMove("SWING_NOT_STARTED")
+                            return
+                        end
+                    end
+                end
+                m.lastState, m.lastStateTime = state, stateTime
+
+                if m.step == 1 then return end
+                if not m.didHit and state ~= SWING_STATE then
+                    self:_CancelCurrentAttackMove("SWING_LEFT")
+                    return
+                end
+                swingTime = stateTime
+            end
+
+            if not m.didHit and swingTime >= (m.hitAt or 0) then
                 m.didHit = true
+                m.hitT = m.t
 
                 --print("Do u see this?")
                 -- CLAW VFX HERE
@@ -2290,67 +2555,7 @@ return Component {
                 self:_publishSFX("meleeAttack")
             end
 
-            if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
-                self:_EndMove()
-            end
-            return
-        end
-
-        -------------------------------------------------
-        -- Phase 1: Melee Punish (Single Feather Bomb)
-        -------------------------------------------------
-        if m.kind == "P1FeatherBombPunish" then
-            if m.step == 0 then
-                self:FacePlayer()
-                if self._animator then self._animator:SetTrigger("FeatherBomb") end
-                self:_publishSFX("rangedAttack")
-                
-                m.step = 1
-                m.fireAt = (m.charge or 0.5)
-            end
-
-            if not m.didFire and m.t >= m.fireAt then
-                m.didFire = true
-                
-                -- Find the specific grid cell the player is standing on
-                local cellNum = self:_GetPlayerGridNumpad()
-                local yOff = self.P3_FeatherTargetYOffset or 0.25
-                local gx, gz = self:_GetGridXZ(cellNum)
-                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
-                local sx, sy, sz = self:_GetSpawnPos()
-                
-                -- 1. Spawn the new smart projectile
-                local bombId = Prefab.InstantiatePrefab(self.FeatherBombProjectilePrefab)
-                
-                -- 2. Leave a note on the Global Blackboard
-                _G.PendingFeatherBombs = _G.PendingFeatherBombs or {}
-                _G.PendingFeatherBombs[bombId] = {
-                    sx = sx, sy = sy, sz = sz,
-                    tx = gx, ty = gy + yOff, tz = gz,
-                    targetCell = cellNum
-                }
-                
-                -- -- Shoot the knife to that exact cell
-                -- self:SpawnKnifeSingleAtWorld(gx, gy + (self.P3_FeatherTargetYOffset or 0.25), gz, "P3F_Punish")
-
-                -- -- Queue the explosion when the knife "lands"
-                -- local delay = self.P3_FeatherActivateDelay or 0.90
-                -- self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
-                --     t = delay,
-                --     payload = {
-                --         entityId = self.entityId,
-                --         cells = { cellNum }, -- Targets only the player's cell
-                --         dmg = 2,
-                --         step = self.GridStep or 4.0,
-                --         cx = self.GridCenterX or 0.0,
-                --         cz = self.GridCenterZ or 0.0,
-                --     }
-                -- }
-                
-                m.doneAt = m.t + (m.postDelay or 0.75)
-            end
-
-            if m.doneAt and m.t >= m.doneAt then
+            if m.didHit and m.t >= (m.hitT + (m.postDelay or 0.4)) then
                 self:_EndMove()
             end
             return
@@ -2367,6 +2572,11 @@ return Component {
                 m.didFire = true
                 self:SpawnKnifeVolley3(m.spread or 0.6)
                 m.doneAt = m.t + (m.postDelay or 0.35)
+                -- Counted when the knives leave, so a throw a hit cancelled
+                -- does not bring the charged slash closer
+                if m.countForLunge then
+                    self._p1ThrowsAway = (self._p1ThrowsAway or 0) + 1
+                end
             end
             if m.doneAt and m.t >= m.doneAt then self:_EndMove() end
             return
@@ -2442,27 +2652,57 @@ return Component {
         -- Move4: Fate Sealed (charge-up -> dash -> slash -> recover)
         -------------------------------------------------
         if m.kind == "FateSealed" then
+            local dashDur = m.dashDur or 0.4
+            -- Seconds into the dash when the claw connects
+            local contactT = dashDur * (m.slashAt or 0.9)
 
             -- Step 0: charge-up (telegraph)
             if m.step == 0 then
                 -- face player during charge (feels intentional)
                 self:FacePlayer()
-                
+
                 m.chargeT = (m.chargeT or 0) + dtSec
                 local chargeDur = m.chargeDur or 0.45
-                
-                -- OPTIONAL: play charge animation / VFX / SFX once
+
                 if not m.chargeStarted then
                     m.chargeStarted = true
-                    --print("[Miniboss] FateSealed: SetTrigger(Melee)")
-                    self._animator:SetTrigger("Melee")
+
+                    -- The wind up warning. This attack crosses the room, so
+                    -- the player needs to know it is coming while there is
+                    -- still time to be somewhere else.
+                    if _G.event_bus and _G.event_bus.publish then
+                        local cx, cy, cz = self:GetPosition()
+                        -- Placed at ground height, the same way the dive
+                        -- warning is.
+                        local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or cy
+                        _G.event_bus.publish("miniboss_charge_warning", {
+                            targetId = self.entityId,
+                            posX = cx, posY = gy, posZ = cz,
+                            seconds = chargeDur,
+                        })
+                        _G.event_bus.publish("camera_shake", {
+                            intensity = self.ChargeShakeIntensity or 0.55,
+                            duration  = chargeDur,
+                            frequency = self.ChargeShakeFrequency or 18.0,
+                        })
+                    end
+                end
+
+                -- The swing is the same clip as the ordinary melee attack,
+                -- whose claw connects BossMeleeWindup seconds in. It starts
+                -- that long before the dash's contact time so the claw lands
+                -- with the damage.
+                if not m.swingTriggered
+                   and m.chargeT >= chargeDur + contactT - (self.BossMeleeWindup or 1.1) then
+                    m.swingTriggered = true
+                    if self._animator then self._animator:SetTrigger("Melee") end
                 end
 
                 if m.chargeT >= chargeDur then
                     -- lock dash direction at the END of charge (fair + readable)
                     local dx, dz = self:_DirToPlayerXZ()
                     if not dx then
-                        self:_EndMove()
+                        self:_CancelCurrentAttackMove("NO_TARGET")
                         return
                     end
 
@@ -2473,6 +2713,11 @@ return Component {
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
 
+                    -- The dash stays inside the arena
+                    local ex, ez = self:GetEnemyPosXZ()
+                    m.maxTravel = self:_ArenaTravelLimit(ex, ez, dx, dz)
+                    m.travelled = 0
+
                     m.step = 1
                     m.chargeT = 0
                 end
@@ -2480,53 +2725,60 @@ return Component {
                 return
             end
 
-            -- Step 1: dash phase (stop early if we reach player, but keep timer for slash)
-            local dashDur   = m.dashDur or 0.22
-            local dashSpeed = m.dashSpeed or 18.0
-            local stopDist  = m.stopDist or 1.8
-
+            -- Step 1: dash along the locked direction until level with the
+            -- player, then the claw lands at the contact time. A player who
+            -- steps off the line during the dash is missed.
             if m.step == 1 then
                 m.dashT = (m.dashT or 0) + dtSec
 
-                -- Check distance to player in XZ
-                local px, _, pz = self:GetPlayerPosForAI()
-                if px then
+                local speed = 0
+                if not m.reached then
+                    local px, _, pz = self:GetPlayerPosForAI()
                     local ex, ez = self:GetEnemyPosXZ()
-                    local ddx, ddz = px - ex, pz - ez
-                    if (ddx*ddx + ddz*ddz) <= (stopDist*stopDist) then
+                    if px and ex then
+                        -- How far ahead of the boss the player is along the dash
+                        local along = (px - ex) * m.dx + (pz - ez) * m.dz
+                        local room = math.min(along - (m.stopDist or 0.8),
+                                              (m.maxTravel or 0) - m.travelled)
+                        if room <= 0 or m.dashT > contactT then
+                            m.reached = true
+                        else
+                            -- Units per second, and never past the stop point
+                            -- within this frame
+                            speed = math.min(m.dashSpeed or 40.0, room / math.max(dtSec, 1e-4))
+                        end
+                    else
                         m.reached = true
                     end
                 end
 
-                -- Only move if not reached yet
-                if (not m.reached) then
+                if speed > 0 then
+                    m.travelled = m.travelled + speed * dtSec
                     if self._controller then
-                        CharacterController.Move(
-                            self._controller,
-                            m.dx * dashSpeed * dtSec,
-                            0,
-                            m.dz * dashSpeed * dtSec
-                        )
+                        CharacterController.Move(self._controller, m.dx * speed, 0, m.dz * speed)
                     else
-                        -- fallback (just in case CC is missing)
                         local x, y, z = self:GetPosition()
                         if x then
-                            self:SetPosition(x + m.dx * dashSpeed * dtSec, y, z + m.dz * dashSpeed * dtSec)
+                            self:SetPosition(x + m.dx * speed * dtSec, y, z + m.dz * speed * dtSec)
                         end
                     end
                 else
-                    -- reached player: stop moving, just wait out slash timing
+                    -- Stopped: face the player while the claw comes down
                     self:FacePlayer()
                 end
 
-                -- slash timing: keep as-is (it will now happen while standing still if reached early)
-                local slashAt = m.slashAt or 0.85 -- fraction of dash
-                if not m.slashed and m.dashT >= (dashDur * slashAt) then
+                if not m.slashed and m.dashT >= contactT then
                     m.slashed = true
                     self:_publishSFX("meleeAttack")
 
                     if _G.event_bus and _G.event_bus.publish then
                         local ex, ey, ez = self:GetPosition()
+                        local qW, qX, qY, qZ = self:GetRotation()
+                        _G.event_bus.publish("miniboss_vfx", {
+                            pos = { x = ex, y = ey, z = ez },
+                            rot = { w = qW, x = qX, y = qY, z = qZ },
+                            entityId = self.entityId,
+                        })
                         _G.event_bus.publish("miniboss_slash", {
                             entityId = self.entityId,
                             x = ex, y = ey, z = ez,
@@ -2648,9 +2900,17 @@ return Component {
 
         if inMeleeRange then
             self._p1MeleeTimer = (self._p1MeleeTimer or 0) + dtSec
+            -- Only throws in a row at a player who keeps away count
+            self._p1ThrowsAway = 0
         else
             self._p1MeleeTimer = 0 -- Reset instantly if they run away
         end
+
+        -- Ticked before the move guards below so it keeps counting while the
+        -- boss is mid-attack. It does not count while the boss is action locked,
+        -- recovering from the intro or disengaged, because Update returns before
+        -- reaching this function in those states.
+        self._p1ChargedSlashCd = math.max(0, (self._p1ChargedSlashCd or 0) - dtSec)
 
         -- =========================================================
         -- 2. GUARDS: Stop here if the boss is mid-attack or locked
@@ -2665,15 +2925,31 @@ return Component {
         -- 3. CHOOSE NEXT MOVE (Boss is idle and ready)
         -- =========================================================
         
-        -- PRIORITY 1: Anti-Camper Punish
-        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0) then
+        -- PRIORITY 1: the big attack. The player has stood inside melee range
+        -- long enough to be punished for it, and the charged slash crosses the
+        -- room, so standing still is the wrong answer to it.
+        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0)
+           and self._p1ChargedSlashCd <= 0 then
             self._p1MeleeTimer = 0 -- Reset so it doesn't chain-cast
             self._meleeCdT = self.BossMeleeCooldown or 2.5 -- Reset normal melee cooldown so it doesn't chain cast
-            
-            self:_BeginMove("P1FeatherBombPunish", {
-                charge = 1.0,
-                postDelay = 0.75
-            })
+            self._p1ChargedSlashCd = self.P1_ChargedSlashCooldown or 18.0
+
+            self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
+            return
+        end
+
+        -- PRIORITY 1b: the player keeps away. After one or two throws the boss
+        -- charges and crosses the room, so walking away is not a safe answer.
+        -- The throws set the pace here, and the slash also restarts the
+        -- melee range cooldown, since it leaves the boss beside the player.
+        if (not inMeleeRange)
+           and (self._p1ThrowsAway or 0) >= (self._p1ThrowTarget or 1) then
+            self._p1ThrowsAway = 0
+            self._p1ThrowTarget = self:_RollP1ThrowTarget()
+            self._p1ChargedSlashCd = self.P1_ChargedSlashCooldown or 18.0
+            self._meleeCdT = self.BossMeleeCooldown or 2.5
+
+            self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
             return
         end
 
@@ -2690,8 +2966,17 @@ return Component {
         self:_BeginMove("P1RangedCharged", {
             charge = self.P1_RangedCharge or 0.75,
             spread = 0.6,
-            postDelay = 0.35
+            postDelay = 0.35,
+            countForLunge = true,
         })
+    end,
+
+    -- How many throws at a player who keeps away come before the next charged
+    -- slash. Scene values are stored as floats, so they are floored.
+    _RollP1ThrowTarget = function(self)
+        local lo = math.max(1, math.floor(self.P1_ThrowsBeforeLungeMin or 1))
+        local hi = math.max(lo, math.floor(self.P1_ThrowsBeforeLungeMax or 2))
+        return math.random(lo, hi)
     end,
 
     EnterPhase2_Air = function(self)
@@ -2711,6 +2996,10 @@ return Component {
         self._phase2State = "MOVE"
         self._phase2AfterAttackT = 0
         self._phase2BurstStarted = false
+        -- Only the hook path sets this, so anything else that puts the boss on
+        -- the ground would otherwise inherit whatever the last hook left.
+        self._phase2GroundAttacksLeft = 0
+        self._phase2GroundT = 0
     end,
 
     _UpdatePhase2 = function(self, dtSec)
@@ -2727,24 +3016,53 @@ return Component {
             -- brief hooked lock on landing
             self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
 
-            -- queue FateSealed after hook lock ends (your existing design)
-            self._phase2QueuedFate = true
+            -- Stay on the ground for a couple of attacks before lifting off.
+            -- Being hooked down is the player's reward for landing the hook. The
+            -- charged slash is not used here, because it carries the boss across
+            -- the room and away from the player.
+            self._phase2GroundAttacksLeft = self.P2_GroundAttacksAfterSlam or 2
+            self._phase2GroundT = 0
             self._phase2State = "GROUND"
             return
         end
 
-        -- Ground handling: run queued FateSealed, then go back to air
+        -- Ground handling: take the queued attacks, then go back to air
         if not self._inAir then
             self._phase2State = "GROUND"
+            self._phase2GroundT = (self._phase2GroundT or 0) + dtSec
 
-            if self._phase2QueuedFate and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
-                self._phase2QueuedFate = false
-                self:FateSealed(2.0)
+            if (self._phase2GroundAttacksLeft or 0) > 0
+               and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+                self._phase2GroundAttacksLeft = self._phase2GroundAttacksLeft - 1
+
+                -- Melee if the player stayed to trade, a throw if they backed
+                -- off. Either way the boss spends the time on the ground.
+                local px, _, pz = self:GetPlayerPosForAI()
+                local inRange = false
+                if px then
+                    local ex, ez = self:GetEnemyPosXZ()
+                    local dx, dz = px - ex, pz - ez
+                    local r = self.BossMeleeRange or 2.2
+                    inRange = (dx*dx + dz*dz) <= (r*r)
+                end
+
+                if inRange then
+                    self:_DoMeleeAttack()
+                else
+                    self:_BeginMove("P1RangedCharged", {
+                        charge = self.P1_RangedCharge or 0.75,
+                        spread = 0.6,
+                        postDelay = 0.35
+                    })
+                end
                 return
             end
 
-            -- Once FateSealed ends (or nothing queued), lift back into air and pick a new point
-            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) and (not self._phase2QueuedFate) then
+            -- Attacks done and the minimum time served: lift back into the air
+            -- and pick a new point
+            if self:IsCurrentMoveFinished() and (not self:IsActionLocked())
+               and (self._phase2GroundAttacksLeft or 0) <= 0
+               and (self._phase2GroundT or 0) >= (self.P2_MinGroundTime or 3.0) then
                 self:_SetInAir(true)
                 self._phase2Numpad = self:_PickRandomAirNumpad(self._phase2Numpad)
                 self._phase2State = "MOVE"
@@ -2906,26 +3224,6 @@ return Component {
         end
     end,
 
-    _GetPlayerGridNumpad = function(self)
-        local px,py,pz = self:GetPlayerPosForAI()
-        if not px then return 5 end
-        local cx = self.GridCenterX or 0
-        local cz = self.GridCenterZ or 0
-        local step = self.GridStep or 4.0
-
-        local ix = math.floor((px - cx)/step + 0.5)
-        local iz = math.floor((pz - cz)/step + 0.5)
-        ix = math.max(-1, math.min(1, ix))
-        iz = math.max(-1, math.min(1, iz))
-
-        local map = {
-            ["-1,-1"]=1, ["0,-1"]=2, ["1,-1"]=3,
-            ["-1,0"]=4,  ["0,0"]=5,  ["1,0"]=6,
-            ["-1,1"]=7,  ["0,1"]=8,  ["1,1"]=9,
-        }
-        return map[tostring(ix)..","..tostring(iz)] or 5
-    end,
-
     _DoDiveToPlayerGrid = function(self, dtSec)
         dtSec = toDtSec(dtSec)
         if dtSec <= 0 then return false end
@@ -3029,6 +3327,22 @@ return Component {
                 self._p3_dive_predelay = self.P3_DivePreDelay or 0.5
             end
 
+            -- Mark the ground it is about to come down on, and move the mark
+            -- when the landing spot moves. The boss keeps tracking the player
+            -- until it drops, so a mark placed once on first arrival can end up
+            -- somewhere the slam never lands.
+            local moved = (d.markX == nil)
+                or ((d.gx - d.markX)^2 + (d.gz - d.markZ)^2 > 0.25)
+            if moved and _G.event_bus and _G.event_bus.publish then
+                d.markX, d.markZ = d.gx, d.gz
+                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or 0
+                _G.event_bus.publish("miniboss_slam_warning", {
+                    targetId = self.entityId,
+                    posX = d.gx, posY = gy, posZ = d.gz,
+                    seconds = math.max(0.2, self._p3_dive_predelay),
+                })
+            end
+
             -- wait in air above player
             if self._p3_dive_predelay > 0 then
                 self._p3_dive_predelay = self._p3_dive_predelay - dtSec
@@ -3046,11 +3360,51 @@ return Component {
     end,
 
     _UpdatePhase3 = function(self, dtSec)
+        -- Pulled out of the air by the chain: fall, land, then step 5.
+        if self._p3AirHooked and not self._slamActive and not self._inAir then
+            -- The fall ended some way other than landing. Treat it as landed
+            -- rather than leaving the loop stuck where it was.
+            self._p3AirHooked = false
+            self._p3HookedSlashDone = false
+            self._immuneChain = false
+            self._phase3Step = 5
+            return
+        end
+
+        if self._p3AirHooked and self._slamActive then
+            local landed = self:UpdateSlamDown(dtSec, "hook_slam")
+            if not landed then return end
+
+            self:_SetInAir(false)
+            self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
+            self._immuneChain = false
+            self._p3AirHooked = false
+            self._p3HookedSlashDone = false
+            self._phase3Step = 5
+            return
+        end
+
+        -- step 5: the answer to being hooked down, one charged slash across the
+        -- room, then back to the top of the loop to throw again.
+        if self._phase3Step == 5 then
+            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+                if not self._p3HookedSlashDone then
+                    self._p3HookedSlashDone = true
+                    self:FateSealed(1.0)
+                    return
+                end
+                self._phase3Step = 0
+            end
+            return
+        end
+
         -- step 0: go to center in air
         if self._phase3Step == 0 then
             self:_SetInAir(true)
             self._immuneChain = true
             self._p3WasHooked = false
+            self._p3AirHooked = false
+            self._p3HookedSlashDone = false
             self._p3LotusInterrupted = false
             self._p3PendingFate = false
             self._p3FateDelayT = nil
@@ -3065,12 +3419,19 @@ return Component {
                 self._phase3RainCount = 0
                 self._phase3Step = 1
                 self._phase3RainT = nil
+                -- A hook can land mid-cast and leave this set, and step 1 only
+                -- plays the throw animation when it starts a cast from nothing.
+                self._phase3FeatherCastT = nil
             end
             return
         end
 
         -- step 1: shoot feathers to 5 random grids twice (with cast + cooldown)
         if self._phase3Step == 1 then
+            -- Hookable while it throws, so the player has an answer to the bombs
+            -- other than waiting out both rounds and then dodging the dive.
+            self._immuneChain = false
+
             -- Start casting if not already
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
@@ -3107,6 +3468,7 @@ return Component {
                 self._phase3RainT = nil
 
                 if (self._phase3RainCount or 0) >= (self.P3_FeatherRounds or 2) then
+                    self._immuneChain = true
                     self._phase3Step = 2
                 end
                 return
@@ -3208,10 +3570,8 @@ return Component {
             pcall(function() self._animator:SetBool("PlayerInDetectionRange", false) end)
             pcall(function() self._animator:SetBool("PlayerInAttackRange", false) end)
             pcall(function() self._animator:SetBool("ReadyToAttack", false) end)
-            pcall(function() self._animator:ResetTrigger("Melee") end)
-            pcall(function() self._animator:ResetTrigger("Ranged") end)
-            pcall(function() self._animator:ResetTrigger("Taunt") end)
-            pcall(function() self._animator:ResetTrigger("Hooked") end)
+            self:_ClearTriggers({ "Melee", "Ranged", "Taunt", "Hooked" })
+            self:_ClearTriggers(HURT_TRIGGERS)
         end
 
         self:_publishBossHealth()
@@ -3254,10 +3614,15 @@ return Component {
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,
-            dashSpeed = 700.0,
-            stopDist = 0.8,
+            dashSpeed = self.LungeSpeed or 40.0,
+            -- A dashing boss carries the player along if it reaches them: the
+            -- player's controller takes the boss's speed from the contact,
+            -- and was thrown about 2 units clear of the claw. The capsules
+            -- meet between 0.8 and 1.3 units apart, so the dash stops at 1.3
+            -- and the claw reaches 1.8, a stride further.
+            stopDist = 1.3,
             slashAt = 0.90,
-            slashRadius = 1.4,
+            slashRadius = 1.8,
             dmg = 4,
             kbStrength = 8.0,
             postDelay = 2.60

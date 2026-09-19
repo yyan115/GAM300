@@ -69,6 +69,13 @@ return Component {
         AttacksEnabled      = true,
         -- Minimum height above last grounded Y before aerial attacks are allowed.
         -- Below this the player is too close to the ground for aerial combo to make sense.
+        --
+        -- 0.8 is deliberate and correct. The way into the aerial combo is
+        -- lift_attack, which jumps at PlayerMovement's LiftAttackHeight of
+        -- 1.35 and clears this easily. A standing jump peaks at 0.527 and is
+        -- meant to be refused. I lowered this to 0.25 on the mistaken reading
+        -- that the moveset was unreachable, having only ever tested a standing
+        -- jump from idle.
         MinAerialAttackHeight = 0.8,
         -- Height above ground that auto-routes idle airborne attack to air_slam.
         SlamHeightThreshold   = 5.0,
@@ -377,6 +384,7 @@ return Component {
         self._chainAttackCooldown = 0
         self._chainPressBlocked   = false
         self._lastAerialHitLanded = false
+        self._aerialStringHit     = false
         self._aerialLockoutTimer  = 0   -- blocks aerial attack input when > 0
     end,
 
@@ -455,6 +463,10 @@ return Component {
             self._attackHitSub = _G.event_bus.subscribe("attack_hit_confirmed", function()
                 if self._currentStateData and self._currentStateData.isAerial then
                     self._lastAerialHitLanded = true
+                    -- Scoped to the whole aerial string, not to one state. See
+                    -- the branch in air_light_2 for why the per-state flag
+                    -- cannot be the one that decides it.
+                    self._aerialStringHit = true
                 end
             end)
         end
@@ -489,9 +501,20 @@ return Component {
                 -- Always allow if chain is already extended (retract path).
                 -- Block only if retracted and cooldown is active (would start new extension).
                 local chainIsOut = self._chainIsExtended
+
+                -- Block new chain extension during committed attacks (before 80%)
+                local attackLocked = false
+                if not chainIsOut and self._currentStateId ~= "idle" and self._currentStateId ~= "dash" then
+                    local dur = self._currentStateData.clipDuration or self._currentStateData.duration or 0
+                    local prog = (dur > 0) and math.min(self._stateTimer / dur, 1.0) or 1.0
+                    attackLocked = (prog < 0.6)
+                end
+
                 --print(string.format("[ComboManager] chain press: cooldown=%.2f isExtended=%s",
                 --    self._chainAttackCooldown, tostring(chainIsOut)))
-                if self._chainAttackCooldown <= 0 or chainIsOut then
+                if attackLocked then
+                    self._chainPressBlocked = true
+                elseif self._chainAttackCooldown <= 0 or chainIsOut then
                     event_bus.publish("chain.down", {})
                     self._chainPressBlocked = false
                 else
@@ -633,7 +656,13 @@ return Component {
         --                  a normal jump, cutting the attack's recovery frames.
         -- ══════════════════════════════════════════════════════════════════
         if state.id ~= "idle" then
-            if input:HasBufferedDash() and state.transitions.dash then
+            -- Animation commitment: attacks are locked until 80% of the animation
+            -- plays out. Prevents spam-cancelling attacks with dash/jump.
+            local cancelThreshold = 0.6
+            local animProgress = (refDuration and refDuration > 0)
+                and math.min(self._stateTimer / refDuration, 1.0) or 1.0
+
+            if input:HasBufferedDash() and state.transitions.dash and animProgress >= cancelThreshold then
                 input:ConsumeBufferedDash()
                 self._queuedCombo = nil
                 --print("[ComboManager] DASH CANCEL: " .. state.id .. " -> dash")
@@ -641,7 +670,7 @@ return Component {
                 return
             end
 
-            if input:IsJumpJustPressed() and not _G.player_is_jumping then
+            if input:IsJumpJustPressed() and not _G.player_is_jumping and animProgress >= cancelThreshold then
                 if state.transitions.jump then
                     -- Lift attack: this state explicitly launches into an aerial state
                     self._queuedCombo = nil
@@ -717,7 +746,19 @@ return Component {
 
                 elseif state.id == "air_light_2" then
                     -- Hit confirmed → loop; missed → slam.
-                    if self._lastAerialHitLanded then
+                    --
+                    -- This reads the string-scoped flag rather than the
+                    -- per-state one. The branch is evaluated the moment the
+                    -- attack input arrives, which is before air_light_2's own
+                    -- hitbox has connected, while the per-state flag is reset
+                    -- on entry to air_light_2. So the per-state flag could
+                    -- only be true if a hit landed in the sliver between
+                    -- entering the state and the player pressing again, and
+                    -- measured traces took the slam path on every string that
+                    -- did connect. The question the branch is asking is
+                    -- whether this trip through the air has been landing, so
+                    -- the flag it reads is reset when an aerial string begins.
+                    if self._aerialStringHit then
                         candidateStateId = "air_light_1"
                     else
                         candidateStateId = "air_slam"
@@ -748,7 +789,14 @@ return Component {
             end
 
         elseif input:HasBufferedDash() then
-            candidateStateId = state.transitions.dash
+            -- During active attacks, dash is handled exclusively by the
+            -- immediate cancel system above (gated at 80% animation progress).
+            -- Don't route through the combo window / queuing path here, as that
+            -- would speed up the animation and allow earlier cancels.
+            -- Only allow the regular path when idle (normal dash from standing).
+            if state.id == "idle" then
+                candidateStateId = state.transitions.dash
+            end
         end
 
         -- No valid transition — check for auto-idle at end of animation
@@ -843,6 +891,13 @@ return Component {
         -- Reset aerial hit flag and arm lockout on every aerial state entry.
         if newState.isAerial then
             self._lastAerialHitLanded = false
+            -- A new aerial string starts only when entering the air from a
+            -- state that was not itself aerial. Within a string the flag
+            -- carries, so a hit in air_light_1 still counts when air_light_2
+            -- decides whether to loop.
+            if not (oldState and oldState.isAerial) then
+                self._aerialStringHit = false
+            end
             if newState.isSlam ~= true then
                 -- Lockout prevents input being registered again until this decays.
                 -- Slam is excluded — it's a commitment, not a repeatable attack.

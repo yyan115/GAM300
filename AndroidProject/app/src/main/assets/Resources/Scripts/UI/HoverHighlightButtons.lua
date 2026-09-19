@@ -1,8 +1,10 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings"}
-local UI_MENUS       = {"SettingsUI", "CreditsUI", "QuitPromptUI"}
+local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
+-- The quit prompt is not here: the engine puts it up, and nothing else in the
+-- scene runs while it is.
+local UI_MENUS       = {"SettingsUI", "CreditsUI", "ControlsUI"}
 
 local NORMAL_TEXT_COLOR  = {0.8, 0.8, 0.8}
 local HOVERED_TEXT_COLOR = {0.0, 0.0, 0.0}
@@ -51,6 +53,29 @@ return Component {
                 self.UIState[index] = { component = GetComponent(e, "ActiveComponent") }
             end
         end
+
+        -- Nothing here updates while the quit prompt is up, so a highlight
+        -- lit when it opened would stay lit underneath it. Clear it then.
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._quitPromptSub = _G.event_bus.subscribe("quit_prompt.shown", function()
+                self:_clearHighlights()
+            end)
+        end
+    end,
+
+    OnDisable = function(self)
+        if self._quitPromptSub and _G.event_bus and _G.event_bus.unsubscribe then
+            _G.event_bus.unsubscribe(self._quitPromptSub)
+            self._quitPromptSub = nil
+        end
+    end,
+
+    _clearHighlights = function(self)
+        for _, data in ipairs(self.buttonBounds) do
+            if data.spriteComponent then data.spriteComponent.isVisible = false end
+            applyTextColor(data.textComponent, NORMAL_TEXT_COLOR)
+        end
+        self.lastState = nil
     end,
 
     Update = function(self, dt)
@@ -68,11 +93,7 @@ return Component {
         for _, state in ipairs(self.UIState) do
             if state.component and state.component.isActive then
                 if self.lastState ~= nil then
-                    for _, data in ipairs(self.buttonBounds) do
-                        if data.spriteComponent then data.spriteComponent.isVisible = false end
-                        applyTextColor(data.textComponent, NORMAL_TEXT_COLOR)
-                    end
-                    self.lastState = nil
+                    self:_clearHighlights()
                 end
                 return
             end

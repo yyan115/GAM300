@@ -124,6 +124,11 @@ return Component {
     -- ──────────────────────────────────────────────────────────────────────────
     Update = function(self, dt)
         if self._done then return end
+        if Input.IsActionPressed("SkipIntro") or Input.IsPointerJustPressed() then
+            self._done = true
+            if Scene and Scene.Load then Scene.Load(self.nextScene) end
+            return
+        end
         self._timer = self._timer + dt
         local t = self._timer
 

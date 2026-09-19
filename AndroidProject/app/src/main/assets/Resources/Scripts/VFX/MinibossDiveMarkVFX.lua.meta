@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c068caa832e67-0006737976000003",
+        "source": "../../Resources/Scripts/VFX/MinibossDiveMarkVFX.lua",
+        "compiled": "../../Resources/Scripts/VFX/MinibossDiveMarkVFX.lua",
+        "android_compiled": "Resources/Scripts/VFX/MinibossDiveMarkVFX.lua"
+    }
+}
