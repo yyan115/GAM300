@@ -60,8 +60,9 @@ local event_bus = _G.event_bus
 -- ══════════════════════════════════════════════════════════════════════════
 -- Ways of reshaping the three ground hits without editing their clips, kept
 -- side by side so they can be compared. SwingVariant picks one, and the
--- environment variable GAM300_SWING_VARIANT overrides it. "off" is the
--- shipped behaviour. Per combo step, every key is optional:
+-- environment variable GAM300_SWING_VARIANT overrides it. "quick12_cut" is
+-- what the game plays. "off" is the swing as it was before these, the clips
+-- untouched. Per combo step, every key is optional:
 --
 --   start        where in the clip the swing starts, so the wind up is skipped.
 --                The animator state itself starts there, so the part skipped
@@ -99,6 +100,7 @@ local SNAP_12_BLENDS = {
 local LONG_LUNGE = { speed = 8.0, duration = 0.22 }
 
 local SWING_VARIANTS = {
+    -- The swings as they were before any of this: every clip untouched.
     off = {},
 
     -- Every hit plays its whole clip. The reference the others are cut from.
@@ -233,8 +235,8 @@ return Component {
         DefaultComboWindow  = 0.5,
         HeavyChargeTime     = 0.8,
         MaxComboAnimSpeed   = 2.0,
-        -- Which entry of SWING_VARIANTS is live. "off" is what ships.
-        SwingVariant        = "off",
+        -- Which entry of SWING_VARIANTS is live.
+        SwingVariant        = "quick12_cut",
         -- Minimum seconds between chain attacks. The tap-fire (ChainBootstrap)
         -- still fires every press; only the attack animation is gated.
         ChainAttackCooldown = 0.6,
