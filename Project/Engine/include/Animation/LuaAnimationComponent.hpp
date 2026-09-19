@@ -117,6 +117,12 @@ struct LuaAnimationComponent
         return comp ? comp->GetStateTime() : 0.0f;
     }
 
+    // The clip the animator is playing, for GetClipDuration
+    size_t GetActiveClipIndex() const {
+        auto* comp = GetInternal();
+        return comp ? comp->GetActiveClipIndex() : 0;
+    }
+
     float GetClipDuration(size_t clipIndex) const {
         auto* comp = GetInternal();
         if (!comp) return 0.0f;
