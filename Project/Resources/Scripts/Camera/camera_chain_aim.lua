@@ -108,7 +108,7 @@ function M.updateChainAim(self, dt)
     -- nearest enemy within the configured angular window.
     -- Skip when the player is manually aiming so it doesn't fight their input.
     local manuallyAiming = self._chainAimManualTimer and self._chainAimManualTimer > 0
-    if self._chainAiming and self._chainAimYaw and not manuallyAiming then
+    if self.chainAimAssistEnabled and self._chainAiming and self._chainAimYaw and not manuallyAiming then
         M.updateAimAssist(self, dt, camX, camY, camZ)
     elseif manuallyAiming then
         -- Clear stale assist target so the chain fires where the player is

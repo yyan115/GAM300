@@ -69,6 +69,9 @@ return Component {
         chainAimSideOffset      = 0.3,
 
         -- === Chain Aim Assist ===
+        -- Off: while aiming the chain, the camera is not pulled toward an
+        -- enemy near the crosshair, and the chain goes where the player aims.
+        chainAimAssistEnabled      = false,
         chainAimAssistComponents   = {"EnemyAI", "FlyingEnemyLogic"},
         chainAimAssistAngle        = 30.0,
         chainAimAssistStrength     = 15.0,

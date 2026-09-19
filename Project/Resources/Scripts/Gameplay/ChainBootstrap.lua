@@ -65,6 +65,9 @@ return Component {
         ChainSlackDistance = 1.0,   -- extra metres player can move past chainLen before chain flops
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
+        -- Off: a tapped chain goes straight out in front of the player instead
+        -- of turning toward an enemy in the cone below.
+        LockOnAssistEnabled = false,
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
 
         -- === Spin ===
@@ -829,6 +832,7 @@ return Component {
     -- Returns a normalised direction {x,y,z} toward the closest LockOn target within
     -- the half-cone, or nil if none qualify. pfx/pfz = normalised player forward XZ.
     _pickLockOnDirection = function(self, pfx, pfy, pfz)
+        if not self.LockOnAssistEnabled then return nil end
         if not Engine or not Engine.GetEntitiesByTag then return nil end
 
         local halfCos = math.cos(math.rad(tonumber(self.LockOnAngleDeg) or 45.0))
