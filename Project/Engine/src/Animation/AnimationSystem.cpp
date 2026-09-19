@@ -77,14 +77,13 @@ void AnimationSystem::InitialiseAnimationComponent(Entity entity, ModelRenderCom
 				// why enemies played their attack animation while idle or
 				// walking. Deriving the GUIDs from the paths we just adopted
 				// keeps the two lists describing the same clips by
-				// construction. A path with no .meta yields a zero GUID, which
-				// makes the loader fall back to the path exactly as before.
+				// construction. A clip that has moved is found by name, and a
+				// path with no .meta yields a zero GUID, which makes the loader
+				// fall back to the path exactly as before.
 				animComp.clipGUIDs.clear();
 				animComp.clipGUIDs.reserve(ctrlClipPaths.size());
 				for (const auto& clipPath : ctrlClipPaths) {
-					animComp.clipGUIDs.push_back(
-						AssetManager::GetInstance().GetGUID128FromAssetMeta(
-							NormalizeAnimationAssetPath(clipPath)));
+					animComp.clipGUIDs.push_back(AnimationComponent::ClipGUIDFromPath(clipPath));
 				}
 
 				ENGINE_PRINT("[AnimationSystem] Loaded controller: ", animComp.controllerPath, " with ", ctrlClipPaths.size(), " clips\n");

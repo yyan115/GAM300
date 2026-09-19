@@ -7,6 +7,7 @@
 #include <WindowManager.hpp>
 #include "Graphics/Model/Model.h"
 #include "Asset Manager/AssetManager.hpp"
+#include "Asset Manager/MetaFilesManager.hpp"
 #include <filesystem>
 
 namespace {
@@ -344,6 +345,20 @@ void AnimationComponent::SyncAnimatorToActiveClip(Entity entity)
     }
     Animation* clip = clips[activeClip].get();
     animator->PlayAnimation(clip, entity);
+}
+
+GUID_128 AnimationComponent::ClipGUIDFromPath(const std::string& authoredPath)
+{
+    // The asset manager invents a new GUID for an asset it has no .meta for,
+    // a different one on every call, so only ask it about a clip that has one.
+    std::string path = NormalizeAnimationAssetPath(authoredPath);
+    if (!MetaFilesManager::MetaFileExists(path)) {
+        path = FindAnimationByFileName(path);
+        if (path.empty() || !MetaFilesManager::MetaFileExists(path)) {
+            return GUID_128{};
+        }
+    }
+    return AssetManager::GetInstance().GetGUID128FromAssetMeta(path);
 }
 
 void AnimationComponent::SetClipCount(size_t count)

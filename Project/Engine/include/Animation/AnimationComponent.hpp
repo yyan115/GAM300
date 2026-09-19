@@ -119,6 +119,12 @@ public:
     // Resets the State Machine to entry state and clears all pending state transitions.
     void ResetSM(Entity entity);
 
+    // The GUID of the clip asset an authored path names. A clip that has moved
+    // since the path was written is found by file name, the way
+    // LoadClipsFromPaths finds it. A clip with no .meta gets a zero GUID,
+    // which makes LoadClipsFromPaths fall back to the path.
+    static GUID_128 ClipGUIDFromPath(const std::string& authoredPath);
+
 private:
     bool mLoopJustCompleted = false;
     std::vector<std::shared_ptr<Animation>> clips;
