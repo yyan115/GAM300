@@ -424,6 +424,19 @@ void ECSManager::PreWarmActiveHierarchyCache() {
 	}
 }
 
+bool ECSManager::IsInSubtree(Entity entity, Entity root) {
+	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+	Entity current = entity;
+	// A parent chain longer than there are entities has a cycle in it.
+	for (std::size_t depth = 0; depth < MAX_ENTITIES; ++depth) {
+		if (current == root) return true;
+		if (current >= MAX_ENTITIES || !HasComponent<ParentComponent>(current)) return false;
+		current = guidRegistry.GetEntityByGUID(GetComponent<ParentComponent>(current).parent);
+		if (current == INVALID_ENTITY) return false;
+	}
+	return false;
+}
+
 bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 	if (entity >= MAX_ENTITIES) {
 		return false;

@@ -95,6 +95,11 @@
             "id": 4,
             "name": "test",
             "order": 4
+        },
+        {
+            "id": 5,
+            "name": "Overlay",
+            "order": 5
         }
     ]
 }

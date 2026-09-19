@@ -10,6 +10,7 @@
 
 #include "RunTimeVar.hpp"
 #include "TimeManager.hpp"
+#include "UI/QuitConfirmation.hpp"
 #include <Logging.hpp>
 
 #define UNREFERENCED_PARAMETER(P) (P)
@@ -119,8 +120,13 @@ PlatformWindow WindowManager::getWindow() {
     return ptrWindow;
 }
 
+// Set when the engine itself decides to close. A close flag the platform raised
+// without it came from the window, and goes to QuitConfirmation instead.
+static bool s_closeApproved = false;
+
 void WindowManager::SetWindowShouldClose()
 {
+    s_closeApproved = true;
     if (platform) {
         platform->SetShouldClose(true);
     }
@@ -134,6 +140,8 @@ bool WindowManager::ShouldClose() {
 }
 
 void WindowManager::Exit() {
+    // A window made after this one starts with no close decided.
+    s_closeApproved = false;
     if (platform) {
         platform->DestroyWindow();
         delete platform;
@@ -318,7 +326,10 @@ bool WindowManager::IsCursorPausedByUser() {
 void WindowManager::UpdateCursorState() {
     if (!platform) return;
 
-    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser;
+    // The quit prompt needs the cursor. The game's own request is left as it
+    // is, so the lock comes back by itself when the prompt goes.
+    bool shouldLock = s_cursorLockRequested && !s_cursorPausedByUser
+        && !QuitConfirmation::IsPrompting();
 
 #ifdef EDITOR
     // In Editor, only actually lock cursor if game is playing
@@ -344,14 +355,32 @@ void WindowManager::SwapBuffers() {
     }
 }
 
+// A close the window raised on its own, such as Alt+F4, is withdrawn and
+// handed to QuitConfirmation, which asks first. The editor's window and the
+// Android activity close the way they always have.
+static void RouteWindowCloseRequest(IPlatform* platform) {
+#if !defined(EDITOR) && !defined(ANDROID)
+    if (!s_closeApproved && platform->ShouldClose()) {
+        platform->SetShouldClose(false);
+        QuitConfirmation::OnWindowCloseRequest();
+    }
+#else
+    (void)platform;
+#endif
+}
+
 void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
+        RouteWindowCloseRequest(platform);
     }
 }
 
 void WindowManager::WaitEvents(double timeout) {
-    if (platform) platform->WaitEvents(timeout);
+    if (platform) {
+        platform->WaitEvents(timeout);
+        RouteWindowCloseRequest(platform);
+    }
 }
 
 IPlatform* WindowManager::GetPlatform() {

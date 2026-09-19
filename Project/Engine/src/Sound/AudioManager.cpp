@@ -100,6 +100,8 @@ void AudioManager::Shutdown() {
             if (kv.second) groups.push_back(kv.second);
         }
         BusMap.clear();
+        if (GameGroup) groups.push_back(GameGroup);
+        GameGroup = nullptr;
 
         // Take ownership of system
         sys = System;
@@ -173,7 +175,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     FMOD_CHANNEL* channel = nullptr;
 
     // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, GetGameGroup(), true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] FMOD_System_PlaySound failed: %s\n", FMOD_ErrorString(res));
         return 0;
@@ -221,7 +223,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     FMOD_CHANNEL* channel = nullptr;
 
     // Play paused so we can configure the channel before it starts
-    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, GetGameGroup(), true, &channel);
     if (res != FMOD_OK) {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPosition failed: ", FMOD_ErrorString(res), "\n");
         return 0;
@@ -550,6 +552,12 @@ FMOD_CHANNELGROUP* AudioManager::GetOrCreateBus(const std::string& busName) {
 
     BusMap[busName] = group;
 
+    if (busName != "UI") {
+        if (FMOD_CHANNELGROUP* game = GetGameGroup()) {
+            FMOD_ChannelGroup_AddGroup(game, group, true, nullptr);
+        }
+    }
+
     // Apply any pending volume that was set before the bus was created
     auto pendingIt = PendingBusVolumes.find(busName);
     if (pendingIt != PendingBusVolumes.end()) {
@@ -613,6 +621,26 @@ void AudioManager::SetMasterVolume(float volume) {
 
 float AudioManager::GetMasterVolume() const {
     return MasterVolume.load();
+}
+
+FMOD_CHANNELGROUP* AudioManager::GetGameGroup() {
+    if (GameGroup || !System) return GameGroup;
+    FMOD_RESULT res = FMOD_System_CreateChannelGroup(System, "Game", &GameGroup);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: Failed to create the Game group: ", FMOD_ErrorString(res), "\n");
+        GameGroup = nullptr;
+        return nullptr;
+    }
+    FMOD_ChannelGroup_SetPaused(GameGroup, ModalSuspended);
+    return GameGroup;
+}
+
+void AudioManager::SetModalSuspended(bool suspended) {
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    ModalSuspended = suspended;
+    if (GameGroup) {
+        FMOD_ChannelGroup_SetPaused(GameGroup, suspended);
+    }
 }
 
 void AudioManager::SetWindowSuspended(bool suspended) {

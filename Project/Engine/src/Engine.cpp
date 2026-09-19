@@ -42,6 +42,7 @@
 #endif
 #include <Asset Manager/AssetManager.hpp>
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "UI/QuitConfirmation.hpp"
 #include <cmath>
 
 namespace TEMP {
@@ -88,6 +89,19 @@ namespace {
     }
 }
 #endif
+
+namespace {
+    // Drops the mouse travel and button presses input gathered while the game
+    // was not reading it, so the camera does not jump when play resumes.
+    void RebaselineInput() {
+        // Consume cursor recenter events before taking the new mouse baseline.
+        WindowManager::PollEvents();
+        if (g_inputManager) {
+            g_inputManager->Update(0.0f);
+            g_inputManager->GetScrollY();
+        }
+    }
+}
 
 // Static member definition
 GameState Engine::currentGameState = GameState::EDIT_MODE;
@@ -750,14 +764,8 @@ bool Engine::WaitWhileInactive() {
         WindowManager::UpdateCursorState();
         if (inactive && g_inputManager) g_inputManager->Update(0.0f);
         if (!inactive) {
-            // Consume cursor recenter events before taking the new mouse baseline.
-            WindowManager::PollEvents();
+            RebaselineInput();
             TimeManager::ResetFrameClock();
-            // Discard mouse travel and button edges accumulated while away.
-            if (g_inputManager) {
-                g_inputManager->Update(0.0f);
-                g_inputManager->GetScrollY();
-            }
         }
         suspended = inactive;
     }
@@ -800,7 +808,12 @@ void Engine::Update() {
     //RunBrainInitSystem(ecs);
 
     //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
-    {
+    // While the quit prompt is up it is the only part of the scene that runs,
+    // and no scene load moves on underneath it.
+    QuitConfirmation::BeginFrame();
+    const bool modal = QuitConfirmation::IsPrompting();
+
+    if (!modal) {
         PROFILE_SCOPED("Engine::AsyncLoad");
         SceneManager::GetInstance().UpdateAsyncLoad();
     }
@@ -809,7 +822,13 @@ void Engine::Update() {
 	if (ShouldRunGameLogic())
     {
         PROFILE_SCOPED("Engine::UpdateScene");
-        SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
+        if (modal) {
+            SceneManager::GetInstance().UpdateSceneModal(
+                QuitConfirmation::GetPromptRoot(), QuitConfirmation::AcceptsPointerPresses());
+        }
+        else {
+            SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
+        }
 	}
 
     // Sampled after the scene has run so the values written are the ones
@@ -907,6 +926,12 @@ void Engine::EndDraw() {
 	// Update cursor state at end of frame (enforces lock state, handles ImGui interference)
 	WindowManager::UpdateCursorState();
 
+	// The cursor was free while the quit prompt was up. Now it is locked
+	// again, start the next frame from where it is.
+	if (QuitConfirmation::ConsumeInputRebaseline()) {
+		RebaselineInput();
+	}
+
 	// Collect GPU profiling queries for Tracy
 	PROFILE_GPU_COLLECT;
 
@@ -919,6 +944,10 @@ void Engine::Shutdown() {
 	ENGINE_LOG_INFO("Engine shutdown started");
 
 	Telemetry::Shutdown();
+
+	// Before the scene and audio go, so nothing is left held for a process
+	// that is reused, as an Android app's is.
+	QuitConfirmation::Reset();
 
 	// Shutdown GameSettings first (saves any dirty settings)
 	GameSettingsManager::GetInstance().Shutdown();
@@ -958,6 +987,10 @@ void Engine::SetGameState(GameState state) {
 	// When leaving play mode, force unlock cursor
 	if (previousState == GameState::PLAY_MODE && state != GameState::PLAY_MODE) {
 		WindowManager::ForceUnlockCursor();
+	}
+	// Stopping play ends any quit prompt. Pausing keeps it, to carry on after.
+	if (state == GameState::EDIT_MODE) {
+		QuitConfirmation::Reset();
 	}
 }
 

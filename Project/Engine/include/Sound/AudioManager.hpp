@@ -112,6 +112,9 @@ public:
     float GetMasterVolume() const;
     void ENGINE_API SetGlobalPaused(bool paused);
     void ENGINE_API SetWindowSuspended(bool suspended);
+    // Pauses every sound but the UI bus's, for a modal prompt that has to stay
+    // audible over a game it has stopped.
+    void ENGINE_API SetModalSuspended(bool suspended);
 
     // Resource management helpers
     FMOD_SOUND* CreateSound(const std::string& assetPath);
@@ -163,6 +166,12 @@ private:
 
     // Channel groups (buses)
     std::unordered_map<std::string, FMOD_CHANNELGROUP*> BusMap;
+
+    // Parent of every bus except the UI bus, and of channels played on no bus.
+    // Created with the first sound, under the master group.
+    FMOD_CHANNELGROUP* GameGroup = nullptr;
+    bool ModalSuspended = false;
+    FMOD_CHANNELGROUP* GetGameGroup();
 
     // Pending bus volumes (for buses not yet created)
     std::unordered_map<std::string, float> PendingBusVolumes;

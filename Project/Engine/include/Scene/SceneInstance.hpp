@@ -18,6 +18,7 @@ public:
 	void InitializePhysics() override;
 
 	void Update(double dt) override;
+	void UpdateModal(Entity modalRoot, bool acceptPresses) override;
 	void Draw() override;
 	void Exit() override;
 	void ShutDownPhysics() override;

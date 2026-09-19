@@ -757,6 +757,7 @@ namespace SceneWrappers {
 // WINDOW SYSTEM WRAPPERS
 // ============================================================================
 #include "WindowManager.hpp"
+#include "UI/QuitConfirmation.hpp"
 
 namespace WindowWrappers {
     inline int GetWindowWidth() {
@@ -787,8 +788,19 @@ namespace WindowWrappers {
         WindowManager::SetWindowTitle(title.c_str());
     }
 
+    // Closes the game, the quit prompt's Yes.
     inline void RequestClose() {
-        WindowManager::SetWindowShouldClose();
+        QuitConfirmation::Confirm();
+    }
+
+    // Shows the quit confirmation, the same one Alt+F4 brings up.
+    inline void RequestQuit() {
+        QuitConfirmation::Request();
+    }
+
+    // Dismisses the quit confirmation.
+    inline void CancelQuit() {
+        QuitConfirmation::Cancel();
     }
 
     inline void SetCursorLocked(bool locked) {

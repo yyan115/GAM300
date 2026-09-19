@@ -15,14 +15,14 @@ void ButtonSystem::Initialise(ECSManager& ecsManager) {
     m_ecs = &ecsManager;
 }
 
-void ButtonSystem::Update() {
+void ButtonSystem::Update(Entity scope) {
     PROFILE_FUNCTION();
     // This only runs during play mode in editor
     // Update any button-related state here
-    UpdateButtonStates();
+    UpdateButtonStates(scope);
 }
 
-void ButtonSystem::UpdateButtonStates() {
+void ButtonSystem::UpdateButtonStates(Entity scope) {
     if (!m_ecs) return;
     if (entities.empty()) return;
 
@@ -65,6 +65,7 @@ void ButtonSystem::UpdateButtonStates() {
             if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
             // Skip buttons on inactive entities or those with an inactive parent
             if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;
+            if (scope != INVALID_ENTITY && !m_ecs->IsInSubtree(e, scope)) continue;
             HandlePointerClick(e, pointerPosInGameSpace);
         }
     }

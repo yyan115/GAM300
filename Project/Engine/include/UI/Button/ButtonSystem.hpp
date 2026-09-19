@@ -12,7 +12,7 @@ public:
     ~ButtonSystem() = default;
 
     void Initialise(ECSManager& ecsManager);
-    void Update();  // Only runs during play mode
+    void Update(Entity scope = INVALID_ENTITY);  // Only runs during play mode. A scope limits it to one subtree.
     void Shutdown();
 
     // Called when a button UI element is clicked (from input/UI system)
@@ -20,7 +20,7 @@ public:
 
 private:
     void ProcessButtonClick(Entity buttonEntity);
-    void UpdateButtonStates();
+    void UpdateButtonStates(Entity scope);
     void HandlePointerClick(Entity buttonEntity, Vector3D pointerPos);
     ECSManager* m_ecs = nullptr;
 };

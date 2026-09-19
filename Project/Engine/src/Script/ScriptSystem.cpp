@@ -823,8 +823,11 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
         ENGINE_PRINT("[ScriptSystem] Initialised\n");
     }
 }
-void ScriptSystem::Update()
+void ScriptSystem::Update(Entity scope)
 {
+    const bool scoped = scope != INVALID_ENTITY;
+    auto inScope = [&](Entity e) { return !scoped || m_ecs->IsInSubtree(e, scope); };
+
     // If there are script entities that are pending destruction, destroy them first.
     while (!entitiesPendingDestroy.empty()) {
         Entity entityToDestroy = entitiesPendingDestroy.front();
@@ -843,7 +846,8 @@ void ScriptSystem::Update()
 
     // advance coroutines & runtime tick if runtime initialized
     // Use scaled delta time so coroutines respect pause state
-    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
+    // A scoped update freezes everything outside the scope, coroutines included.
+    if (!scoped && Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
     // Single lock for entire Update — m_runtimeMap is only accessed from main thread
     // (SequentialSystemOrchestrator::Update is single-threaded)
@@ -853,7 +857,7 @@ void ScriptSystem::Update()
     std::vector<Entity> newlyCreatedEntities;
     for (Entity e : entities)
     {
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+        if (!inScope(e) || !m_ecs->IsEntityActiveInHierarchy(e)) {
             continue;
         }
 
@@ -926,6 +930,10 @@ void ScriptSystem::Update()
     // Pass 4a: detect inactive→active transitions, set justActivated flags
     for (Entity e : entities)
     {
+        // Left as they are outside the scope, so a frozen entity is not seen
+        // as newly activated when it resumes.
+        if (!inScope(e)) continue;
+
         bool isActive = m_ecs->IsEntityActiveInHierarchy(e);
 
         if (!isActive) {
@@ -945,7 +953,7 @@ void ScriptSystem::Update()
     // Pass 4b: run script Updates (all justActivated flags are visible)
     for (Entity e : entities)
     {
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;
+        if (!inScope(e) || !m_ecs->IsEntityActiveInHierarchy(e)) continue;
 
         ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
         if (!comp) continue;
@@ -975,6 +983,7 @@ void ScriptSystem::Update()
     // Pass 4c: clear all justActivated flags now that every script has run
     for (Entity e : entities)
     {
+        if (!inScope(e)) continue;
         if (m_ecs->HasComponent<ActiveComponent>(e)) {
             auto& ac = m_ecs->GetComponent<ActiveComponent>(e);
             if (ac.justActivated) ac.justActivated = false;
