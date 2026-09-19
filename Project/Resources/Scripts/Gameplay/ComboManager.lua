@@ -149,8 +149,13 @@ local SWING_VARIANTS = {
         light_3 = { start = 0.45, finish = 0.60 },
     },
 
-    -- F. Shorter crossfades. There is none into a hit already. Out of each
-    -- hit the animator blends back to idle over a whole second.
+    -- F. Shorter crossfades. Out of each hit the animator blends back to idle
+    -- over a whole second. Into each hit it blends for 0.2 s: the controller
+    -- asks for none, and a state entered with no blend gets the engine's
+    -- default of 0.2 s, so asking for less has to name a small blend.
+    snap_in_3 = {
+        blends = { { "NA2", "NA3", 0.05 } },
+    },
     snap_out_3 = {
         blends = { { "NA3", "Idle", 0.2 } },
     },
@@ -169,10 +174,11 @@ local SWING_VARIANTS = {
         light_3 = { lunge = { speed = 8.0, duration = 0.22 } },
     },
 
-    -- E and F together: the horizontal swing, and a short blend out of it.
+    -- E and F together: the horizontal swing, with short blends into and out
+    -- of it. The default blend in takes most of a swing this short.
     horizontal_3_snap = {
         light_3 = { start = 0.40, finish = 0.62 },
-        blends = { { "NA3", "Idle", 0.2 } },
+        blends = { { "NA2", "NA3", 0.05 }, { "NA3", "Idle", 0.2 } },
     },
 }
 
