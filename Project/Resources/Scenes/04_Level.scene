@@ -211619,7 +211619,7 @@
                                 "entryFunction": "OnInit",
                                 "autoInvokeEntry": true,
                                 "instanceState": {
-                                    "DashSpeed": 7.5,
+                                    "PostDashRecoveryTime": 0.3,
                                     "_dashExitBoost": 0.0,
                                     "playerJumpSFX": [
                                         "00612e339f2a542c-0004202e3600007d",
@@ -211642,7 +211642,7 @@
                                         "00612e33af395ef5-0004202e36000091",
                                         "006cb5ca4332c9da-00047d6524000021"
                                     ],
-                                    "DashDuration": 0.45,
+                                    "DashSpeed": 6.0,
                                     "_kbZ": 0.0,
                                     "_chainAimActive": false,
                                     "_lungeDirX": 0.0,
@@ -211821,7 +211821,7 @@
                                     "Deceleration": 16.0,
                                     "_freezePending": false,
                                     "AirSlamAcceleration": 80.0,
-                                    "PostDashRecoveryTime": 0.3
+                                    "DashDuration": 0.5
                                 }
                             },
                             {
@@ -211853,7 +211853,7 @@
                                     "_subscriptions": {},
                                     "IFrameDuration": 0.5,
                                     "_transform_fetched": false,
-                                    "DashIFrameDuration": 0.45
+                                    "DashIFrameDuration": 0.5
                                 }
                             },
                             {
