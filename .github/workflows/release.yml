@@ -641,12 +641,16 @@ jobs:
 
           **Version:** `${{ github.event.inputs.version }}`
 
+          ${{ github.event.inputs.changelog != '' && '## Changelog' || '' }}
+
           ${{ github.event.inputs.changelog }}
 
-          ### Downloads
-          - **Windows** — download and run `Kusane_Setup.exe`.
-          - **Linux** — download `Kusane-x86_64.AppImage`, then `chmod +x` it and run it.
-          - **Android** — `Kusane.apk`
+          ## Downloads
+          - **Windows** - download and run `Kusane_Setup.exe`.
+          - **Linux** - download `Kusane-x86_64.AppImage`, then `chmod +x` it and run it.
+          - **Android** - download `Kusane.apk` and allow installs from your browser.
+
+          Screenshots, the trailer and these downloads are also on the [game page](https://yyan115.github.io/GAM300/).
 
           ---
           *Built automatically from `${{ github.sha }}` on `${{ github.ref_name }}`*
