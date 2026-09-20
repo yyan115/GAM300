@@ -6,7 +6,7 @@
 <title>Kusane</title>
 <meta name="description" content="Kusane is a 3D action game about dragging things out of the sky with a chain, for Windows, Linux and Android.">
 <meta property="og:title" content="Kusane">
-<meta property="og:description" content="They took her temple, her clan and her wings. She found a chain, and went back in.">
+<meta property="og:description" content="Her wings are gone. The thing that took them is wearing them.">
 <meta property="og:image" content="media/hero-poster.jpg">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -251,7 +251,65 @@
     /* ── Gallery ─────────────────────────────────────────────────── */
     .gallery {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+        gap: 14px;
+        margin-top: 40px;
+    }
+
+    .gallery figure {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--edge);
+        cursor: zoom-in;
+        aspect-ratio: 16 / 9;
+    }
+
+    .gallery img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+
+    .gallery figure:hover img { transform: scale(1.05); }
+
+    .gallery figcaption {
+        position: absolute;
+        inset: auto 0 0 0;
+        padding: 26px 14px 10px;
+        font-size: 0.78rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #efece7;
+        background: linear-gradient(to top, rgba(7, 6, 10, 0.9), transparent);
+    }
+
+    /* ── Clips ──────────────────────────────────────────────────── */
+    .clip-frame {
+        margin-top: 36px;
+        border: 1px solid var(--edge);
+        background: #000;
+        overflow: hidden;
+    }
+
+    .clip-frame video {
+        width: 100%;
+        display: block;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+
+    .lede {
+        font-size: clamp(1.05rem, 2vw, 1.3rem);
+        font-weight: 300;
+        color: #d6d0c8;
+    }
+
+    /* ── Gallery ─────────────────────────────────────────────────── */
+    .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
         gap: 14px;
         margin-top: 40px;
     }
@@ -318,11 +376,6 @@
 
     .clip p { margin-bottom: 14px; }
     .clip p:last-child { margin-bottom: 0; }
-
-    @media (max-width: 760px) {
-        .clip { grid-template-columns: 1fr; }
-        .clip.reverse .clip-frame { order: 0; }
-    }
 
     /* ── Downloads ───────────────────────────────────────────────── */
     .downloads { text-align: center; }
@@ -419,9 +472,9 @@
 <header class="topbar" id="topbar">
     <a href="#top" class="mark">Kusane</a>
     <nav>
-        <a href="#game">The Game</a>
-        <a href="#gallery">Gallery</a>
+        <a href="#chain">The Chain</a>
         <a href="#boss">The Boss</a>
+        <a href="#gallery">Gallery</a>
         <a href="#download" class="btn small">Download</a>
     </nav>
 </header>
@@ -431,57 +484,24 @@
         <source src="media/hero.mp4" type="video/mp4">
     </video>
     <h1>Kusane</h1>
-    <p class="tagline">They took her temple, her clan and her wings. She found a chain, and went back in.</p>
+    <p class="tagline">Her wings are gone. The thing that took them is wearing them.</p>
     <div class="hero-actions">
         <a href="#download" class="btn">Download</a>
-        <a href="#game" class="btn ghost">What it is</a>
+        <a href="#chain" class="btn ghost">See it</a>
     </div>
     <div class="release-line" id="hero-release"></div>
     <div class="scroll-cue">Scroll</div>
 </section>
 
-<section class="section" id="game">
-    <div class="container">
-        <div class="eyebrow">The Game</div>
-        <h2>Her wings are gone. The thing that took them is wearing them.</h2>
-        <p>
-            Kusane is the last of the clan that kept a mountain temple. The Karasu came for it in a
-            night, and she woke in the ruins of her own home, too light and too empty, with nothing
-            left where her wings had been.
-        </p>
-        <p>
-            What she finds instead is a chain, resting on a holder in the hall she grew up in. It is
-            the wrong weapon for crows. They fly, and it does not reach that far.
-        </p>
-        <p>
-            Unless you throw it.
-        </p>
-    </div>
-</section>
-
 <section class="section" id="chain">
     <div class="container">
         <div class="eyebrow">The Chain</div>
-        <h2>They fly. You do not. So bring them down.</h2>
-
-        <div class="clip">
-            <div class="clip-frame">
-                <video autoplay muted loop playsinline poster="media/shot-statue.jpg" aria-hidden="true">
-                    <source src="media/clip-chain.mp4" type="video/mp4">
-                </video>
-            </div>
-            <div>
-                <h3>The Guardian Statue Hall</h3>
-                <p>
-                    A crow in the air throws knives at you and never lands, and your sword swings
-                    through the space underneath it. So the chain goes out, takes hold of one, and
-                    drags it out of the sky. It does not get to fly again.
-                </p>
-                <p>
-                    Everything you hit comes apart into feathers. Gather enough of them and they go
-                    back out as a fan of ten, and whatever they land on stops being a problem.
-                </p>
-            </div>
+        <h2>They fly. You do not.</h2>
+        <p class="lede">So pull them down.</p>
+        <div class="clip-frame">
+            <video autoplay muted loop playsinline poster="media/shot-statue.jpg" aria-hidden="true">
+                <source src="media/clip-chain.mp4" type="video/mp4">
+            </video>
         </div>
     </div>
 </section>
@@ -489,32 +509,12 @@
 <section class="section" id="boss">
     <div class="container">
         <div class="eyebrow">The Boss</div>
-        <h2>One fight, and it is wearing your wings.</h2>
-
-        <div class="clip reverse">
-            <div class="clip-frame">
-                <video autoplay muted loop playsinline poster="media/shot-boss-charge.jpg" aria-hidden="true">
-                    <source src="media/clip-boss.mp4" type="video/mp4">
-                </video>
-            </div>
-            <div>
-                <h3>The Battle Dome</h3>
-                <p>
-                    The Karasu at the end of the temple wants you to see what it made out of your
-                    clan. It takes you on the ground first, and it answers what you do: stay close
-                    and it claws, back off and it throws, push it and it crosses the whole floor to
-                    reach you.
-                </p>
-                <p>
-                    Then it goes up, where the chain is the only thing that still touches it. Pull it
-                    down and you have got seconds to make them count.
-                </p>
-                <p>
-                    And then it stops coming down at all. It starts to glow, which is how you know
-                    the chain is no use to you now, and it marks the floor under your feet before it
-                    drops on them.
-                </p>
-            </div>
+        <h2>One fight left.</h2>
+        <p class="lede">It is wearing your wings.</p>
+        <div class="clip-frame">
+            <video autoplay muted loop playsinline poster="media/shot-boss-charge.jpg" aria-hidden="true">
+                <source src="media/clip-boss.mp4" type="video/mp4">
+            </video>
         </div>
     </div>
 </section>
@@ -522,14 +522,14 @@
 <section class="section" id="gallery">
     <div class="container">
         <div class="eyebrow">Gallery</div>
-        <h2>The rooms, in the order you walk them.</h2>
+        <h2>The temple.</h2>
         <div class="gallery">
             <figure><img src="media/shot-temple.jpg" alt="The chain resting on its holder in the Temple Hall" loading="lazy"><figcaption>The Temple Hall</figcaption></figure>
             <figure><img src="media/shot-library.jpg" alt="A Karasu standing among the bookshelves of the Study" loading="lazy"><figcaption>The Study</figcaption></figure>
             <figure><img src="media/shot-statue.jpg" alt="The winged statue the hall is named for" loading="lazy"><figcaption>The Guardian Statue Hall</figcaption></figure>
-            <figure><img src="media/shot-boss-charge.jpg" alt="The boss glowing yellow as it winds up a charge" loading="lazy"><figcaption>A charge, winding up</figcaption></figure>
-            <figure><img src="media/shot-boss-dive.jpg" alt="A red mark on the floor under the boss's dive" loading="lazy"><figcaption>The dive, marked before it lands</figcaption></figure>
-            <figure><img src="media/shot-boss-glow.jpg" alt="The boss glowing purple in the air" loading="lazy"><figcaption>Out of the chain's reach</figcaption></figure>
+            <figure><img src="media/shot-boss-charge.jpg" alt="The boss glowing yellow as it winds up a charge" loading="lazy"><figcaption>A charge</figcaption></figure>
+            <figure><img src="media/shot-boss-dive.jpg" alt="A red mark on the floor under the boss's dive" loading="lazy"><figcaption>The dive</figcaption></figure>
+            <figure><img src="media/shot-boss-glow.jpg" alt="The boss glowing purple in the air" loading="lazy"><figcaption>Out of reach</figcaption></figure>
         </div>
     </div>
 </section>
@@ -541,8 +541,7 @@
         <div class="release-tag" id="release-tag">Checking for the latest release...</div>
         <div class="dl-grid" id="download-cards"></div>
         <p class="note">
-            Windows ships as an installer. Linux is a single AppImage: mark it executable and run it.
-            Android is an APK, so allow installs from your browser first.
+            Windows is an installer. Linux is an AppImage, so mark it executable. Android is an APK.
         </p>
     </div>
 </section>
