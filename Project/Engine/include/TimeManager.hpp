@@ -5,6 +5,9 @@
 class ENGINE_API TimeManager {
 public:
 	static void UpdateDeltaTime();
+	// Starts the clock again after a stretch with no frames, so the first one
+	// back does not carry the whole pause as its delta
+	static void ResetFrameClock();
 	static double GetDeltaTime();
 	static double GetUnscaledDeltaTime();
 	static double GetFps();

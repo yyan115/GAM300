@@ -31,6 +31,9 @@ public:
     static bool InitializeAssets(); // Android-specific delayed asset loading
     static bool InitializeGraphicsResources();
     static void Update();
+    // True while a fullscreen window is not the one being used, having paused
+    // the game. The caller skips the frame.
+    static bool WaitWhileInactive();
 
     // Rendering phases
     static void StartDraw();

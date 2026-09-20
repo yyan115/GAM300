@@ -111,6 +111,8 @@ public:
     void ENGINE_API SetMasterVolume(float volume);
     float GetMasterVolume() const;
     void ENGINE_API SetGlobalPaused(bool paused);
+    // Pauses every sound while the window is not the one being used
+    void ENGINE_API SetWindowSuspended(bool suspended);
     // Pauses every sound but the UI bus's, for a modal prompt that has to stay
     // audible over a game it has stopped.
     void ENGINE_API SetModalSuspended(bool suspended);
