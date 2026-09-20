@@ -1,8 +1,8 @@
 -- Resources/Scripts/Gameplay/HitStop.lua
 -- Attach to any persistent entity (e.g. Player or GameManager).
 --
--- Drives camera effects on hit — chromatic aberration, vignette, screen shake,
--- and a brief colour desaturation — scaled continuously by damage dealt.
+-- Drives camera effects on hit — chromatic aberration, vignette, screen shake
+-- and a brief slow-mo — scaled continuously by damage dealt.
 -- No longer touches Time.SetTimeScale directly; slow-mo on heavy hits is
 -- delegated to camera_effects via fx_time_scale so effects survive time dilation
 -- and don't conflict with the slam/dodge slow-mo already published elsewhere.
@@ -10,7 +10,7 @@
 -- Effect tiers (all values lerp between min and max across the damage range):
 --   Light  (damage < LightHitThreshold)  : chromatic spike + shake
 --   Medium (damage >= LightHitThreshold) : + vignette pulse
---   Heavy  (damage >= HeavyHitThreshold) : + colour desaturation + brief slow-mo
+--   Heavy  (damage >= HeavyHitThreshold) : the strongest of each
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
@@ -46,12 +46,6 @@ return Component {
         VignetteDurationMin = 0.25,
         VignetteDurationMax = 0.50,
 
-        -- === Color desaturation (heavy hits only, damage past midpoint) ===
-        -- Snaps saturation down then springs back — gives a "bone-crunch" feel.
-        HeavySaturation       = 0.40,
-        HeavyColorDurationMin = 0.12,
-        HeavyColorDurationMax = 0.25,
-
         -- === Slow-mo ===
         -- Brief camera_effects-managed time dilation — does NOT conflict with
         -- slam or dodge slow-mo since camera_effects resolves the highest caller.
@@ -65,13 +59,14 @@ return Component {
         -- as having connected with something solid, and it was switched off for
         -- the majority of hits.
         --
-        -- Durations are in frames at 60 Hz: 0.05 is three frames, 0.12 is seven.
+        -- Durations are in frames at 60 Hz: 0.04 is two frames, 0.08 five.
         -- Light hits want to be felt without interrupting the flow of a combo;
-        -- the heavy ones want to land.
-        LightTimeScale         = 0.55,
-        LightTimeScaleDuration = 0.05,
-        HeavyTimeScale         = 0.25,
-        HeavyTimeScaleDuration = 0.12,
+        -- the heavy ones want to land. Kept light, so the pause does not drag
+        -- on the quicker combo.
+        LightTimeScale         = 0.75,
+        LightTimeScaleDuration = 0.04,
+        HeavyTimeScale         = 0.50,
+        HeavyTimeScaleDuration = 0.08,
     },
 
     Start = function(self)
@@ -170,23 +165,11 @@ return Component {
         -- Unscaled timer inside camera_effects, so it survives its own dilation.
         eb.publish("fx_time_scale", {
             scale    = lerp(
-                tonumber(self.LightTimeScale)         or 0.55,
-                tonumber(self.HeavyTimeScale)         or 0.25, t),
+                tonumber(self.LightTimeScale)         or 0.75,
+                tonumber(self.HeavyTimeScale)         or 0.50, t),
             duration = lerp(
-                tonumber(self.LightTimeScaleDuration) or 0.05,
-                tonumber(self.HeavyTimeScaleDuration) or 0.12, t),
+                tonumber(self.LightTimeScaleDuration) or 0.04,
+                tonumber(self.HeavyTimeScaleDuration) or 0.08, t),
         })
-
-        -- ── Heavy-hit extras (past the halfway point between thresholds) ─────
-        if t >= 0.5 then
-            -- Colour desaturation snap
-            eb.publish("fx_color_grading", {
-                saturation = tonumber(self.HeavySaturation) or 0.40,
-                duration   = lerp(
-                    tonumber(self.HeavyColorDurationMin) or 0.12,
-                    tonumber(self.HeavyColorDurationMax) or 0.25,
-                    (t - 0.5) * 2.0),
-            })
-        end
     end,
 }

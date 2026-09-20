@@ -11,6 +11,13 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
+        -- Height above the floor, so the crack does not fight the floor for
+        -- depth and shimmer as the camera moves
+        FloorOffset = 0.02,
+        -- The crack goes when the slammed enemy stands up, and after this many
+        -- seconds whatever else happens: an enemy the slam or a hit kills
+        -- never stands up
+        MaxSeconds = 2.5,
     },
 
 
@@ -18,13 +25,22 @@ return Component {
         --print("Spawning Ground Slam VFX at: ", x,y,z)
         --Set VFX AT Slammed location
         self._transform.localPosition.x = x
-        self._transform.localPosition.y = y
-        self._transform.localPosition.z = z 
+        self._transform.localPosition.y = y + (self.FloorOffset or 0)
+        self._transform.localPosition.z = z
         self._transform.isDirty = true
 
         if self.model then
             ModelRenderComponent.SetVisible(self.model, true)
         end
+        self._shownFor = 0
+    end,
+
+    _Hide = function(self)
+        if self.model then
+            ModelRenderComponent.SetVisible(self.model, false)
+        end
+        self._trackedEnemyAnim = nil
+        self._shownFor = nil
     end,
 
 
@@ -50,13 +66,12 @@ return Component {
     end,
     
     Update = function(self, dt)
-        if self._trackedEnemyAnim then
-            local currentAnim = self._trackedEnemyAnim:GetCurrentState()
-            if currentAnim == "Stand Up" then    --make this a field
-                if self.model then
-                    ModelRenderComponent.SetVisible(self.model, false)      -- or timer
-                end
-            end
+        if not self._shownFor then return end
+        self._shownFor = self._shownFor + (dt or 0)
+        local stoodUp = self._trackedEnemyAnim ~= nil
+            and self._trackedEnemyAnim:GetCurrentState() == "Stand Up"
+        if stoodUp or self._shownFor >= (self.MaxSeconds or 2.5) then
+            self:_Hide()
         end
     end,
 

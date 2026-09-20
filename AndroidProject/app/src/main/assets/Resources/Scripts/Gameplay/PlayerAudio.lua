@@ -15,6 +15,7 @@ EVENTS CONSUMED:
     player_jumped        → play playerJumpSFX
     player_landed        → play playerLandSFX
     player_dashed        → play playerDashSFX
+    dodge_success        → play playerDodgeSFX, at most once every DodgeSoundCooldown seconds
     player_footstep      → play staircaseFootstepSFX if near a Staircase-tagged entity, else playerFootstepSFX
     featherCollected     → play featherPickupSFX
     feather_skill_start  → play featherSkillStartSFX
@@ -29,6 +30,7 @@ FIELDS (populate clip arrays in editor with audio GUIDs):
     playerLandSFX        — sounds on landing
     playerDeadSFX        — sounds on player death
     playerDashSFX        — sounds on dash
+    playerDodgeSFX       — sound when a dash carries the player through an attack
     featherPickupSFX     — sounds when a feather is collected
     featherSkillStartSFX — sounds when feather skill is activated
     featherSkillReleaseSFX — sounds when feather skill releases
@@ -52,12 +54,15 @@ return Component {
         playerLandSFX        = {},
         playerDeadSFX        = {},
         playerDashSFX        = {},
+        playerDodgeSFX       = {},
         featherPickupSFX     = {},
         featherSkillStartSFX = {},
         featherSkillReleaseSFX = {},
         playerHealSFX        = {},
 
         FootstepVolume       = 0.5,
+        -- A volley of knives dodged together is one dodge, not several
+        DodgeSoundCooldown   = 0.3,
     },
 
     -- Raycast downward from the player and walk up the hierarchy checking for
@@ -103,7 +108,7 @@ return Component {
         if _G.event_bus and _G.event_bus.unsubscribe then
             local stale = {
                 "_deadSub", "_hurtSub", "_jumpedSub", "_landedSub", "_dashedSub",
-                "_footstepSub", "_featherPickupSub", "_featherSkillStartSub",
+                "_dodgeSub", "_footstepSub", "_featherPickupSub", "_featherSkillStartSub",
                 "_featherSkillReleaseSub", "_healSub",
             }
             for _, key in ipairs(stale) do
@@ -144,6 +149,13 @@ return Component {
 
         self._dashedSub = _G.event_bus.subscribe("player_dashed", function(_)
             AudioHelper.PlayRandomSFX(self._audio, self.playerDashSFX)
+        end)
+
+        self._dodgeCd = 0
+        self._dodgeSub = _G.event_bus.subscribe("dodge_success", function(_)
+            if self._dodgeCd > 0 then return end
+            self._dodgeCd = self.DodgeSoundCooldown or 0.3
+            AudioHelper.PlayRandomSFX(self._audio, self.playerDodgeSFX)
         end)
 
         self._footstepSub = _G.event_bus.subscribe("player_footstep", function(_)
@@ -188,11 +200,17 @@ return Component {
         end
     end,
 
+    Update = function(self, dt)
+        if (self._dodgeCd or 0) > 0 then
+            self._dodgeCd = self._dodgeCd - (dt or 0)
+        end
+    end,
+
     OnDisable = function(self)
         if _G.event_bus and _G.event_bus.unsubscribe then
             local subs = {
                 "_deadSub", "_hurtSub", "_jumpedSub",
-                "_landedSub", "_dashedSub", "_footstepSub",
+                "_landedSub", "_dashedSub", "_dodgeSub", "_footstepSub",
                 "_featherPickupSub", "_featherSkillStartSub", "_featherSkillReleaseSub",
                 "_healSub",
             }

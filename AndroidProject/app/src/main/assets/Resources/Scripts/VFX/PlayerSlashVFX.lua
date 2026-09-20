@@ -40,6 +40,11 @@ return Component {
         OffsetHeight = 0,      -- Adjust OffsetHeight for dagger starting height
         OffsetDistance = -0.2, -- Adjust how far VFX spawn based on player position
         SideOffset = 0,        -- Adjust VFX Spawn (+ve for Right, -ve for Left)
+        -- Sweep around the player's centre rather than where the dagger is when
+        -- the slash starts. A swing that starts in a wind up has the dagger out
+        -- to one side then, and the sweep came out off centre. Height still
+        -- follows the dagger.
+        CenterOnPlayer = false,
         Speed = 750,
         SpawnTime = 0.14,      -- Threshold for triggering (Normalized Time)
         AttackState = "NA3",
@@ -176,6 +181,10 @@ return Component {
 
         -- Child local position = offset from player / parent scale
         -- Root is already at player position, so this is just the small offset
+        if self.CenterOnPlayer then
+            daggerRelX, daggerRelZ = 0, 0
+        end
+
         local ps = self._parentScale
         self._transform.localPosition.x = (daggerRelX + combinedOffsetX) / ps
         self._transform.localPosition.y = (daggerRelY + self.OffsetHeight) / ps

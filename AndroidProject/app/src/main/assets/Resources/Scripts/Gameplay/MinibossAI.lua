@@ -17,11 +17,12 @@ local KnifePool = require("Gameplay.KnifePool")
 -- long HitIFrame to stop one swing counting twice.
 local SWING_HIT_TYPES = { COMBO = true, LIFT = true, AIR = true, SLAM = true }
 
--- Moves that deal damage. A hit can cancel these, and the stagger cooldown
--- decides how often it may.
+-- Moves that deal damage. Nothing the player does stops one once it has
+-- started: the boss cannot be stunned.
 local ATTACK_MOVE_KINDS = {
     BossMelee = true, P1RangedCharged = true, ShoutAOE = true, Basic = true,
     BurstFire = true, AntiDodge = true, FateSealed = true, DeathLotus = true,
+    FeatherFlurry = true,
 }
 
 -- The animator trigger an attack move sets to start its animation. A trigger
@@ -30,19 +31,31 @@ local ATTACK_MOVE_KINDS = {
 local ATTACK_MOVE_TRIGGER = {
     BossMelee = "Melee", FateSealed = "Melee",
     P1RangedCharged = "Ranged", Basic = "Ranged", BurstFire = "Ranged", AntiDodge = "Ranged",
-    DeathLotus = "Ranged", ShoutAOE = "Taunt",
+    DeathLotus = "Ranged", ShoutAOE = "Taunt", FeatherFlurry = "Ranged",
 }
 
 local HURT_TRIGGERS = { "Hurt1", "Hurt2", "Hurt3" }
 
--- The MinibossAC states that have a transition on Hurt1/2/3. A hurt trigger
--- set in any other state waits, and later pulls an unrelated attack into Hurt.
+-- What phase 3 does on the ground after each dive, in order
+local P3_GROUND_PLAN = { "DeathLotus", "Lunge", "FeatherFlurry", "Lunge" }
+
+-- The MinibossAC states the boss flinches from: its combat idle, between
+-- attacks, the only one of them with a transition into Hurt. A hurt animation
+-- never interrupts an attack, and a hurt trigger set in any other state would
+-- wait and pull a later attack into Hurt.
 local TAKES_HURT = {
-    ["Recovery"] = true, ["Taunt"] = true, ["Melee Attack"] = true, ["Ranged Attack"] = true,
+    ["Recovery"] = true,
 }
 
--- The MinibossAC state that plays the claw swing
+-- The MinibossAC states that play the claw swing and the throw
 local SWING_STATE = "Melee Attack"
+local THROW_STATE = "Ranged Attack"
+
+-- The MinibossAC states of being pulled out of the air: the fall, the impact
+-- and getting up. The boss is on the floor through all three.
+local FALL_STATES = {
+    ["Falling"] = true, ["Fall Impact"] = true, ["Stand Up"] = true,
+}
 
 -------------------------------------------------
 -- Helpers
@@ -109,8 +122,6 @@ end
 local function _lockPriority(reason)
     if reason == "DEAD"            then return 100 end
     if reason == "PHASE_TRANSFORM" then return 90  end
-    if reason == "HOOKED"          then return 80  end
-    if reason == "HIT_STUN"        then return 10  end
     return 0
 end
 
@@ -177,7 +188,6 @@ return Component {
         -- ground or in the air, use this one. Everything else keeps HitIFrame,
         -- which stops a single explosion registering once per tick.
         ComboHitIFrame = 0.25,
-        HookedDuration = 4.0,
 
         -- "Transformation" (phase transition) lock
         PhaseTransformDuration = 3.2,
@@ -209,15 +219,6 @@ return Component {
 
         -- Ranged charge (phase 1 Move1)
         P1_RangedCharge = 0.75,
-        -- Seconds the player can stay inside melee range before the boss answers
-        -- with its big attack, the charged cross-room slash.
-        P1_MeleePunishTime = 5.0,
-        -- Seconds before the charged slash can answer a player standing in
-        -- melee range again. Wind up, dash and recovery take about four
-        -- seconds, so a short cooldown turns it into most of the phase instead
-        -- of an occasional big attack. A player who keeps away meets it after
-        -- the throws below instead, whatever this cooldown says.
-        P1_ChargedSlashCooldown = 18.0,
         -- Charge time for the phase 1 charged slash. Longer than phase 3's so
         -- the telegraph is readable the first time a player meets it.
         P1_ChargedSlashCharge = 1.10,
@@ -225,27 +226,28 @@ return Component {
         -- boss answers with the charged slash. Rolled again after each slash.
         P1_ThrowsBeforeLungeMin = 1,
         P1_ThrowsBeforeLungeMax = 2,
+        -- Melee attacks at a player who stays in melee range before the boss
+        -- answers with the charged slash, the same way. More than the throws,
+        -- since a melee attack comes round faster than a throw.
+        P1_MeleesBeforeLungeMin = 3,
+        P1_MeleesBeforeLungeMax = 3,
         -- Speed of the charged slash's dash, in units per second, in every
         -- phase. The claw lands 0.36 s into the dash, and at this speed the
         -- boss crosses the arena (about 14 units) by then.
         LungeSpeed = 40.0,
-        -- Seconds the boss has to wait after a hit stops one of its attacks
-        -- before a hit can stop another. Hits in between still do damage, but
-        -- the attack carries on and lands.
-        StaggerCooldown = 5.5,
-        -- Seconds a melee attack waits for its swing animation to start. The
-        -- swing can be held up by a hurt animation that is still playing, and
-        -- the attack is dropped if it does not start in this time.
-        BossMeleeStartTimeout = 1.0,
+        -- Seconds an attack waits for its animation to start: the claw swing
+        -- for a melee attack, the throw for a ranged one. The animation can be
+        -- held up by a hurt animation or by getting up off the floor, and the
+        -- attack is dropped if it does not start in this time.
+        AttackAnimStartTimeout = 1.0,
         -- Damage the player's feather skill does to this boss: three times a
         -- first hit, which ComboManager puts at 10.
         FeatherSkillDamage = 30,
         -- Damage the ground combo's three hits do to this boss, weak to strong.
-        -- All three land now, where one hit in a combo used to, 10 damage, so
-        -- together they come to a little more than that one hit did.
-        ComboHit1Damage = 3,
-        ComboHit2Damage = 4,
-        ComboHit3Damage = 6,
+        -- 3, 4 and 6 wore it down too slowly.
+        ComboHit1Damage = 5,
+        ComboHit2Damage = 7,
+        ComboHit3Damage = 10,
         -- Seconds before the hurt sound can play again. Every landed hit counts
         -- now, and a sound for each was far too often.
         HurtSoundCooldown = 3.5,
@@ -318,16 +320,30 @@ return Component {
         PlayerArenaExtraRadius = 0.75,
 
         P2_BurstRounds = 3,
-        P2_BurstGap = 1.25, -- small pause between bursts
+        P2_BurstGap = 0.8, -- small pause between bursts
+        -- Seconds between the knives within one burst
+        P2_BurstInterval = 0.12,
         -- Attacks the boss takes on the ground after being hooked down, before
         -- it lifts off again. This is the window the player earned with the hook.
         P2_GroundAttacksAfterSlam = 2,
-        -- Least time it stays down after a hook. A player who keeps hitting it
-        -- cancels its ground attacks, and without a floor that would shorten
-        -- the very window the hook was meant to open.
-        P2_MinGroundTime = 3.0,
+        -- Least time it stays down after a hook, from landing. On the ground it
+        -- gets up, takes its attacks, then the charged slash, and lifts off once
+        -- all of that is done and this much time has passed.
+        P2_MinGroundTime = 8.0,
 
         -- Phase 3 tuning
+        -- Least time it stays on the ground after the dive, from landing. The
+        -- player can only hit it down here, and the feather bombs above are
+        -- still what makes it fly up again.
+        P3_MinGroundTime = 9.0,
+        -- Phase 3's charged slash: a shorter wind up and a faster dash than
+        -- phase 1's, twice in every stay on the ground.
+        P3_LungeCharge = 0.50,
+        P3_LungeSpeed = 60.0,
+        -- The feather flurry on the ground: feathers thrown at the player in
+        -- quick succession, over as many throw animations as it takes.
+        P3_FlurryShots = 12,
+        P3_FlurryInterval = 0.10,
         P3_FeatherCellsPerRound = 5,
         P3_FeatherRounds = 2,
         P3_FeatherRoundGap = 0.90,        -- time between rounds (telegraph/explode window)
@@ -336,7 +352,6 @@ return Component {
         P3_DiveCommitRadius = 0.20,       -- how close in XZ before slamming down
         P3_DivePreDelay = 1.00,           -- how long to wait before the dive smash
         P3_DivePostDelay = 0.50,          -- how long to wait after the dive smash
-        P3_FateAfterHookDelay = 2.00,     -- wait after interrupt before casting Fate Sealed
 
         P3_FeatherCastTime = 0.25,         -- longer "windup" before firing all 5
         P3_FeatherCooldown = 2.00,         -- longer cooldown after firing (between rounds)
@@ -349,8 +364,6 @@ return Component {
 
         -- Feather travel speed (slower fall/flight)
         P3_FeatherSpeedScale = 0.2,       -- multiplier on knife speed for P3F tags (0.2~0.6 feels good)
-
-        HurtReactDuration = 0.35,   -- how long we "reserve" time for hurt anim to play
 
     },
 
@@ -371,7 +384,6 @@ return Component {
         self.currentMoveDef = nil
         self._recoverTimer = 0
         self._hitLockTimer = 0
-        self._staggerCdT = 0
 
         self._moveQueue = {}
 
@@ -403,9 +415,6 @@ return Component {
         self._pendingPhase = nil        -- when transforming
         self._transforming = false
 
-        -- hooked tracking
-        self._hooked = false
-
         self._hoverT = 0
         self._slamActive = false
         self._slamMode = nil
@@ -431,6 +440,8 @@ return Component {
         self._meleeCdT = 0
         self._p1ThrowsAway = 0
         self._p1ThrowTarget = self:_RollP1ThrowTarget()
+        self._p1MeleesClose = 0
+        self._p1MeleeTarget = self:_RollP1MeleeTarget()
 
         self._p3_dive_postdelay = self.P3_DivePostDelay
         self._p3_dive_predelay = self.P3_DivePreDelay
@@ -552,7 +563,7 @@ return Component {
                 if payload.entityId ~= nil and payload.entityId ~= self.entityId then
                     return
                 end
-                self:ApplyHook(payload.duration or self.HookedDuration or 4.0)
+                self:ApplyHook()
             end)
         end
 
@@ -587,7 +598,7 @@ return Component {
             if not payload then return end
             if payload.entityId ~= self.entityId then return end
             --print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
-            pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
+            pcall(function() self:ApplyHook() end)
         end)
 
         -- === Player death subscription ===
@@ -638,7 +649,7 @@ return Component {
         end
 
         if debugControls and Keyboard.IsDigitPressed(2) then
-            self:ApplyHook(self.HookedDuration)
+            self:ApplyHook()
         end
 
         if debugControls and Keyboard.IsDigitPressed(4) then
@@ -649,11 +660,16 @@ return Component {
             self:ForceNextPhase()
         end
 
-        -- Show boss HP bar only after the intro/cinematic is fully over
-        if self._introDone and (not self._inIntro) and (not self.dead) and (not self._bossHealthBarShown) then
-            self._bossHealthBarShown = true
-            self:_publishBossHealth()
-            self:_setBossHealthBarVisible(true)
+        -- The HP bar shows while the fight is on: after the intro, and only
+        -- while the player is inside the arena, the same test that ends the
+        -- fight when they leave. It goes when they walk out of the boss room
+        -- and comes back when they return.
+        local barWanted = (self._introDone and (not self._inIntro) and (not self.dead)
+            and self:_IsPlayerInsideArena()) == true
+        if barWanted ~= (self._bossHealthBarShown == true) then
+            self._bossHealthBarShown = barWanted
+            if barWanted then self:_publishBossHealth() end
+            self:_setBossHealthBarVisible(barWanted)
         end
 
         -- -- Tick pending rain explosion "land" events
@@ -723,7 +739,6 @@ return Component {
         -- 2) Tick timers always
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         self._hurtSoundCd = math.max(0, (self._hurtSoundCd or 0) - dtSec)
-        self._staggerCdT = math.max(0, (self._staggerCdT or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
         end
@@ -1269,6 +1284,23 @@ return Component {
         return opts[math.random(1, #opts)]
     end,
 
+    -- True while the animator is still playing the boss being pulled down:
+    -- the fall, the impact on the floor, or getting up.
+    _IsGettingUp = function(self)
+        return self._animator ~= nil and FALL_STATES[self._animator:GetCurrentState()] == true
+    end,
+
+    -- Whether the chain can take hold of the boss. Published when it changes,
+    -- so the boss's glow can show that it cannot be hooked.
+    _SetChainImmune = function(self, immune)
+        immune = immune == true
+        if self._immuneChain == immune then return end
+        self._immuneChain = immune
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("miniboss_unhookable", { entityId = self.entityId, active = immune })
+        end
+    end,
+
     _SetInAir = function(self, inAir)
         if inAir then
             if not self._inAir then
@@ -1679,22 +1711,11 @@ return Component {
             return
         end
 
-        -- Whether this hit stops the boss. An attack whose damage has not
-        -- landed yet is stopped at most once every StaggerCooldown seconds,
-        -- otherwise it carries on and lands. Any other hit staggers it.
-        local pending = self:_IsAttackPending()
-        local stagger = false
-        if self:IsInMove("FateSealed") then
-            -- Super armour. The charged slash is the big attack in phase 1 and
-            -- the answer to a hook in phase 3, and it is only a big attack if
-            -- the player cannot cancel it by swinging during the wind up. Once
-            -- the slash has landed the boss flinches, but keeps its recovery,
-            -- which is the player's window to punish it.
-            if not pending then self:_PlayHurtAnim() end
-        elseif (not pending) or (self._staggerCdT or 0) <= 0 then
-            if pending then self._staggerCdT = self.StaggerCooldown or 5.5 end
-            self:_Stagger()
-            stagger = true
+        -- The boss cannot be stunned. A hit never stops an attack, and between
+        -- attacks, with no move under way, it only flinches, which does not
+        -- hold up its next move.
+        if self:IsCurrentMoveFinished() then
+            self:_PlayHurtAnim()
         end
 
         -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
@@ -1732,77 +1753,25 @@ return Component {
         if (computed ~= (self._phase or 1)) and (not self._transforming) and (not self.dead) then
             self:StartBossPhaseTransition(computed)
         end
-
-        -- If transforming now, don't apply HIT_STUN (avoid overwriting lock intent)
-        if self._transforming or (self._lockReason == "PHASE_TRANSFORM") then
-            return
-        end
-
-        -- Tiny hit-stun lock, only when the hit stopped the boss
-        if stagger then
-            self:LockActions("HIT_STUN", 0.15)
-        end
-
-        -- if self.ClipHurt and self.ClipHurt >= 0 and self.PlayClip then
-        --     self:PlayClip(self.ClipHurt, false)
-        -- end
     end,
 
-    ApplyHook = function(self, duration)
+    -- The chain's hold on the boss. In phase 2 it pulls the boss out of the
+    -- air and slams it down, which is the one way to bring it within reach.
+    -- Anywhere else it does not hold it: on the ground the boss is too heavy
+    -- to be stopped by it, like any other hit, and in phase 3 it cannot be
+    -- hooked out of the air at all, which its glow shows.
+    ApplyHook = function(self)
         if self.dead then return end
         if self._inIntro then return end
         if self._immuneChain then return end
 
-        -- phase 2: hooking forces boss down
         if self._phase == 2 and self._inAir then
-            self._hooked = true
-            self._hookedDownRequested = true
-
             -- Cancel current air attack immediately
             self:_EndMove()
 
             -- Start falling RIGHT NOW
             self:BeginSlamDown("Pulldown")
-
-            --print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
-            return
         end
-
-        -- phase 3: hooked out of the air while it is throwing bombs. Same as
-        -- phase 2, it comes down, and what it does on the ground is one charged
-        -- slash before it goes back up to throw again.
-        if self._phase == 3 and self._inAir then
-            self._hooked = true
-            self._hookedDownRequested = true
-            self._p3AirHooked = true
-            self:_EndMove()
-            self:BeginSlamDown("Pulldown")
-            return
-        end
-
-        if self._phase == 3 and not self._inAir then
-            -- If hooked during Death Lotus, interrupt it immediately and schedule Fate Sealed
-            if self:IsInMove("DeathLotus") then
-                --print("[Miniboss][P3] Hooked DURING DeathLotus -> INTERRUPT")
-                self._p3LotusInterrupted = true
-                self._p3PendingFate = true
-                self._p3FateDelayT = self.P3_FateAfterHookDelay or 2.0
-                self:_EndMove() -- hard stop lotus right now
-            else
-                self._p3WasHooked = true
-            end
-        end
-
-        self._hooked = true
-
-        local dur = duration or self.HookedDuration or 4.0
-        self:LockActions("HOOKED", dur)
-
-        if self.ClipHooked and self.ClipHooked >= 0 and self.PlayClip then
-            self:PlayClip(self.ClipHooked, true)
-        end
-
-        --print(string.format("[Miniboss][Hooked] START %.2fs", dur))
     end,
 
     Die = function(self)
@@ -2324,24 +2293,16 @@ return Component {
         end
     end,
 
-    _DoMeleeAttack = function(self)
-        -- The animator state before the trigger is set. The animator takes
-        -- the trigger later in the frame, so the move can tell a swing that
-        -- starts from this one from a swing that was already playing.
-        local lastState, lastStateTime
-        if self._animator then
-            lastState = self._animator:GetCurrentState()
-            lastStateTime = self._animator:GetStateTime()
-            self._animator:SetTrigger("Melee")
-        end
+    -- countForLunge: phase 1 counts its melee attacks toward the charged slash
+    _DoMeleeAttack = function(self, countForLunge)
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
             range  = self.BossMeleeRange or 2.95,
             dmg    = 4,
             postDelay = 1.0,
-            lastState = lastState,
-            lastStateTime = lastStateTime,
+            countForLunge = countForLunge == true,
         })
+        self:_TriggerAttackAnim(self._move, "Melee")
     end,
 
     -------------------------------------------------
@@ -2385,16 +2346,48 @@ return Component {
         end
     end,
 
-    -- True while the current move is an attack whose damage has not landed
-    _IsAttackPending = function(self)
-        local m = self._move
-        if self._moveFinished or not m or not ATTACK_MOVE_KINDS[m.kind] then return false end
-        if m.kind == "BossMelee" then return not m.didHit end
-        if m.kind == "FateSealed" then return not m.slashed end
-        if m.kind == "P1RangedCharged" or m.kind == "ShoutAOE" then return not m.didFire end
-        if m.kind == "Basic" or m.kind == "AntiDodge" then return m.step == 0 end
-        -- BurstFire and DeathLotus fire across the whole move
-        return true
+    -- Follows the animator into an attack's animation, so what the attack
+    -- does is timed from the animation instead of from a timer that runs
+    -- whatever the animator is doing. m.lastState and m.lastStateTime start as
+    -- the animator's state from before the attack's trigger was set, so an
+    -- animation already playing is not taken for the new one. Returns
+    -- "waiting" until the animation starts, "timeout" if it has not started
+    -- within AttackAnimStartTimeout, then "playing" with the seconds into it,
+    -- and "left" once the animator has moved on from it.
+    _FollowAttackAnim = function(self, m, stateName, dtSec)
+        if not self._animator then return "playing", m.t end
+        local state = self._animator:GetCurrentState()
+        local stateTime = self._animator:GetStateTime()
+        local waiting = false
+        if not m.animStarted then
+            -- Entered fresh: from another state, or from the end of an earlier
+            -- play of the same one, which restarts the state time.
+            if state == stateName
+               and (m.lastState ~= stateName or stateTime < (m.lastStateTime or 0)) then
+                m.animStarted = true
+            else
+                waiting = true
+                m.animWaitT = (m.animWaitT or 0) + dtSec
+            end
+        end
+        m.lastState, m.lastStateTime = state, stateTime
+        if waiting then
+            if m.animWaitT >= (self.AttackAnimStartTimeout or 1.0) then return "timeout" end
+            return "waiting"
+        end
+        if state ~= stateName then return "left" end
+        return "playing", stateTime
+    end,
+
+    -- Sets an attack's animation trigger, first noting the animator's state
+    -- for _FollowAttackAnim. The animator takes the trigger later in the
+    -- frame, so the state noted here is the one from before the attack.
+    _TriggerAttackAnim = function(self, m, trigger)
+        m.animStarted, m.animWaitT = false, 0
+        if not self._animator then return end
+        m.lastState = self._animator:GetCurrentState()
+        m.lastStateTime = self._animator:GetStateTime()
+        self._animator:SetTrigger(trigger)
     end,
 
     -- Clears animator triggers. SetBool on a Trigger parameter keeps its
@@ -2416,32 +2409,10 @@ return Component {
         self._animator:SetTrigger(HURT_TRIGGERS[math.random(1, #HURT_TRIGGERS)])
     end,
 
-    -- A hit that stops the boss: the attack in progress is cancelled so its
-    -- damage never lands, and the boss plays a short hurt reaction.
-    _Stagger = function(self)
-        self:_CancelCurrentAttackMove("HURT")
-        self:_PlayHurtAnim()
-        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
-    end,
-
     TickMove = function(self, dtSec)
         if self._moveFinished or not self._move then return end
         local m = self._move
         m.t = (m.t or 0) + dtSec
-
-        -- =========================
-        -- Queued reaction: Hurt
-        -- =========================
-        if m.kind == "HurtReact" then
-            if m.step == 0 then
-                m.step = 1
-                m.endAt = (m.duration or 0.35)
-            end
-            if m.t >= (m.endAt or 0.35) then
-                self:_EndMove()
-            end
-            return
-        end
 
         -- =========================
         -- Queued reaction: Shout AOE (delayed hit)
@@ -2490,41 +2461,27 @@ return Component {
                 self:FacePlayer()
                 m.step = 1
                 m.hitAt = (m.windup or 0.85)
-                m.swingWaitT = 0
             end
 
-            local swingTime = m.t
-            if self._animator then
-                local state = self._animator:GetCurrentState()
-                local stateTime = self._animator:GetStateTime()
-                if m.step == 1 then
-                    -- Entered fresh: from another state, or from the end of an
-                    -- earlier swing, which restarts the state time.
-                    local entered = state == SWING_STATE
-                        and (m.lastState ~= SWING_STATE or stateTime < m.lastStateTime)
-                    if entered then
-                        m.step = 2
-                    else
-                        m.swingWaitT = m.swingWaitT + dtSec
-                        if m.swingWaitT >= (self.BossMeleeStartTimeout or 1.0) then
-                            self:_CancelCurrentAttackMove("SWING_NOT_STARTED")
-                            return
-                        end
-                    end
-                end
-                m.lastState, m.lastStateTime = state, stateTime
-
-                if m.step == 1 then return end
-                if not m.didHit and state ~= SWING_STATE then
-                    self:_CancelCurrentAttackMove("SWING_LEFT")
-                    return
-                end
-                swingTime = stateTime
+            local anim, swingTime = self:_FollowAttackAnim(m, SWING_STATE, dtSec)
+            if anim == "waiting" then return end
+            if anim == "timeout" then
+                self:_CancelCurrentAttackMove("SWING_NOT_STARTED")
+                return
+            end
+            if anim == "left" and not m.didHit then
+                self:_CancelCurrentAttackMove("SWING_LEFT")
+                return
             end
 
-            if not m.didHit and swingTime >= (m.hitAt or 0) then
+            if not m.didHit and swingTime and swingTime >= (m.hitAt or 0) then
                 m.didHit = true
                 m.hitT = m.t
+                -- Counted when the claw comes down, as a throw is when its
+                -- knives leave
+                if m.countForLunge then
+                    self._p1MeleesClose = (self._p1MeleesClose or 0) + 1
+                end
 
                 --print("Do u see this?")
                 -- CLAW VFX HERE
@@ -2562,13 +2519,26 @@ return Component {
         end
 
         if m.kind == "P1RangedCharged" then
+            -- The knives leave at a set point in the throw animation, and only
+            -- while it plays. On a timer alone they left while the boss was
+            -- still getting up off the floor after a slam, with no throw.
             if m.step == 0 then
                 self:FacePlayer()
-                if self._animator then self._animator:SetTrigger("Ranged") end
+                self:_TriggerAttackAnim(m, "Ranged")
                 m.step = 1
                 m.fireAt = (m.charge or 0.75)
             end
-            if not m.didFire and m.t >= (m.fireAt or 0.75) then
+            local throwTime
+            if not m.didFire then
+                local anim
+                anim, throwTime = self:_FollowAttackAnim(m, THROW_STATE, dtSec)
+                if anim == "waiting" then return end
+                if anim ~= "playing" then
+                    self:_CancelCurrentAttackMove(anim == "timeout" and "THROW_NOT_STARTED" or "THROW_LEFT")
+                    return
+                end
+            end
+            if not m.didFire and throwTime >= (m.fireAt or 0.75) then
                 m.didFire = true
                 self:SpawnKnifeVolley3(m.spread or 0.6)
                 m.doneAt = m.t + (m.postDelay or 0.35)
@@ -2576,6 +2546,9 @@ return Component {
                 -- does not bring the charged slash closer
                 if m.countForLunge then
                     self._p1ThrowsAway = (self._p1ThrowsAway or 0) + 1
+                    -- The player kept away long enough to be thrown at, so
+                    -- the melee attacks before it no longer run in a row
+                    self._p1MeleesClose = 0
                 end
             end
             if m.doneAt and m.t >= m.doneAt then self:_EndMove() end
@@ -2679,6 +2652,7 @@ return Component {
                             targetId = self.entityId,
                             posX = cx, posY = gy, posZ = cz,
                             seconds = chargeDur,
+                            fast = m.fast == true,
                         })
                         _G.event_bus.publish("camera_shake", {
                             intensity = self.ChargeShakeIntensity or 0.55,
@@ -2812,6 +2786,55 @@ return Component {
         end
 
         -------------------------------------------------
+        -- Feather flurry: feathers at the player in quick succession
+        -------------------------------------------------
+        -- One throw animation after another until every feather is out. A
+        -- feather leaves only while a throw plays, so none leaves between
+        -- throws or while the boss is doing anything else.
+        if m.kind == "FeatherFlurry" then
+            if m.step == 0 then
+                self:FacePlayer()
+                self:_TriggerAttackAnim(m, "Ranged")
+                m.throws = (m.throws or 0) + 1
+                m.nextShotAt = m.releaseAt or 0.2
+                m.step = 1
+            end
+            if m.step == 1 then
+                local anim, throwTime = self:_FollowAttackAnim(m, THROW_STATE, dtSec)
+                if anim == "waiting" then return end
+                if anim == "timeout" then
+                    self:_CancelCurrentAttackMove("THROW_NOT_STARTED")
+                    return
+                end
+                if anim == "left" then
+                    -- This throw is over. Another, unless all are out or the
+                    -- throws have run out.
+                    if (m.shotsDone or 0) < (m.shots or 12) and m.throws < (m.maxThrows or 6) then
+                        m.step = 0
+                    else
+                        m.step = 2
+                        m.doneAt = m.t + (m.postDelay or 0.4)
+                    end
+                    return
+                end
+                self:FacePlayer()
+                if (m.shotsDone or 0) < (m.shots or 12) and throwTime >= m.nextShotAt then
+                    self:SpawnKnifeSingleAtPlayer()
+                    m.shotsDone = (m.shotsDone or 0) + 1
+                    m.nextShotAt = throwTime + (m.interval or 0.1)
+                    if m.shotsDone == 1 or m.shotsDone % 4 == 0 then
+                        self:_publishSFX("rangedAttack")
+                    end
+                end
+                return
+            end
+            if m.step == 2 and m.t >= m.doneAt then
+                self:_EndMove()
+            end
+            return
+        end
+
+        -------------------------------------------------
         -- Move5: Death Lotus (spin + forward sprays)
         -------------------------------------------------
         if m.kind == "DeathLotus" then
@@ -2860,16 +2883,10 @@ return Component {
         self._moveQueue[#self._moveQueue + 1] = { kind = kind, data = data or {} }
     end,
 
-    EnqueueMoveFront = function(self, kind, data)
-        self._moveQueue = self._moveQueue or {}
-        table.insert(self._moveQueue, 1, { kind = kind, data = data or {} })
-    end,
-
     TryStartQueuedMove = function(self)
         if not self:IsCurrentMoveFinished() then return false end
 
-        -- Allow queued reactions during HIT_STUN (but still block for HOOKED/PHASE_TRANSFORM/DEAD/etc)
-        if self:IsActionLocked() and (self._lockReason ~= "HIT_STUN") then
+        if self:IsActionLocked() then
             return false
         end
 
@@ -2899,18 +2916,9 @@ return Component {
         end
 
         if inMeleeRange then
-            self._p1MeleeTimer = (self._p1MeleeTimer or 0) + dtSec
             -- Only throws in a row at a player who keeps away count
             self._p1ThrowsAway = 0
-        else
-            self._p1MeleeTimer = 0 -- Reset instantly if they run away
         end
-
-        -- Ticked before the move guards below so it keeps counting while the
-        -- boss is mid-attack. It does not count while the boss is action locked,
-        -- recovering from the intro or disengaged, because Update returns before
-        -- reaching this function in those states.
-        self._p1ChargedSlashCd = math.max(0, (self._p1ChargedSlashCd or 0) - dtSec)
 
         -- =========================================================
         -- 2. GUARDS: Stop here if the boss is mid-attack or locked
@@ -2919,20 +2927,20 @@ return Component {
         if not self:IsCurrentMoveFinished() then return end
         if self:IsActionLocked() then return end
         if not px then return end
-        if self:IsInMove("HurtReact") or (self._hitLockTimer > 0) then return end
 
         -- =========================================================
         -- 3. CHOOSE NEXT MOVE (Boss is idle and ready)
         -- =========================================================
         
-        -- PRIORITY 1: the big attack. The player has stood inside melee range
-        -- long enough to be punished for it, and the charged slash crosses the
-        -- room, so standing still is the wrong answer to it.
-        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0)
-           and self._p1ChargedSlashCd <= 0 then
-            self._p1MeleeTimer = 0 -- Reset so it doesn't chain-cast
-            self._meleeCdT = self.BossMeleeCooldown or 2.5 -- Reset normal melee cooldown so it doesn't chain cast
-            self._p1ChargedSlashCd = self.P1_ChargedSlashCooldown or 18.0
+        -- PRIORITY 1: the player stays in melee range. After a few melee
+        -- attacks the boss answers with the charged slash, so trading blows up
+        -- close is not safe for ever either. The slash restarts the melee
+        -- cooldown, since it leaves the boss beside the player.
+        if inMeleeRange
+           and (self._p1MeleesClose or 0) >= (self._p1MeleeTarget or 3) then
+            self._p1MeleesClose = 0
+            self._p1MeleeTarget = self:_RollP1MeleeTarget()
+            self._meleeCdT = self.BossMeleeCooldown or 2.5
 
             self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
             return
@@ -2941,12 +2949,12 @@ return Component {
         -- PRIORITY 1b: the player keeps away. After one or two throws the boss
         -- charges and crosses the room, so walking away is not a safe answer.
         -- The throws set the pace here, and the slash also restarts the
-        -- melee range cooldown, since it leaves the boss beside the player.
+        -- melee cooldown and count, since it leaves the boss beside the player.
         if (not inMeleeRange)
            and (self._p1ThrowsAway or 0) >= (self._p1ThrowTarget or 1) then
             self._p1ThrowsAway = 0
             self._p1ThrowTarget = self:_RollP1ThrowTarget()
-            self._p1ChargedSlashCd = self.P1_ChargedSlashCooldown or 18.0
+            self._p1MeleesClose = 0
             self._meleeCdT = self.BossMeleeCooldown or 2.5
 
             self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
@@ -2957,7 +2965,7 @@ return Component {
         if inMeleeRange then
             if (self._meleeCdT or 0) <= 0 then
                 self._meleeCdT = self.BossMeleeCooldown or 2.5
-                self:_DoMeleeAttack()
+                self:_DoMeleeAttack(true)
             end
             return
         end
@@ -2979,6 +2987,14 @@ return Component {
         return math.random(lo, hi)
     end,
 
+    -- How many melee attacks at a player who stays in melee range come before
+    -- the next charged slash
+    _RollP1MeleeTarget = function(self)
+        local lo = math.max(1, math.floor(self.P1_MeleesBeforeLungeMin or 3))
+        local hi = math.max(lo, math.floor(self.P1_MeleesBeforeLungeMax or 3))
+        return math.random(lo, hi)
+    end,
+
     EnterPhase2_Air = function(self)
         --print("[Miniboss] EnterPhase2_Air")
         self:_SetInAir(true)
@@ -2991,7 +3007,7 @@ return Component {
 
         self._phase2BurstRoundsDone = 0
         self._phase2BurstGapT = 0
-        self._immuneChain = false
+        self:_SetChainImmune(false)
         self._phase2Numpad = self:_PickRandomAirNumpad(nil)
         self._phase2State = "MOVE"
         self._phase2AfterAttackT = 0
@@ -3013,26 +3029,29 @@ return Component {
             -- landed this frame: switch to ground mode (creates CC)
             self:_SetInAir(false)
 
-            -- brief hooked lock on landing
-            self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
-
-            -- Stay on the ground for a couple of attacks before lifting off.
-            -- Being hooked down is the player's reward for landing the hook. The
-            -- charged slash is not used here, because it carries the boss across
-            -- the room and away from the player.
+            -- On the ground it gets up, takes a couple of attacks, answers with
+            -- the charged slash, and lifts off once P2_MinGroundTime has passed.
+            -- Being hooked down is the player's reward for landing the hook,
+            -- and this is the window it opens.
             self._phase2GroundAttacksLeft = self.P2_GroundAttacksAfterSlam or 2
+            self._phase2LungeDone = false
             self._phase2GroundT = 0
             self._phase2State = "GROUND"
             return
         end
 
-        -- Ground handling: take the queued attacks, then go back to air
+        -- Ground handling: get up, attack, the charged slash, then back to air
         if not self._inAir then
             self._phase2State = "GROUND"
             self._phase2GroundT = (self._phase2GroundT or 0) + dtSec
 
-            if (self._phase2GroundAttacksLeft or 0) > 0
-               and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+            -- Nothing starts until it is back on its feet. The fall, the impact
+            -- and getting up all play with the boss on the floor, and anything
+            -- started then came out of a body lying on the ground.
+            if self:_IsGettingUp() then return end
+            if not self:IsCurrentMoveFinished() or self:IsActionLocked() then return end
+
+            if (self._phase2GroundAttacksLeft or 0) > 0 then
                 self._phase2GroundAttacksLeft = self._phase2GroundAttacksLeft - 1
 
                 -- Melee if the player stayed to trade, a throw if they backed
@@ -3058,11 +3077,15 @@ return Component {
                 return
             end
 
+            if not self._phase2LungeDone then
+                self._phase2LungeDone = true
+                self:FateSealed(self.P1_ChargedSlashCharge or 1.10)
+                return
+            end
+
             -- Attacks done and the minimum time served: lift back into the air
             -- and pick a new point
-            if self:IsCurrentMoveFinished() and (not self:IsActionLocked())
-               and (self._phase2GroundAttacksLeft or 0) <= 0
-               and (self._phase2GroundT or 0) >= (self.P2_MinGroundTime or 3.0) then
+            if (self._phase2GroundT or 0) >= (self.P2_MinGroundTime or 8.0) then
                 self:_SetInAir(true)
                 self._phase2Numpad = self:_PickRandomAirNumpad(self._phase2Numpad)
                 self._phase2State = "MOVE"
@@ -3155,7 +3178,7 @@ return Component {
 
     EnterPhase3_Air = function(self)
         self:_SetInAir(true)
-        self._immuneChain = true
+        self:_SetChainImmune(true)
         self._phase3Step = 0
         self._phase3RainCount = 0
         self._phase3DiveStarted = false
@@ -3360,54 +3383,11 @@ return Component {
     end,
 
     _UpdatePhase3 = function(self, dtSec)
-        -- Pulled out of the air by the chain: fall, land, then step 5.
-        if self._p3AirHooked and not self._slamActive and not self._inAir then
-            -- The fall ended some way other than landing. Treat it as landed
-            -- rather than leaving the loop stuck where it was.
-            self._p3AirHooked = false
-            self._p3HookedSlashDone = false
-            self._immuneChain = false
-            self._phase3Step = 5
-            return
-        end
-
-        if self._p3AirHooked and self._slamActive then
-            local landed = self:UpdateSlamDown(dtSec, "hook_slam")
-            if not landed then return end
-
-            self:_SetInAir(false)
-            self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
-            self._immuneChain = false
-            self._p3AirHooked = false
-            self._p3HookedSlashDone = false
-            self._phase3Step = 5
-            return
-        end
-
-        -- step 5: the answer to being hooked down, one charged slash across the
-        -- room, then back to the top of the loop to throw again.
-        if self._phase3Step == 5 then
-            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
-                if not self._p3HookedSlashDone then
-                    self._p3HookedSlashDone = true
-                    self:FateSealed(1.0)
-                    return
-                end
-                self._phase3Step = 0
-            end
-            return
-        end
-
-        -- step 0: go to center in air
+        -- step 0: go to the middle of the arena in the air. From here until it
+        -- lands from the dive it cannot be hooked, and glows to say so.
         if self._phase3Step == 0 then
             self:_SetInAir(true)
-            self._immuneChain = true
-            self._p3WasHooked = false
-            self._p3AirHooked = false
-            self._p3HookedSlashDone = false
-            self._p3LotusInterrupted = false
-            self._p3PendingFate = false
-            self._p3FateDelayT = nil
+            self:_SetChainImmune(true)
             self._phase3Dive = nil
             self._slamActive = false
             self._phase3DiveStarted = false
@@ -3419,8 +3399,6 @@ return Component {
                 self._phase3RainCount = 0
                 self._phase3Step = 1
                 self._phase3RainT = nil
-                -- A hook can land mid-cast and leave this set, and step 1 only
-                -- plays the throw animation when it starts a cast from nothing.
                 self._phase3FeatherCastT = nil
             end
             return
@@ -3428,15 +3406,10 @@ return Component {
 
         -- step 1: shoot feathers to 5 random grids twice (with cast + cooldown)
         if self._phase3Step == 1 then
-            -- Hookable while it throws, so the player has an answer to the bombs
-            -- other than waiting out both rounds and then dodging the dive.
-            self._immuneChain = false
-
             -- Start casting if not already
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
 
-                --print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
                 self:_publishSFX("rangedAttack")
 
@@ -3468,7 +3441,6 @@ return Component {
                 self._phase3RainT = nil
 
                 if (self._phase3RainCount or 0) >= (self.P3_FeatherRounds or 2) then
-                    self._immuneChain = true
                     self._phase3Step = 2
                 end
                 return
@@ -3479,47 +3451,40 @@ return Component {
 
         -- step 2: dive onto player's grid (approach then slam)
         if self._phase3Step == 2 then
-            self._immuneChain = true -- not hookable in air
             local done = self:_DoDiveToPlayerGrid(dtSec)
             if done then
-                self._immuneChain = false -- hookable on ground during lotus
+                self:_SetChainImmune(false)
                 self._phase3Step = 3
+                self._phase3GroundT = 0
+                self._phase3GroundNext = 1
             end
             return
         end
 
-        -- step 3: Death Lotus on ground
+        -- step 3: on the ground, where the player can hit it. The spinning
+        -- throw, the charged slash, the feather flurry and the charged slash
+        -- again, in turn, then back up once P3_MinGroundTime has passed. None
+        -- of them can be cut short by the player, so one hit no longer sends
+        -- it back into the air.
         if self._phase3Step == 3 then
-            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
-                self:DeathLotus()
-                self._phase3Step = 4
-            end
-            return
-        end
+            self._phase3GroundT = (self._phase3GroundT or 0) + dtSec
+            if not self:IsCurrentMoveFinished() or self:IsActionLocked() then return end
 
-        -- step 4: while lotus is running OR after lotus ends / interrupted
-        if self._phase3Step == 4 then
-            -- If lotus is still running, just wait (hook interrupt is handled in ApplyHook)
-            if self:IsInMove("DeathLotus") then
-                return
-            end
-
-            -- If lotus was interrupted by hook: wait a bit, then Fate Sealed
-            if self._p3PendingFate then
-                self._p3FateDelayT = (self._p3FateDelayT or (self.P3_FateAfterHookDelay or 2.0)) - dtSec
-                if self._p3FateDelayT <= 0 and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
-                    self._p3PendingFate = false
-                    self._p3FateDelayT = nil
-                    self:FateSealed(1.0)
-                    return
+            local nextMove = P3_GROUND_PLAN[self._phase3GroundNext or 1]
+            if nextMove then
+                self._phase3GroundNext = (self._phase3GroundNext or 1) + 1
+                if nextMove == "DeathLotus" then
+                    self:DeathLotus()
+                elseif nextMove == "FeatherFlurry" then
+                    self:FeatherFlurry()
+                elseif nextMove == "Lunge" then
+                    self:FateSealed(self.P3_LungeCharge or 0.50, self.P3_LungeSpeed or 60.0, true)
                 end
                 return
             end
 
-            -- After Fate Sealed ends (or no fate), repeat cycle
-            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+            if self._phase3GroundT >= (self.P3_MinGroundTime or 9.0) then
                 self._phase3Step = 0
-                self._immuneChain = true
             end
             return
         end
@@ -3538,7 +3503,7 @@ return Component {
         self._transforming = false
         self._pendingPhase = nil
         self._immuneDamage = false
-        self._immuneChain = false
+        self:_SetChainImmune(false)
 
         self._phase2BurstRoundsDone = 0
         self._phase2BurstGapT = 0
@@ -3594,7 +3559,7 @@ return Component {
         self._animator:SetTrigger("Ranged")
         self:_BeginMove("BurstFire", {
             bursts = 5,
-            interval = 0.18,   -- adjust for difficulty
+            interval = self.P2_BurstInterval or 0.12,
             postDelay = 0.45
         })
     end,
@@ -3610,11 +3575,14 @@ return Component {
         })
     end,
 
-    FateSealed = function(self, chargeTime)
+    -- fast: phase 3's quicker lunge, which the boss's glow tells apart from
+    -- the slower one in phases 1 and 2
+    FateSealed = function(self, chargeTime, dashSpeed, fast)
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,
-            dashSpeed = self.LungeSpeed or 40.0,
+            dashSpeed = dashSpeed or self.LungeSpeed or 40.0,
+            fast = fast == true,
             -- A dashing boss carries the player along if it reaches them: the
             -- player's controller takes the boss's speed from the contact,
             -- and was thrown about 2 units clear of the claw. The capsules
@@ -3626,6 +3594,16 @@ return Component {
             dmg = 4,
             kbStrength = 8.0,
             postDelay = 2.60
+        })
+    end,
+
+    FeatherFlurry = function(self)
+        self:_BeginMove("FeatherFlurry", {
+            shots = math.floor(self.P3_FlurryShots or 12),
+            interval = self.P3_FlurryInterval or 0.10,
+            releaseAt = 0.2,
+            maxThrows = 6,
+            postDelay = 0.4,
         })
     end,
 

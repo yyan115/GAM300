@@ -69,6 +69,9 @@ return Component {
         chainAimSideOffset      = 0.3,
 
         -- === Chain Aim Assist ===
+        -- Off: while aiming the chain, the camera is not pulled toward an
+        -- enemy near the crosshair, and the chain goes where the player aims.
+        chainAimAssistEnabled      = false,
         chainAimAssistComponents   = {"EnemyAI", "FlyingEnemyLogic"},
         chainAimAssistAngle        = 30.0,
         chainAimAssistStrength     = 15.0,
@@ -89,6 +92,9 @@ return Component {
         ShakeFrequency     = 25.0,
 
         -- === Lock-On ===
+        -- Off: the camera no longer turns by itself toward an enemy the player
+        -- hits. Only the mouse turns it.
+        lockOnEnabled         = false,
         -- Acquire inside a tighter radius than the one that breaks the lock, so
         -- an enemy hovering at the boundary cannot acquire/release repeatedly.
         lockOnAcquireDistance = 12.0,
@@ -401,7 +407,7 @@ return Component {
                 or (self._actionModeActive and self.actionModeLockRotation)
 
             if cursorOk and not shouldLock then
-                local lockedOn = LockOn.update(self, dt)
+                local lockedOn = self.lockOnEnabled and LockOn.update(self, dt)
                 if not lockedOn then
                     CamInput.updateMouseLook(self, dt)
                 end

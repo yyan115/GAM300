@@ -3902,13 +3902,13 @@ Resources/Scripts/Gameplay/GroundHookedState.lua
 Resources/Scripts/Gameplay/GroundHurtState.lua
 Resources/Scripts/Gameplay/HitStop.lua
 Resources/Scripts/Gameplay/PlayerHealth.lua
-Resources/Scripts/Gameplay/PlayerMovement(Updated).lua
 Resources/Scripts/Gameplay/ChainBootstrap.lua
 Resources/Scripts/Gameplay/PauseListener.lua
-Resources/Scripts/Gameplay/ComboManager.lua
 Resources/Scripts/Gameplay/AttackHitbox.lua
 Resources/Scripts/Gameplay/EnemyAI.lua
 Resources/Scripts/Gameplay/GroundAttackState.lua
+Resources/Scripts/Gameplay/ComboManager.lua
+Resources/Scripts/Gameplay/PlayerMovement(Updated).lua
 Resources/Scripts/Gameplay/MinibossAI.lua
 Resources/Scripts/UI/ButtonHover.lua.meta
 Resources/Scripts/UI/AndroidOnly.lua
@@ -4031,10 +4031,10 @@ Resources/Scripts/VFX/WeaponPickUpVFX.lua
 Resources/Scripts/VFX/WeaponPickUpVFX.lua.meta
 Resources/Scripts/VFX/PlayerSlashVFX.lua
 Resources/Scripts/VFX/GroundSlamDustVFX.lua
-Resources/Scripts/VFX/MinibossChargeVFX.lua
-Resources/Scripts/VFX/MinibossChargeVFX.lua.meta
-Resources/Scripts/VFX/MinibossDiveMarkVFX.lua
 Resources/Scripts/VFX/MinibossDiveMarkVFX.lua.meta
+Resources/Scripts/VFX/MinibossGlowVFX.lua
+Resources/Scripts/VFX/MinibossGlowVFX.lua.meta
+Resources/Scripts/VFX/MinibossDiveMarkVFX.lua
 Resources/Scripts/EnemyHealth.lua
 Resources/Scripts/Tools/CameraFlythrough.lua.meta
 Resources/Scripts/Tools/CameraFlythrough.lua
@@ -5150,6 +5150,8 @@ Resources/Audio/04_GameLevel/Player/PlayerSkill/FeatherBlast_Release.wav
 Resources/Audio/04_GameLevel/Player/PlayerSkill/FeatherBlast_Release.wav.meta
 Resources/Audio/04_GameLevel/Player/PlayerSkill/FeatherBlast_Start.wav
 Resources/Audio/04_GameLevel/Player/PlayerSkill/FeatherBlast_Start.wav.meta
+Resources/Audio/04_GameLevel/Player/PlayerDodge/PlayerDodge1.wav
+Resources/Audio/04_GameLevel/Player/PlayerDodge/PlayerDodge1.wav.meta
 Resources/Audio/04_GameLevel/Weapon/Chain/ChainHitFlesh1.wav.meta
 Resources/Audio/04_GameLevel/Weapon/Chain/ChainHitFlesh2.wav.meta
 Resources/Audio/04_GameLevel/Weapon/Chain/ChainHitFlesh3.wav.meta
@@ -5575,7 +5577,6 @@ Resources/Prefabs/VFXPrefabs/IncenseSmokeVFXBig.prefab
 Resources/Prefabs/VFXPrefabs/IncenseSmokeVFXSmall.prefab
 Resources/Prefabs/VFXPrefabs/RockParticlesVFX.prefab
 Resources/Prefabs/VFXPrefabs/WeaponPickupVFX.prefab
-Resources/Prefabs/VFXPrefabs/MinibossChargeVFX.prefab
 Resources/Prefabs/VFXPrefabs/MinibossDiveMarkVFX.prefab
 Resources/Prefabs/Incense_LowPoly.prefab
 Resources/Prefabs/PauseMenu.prefab

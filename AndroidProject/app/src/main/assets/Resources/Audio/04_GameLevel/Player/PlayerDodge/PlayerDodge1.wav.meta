@@ -1,0 +1,9 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0077aa15387b67c7-00067490dc000003",
+        "source": "../../Resources/Audio/04_GameLevel/Player/PlayerDodge/PlayerDodge1.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Player/PlayerDodge/PlayerDodge1.wav",
+        "android_compiled": "Resources/Audio/04_GameLevel/Player/PlayerDodge/PlayerDodge1.wav"
+    }
+}
