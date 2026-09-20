@@ -208017,6 +208017,29 @@
                     }
                 },
                 {
+                    "BloomComponent": {
+                        "type": "BloomComponent",
+                        "data": [
+                            {
+                                "type": "bool",
+                                "data": false
+                            },
+                            {
+                                "type": "float",
+                                "data": 0
+                            }
+                        ],
+                        "bloomColor": {
+                            "type": "glm::vec3",
+                            "data": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    }
+                },
+                {
                     "TagComponent": {
                         "tagIndex": 8
                     }
@@ -208037,39 +208060,20 @@
                                 "entryFunction": "OnInit",
                                 "autoInvokeEntry": true,
                                 "instanceState": {
-                                    "P3_FeatherRounds": 2.0,
-                                    "ShoutKnockback": 120.0,
-                                    "EnterPhase2_Air": null,
                                     "SpawnKnifeFan8_NoCenter": null,
                                     "GroundStickVel": -0.2,
                                     "Die": null,
-                                    "KnockbackDuration": 0.12,
-                                    "GetTransform": null,
-                                    "ApplyHit": null,
                                     "_private": {},
                                     "ArenaRadius": 7.75,
-                                    "After": null,
                                     "P3_FeatherActivateDelay": 0.9,
-                                    "enemyDeathSFX": [
-                                        "0078994fecd9fbf6-00047bfe4c000001",
-                                        "0078994fb11b9c0e-00047bfe4c000003",
-                                        "0078994f9a21411d-00047bfe4c000005",
-                                        "0078994ffb52bcfd-00047bfe4c000007",
-                                        "0078994fecfd6d67-00047bfe4c000009"
-                                    ],
                                     "GetMoveWeightForPhase": null,
                                     "_subscriptions": {},
                                     "SpawnKnifeVolley3": null,
-                                    "DestroyCC": null,
                                     "_introDone": false,
                                     "SpawnKnifeSingleAtWorld": null,
-                                    "HurtReactDuration": 0.35,
-                                    "P3_FeatherCooldown": 2.0,
                                     "BasicAttack": null,
-                                    "UnlockActions": null,
                                     "FacePlayer": null,
                                     "ChooseMove": null,
-                                    "P3_FeatherSpeedScale": 0.2,
                                     "fsm": {
                                         "timeInState": 0.0,
                                         "enabled": true
@@ -208083,7 +208087,6 @@
                                         "00612e33fb3b1ead-0004202e36000029"
                                     ],
                                     "ApplyGravity": null,
-                                    "GetPosition": null,
                                     "P3_DiveCommitRadius": 0.2,
                                     "__created_at": 1770347344.0,
                                     "enemyRangedAttackSFX": [
@@ -208093,7 +208096,6 @@
                                         "00612e339fed7d3e-0004202e36000049",
                                         "00612e33c92234c1-0004202e3600004b"
                                     ],
-                                    "Update": null,
                                     "AirSpeedMultiplier": 10.0,
                                     "HoverBobFreq": 0.9,
                                     "SetPosition": null,
@@ -208102,13 +208104,11 @@
                                     "ShoutRadius": 4.0,
                                     "MaintainHover": null,
                                     "CreateCC": null,
-                                    "AirMoveSpeed": 9.0,
                                     "EnqueueMoveFront": null,
                                     "IntroDuration": 2.5,
                                     "FinishBossPhaseTransition": null,
                                     "_FreeReserved": null,
                                     "FateSealed": null,
-                                    "_EnterAirMode": null,
                                     "HookedDuration": 0.0,
                                     "Unsubscribe": null,
                                     "GetCurrentPhase": null,
@@ -208119,16 +208119,13 @@
                                     "_knifeVolleyId": 0.0,
                                     "Gravity": -9.81,
                                     "_PickRandomAirNumpad": null,
-                                    "SpawnForwardSingle": null,
                                     "_UpdatePhase2": null,
                                     "Awake": null,
                                     "GetPlayerPosForAI": null,
-                                    "_PickRainCells5": null,
                                     "_moveFinished": true,
                                     "dead": false,
                                     "DisableSafe": null,
                                     "_UpdatePhase1": null,
-                                    "_DoShoutAOE": null,
                                     "ShoutPostDelay": 2.15,
                                     "BossMeleeWindup": 1.1,
                                     "GridCenterZ": 38.396,
@@ -208143,9 +208140,7 @@
                                         "00612e33d3f6a4c0-0004202e36000035"
                                     ],
                                     "_NewVolleyToken": null,
-                                    "_vy": 0.0,
                                     "_meleeCdT": 0.0,
-                                    "P1_Shout2Pct": 0.75,
                                     "ApplyHook": null,
                                     "enemyRangedHitSFX": [
                                         "00612e33d64a7674-0004202e36000037",
@@ -208162,7 +208157,6 @@
                                     ],
                                     "HitIFrame": 1.0,
                                     "ShoutDamage": 1.0,
-                                    "P3_FeatherCastTime": 0.25,
                                     "_p3_dive_postdelay": 0.5,
                                     "OnDestroy": null,
                                     "_p1DidShout75": false,
@@ -208184,11 +208178,9 @@
                                     "_slamActive": false,
                                     "_hoverT": 0.0,
                                     "P3_FeatherCellsPerRound": 5.0,
-                                    "IsInMove": null,
                                     "BossMeleeRange": 2.2,
                                     "_transforming": false,
                                     "_lastPhaseProcessed": 1.0,
-                                    "_MoveToXZ_Air": null,
                                     "_recoverTimer": 0.0,
                                     "TryStartQueuedMove": null,
                                     "ApplyRotation": null,
@@ -208198,7 +208190,6 @@
                                     "_inIntro": false,
                                     "_moveQueue": {},
                                     "_hitLockTimer": 0.0,
-                                    "AirHeight": 1.0,
                                     "_moveCooldowns": {},
                                     "P1_Shout1Pct": 0.9,
                                     "AwakeSafe": null,
@@ -208224,22 +208215,16 @@
                                     "ShoutWindup": 0.95,
                                     "P3_FeatherCastTime": 0.25,
                                     "HurtReactDuration": 0.35,
-                                    "_transform_fetched": false,
                                     "GetPosition": null,
                                     "_EnterAirMode": null,
-                                    "AirHeight": 1.0,
-                                    "EnqueueMove": null,
+                                    "Phase2HpPct": 0.5,
                                     "GetTransform": null,
-                                    "_GetGridXZ": null,
                                     "_PickRainCells5": null,
                                     "P1_Shout2Pct": 0.75,
                                     "_GetHpPct": null,
-                                    "BossMeleeCooldown": 2.95,
                                     "UnlockActions": null,
                                     "After": null,
-                                    "IsActionLocked": null,
                                     "ArenaCenterX": 98.805,
-                                    "BeginSlamDown": null,
                                     "AirMoveSpeed": 9.0,
                                     "SpawnForwardSingle": null,
                                     "P3_FeatherCooldown": 2.0,
@@ -208255,7 +208240,6 @@
                                     "_MoveToXZ_Air": null,
                                     "OnDisable": null,
                                     "_EndMove": null,
-                                    "Phase2HpPct": 0.66,
                                     "Start": null,
                                     "_DoDiveToPlayerGrid": null,
                                     "UpdateSafe": null,
@@ -208302,7 +208286,7 @@
                                     "MaxFallSpeed": -25.0,
                                     "BossMeleeCooldown": 2.95,
                                     "EnsureController": null,
-                                    "P2_BurstGap": 1.25,
+                                    "AirHeight": 2.5,
                                     "BurstFire": null,
                                     "_GetGridXZ": null,
                                     "_GetAirWaypoint": null,
@@ -208318,7 +208302,7 @@
                                     "EnqueueMove": null,
                                     "_BeginMove": null,
                                     "Update": null,
-                                    "P3_FeatherRounds": 2.0,
+                                    "P2_BurstGap": 0.8,
                                     "enemyTauntSFX": [
                                         "00612e33f0f92281-0004202e36000011",
                                         "00612e33f6947b1d-0004202e36000013",
@@ -208327,8 +208311,16 @@
                                     "ArenaLeashBuffer": 0.5,
                                     "ArenaCenterZ": 38.396,
                                     "GridCenterX": 98.805,
-                                    "Phase2HpPct": 0.5
+                                    "P3_FeatherRounds": 4.0
                                 }
+                            },
+                            {
+                                "scriptGuidStr": "0077aa1514c382eb-00067490da000001",
+                                "scriptPath": "../../Resources/Scripts/VFX/MinibossGlowVFX.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true
                             }
                         ]
                     }
@@ -265039,7 +265031,7 @@
                     }
                 },
                 {
-                    "id": 3318,
+                    "id": 3314,
                     "guid": "000c068ce454508d-000673b0840014dd",
                     "Name": "DiveMarkCore",
                     "SiblingIndex": 108,
@@ -265051,7 +265043,7 @@
                     }
                 },
                 {
-                    "id": 3319,
+                    "id": 3315,
                     "guid": "000c068c8f57477b-000673b2ea0014e3",
                     "Name": "DiveMarkDisc",
                     "SiblingIndex": 108,
