@@ -265020,59 +265020,14 @@
             }
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/MinibossChargeVFX.prefab",
-            "id": 3312,
-            "guid": "000c068cc230c2a9-0006737aaa0014c5",
-            "Name": "MinibossChargeVFX",
-            "SiblingIndex": 106,
-            "Children": [
-                {
-                    "id": 3313,
-                    "guid": "000c068ca1218ce5-0006737bd00014c7",
-                    "Name": "ChargeGather",
-                    "SiblingIndex": 107,
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "000c068cc230c2a9-0006737aaa0014c5"
-                        ]
-                    }
-                },
-                {
-                    "id": 3314,
-                    "guid": "000c068cdcebdcff-0006737e8c0014cf",
-                    "Name": "ChargeFeathers",
-                    "SiblingIndex": 107,
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "000c068cc230c2a9-0006737aaa0014c5"
-                        ]
-                    }
-                },
-                {
-                    "id": 3315,
-                    "guid": "000c068cc2e8b9c5-0006737ff80014d1",
-                    "Name": "ChargeGlints",
-                    "SiblingIndex": 107,
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "000c068cc230c2a9-0006737aaa0014c5"
-                        ]
-                    }
-                }
-            ]
-        },
-        {
             "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/MinibossDiveMarkVFX.prefab",
-            "id": 3316,
+            "id": 3312,
             "guid": "000c068ca9e7c86e-000673aef40014d3",
             "Name": "MinibossDiveMarkVFX",
             "SiblingIndex": 107,
             "Children": [
                 {
-                    "id": 3317,
+                    "id": 3313,
                     "guid": "000c068cef2ae985-000673af880014d5",
                     "Name": "DiveMarkMotes",
                     "SiblingIndex": 108,

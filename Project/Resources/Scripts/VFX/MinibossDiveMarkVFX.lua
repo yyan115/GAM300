@@ -1,4 +1,4 @@
--- The mark under the miniboss's phase 3 dive. A glowing purple disc closes
+-- The mark under the miniboss's phase 3 dive. A glowing red disc closes
 -- in on the spot it will land, with motes rising from it toward the boss and
 -- a glint at its centre, flickering once the drop is close. The boss drops
 -- straight down, so the mark follows the boss rather than the warning's
@@ -27,7 +27,7 @@ return Component {
         DiscOpacityStart = 0.35,
         DiscOpacityEnd   = 0.8,
         -- Disc glow at full strength. The disc is dark, and this much turns it
-        -- a deep violet; around 1 it glares a flat neon over the floor.
+        -- a deep red; around 1 it glares a flat neon over the floor.
         DiscBloomEnd = 0.2,
         -- Mote emission at the start and at full strength
         MoteRateStart = 20.0,
