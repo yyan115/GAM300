@@ -98,10 +98,54 @@ return Component {
         end)
     end,
 
+    -- Opens the pause menu: the game stops, its audio stops, and the menu's
+    -- buttons are made live in the same frame, since a button enabled a frame
+    -- later cannot be clicked on the frame the menu appears.
+    _OpenPauseMenu = function(self)
+        self._pauseComp.isActive = true
+        Time.SetPaused(true)
+
+        for _, buttonComp in pairs(self._pauseButtons) do
+            if buttonComp then
+                buttonComp.interactable = true
+            end
+        end
+
+        -- Pause all game audio (UI on "UI" bus still plays)
+        Audio.SetBusPaused("BGM", true)
+        Audio.SetBusPaused("SFX", true)
+
+        if event_bus and event_bus.publish then
+            event_bus.publish("game_paused", true)
+        end
+    end,
+
+    -- True while any of the menus is up
+    _AnyMenuOpen = function(self)
+        return self._pauseComp.isActive or self._settingsComp.isActive
+            or self._confirmComp.isActive
+            or (self._controlsComp and self._controlsComp.isActive) or false
+    end,
+
     Update = function(self, dt)
         if not self._pauseComp or not self._settingsComp or not self._confirmComp then
             return
         end
+
+        -- Leaving a fullscreen game brings the pause menu up, so it comes back
+        -- with the menu rather than dropping the player into a fight they were
+        -- not watching. A windowed game is left alone: he plays it beside
+        -- other work on purpose.
+        local focused = true
+        if Screen and Screen.IsFocused then focused = Screen.IsFocused() end
+        local fullscreen = false
+        if Screen and Screen.IsFullscreen then fullscreen = Screen.IsFullscreen() end
+        if self._wasFocused == nil then self._wasFocused = focused end
+        if self._wasFocused and not focused and fullscreen
+           and not self:_AnyMenuOpen() and not self._playerDead then
+            self:_OpenPauseMenu()
+        end
+        self._wasFocused = focused
 
         -- Use unscaled delta time for the cooldown timer so it works even when paused
         local unscaledDt = Time.GetUnscaledDeltaTime()
@@ -156,25 +200,7 @@ return Component {
                     event_bus.publish("game_paused", false)
                 end
             else
-                -- Pause game
-                self._pauseComp.isActive = true
-                Time.SetPaused(true)
-
-                -- Directly enable pause buttons to avoid script execution order issues
-                -- This ensures buttons are interactable on the same frame the menu opens
-                for _, buttonComp in pairs(self._pauseButtons) do
-                    if buttonComp then
-                        buttonComp.interactable = true
-                    end
-                end
-
-                -- Pause all game audio (UI on "UI" bus still plays)
-                Audio.SetBusPaused("BGM", true)
-                Audio.SetBusPaused("SFX", true)
-
-                if event_bus and event_bus.publish then
-                    event_bus.publish("game_paused", true)
-                end
+                self:_OpenPauseMenu()
             end
             end  -- if not onSubPage
         end

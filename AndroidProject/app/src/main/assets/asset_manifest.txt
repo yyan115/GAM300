@@ -3954,7 +3954,6 @@ Resources/Scripts/UI/GameOverMenu/GameOverMenu.lua.meta
 Resources/Scripts/UI/GameOverMenu/GameOverButtonHandler.lua
 Resources/Scripts/UI/GameOverMenu/GameOverMenu.lua
 Resources/Scripts/UI/CinemaBarController.lua.meta
-Resources/Scripts/UI/DashCooldownUI.lua
 Resources/Scripts/UI/DashCooldownUI.lua.meta
 Resources/Scripts/UI/NarrativeManager.lua.meta
 Resources/Scripts/UI/SkillCooldownUI.lua
@@ -3988,6 +3987,7 @@ Resources/Scripts/UI/SkipHighlight.lua
 Resources/Scripts/UI/CutsceneHandler.lua
 Resources/Scripts/UI/SplashScreenAnimator.lua
 Resources/Scripts/UI/HoverHighlightButtons.lua
+Resources/Scripts/UI/DashCooldownUI.lua
 Resources/Scripts/CharacterMovementTest.lua.meta
 Resources/Scripts/ForceTest.lua
 Resources/Scripts/ForceTest.lua.meta
