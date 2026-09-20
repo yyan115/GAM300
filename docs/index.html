@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kusane</title>
-<meta name="description" content="Kusane is a 3D action platformer of chains, blades and unforgiving combat, built on a custom C++ engine for Windows, Linux and Android.">
+<meta name="description" content="Kusane is a 3D action game about pulling flying enemies out of the sky with a chain, built on a custom C++ engine for Windows, Linux and Android.">
 <meta property="og:title" content="Kusane">
-<meta property="og:description" content="A dark action platformer built on chains, blades and unforgiving combat.">
+<meta property="og:description" content="The Karasu took her temple and her wings. She goes back in with a chain.">
 <meta property="og:image" content="media/hero-poster.jpg">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -285,14 +285,70 @@
         background: linear-gradient(to top, rgba(7, 6, 10, 0.9), transparent);
     }
 
-    /* ── Trailer ─────────────────────────────────────────────────── */
-    .trailer-frame {
-        margin-top: 36px;
-        border: 1px solid var(--edge);
-        background: #000;
+    /* ── Clips ───────────────────────────────────────────────────── */
+    .clip {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: clamp(24px, 4vw, 56px);
+        align-items: center;
+        margin-top: clamp(48px, 7vw, 88px);
     }
 
-    .trailer-frame video { width: 100%; display: block; aspect-ratio: 16 / 9; }
+    .clip.reverse { grid-template-columns: 1fr 1.25fr; }
+    .clip.reverse .clip-frame { order: 2; }
+
+    .clip-frame {
+        border: 1px solid var(--edge);
+        background: #000;
+        overflow: hidden;
+    }
+
+    .clip-frame video, .clip-frame img {
+        width: 100%;
+        display: block;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+    }
+
+    .clip h3 {
+        font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+        letter-spacing: 1px;
+        margin-bottom: 14px;
+    }
+
+    .clip p { margin-bottom: 14px; }
+    .clip p:last-child { margin-bottom: 0; }
+
+    .spec {
+        list-style: none;
+        margin-top: 34px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .spec li {
+        display: grid;
+        grid-template-columns: 9.5rem 1fr;
+        gap: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--edge);
+        color: #c4bdb4;
+        font-weight: 300;
+        font-size: 0.95rem;
+    }
+
+    .spec b {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        color: var(--paper);
+        letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 760px) {
+        .clip { grid-template-columns: 1fr; }
+        .clip.reverse .clip-frame { order: 0; }
+        .spec li { grid-template-columns: 1fr; gap: 2px; }
+    }
 
     /* ── Downloads ───────────────────────────────────────────────── */
     .downloads { text-align: center; }
@@ -391,7 +447,7 @@
     <nav>
         <a href="#game">The Game</a>
         <a href="#gallery">Gallery</a>
-        <a href="#trailer">Trailer</a>
+        <a href="#boss">The Boss</a>
         <a href="#download" class="btn small">Download</a>
     </nav>
 </header>
@@ -401,10 +457,10 @@
         <source src="media/hero.mp4" type="video/mp4">
     </video>
     <h1>Kusane</h1>
-    <p class="tagline">A dark action platformer built on chains, blades and unforgiving combat.</p>
+    <p class="tagline">The Karasu took her temple and her wings. She goes back in with a chain.</p>
     <div class="hero-actions">
         <a href="#download" class="btn">Download</a>
-        <a href="#trailer" class="btn ghost">Watch the trailer</a>
+        <a href="#game" class="btn ghost">What it is</a>
     </div>
     <div class="release-line" id="hero-release"></div>
     <div class="scroll-cue">Scroll</div>
@@ -413,29 +469,86 @@
 <section class="section" id="game">
     <div class="container">
         <div class="eyebrow">The Game</div>
-        <h2>Fight with chains. Kill with precision.</h2>
+        <h2>A temple to walk back through, one room at a time.</h2>
         <p>
-            Kusane is a 3D action platformer where a chain weapon and a blade carry you through
-            waves of ground and airborne enemies. Hook a target from across the room, pull it in,
-            and finish it on the ground, or take the fight into the air and keep it there.
+            You play Kusane, the last of the clan that kept a mountain temple. The Karasu took it
+            from them in a night, and she woke in the ruins without her wings. She finds a feather
+            chain resting on a holder and starts back through her own home: the hall, the study,
+            the statue hall, the weapon quarters, and the room at the end, where a Karasu wearing
+            wings made of her clan's feathers is waiting.
         </p>
         <p>
-            Feathers from fallen enemies charge a blast that clears the field when it closes in,
-            and a dodge through an attack slows the world long enough to answer it.
+            Five rooms and one fight at the end of them, made by a student team on an engine they
+            wrote themselves.
         </p>
 
-        <div class="pillars">
-            <div class="pillar">
-                <h3>The Chain</h3>
-                <p>A weapon, a way across a gap, and the only way to bring a flying enemy down to where a blade can reach it.</p>
+        <ul class="spec">
+            <li><b>Sword</b><span>A three hit ground combo. Jump out of a swing to lift an enemy off the floor and keep hitting it in the air, ending on a slam.</span></li>
+            <li><b>Chain</b><span>Throw it at something and it holds. A crow on the ground is dragged to you. A crow in the air is pulled down and stays on the ground for good. It does no damage of its own, and it does not aim itself.</span></li>
+            <li><b>Feathers</b><span>Every hit that lands knocks feathers loose. Twenty of them buys a fan of ten feathers, fired where you are aiming, each one exploding where it hits.</span></li>
+            <li><b>Dodge</b><span>One charge, and you are untouchable for all of it. Dodge through an attack and time drops to a sixth of normal for about half a second.</span></li>
+            <li><b>Doors</b><span>Some doors are chained shut. Hook one and pull until it comes off its frame.</span></li>
+            <li><b>Health</b><span>Thirty. Two shrines to save at. Falling kills you outright.</span></li>
+        </ul>
+    </div>
+</section>
+
+<section class="section" id="chain">
+    <div class="container">
+        <div class="eyebrow">The Chain</div>
+        <h2>Crows do not come down on their own.</h2>
+
+        <div class="clip">
+            <div class="clip-frame">
+                <video autoplay muted loop playsinline poster="media/shot-statue.jpg" aria-hidden="true">
+                    <source src="media/clip-chain.mp4" type="video/mp4">
+                </video>
             </div>
-            <div class="pillar">
-                <h3>Aerial Combat</h3>
-                <p>Launch an enemy, follow it up, and keep the combo alive between the ground and the air.</p>
+            <div>
+                <h3>The Guardian Statue Hall</h3>
+                <p>
+                    Six Karasu on the floor and two in the air, around the statue the room is named
+                    for. The ones in the air throw knives in threes and never land, and a sword
+                    cannot reach them.
+                </p>
+                <p>
+                    So the chain goes out, one comes down, and it does not get back up: a flyer
+                    pulled out of the sky is a ground enemy for the rest of the fight. The feathers
+                    the fight knocks loose pay for the ten that go back out and explode.
+                </p>
             </div>
-            <div class="pillar">
-                <h3>The Miniboss</h3>
-                <p>Three phases that each have to be read: it telegraphs, it answers what you do, and it cannot be stunlocked.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="boss">
+    <div class="container">
+        <div class="eyebrow">The Boss</div>
+        <h2>One fight ends the game.</h2>
+
+        <div class="clip reverse">
+            <div class="clip-frame">
+                <video autoplay muted loop playsinline poster="media/shot-boss-charge.jpg" aria-hidden="true">
+                    <source src="media/clip-boss.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div>
+                <h3>The Battle Dome</h3>
+                <p>
+                    Six hundred health and three phases, and it changes at two thirds and one third,
+                    so the phase you are in is a readout of how far you have got.
+                </p>
+                <p>
+                    On the ground it claws at you, throws knives when you back off, and answers three
+                    swings, or a throw or two, by charging the length of the arena. In the air it flies a
+                    grid and fires aimed volleys, and that is the one window where the chain still
+                    works on it: hook it down and it owes you eight seconds on the floor.
+                </p>
+                <p>
+                    Past a third it glows, which means the chain will not reach it. It drops feather
+                    bombs across the arena, marks the ground under you and dives on it, and cannot be
+                    knocked out of anything it has started.
+                </p>
             </div>
         </div>
     </div>
@@ -444,27 +557,14 @@
 <section class="section" id="gallery">
     <div class="container">
         <div class="eyebrow">Gallery</div>
-        <h2>The temple, and what waits in it.</h2>
+        <h2>The rooms, in the order you walk them.</h2>
         <div class="gallery">
-            <figure><img src="media/shot-statue.jpg" alt="The statue room" loading="lazy"><figcaption>The statue room</figcaption></figure>
-            <figure><img src="media/shot-boss-charge.jpg" alt="The miniboss winding up its charged slash" loading="lazy"><figcaption>A charged slash, winding up</figcaption></figure>
-            <figure><img src="media/shot-boss-dive.jpg" alt="The mark under the miniboss's dive" loading="lazy"><figcaption>The dive, marked on the floor</figcaption></figure>
-            <figure><img src="media/shot-boss-glow.jpg" alt="The miniboss glowing while it cannot be hooked" loading="lazy"><figcaption>Out of the chain's reach</figcaption></figure>
-            <figure><img src="media/shot-temple.jpg" alt="The temple hall" loading="lazy"><figcaption>The temple hall</figcaption></figure>
-            <figure><img src="media/shot-library.jpg" alt="The library balcony" loading="lazy"><figcaption>The library</figcaption></figure>
-        </div>
-    </div>
-</section>
-
-<section class="section" id="trailer">
-    <div class="container">
-        <div class="eyebrow">Watch</div>
-        <h2>Trailer</h2>
-        <div class="trailer-frame">
-            <video controls preload="none" poster="media/trailer-poster.jpg">
-                <source src="media/trailer.mp4" type="video/mp4">
-                Your browser cannot play this video.
-            </video>
+            <figure><img src="media/shot-temple.jpg" alt="The chain resting on its holder in the Temple Hall" loading="lazy"><figcaption>The Temple Hall</figcaption></figure>
+            <figure><img src="media/shot-library.jpg" alt="A Karasu standing among the bookshelves of the Study" loading="lazy"><figcaption>The Study</figcaption></figure>
+            <figure><img src="media/shot-statue.jpg" alt="The winged statue the hall is named for" loading="lazy"><figcaption>The Guardian Statue Hall</figcaption></figure>
+            <figure><img src="media/shot-boss-charge.jpg" alt="The boss glowing yellow as it winds up a charge" loading="lazy"><figcaption>A charge, winding up</figcaption></figure>
+            <figure><img src="media/shot-boss-dive.jpg" alt="A red mark on the floor under the boss's dive" loading="lazy"><figcaption>The dive, marked before it lands</figcaption></figure>
+            <figure><img src="media/shot-boss-glow.jpg" alt="The boss glowing purple in the air" loading="lazy"><figcaption>Out of the chain's reach</figcaption></figure>
         </div>
     </div>
 </section>
