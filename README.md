@@ -1,16 +1,18 @@
-# GAM300
+# Kusane
+
+[![Kusane](docs/media/hero-poster.jpg)](https://yyan115.github.io/GAM300/)
 
 GAM300 - Team Marbles.
 
-Custom 3D game engine written in C++. Supports cross platform for Windows, Linux, and android.
+Kusane is a 3D action platformer of chains, blades and unforgiving combat, built on our own C++ engine. It runs on Windows, Linux and Android.
 
-**Live Website:** https://yyan115.github.io/GAM300/
+**Play it:** https://yyan115.github.io/GAM300/ · **Downloads:** [Releases](https://github.com/yyan115/GAM300/releases/latest)
 
 Our engine is called Engine Engine, because we have great naming sense.
 
 ## Quick Start
 
-Run setup-vcpkg.bat and setup-android-dev.bat to set up all development requirements for Windows, Linux and android.
+On Windows, run setup-vcpkg.bat and setup-android-dev.bat to set up all development requirements for Windows and android. On Linux, run ./setup-vcpkg.sh instead and see the Linux section below.
 
 1. Open Visual Studio, press "open a local folder", select "Project" folder and open it
 2. Let cmake set up and config everything for you. First run will take 5-10mins. You can see it configure in the output console in Visual Studio. Wait for it to say "1> CMake generation finished."
@@ -18,7 +20,7 @@ Run setup-vcpkg.bat and setup-android-dev.bat to set up all development requirem
 
 There is no solution files anymore as this is the modern way of using cmake with Visual Studios.
 
-Standalone launches, including installer shortcuts, always start fullscreen. For standalone testing, run `Kusane.exe --windowed` on Windows or `./Kusane --windowed` on Linux. This starts the game in a window without changing the saved fullscreen preference. You can also add `--windowed` to a shortcut's arguments. The window title shows FPS by default; set `GAM300_SHOW_FPS=0` to hide it.
+Standalone launches, including installer shortcuts, always start fullscreen. For standalone testing, run `Kusane.exe --windowed` on Windows or `./Kusane --windowed` on Linux. This starts the game in a window without changing the saved fullscreen preference. You can also add `--windowed` to a shortcut's arguments. The window title stays clean in a standalone build. Set `GAM300_SHOW_FPS=1` to put the frame rate back in it while testing.
 
 ## Project Structure
 
@@ -42,7 +44,7 @@ The game can be compiled with either "Debug" or "Release" options.
 
 Include "Engine.h" to start developing.
 
-Scripting is WIP.
+Gameplay is written in Lua, under Project/Resources/Scripts. The engine reloads them on each build, so a script change does not need a recompile of the game.
 
 ### Editor Architecture
 
