@@ -774,24 +774,42 @@ bool Engine::WaitWhileInactive() {
 #if !defined(EDITOR) && !defined(ANDROID)
     // Only a fullscreen game stops. Windowed, he wants it to carry on playing
     // while he works in another window, which is how it was before 20 Sep.
-    static bool suspended = false;
+    static bool away = false;          // the window is not the one in use
+    static bool audioSuspended = false;
     WindowManager::PollEvents();
     if (WindowManager::ShouldClose()) return true;
     const bool inactive = WindowManager::IsFullscreen()
         && (!WindowManager::IsWindowFocused() || WindowManager::IsWindowMinimized());
-    if (inactive != suspended) {
-        AudioManager::GetInstance().SetWindowSuspended(inactive);
+
+    if (inactive && !away) {
+        away = true;
         WindowManager::UpdateCursorState();
         // Drop the travel and presses gathered while away, so the camera does
         // not swing and Alt or Tab do not arrive as gameplay input
         if (g_inputManager) g_inputManager->Update(0.0f);
-        if (!inactive) {
-            RebaselineInput();
-            TimeManager::ResetFrameClock();
-        }
-        suspended = inactive;
+        // This frame still runs. The pause menu comes up from a script that
+        // notices the focus go, and a loop stopped here would never give it
+        // the frame it needs to do that.
+        return false;
     }
+
+    if (!inactive && away) {
+        away = false;
+        if (audioSuspended) {
+            AudioManager::GetInstance().SetWindowSuspended(false);
+            audioSuspended = false;
+        }
+        WindowManager::UpdateCursorState();
+        RebaselineInput();
+        TimeManager::ResetFrameClock();
+        return false;
+    }
+
     if (inactive) {
+        if (!audioSuspended) {
+            AudioManager::GetInstance().SetWindowSuspended(true);
+            audioSuspended = true;
+        }
         WindowManager::WaitEvents(0.1);
         return true;
     }

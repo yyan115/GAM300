@@ -784,6 +784,10 @@ namespace WindowWrappers {
         return WindowManager::IsWindowMinimized();
     }
 
+    inline bool IsFullscreen() {
+        return WindowManager::IsFullscreen();
+    }
+
     inline void SetWindowTitle(const std::string& title) {
         WindowManager::SetWindowTitle(title.c_str());
     }
