@@ -50,6 +50,8 @@ EVENTS CONSUMED:
 EVENTS PUBLISHED:
     dash_executed                       → confirms dash actually ran (i-frame gate in PlayerHealth)
     dash_ended                          → dash finished; carries uses/regen state
+    dash_cooldown_started               → a use was spent; carries the wait before it returns
+    dash_ready                          → a use came back
     player_forward_response             → reply to request_player_forward
     player_position                     → world position each frame
     playerRespawned                     → respawn complete; carries spawn position
@@ -959,6 +961,9 @@ return Component {
             if self._dashRegenTimer <= 0 then
                 self._dashUses       = self._dashUses + 1
                 self._dashRegenTimer = (self._dashUses < self.DashMaxUses) and self.DashCooldown or 0
+                if event_bus and event_bus.publish then
+                    event_bus.publish("dash_ready", { uses = self._dashUses })
+                end
             end
         end
 
@@ -1272,6 +1277,15 @@ return Component {
 
             self._dashUses       = self._dashUses - 1
             self._dashRegenTimer = self.DashCooldown
+            -- The icon runs on this same wait, from this moment, so what it
+            -- shows and when the dash comes back cannot drift apart
+            if event_bus and event_bus.publish then
+                event_bus.publish("dash_cooldown_started", {
+                    cooldown = self.DashCooldown,
+                    uses     = self._dashUses,
+                    maxUses  = self.DashMaxUses,
+                })
+            end
 
             -- Confirm the dash actually ran so PlayerHealth can open the i-frame window.
             -- dash_performed may be discarded (no uses, stun, landing) — dash_executed
