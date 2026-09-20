@@ -168,6 +168,10 @@ return Component {
 
         -- The animator state the dash plays
         DashAnimState          = "Dash",
+        -- How the roll is paced across the dash, as multipliers of the speed
+        -- that fits the clip to it: off the mark quickly, easing as it lands.
+        DashAnimStartSpeed     = 1.45,
+        DashAnimEndSpeed       = 0.65,
 
         -- === Combat / lunge ===
         -- Fallback values — real values come from ComboManager's lunge table.
@@ -718,26 +722,39 @@ return Component {
     end,
 
     -- Plays the dash animation over the dash, whatever the clip's length, so
-    -- the roll and the movement finish together however the dash is tuned.
-    -- The animator leaves the dash state when the dash ends, so a roll played
-    -- slower than the dash is cut off part way. Done once the animator has
-    -- entered the dash state afresh, since entering it sets the state's own
-    -- speed. That is a frame or so into the dash, so what is left of the clip
-    -- is fitted to what is left of the dash.
-    _FitDashAnimToDuration = function(self)
-        if self._dashAnimFitted or not self._animator then return end
+    -- the roll and the movement finish together however the dash is tuned,
+    -- and shapes it: quick off the mark, easing as it lands. A roll played at
+    -- one speed the whole way reads as oddly mechanical.
+    --
+    -- The two multipliers below are of the speed that would fit what is left
+    -- of the clip into what is left of the dash. That is worked out again
+    -- every frame, so whatever the shape does, the roll still ends with the
+    -- dash: running fast early leaves less clip, which slows the rest by
+    -- itself.
+    _DriveDashAnim = function(self)
+        if not self._animator then return end
         if self._animator:GetCurrentState() ~= self.DashAnimState then return end
-        local stateTime = self._animator:GetStateTime()
-        if self._dashAnimPrevTime and stateTime >= self._dashAnimPrevTime then
-            self._dashAnimPrevTime = stateTime
-            return
+        if not self._dashAnimDriving then
+            -- Entered fresh: from another state, or from the end of an earlier
+            -- play of the same one, which restarts the state time.
+            local stateTime = self._animator:GetStateTime()
+            if self._dashAnimPrevTime and stateTime >= self._dashAnimPrevTime then
+                self._dashAnimPrevTime = stateTime
+                return
+            end
+            self._dashAnimDriving = true
         end
-        self._dashAnimFitted = true
+
         local clipSeconds = self._animator:GetClipDuration(self._animator:GetActiveClipIndex())
         local clipLeft = clipSeconds * (1 - self._animator:GetNormalizedTime())
-        if clipLeft > 0 and (self._dashTimer or 0) > 0 then
-            self._animator:SetSpeed(clipLeft / self._dashTimer)
-        end
+        local timeLeft = self._dashTimer or 0
+        if clipLeft <= 0 or timeLeft <= 0.02 then return end
+
+        local fast = self.DashAnimStartSpeed or 1.45
+        local slow = self.DashAnimEndSpeed or 0.65
+        local gone = 1 - math.min(1, timeLeft / math.max(self.DashDuration or 0.5, 0.01))
+        local speed = (clipLeft / timeLeft) * (fast + (slow - fast) * gone)
+        self._animator:SetSpeed(math.max(0.25, math.min(6.0, speed)))
     end,
 
     -- ==========================================================================
@@ -1242,7 +1259,7 @@ return Component {
             self._dashRequested   = false
             self._isDashing       = true
             self._dashTimer       = self.DashDuration
-            self._dashAnimFitted  = false
+            self._dashAnimDriving = false
             -- An early cancel starts a dash from inside the last one's state.
             -- Its state time, noted here, tells the two apart.
             self._dashAnimPrevTime = nil
@@ -1299,7 +1316,7 @@ return Component {
 
         if self._isDashing then
             self._dashTimer = self._dashTimer - dt
-            self:_FitDashAnimToDuration()
+            self:_DriveDashAnim()
 
             if self._dashTimer <= 0 then
                 -- Dash ended: carry speed into normal movement for a natural momentum arc.
