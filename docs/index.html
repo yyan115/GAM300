@@ -1,445 +1,575 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kusane</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kusane</title>
+<meta name="description" content="Kusane is a 3D action platformer of chains, blades and unforgiving combat, built on a custom C++ engine for Windows, Linux and Android.">
+<meta property="og:title" content="Kusane">
+<meta property="og:description" content="A dark action platformer built on chains, blades and unforgiving combat.">
+<meta property="og:image" content="media/hero-poster.jpg">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --ink: #07060a;
+        --paper: #e8e4df;
+        --muted: #a9a29a;
+        --ember: #c0392b;
+        --ember-soft: rgba(192, 57, 43, 0.14);
+        --edge: rgba(232, 228, 223, 0.12);
+    }
 
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #000;
-            color: #e8e4df;
-            line-height: 1.8;
-            overflow-x: hidden;
-        }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* ── Hero ── */
-        .hero {
-            min-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 60px 24px;
-            background:
-                radial-gradient(ellipse 70% 50% at 50% 30%, rgba(180, 50, 40, 0.12), transparent 70%),
-                #000;
-        }
+    html { scroll-behavior: smooth; }
 
-        .hero h1 {
-            font-family: 'Cinzel', serif;
-            font-size: 6rem;
-            font-weight: 900;
-            letter-spacing: 12px;
-            text-transform: uppercase;
-            color: #fff;
-            margin-bottom: 20px;
-        }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--ink);
+        color: var(--paper);
+        line-height: 1.75;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
 
-        .hero p {
-            font-size: 1.35rem;
-            color: #bbb5ad;
-            max-width: 580px;
-            margin-bottom: 48px;
-            font-weight: 300;
-        }
+    h1, h2, h3, .display { font-family: 'Cinzel', Georgia, serif; }
 
-        .hero-btn {
-            display: inline-block;
-            padding: 16px 48px;
-            font-family: 'Cinzel', serif;
-            font-size: 1rem;
-            font-weight: 700;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: #fff;
-            background: #a83228;
-            text-decoration: none;
-            border: none;
-            transition: background 0.3s;
-        }
+    a { color: inherit; }
 
-        .hero-btn:hover {
-            background: #c43a2e;
-        }
+    /* ── Top bar ─────────────────────────────────────────────────── */
+    .topbar {
+        position: fixed;
+        inset: 0 0 auto 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px clamp(16px, 4vw, 48px);
+        background: linear-gradient(to bottom, rgba(7, 6, 10, 0.92), rgba(7, 6, 10, 0));
+        transition: background 0.3s ease, border-color 0.3s ease;
+        border-bottom: 1px solid transparent;
+    }
 
-        /* ── Sections ── */
-        .container {
-            max-width: 860px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
+    .topbar.solid {
+        background: rgba(7, 6, 10, 0.94);
+        border-bottom-color: var(--edge);
+        backdrop-filter: blur(8px);
+    }
 
-        .section {
-            padding: 100px 0;
-            border-top: 1px solid #1a1a1a;
-        }
+    .topbar .mark {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        font-size: 0.95rem;
+        text-decoration: none;
+    }
 
-        .section-eyebrow {
-            font-family: 'Cinzel', serif;
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: #a83228;
-            margin-bottom: 16px;
-        }
+    .topbar nav {
+        display: flex;
+        align-items: center;
+        gap: clamp(12px, 2vw, 28px);
+        font-size: 0.85rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
 
-        .section h2 {
-            font-family: 'Cinzel', serif;
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 24px;
-            line-height: 1.3;
-        }
+    .topbar nav a {
+        color: var(--muted);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
 
-        .section p {
-            font-size: 1.1rem;
-            color: #c0bab3;
-            max-width: 640px;
-            font-weight: 300;
-        }
+    .topbar nav a:hover { color: var(--paper); }
 
-        .section p + p {
-            margin-top: 20px;
-        }
+    .btn {
+        display: inline-block;
+        padding: 13px 34px;
+        font-family: 'Cinzel', serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        text-decoration: none;
+        color: #fff;
+        background: var(--ember);
+        border: 1px solid var(--ember);
+        transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
 
-        /* ── Two-column feature blocks ── */
-        .split {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 48px;
-            margin-top: 48px;
-        }
+    .btn:hover { transform: translateY(-2px); background: #d4442f; }
 
-        .split-block h3 {
-            font-family: 'Cinzel', serif;
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 12px;
-        }
+    .btn.ghost {
+        background: transparent;
+        border-color: rgba(232, 228, 223, 0.45);
+        color: var(--paper);
+    }
 
-        .split-block p {
-            font-size: 1rem;
-            color: #b0aaa3;
-            font-weight: 300;
-        }
+    .btn.ghost:hover { background: rgba(232, 228, 223, 0.08); }
 
-        /* ── Downloads ── */
-        .downloads {
-            padding: 100px 0;
-            border-top: 1px solid #1a1a1a;
-        }
+    .btn.small { padding: 9px 22px; font-size: 0.75rem; letter-spacing: 2px; }
 
-        .version-info {
-            color: #807a73;
-            font-size: 0.9rem;
-            margin-bottom: 36px;
-        }
+    /* ── Hero ────────────────────────────────────────────────────── */
+    .hero {
+        position: relative;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 120px clamp(16px, 5vw, 48px) 80px;
+        overflow: hidden;
+    }
 
-        .download-row {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
+    .hero video, .hero .fallback {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -2;
+    }
 
-        .dl-card {
-            flex: 1;
-            min-width: 260px;
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
-            padding: 36px 32px;
-            text-align: center;
-            transition: border-color 0.3s;
-        }
+    .hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background:
+            radial-gradient(ellipse 80% 60% at 50% 45%, rgba(7, 6, 10, 0.45), rgba(7, 6, 10, 0.88) 75%),
+            linear-gradient(to bottom, rgba(7, 6, 10, 0.75), rgba(7, 6, 10, 0.35) 40%, var(--ink));
+    }
 
-        .dl-card:hover {
-            border-color: #333;
-        }
+    .hero h1 {
+        font-size: clamp(3rem, 11vw, 7rem);
+        font-weight: 900;
+        letter-spacing: clamp(6px, 2vw, 16px);
+        text-transform: uppercase;
+        line-height: 1.05;
+        text-shadow: 0 6px 40px rgba(0, 0, 0, 0.75);
+    }
 
-        .dl-card .dl-platform {
-            font-family: 'Cinzel', serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 8px;
-        }
+    .hero .tagline {
+        font-size: clamp(1rem, 2.4vw, 1.35rem);
+        font-weight: 300;
+        color: #d6d0c8;
+        max-width: 620px;
+        margin: 22px auto 38px;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
+    }
 
-        .dl-card .dl-meta {
-            font-size: 0.85rem;
-            color: #807a73;
-            margin-bottom: 24px;
-        }
+    .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        justify-content: center;
+    }
 
-        .dl-btn {
-            display: inline-block;
-            padding: 12px 32px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            text-decoration: none;
-            color: #fff;
-            border: 1px solid #444;
-            transition: all 0.25s;
-        }
+    .hero .release-line {
+        margin-top: 26px;
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        min-height: 1.4em;
+    }
 
-        .dl-btn:hover {
-            border-color: #fff;
-            background: #fff;
-            color: #000;
-        }
+    .scroll-cue {
+        position: absolute;
+        bottom: 26px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: rgba(232, 228, 223, 0.5);
+        animation: bob 2.6s ease-in-out infinite;
+    }
 
-        /* ── Trailer (hidden until URL is added) ── */
-        .trailer { display: none; }
-        .trailer iframe {
-            width: 100%;
-            max-width: 860px;
-            aspect-ratio: 16/9;
-            border: none;
-            margin-top: 32px;
-        }
+    @keyframes bob {
+        0%, 100% { transform: translate(-50%, 0); }
+        50% { transform: translate(-50%, 7px); }
+    }
 
-        /* ── Screenshots (hidden until images are added) ── */
-        .screenshots { display: none; }
-        .screenshot-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 12px;
-            margin-top: 32px;
-        }
-        .screenshot-grid img {
-            width: 100%;
-            border: 1px solid #1a1a1a;
-        }
+    /* ── Sections ────────────────────────────────────────────────── */
+    .section { padding: clamp(64px, 10vw, 128px) clamp(16px, 5vw, 48px); }
 
-        /* ── Footer ── */
-        .footer {
-            text-align: center;
-            padding: 60px 24px;
-            border-top: 1px solid #1a1a1a;
-            font-size: 0.85rem;
-            color: #555;
-        }
+    .section:nth-of-type(even) { background: #0b0910; }
 
-        .footer a {
-            color: #888;
-            text-decoration: none;
-        }
-        .footer a:hover { color: #ccc; }
+    .container { max-width: 1120px; margin: 0 auto; }
 
-        .footer .copy {
-            margin-top: 16px;
-            font-size: 0.75rem;
-            color: #333;
-        }
+    .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--ember);
+        margin-bottom: 14px;
+    }
 
-        /* ── Loading / empty ── */
-        .loading { text-align: center; padding: 30px; color: #555; }
-        .no-release { text-align: center; color: #555; padding: 20px; }
-        .no-release a { color: #a83228; text-decoration: none; }
+    .section h2 {
+        font-size: clamp(1.7rem, 4vw, 2.6rem);
+        font-weight: 700;
+        line-height: 1.25;
+        margin-bottom: 24px;
+        max-width: 22ch;
+    }
 
-        /* ── Responsive ── */
-        @media (max-width: 700px) {
-            .hero h1 { font-size: 3rem; letter-spacing: 6px; }
-            .hero p { font-size: 1.1rem; }
-            .section h2 { font-size: 1.8rem; }
-            .split { grid-template-columns: 1fr; gap: 32px; }
-            .dl-card { min-width: 100%; }
-        }
-    </style>
+    .section p {
+        color: #c4bdb4;
+        font-weight: 300;
+        max-width: 68ch;
+        margin-bottom: 18px;
+    }
+
+    .pillars {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: clamp(20px, 3vw, 40px);
+        margin-top: 44px;
+    }
+
+    .pillar {
+        border-top: 2px solid var(--ember);
+        padding-top: 20px;
+        background: linear-gradient(to bottom, var(--ember-soft), transparent 60%);
+    }
+
+    .pillar h3 {
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+
+    .pillar p { font-size: 0.95rem; margin: 0; }
+
+    /* ── Gallery ─────────────────────────────────────────────────── */
+    .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+        margin-top: 40px;
+    }
+
+    .gallery figure {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--edge);
+        cursor: zoom-in;
+        aspect-ratio: 16 / 9;
+    }
+
+    .gallery img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+
+    .gallery figure:hover img { transform: scale(1.05); }
+
+    .gallery figcaption {
+        position: absolute;
+        inset: auto 0 0 0;
+        padding: 26px 14px 10px;
+        font-size: 0.78rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #efece7;
+        background: linear-gradient(to top, rgba(7, 6, 10, 0.9), transparent);
+    }
+
+    /* ── Trailer ─────────────────────────────────────────────────── */
+    .trailer-frame {
+        margin-top: 36px;
+        border: 1px solid var(--edge);
+        background: #000;
+    }
+
+    .trailer-frame video { width: 100%; display: block; aspect-ratio: 16 / 9; }
+
+    /* ── Downloads ───────────────────────────────────────────────── */
+    .downloads { text-align: center; }
+
+    .release-tag {
+        font-size: 0.85rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 36px;
+        min-height: 1.4em;
+    }
+
+    .dl-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .dl-card {
+        border: 1px solid var(--edge);
+        padding: 34px 22px;
+        background: rgba(232, 228, 223, 0.03);
+        transition: border-color 0.25s ease, transform 0.25s ease;
+    }
+
+    .dl-card:hover { border-color: rgba(192, 57, 43, 0.6); transform: translateY(-3px); }
+
+    .dl-card .platform {
+        font-family: 'Cinzel', serif;
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+    }
+
+    .dl-card .meta {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 20px;
+        word-break: break-word;
+    }
+
+    .note {
+        color: var(--muted);
+        font-size: 0.9rem;
+        max-width: 60ch;
+        margin: 28px auto 0;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    .footer {
+        padding: 56px 24px 72px;
+        text-align: center;
+        border-top: 1px solid var(--edge);
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+
+    .footer a { color: var(--paper); text-decoration: none; }
+    .footer a:hover { color: var(--ember); }
+    .footer .copy { margin-top: 18px; font-size: 0.78rem; color: #6f6862; }
+
+    /* ── Lightbox ────────────────────────────────────────────────── */
+    .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(4, 3, 6, 0.95);
+        cursor: zoom-out;
+    }
+
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 100%; border: 1px solid var(--edge); }
+
+    @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .scroll-cue { animation: none; }
+        .gallery figure:hover img { transform: none; }
+    }
+
+    @media (max-width: 640px) {
+        .topbar nav a:not(.btn) { display: none; }
+    }
+</style>
 </head>
 <body>
 
-    <!-- Hero -->
-    <div class="hero">
-        <h1>Kusane</h1>
-        <p>A dark action platformer built on chains, blades, and unforgiving combat.</p>
-        <a href="#download" class="hero-btn">Download</a>
-    </div>
+<header class="topbar" id="topbar">
+    <a href="#top" class="mark">Kusane</a>
+    <nav>
+        <a href="#game">The Game</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#trailer">Trailer</a>
+        <a href="#download" class="btn small">Download</a>
+    </nav>
+</header>
 
-    <!-- About -->
-    <div class="section">
-        <div class="container">
-            <div class="section-eyebrow">The Game</div>
-            <h2>Fight with chains. Kill with precision.</h2>
-            <p>
-                Kusane is a 3D action platformer where you wield a chain weapon alongside
-                melee slashes to tear through waves of ground and airborne enemies. Hook targets
-                from a distance, pull them in, and finish them with devastating combo strings.
-                Every encounter demands sharp reflexes and smart positioning.
-            </p>
-            <p>
-                Collect feathers from fallen enemies to charge a powerful AoE blast that clears
-                the field when you're overwhelmed. Time your dodges to trigger slow-motion windows
-                that let you punish overcommitted enemies.
-            </p>
-        </div>
+<section class="hero" id="top">
+    <video autoplay muted loop playsinline poster="media/hero-poster.jpg" aria-hidden="true">
+        <source src="media/hero.mp4" type="video/mp4">
+    </video>
+    <h1>Kusane</h1>
+    <p class="tagline">A dark action platformer built on chains, blades and unforgiving combat.</p>
+    <div class="hero-actions">
+        <a href="#download" class="btn">Download</a>
+        <a href="#trailer" class="btn ghost">Watch the trailer</a>
     </div>
+    <div class="release-line" id="hero-release"></div>
+    <div class="scroll-cue">Scroll</div>
+</section>
 
-    <!-- Combat -->
-    <div class="section">
-        <div class="container">
-            <div class="section-eyebrow">Combat</div>
-            <h2>Chain attacks, airborne combos, and a boss that evolves.</h2>
-            <p>
-                The chain isn't just a weapon — it's how you move, how you interact, and how you
-                survive. Grapple to points across the level, rip open chain-locked doors while
-                fending off enemies, and aim manually to snag exactly the target you want.
-            </p>
-            <div class="split">
-                <div class="split-block">
-                    <h3>Aerial Combat</h3>
-                    <p>Launch enemies into the air and follow up with mid-air slash combos and jump extensions. Chain between ground and air seamlessly.</p>
-                </div>
-                <div class="split-block">
-                    <h3>Multi-Phase Boss</h3>
-                    <p>Face a miniboss whose abilities evolve across phases — from dash attacks to feather bombs to rapid projectile bursts. Adapt or die.</p>
-                </div>
+<section class="section" id="game">
+    <div class="container">
+        <div class="eyebrow">The Game</div>
+        <h2>Fight with chains. Kill with precision.</h2>
+        <p>
+            Kusane is a 3D action platformer where a chain weapon and a blade carry you through
+            waves of ground and airborne enemies. Hook a target from across the room, pull it in,
+            and finish it on the ground, or take the fight into the air and keep it there.
+        </p>
+        <p>
+            Feathers from fallen enemies charge a blast that clears the field when it closes in,
+            and a dodge through an attack slows the world long enough to answer it.
+        </p>
+
+        <div class="pillars">
+            <div class="pillar">
+                <h3>The Chain</h3>
+                <p>A weapon, a way across a gap, and the only way to bring a flying enemy down to where a blade can reach it.</p>
+            </div>
+            <div class="pillar">
+                <h3>Aerial Combat</h3>
+                <p>Launch an enemy, follow it up, and keep the combo alive between the ground and the air.</p>
+            </div>
+            <div class="pillar">
+                <h3>The Miniboss</h3>
+                <p>Three phases that each have to be read: it telegraphs, it answers what you do, and it cannot be stunlocked.</p>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Presentation -->
-    <div class="section">
-        <div class="container">
-            <div class="section-eyebrow">Presentation</div>
-            <h2>Voice-acted cutscenes, hand-crafted art, and cinematic effects.</h2>
-            <p>
-                Opening and ending cutscenes with full voice-over set the tone for a world that
-                takes itself seriously. In-game, screen shake, motion blur, chromatic aberration,
-                and distance-based camera effects make every hit feel impactful.
-            </p>
-            <div class="split">
-                <div class="split-block">
-                    <h3>Visual Polish</h3>
-                    <p>Post-processing effects layer on vignette, chromatic aberration, and motion blur to create a dark, cinematic atmosphere throughout gameplay.</p>
-                </div>
-                <div class="split-block">
-                    <h3>Custom Engine</h3>
-                    <p>Built from scratch in C++ with an ECS architecture, Jolt physics, Lua scripting, and OpenGL rendering. Runs natively on both Windows and Android.</p>
-                </div>
-            </div>
+<section class="section" id="gallery">
+    <div class="container">
+        <div class="eyebrow">Gallery</div>
+        <h2>The temple, and what waits in it.</h2>
+        <div class="gallery">
+            <figure><img src="media/shot-statue.jpg" alt="The statue room" loading="lazy"><figcaption>The statue room</figcaption></figure>
+            <figure><img src="media/shot-boss-charge.jpg" alt="The miniboss winding up its charged slash" loading="lazy"><figcaption>A charged slash, winding up</figcaption></figure>
+            <figure><img src="media/shot-boss-dive.jpg" alt="The mark under the miniboss's dive" loading="lazy"><figcaption>The dive, marked on the floor</figcaption></figure>
+            <figure><img src="media/shot-boss-glow.jpg" alt="The miniboss glowing while it cannot be hooked" loading="lazy"><figcaption>Out of the chain's reach</figcaption></figure>
+            <figure><img src="media/shot-temple.jpg" alt="The temple hall" loading="lazy"><figcaption>The temple hall</figcaption></figure>
+            <figure><img src="media/shot-library.jpg" alt="The library balcony" loading="lazy"><figcaption>The library</figcaption></figure>
         </div>
     </div>
+</section>
 
-    <!-- Trailer (uncomment when ready) -->
-    <!--
-    <div class="section trailer" style="display:block; text-align:center;">
-        <div class="container">
-            <div class="section-eyebrow">Watch</div>
-            <h2>Trailer</h2>
-            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" allowfullscreen></iframe>
+<section class="section" id="trailer">
+    <div class="container">
+        <div class="eyebrow">Watch</div>
+        <h2>Trailer</h2>
+        <div class="trailer-frame">
+            <video controls preload="none" poster="media/trailer-poster.jpg">
+                <source src="media/trailer.mp4" type="video/mp4">
+                Your browser cannot play this video.
+            </video>
         </div>
     </div>
-    -->
+</section>
 
-    <!-- Screenshots (uncomment when ready) -->
-    <!--
-    <div class="section screenshots" style="display:block;">
-        <div class="container">
-            <div class="section-eyebrow">Gallery</div>
-            <h2>Screenshots</h2>
-            <div class="screenshot-grid">
-                <img src="screenshots/screenshot1.png" alt="Screenshot 1">
-                <img src="screenshots/screenshot2.png" alt="Screenshot 2">
-            </div>
-        </div>
+<section class="section downloads" id="download">
+    <div class="container">
+        <div class="eyebrow">Play</div>
+        <h2 style="margin: 0 auto 10px;">Download</h2>
+        <div class="release-tag" id="release-tag">Checking for the latest release...</div>
+        <div class="dl-grid" id="download-cards"></div>
+        <p class="note">
+            Windows ships as an installer. Linux is a single AppImage: mark it executable and run it.
+            Android is an APK, so allow installs from your browser first.
+        </p>
     </div>
-    -->
+</section>
 
-    <!-- Download -->
-    <div class="downloads" id="download">
-        <div class="container">
-            <div class="section-eyebrow">Play Now</div>
-            <h2 style="font-family:'Cinzel',serif; font-size:2.4rem; font-weight:700; color:#fff; margin-bottom:8px;">Download</h2>
-            <div class="version-info" id="version-info">Checking for latest release...</div>
-            <div class="download-row" id="download-cards">
-                <div class="loading">Loading release info...</div>
-            </div>
-        </div>
+<footer class="footer">
+    <a href="https://github.com/yyan115/GAM300">GitHub</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://github.com/yyan115/GAM300/releases">All releases</a>
+    <div class="copy">
+        Kusane, by Team Marbles, on a custom C++ engine.<br>
+        All content &copy; 2025 DigiPen Institute of Technology Singapore. All rights reserved.
     </div>
+</footer>
 
-    <!-- Footer -->
-    <div class="footer">
-        <a href="https://github.com/yyan115/GAM300">GitHub</a>
-        &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-        <a href="https://github.com/yyan115/GAM300/releases">All Releases</a>
-        <div class="copy">All content &copy; 2025 DigiPen Institute of Technology Singapore. All rights reserved.</div>
-    </div>
+<div class="lightbox" id="lightbox"><img alt=""></div>
 
-    <script>
-        const REPO = 'yyan115/GAM300';
+<script>
+    const REPO = 'yyan115/GAM300';
 
-        async function loadRelease() {
-            const cardsEl = document.getElementById('download-cards');
-            const versionEl = document.getElementById('version-info');
+    // Top bar goes solid once the hero is behind you
+    const topbar = document.getElementById('topbar');
+    const onScroll = () => topbar.classList.toggle('solid', window.scrollY > 80);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-            try {
-                const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
+    // Gallery lightbox
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = lightbox.querySelector('img');
+    document.querySelectorAll('.gallery img').forEach(img => {
+        img.addEventListener('click', () => {
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt;
+            lightbox.classList.add('open');
+        });
+    });
+    lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') lightbox.classList.remove('open');
+    });
 
-                if (res.status === 404) {
-                    versionEl.textContent = '';
-                    cardsEl.innerHTML = '<p class="no-release">No releases yet. Downloads will appear here after the first release.</p>';
-                    return;
-                }
+    // Downloads, from the latest release
+    const PLATFORMS = [
+        { name: 'Windows', label: 'Download installer', match: a => a.name.endsWith('.exe') },
+        { name: 'Linux', label: 'Download AppImage', match: a => a.name.endsWith('.AppImage') },
+        { name: 'Android', label: 'Download APK', match: a => a.name.endsWith('.apk') },
+    ];
 
-                if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+    const fileSize = bytes => {
+        const mb = bytes / (1024 * 1024);
+        return mb >= 1024 ? (mb / 1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB';
+    };
 
-                const release = await res.json();
-                versionEl.textContent = `${release.tag_name} \u2014 ${release.name}`;
+    async function loadRelease() {
+        const cards = document.getElementById('download-cards');
+        const tag = document.getElementById('release-tag');
+        const heroLine = document.getElementById('hero-release');
 
-                const winAsset = release.assets.find(a => a.name.includes('Setup') && a.name.endsWith('.exe'));
-                const apkAsset = release.assets.find(a => a.name.endsWith('.apk'));
-
-                let html = '';
-
-                if (winAsset) {
-                    const sizeMB = (winAsset.size / (1024 * 1024)).toFixed(1);
-                    html += `
-                        <div class="dl-card">
-                            <div class="dl-platform">Windows</div>
-                            <div class="dl-meta">${winAsset.name} &middot; ${sizeMB} MB</div>
-                            <a href="${winAsset.browser_download_url}" class="dl-btn">Download Installer</a>
-                        </div>`;
-                }
-
-                if (apkAsset) {
-                    const sizeMB = (apkAsset.size / (1024 * 1024)).toFixed(1);
-                    html += `
-                        <div class="dl-card">
-                            <div class="dl-platform">Android</div>
-                            <div class="dl-meta">${apkAsset.name} &middot; ${sizeMB} MB</div>
-                            <a href="${apkAsset.browser_download_url}" class="dl-btn">Download APK</a>
-                        </div>`;
-                }
-
-                if (!html) {
-                    html = '<p class="no-release">Release found but no downloadable assets.</p>';
-                }
-
-                cardsEl.innerHTML = html;
-
-            } catch (err) {
-                console.error('Failed to load release:', err);
-                versionEl.textContent = '';
-                cardsEl.innerHTML = `
-                    <p class="no-release">
-                        Could not load release info.
-                        <a href="https://github.com/${REPO}/releases">Download from GitHub</a>
-                    </p>`;
+        try {
+            const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
+            if (res.status === 404) {
+                tag.textContent = '';
+                cards.innerHTML = '<p class="note">No releases yet. Downloads appear here with the first one.</p>';
+                return;
             }
-        }
+            if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
 
-        loadRelease();
-    </script>
+            const release = await res.json();
+            tag.textContent = `${release.tag_name} — ${release.name}`;
+            heroLine.textContent = `${release.tag_name} out now`;
+
+            const html = PLATFORMS.map(p => {
+                const asset = release.assets.find(p.match);
+                if (!asset) return '';
+                return `
+                    <div class="dl-card">
+                        <div class="platform">${p.name}</div>
+                        <div class="meta">${asset.name} &middot; ${fileSize(asset.size)}</div>
+                        <a class="btn" href="${asset.browser_download_url}">${p.label}</a>
+                    </div>`;
+            }).join('');
+
+            cards.innerHTML = html || '<p class="note">That release has no downloadable files yet.</p>';
+        } catch (err) {
+            console.error('Failed to load release:', err);
+            tag.textContent = '';
+            cards.innerHTML = `<p class="note">Could not reach GitHub.
+                <a href="https://github.com/${REPO}/releases">Open the releases page</a>.</p>`;
+        }
+    }
+
+    loadRelease();
+</script>
 
 </body>
 </html>
