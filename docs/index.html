@@ -6,7 +6,7 @@
 <title>Kusane</title>
 <meta name="description" content="Kusane is a 3D action game about dragging things out of the sky with a chain, for Windows, Linux and Android.">
 <meta property="og:title" content="Kusane">
-<meta property="og:description" content="Her wings are gone. The thing that took them is wearing them.">
+<meta property="og:description" content="The Karasu took the temple, and Kusane woke without her wings.">
 <meta property="og:image" content="media/hero-poster.jpg">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -304,6 +304,15 @@
         font-size: clamp(1.05rem, 2vw, 1.3rem);
         font-weight: 300;
         color: #d6d0c8;
+        margin-top: 26px;
+    }
+
+    .attrib {
+        font-size: 0.72rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-top: 10px;
     }
 
     /* ── Gallery ─────────────────────────────────────────────────── */
@@ -484,7 +493,7 @@
         <source src="media/hero.mp4" type="video/mp4">
     </video>
     <h1>Kusane</h1>
-    <p class="tagline">Her wings are gone. The thing that took them is wearing them.</p>
+    <p class="tagline">The Karasu took the temple, and Kusane woke without her wings.</p>
     <div class="hero-actions">
         <a href="#download" class="btn">Download</a>
         <a href="#chain" class="btn ghost">See it</a>
@@ -496,8 +505,8 @@
 <section class="section" id="chain">
     <div class="container">
         <div class="eyebrow">The Chain</div>
-        <h2>They fly. You do not.</h2>
-        <p class="lede">So pull them down.</p>
+        <h2>&ldquo;If I cannot strike them in the air, I will drag them down.&rdquo;</h2>
+        <div class="attrib">Kusane</div>
         <div class="clip-frame">
             <video autoplay muted loop playsinline poster="media/shot-statue.jpg" aria-hidden="true">
                 <source src="media/clip-chain.mp4" type="video/mp4">
@@ -509,8 +518,10 @@
 <section class="section" id="boss">
     <div class="container">
         <div class="eyebrow">The Boss</div>
-        <h2>One fight left.</h2>
-        <p class="lede">It is wearing your wings.</p>
+        <h2>&ldquo;Do you like my new wings?&rdquo;</h2>
+        <div class="attrib">Boss</div>
+        <p class="lede">&ldquo;Those feathers belonged to us, our warriors.&rdquo;</p>
+        <div class="attrib">Kusane</div>
         <div class="clip-frame">
             <video autoplay muted loop playsinline poster="media/shot-boss-charge.jpg" aria-hidden="true">
                 <source src="media/clip-boss.mp4" type="video/mp4">
@@ -521,8 +532,7 @@
 
 <section class="section" id="gallery">
     <div class="container">
-        <div class="eyebrow">Gallery</div>
-        <h2>The temple.</h2>
+        <div class="eyebrow">Screenshots</div>
         <div class="gallery">
             <figure><img src="media/shot-temple.jpg" alt="The chain resting on its holder in the Temple Hall" loading="lazy"><figcaption>The Temple Hall</figcaption></figure>
             <figure><img src="media/shot-library.jpg" alt="A Karasu standing among the bookshelves of the Study" loading="lazy"><figcaption>The Study</figcaption></figure>
@@ -536,7 +546,6 @@
 
 <section class="section downloads" id="download">
     <div class="container">
-        <div class="eyebrow">Play</div>
         <h2 style="margin: 0 auto 10px;">Download</h2>
         <div class="release-tag" id="release-tag">Checking for the latest release...</div>
         <div class="dl-grid" id="download-cards"></div>
