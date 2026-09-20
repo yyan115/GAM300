@@ -36,6 +36,7 @@ public:
     
     static void SwapBuffers();
     static void PollEvents();
+    static void WaitEvents(double timeout);
 
     static void error_cb(int error, char const* description);
     static void fbsize_cb(PlatformWindow ptr_win, int width, int height);
@@ -68,6 +69,7 @@ public:
     static bool IsCursorLocked();              // Check if cursor is currently locked
     static bool IsCursorLockRequested();       // Check if game code requested cursor lock
     static void UpdateCursorState();           // Called each frame to enforce cursor state (after ImGui)
+    static void OnWindowFocusChanged(bool focused);  // From the platform, the moment focus changes
     static void ForceUnlockCursor();           // Force unlock (called when game stops, etc.)
     static void PauseCursorLock();             // User pressed ESC to temporarily unlock
     static void ResumeCursorLock();            // User clicked back in game to re-lock

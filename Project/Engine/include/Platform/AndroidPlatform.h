@@ -69,6 +69,8 @@ public:
     bool IsKeyPressed(Input::Key key) override;
     bool IsMouseButtonPressed(Input::MouseButton button) override;
     void GetMousePosition(double* x, double* y) override;
+    // A touch screen has no pointer to put anywhere
+    void SetMousePosition(double x, double y) override { (void)x; (void)y; }
 
     void SetCursorMode(CursorMode mode) override;
     bool IsCursorLocked() override;

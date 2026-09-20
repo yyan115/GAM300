@@ -18,6 +18,9 @@ public:
     virtual void SetShouldClose(bool shouldClose) = 0;
     virtual void SwapBuffers() = 0;
     virtual void PollEvents() = 0;
+    // Sleeps until an event arrives or the timeout passes, for a window that
+    // is not being used and has nothing to draw
+    virtual void WaitEvents(double timeout) { (void)timeout; PollEvents(); }
     
     // Window properties
     virtual int GetWindowWidth() = 0;
@@ -35,6 +38,8 @@ public:
     virtual bool IsKeyPressed(Input::Key key) = 0;
     virtual bool IsMouseButtonPressed(Input::MouseButton button) = 0;
     virtual void GetMousePosition(double* x, double* y) = 0;
+    // Puts the pointer somewhere in the window, in window pixels
+    virtual void SetMousePosition(double x, double y) = 0;
     virtual float GetScrollY() { return 0.0f; }
 
     // Cursor control. Free is shown and can leave the window, Confined is

@@ -12,6 +12,7 @@
 #include "TimeManager.hpp"
 #include "UI/QuitConfirmation.hpp"
 #include <Logging.hpp>
+#include <algorithm>
 
 #define UNREFERENCED_PARAMETER(P) (P)
 
@@ -276,6 +277,13 @@ static bool s_cursorPausedByUser = false;    // User pressed ESC to temporarily 
 
 // The cursor mode the current state calls for
 static CursorMode DesiredCursorMode() {
+    // A window that is not the one being used never holds the pointer.
+    // Otherwise a pointer confined to a fullscreen game outlives the Alt+Tab
+    // that left it, and the desktop has no way to take it back: the machine
+    // looks frozen until the game is killed.
+    if (!WindowManager::IsWindowFocused() || WindowManager::IsWindowMinimized()) {
+        return CursorMode::Free;
+    }
     // The quit prompt needs the cursor. The game's own request is left as it
     // is, so the lock comes back by itself when the prompt goes.
     bool lock = s_cursorLockRequested && !s_cursorPausedByUser
@@ -343,6 +351,29 @@ bool WindowManager::IsCursorPausedByUser() {
     return s_cursorPausedByUser;
 }
 
+// A fullscreen game keeps the pointer on its own screen. GLFW asks the window
+// system to confine it, and under a compositor that request is not always
+// honoured, so the pointer is also pushed back whenever it is found outside.
+// Without this it walks onto the next monitor.
+static void KeepPointerInWindow(IPlatform* platform) {
+    if (s_appliedCursorMode != CursorMode::Confined) return;
+    double x = 0.0, y = 0.0;
+    platform->GetMousePosition(&x, &y);
+    const double w = static_cast<double>(platform->GetWindowWidth());
+    const double h = static_cast<double>(platform->GetWindowHeight());
+    if (w <= 2.0 || h <= 2.0) return;
+    const double cx = std::min(std::max(x, 1.0), w - 2.0);
+    const double cy = std::min(std::max(y, 1.0), h - 2.0);
+    if (cx != x || cy != y) platform->SetMousePosition(cx, cy);
+}
+
+// Called by the platform the moment focus changes, so the pointer is let go
+// on the way out rather than at the end of a frame that may never come.
+void WindowManager::OnWindowFocusChanged(bool focused) {
+    (void)focused;
+    ApplyCursorMode(platform);
+}
+
 void WindowManager::UpdateCursorState() {
     if (!platform) return;
 
@@ -354,6 +385,7 @@ void WindowManager::UpdateCursorState() {
 
     // Also picks up a switch between fullscreen and windowed, within a frame
     ApplyCursorMode(platform);
+    KeepPointerInWindow(platform);
 }
 
 // ============================================================================
@@ -382,6 +414,13 @@ static void RouteWindowCloseRequest(IPlatform* platform) {
 void WindowManager::PollEvents() {
     if (platform) {
         platform->PollEvents();
+        RouteWindowCloseRequest(platform);
+    }
+}
+
+void WindowManager::WaitEvents(double timeout) {
+    if (platform) {
+        platform->WaitEvents(timeout);
         RouteWindowCloseRequest(platform);
     }
 }

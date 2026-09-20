@@ -16,6 +16,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 #ifndef ANDROID
 #include "Platform/DesktopPlatform.h"
+#include "WindowManager.hpp"
 #include "Input/Keys.h"
 #include <glad/glad.h>
 #include <iostream>
@@ -126,6 +127,10 @@ void DesktopPlatform::SwapBuffers() {
 
 void DesktopPlatform::PollEvents() {
     glfwPollEvents();
+}
+
+void DesktopPlatform::WaitEvents(double timeout) {
+    glfwWaitEventsTimeout(timeout);
 }
 
 int DesktopPlatform::GetWindowWidth() {
@@ -350,8 +355,8 @@ void DesktopPlatform::FramebufferSizeCallback(GLFWwindow* window, int width, int
 }
 
 void DesktopPlatform::FocusCallback(GLFWwindow* window, int focused) {
-	(void)focused,window;
-    // Handle focus changes if needed
+	(void)window;
+    WindowManager::OnWindowFocusChanged(focused != 0);
 }
 
 // Input callback implementations
@@ -403,6 +408,10 @@ void DesktopPlatform::ScrollCallback(GLFWwindow* window, double xoffset, double 
     if (s_instance) {
         s_instance->m_scrollY += static_cast<float>(yoffset);
     }
+}
+
+void DesktopPlatform::SetMousePosition(double x, double y) {
+    if (window) glfwSetCursorPos(window, x, y);
 }
 
 float DesktopPlatform::GetScrollY() {

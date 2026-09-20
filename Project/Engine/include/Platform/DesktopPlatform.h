@@ -60,6 +60,7 @@ public:
     void SetShouldClose(bool shouldClose) override;
     void SwapBuffers() override;
     void PollEvents() override;
+    void WaitEvents(double timeout) override;
     
     int GetWindowWidth() override;
     int GetWindowHeight() override;
@@ -75,6 +76,7 @@ public:
     bool IsKeyPressed(Input::Key key) override;
     bool IsMouseButtonPressed(Input::MouseButton button) override;
     void GetMousePosition(double* x, double* y) override;
+    void SetMousePosition(double x, double y) override;
     float GetScrollY() override;
 
     void SetCursorMode(CursorMode mode) override;
