@@ -72,22 +72,23 @@ local function stepOnce(state, dt, params)
         if needsBidirectional then
             -- Forward pass
             for i = 2, n do
-                local a = positions[i-1]
-                local b = positions[i]
-                local ax,ay,az = a[1], a[2], a[3]
-                local bx,by,bz = b[1], b[2], b[3]
-                local dx,dy,dz = bx - ax, by - ay, bz - az
-                local dist = vec_len(dx,dy,dz)
-                if dist < EPS then dist = EPS end
-                local target = segLen
-                if params and params.LinkMaxDistance and (not params.IsElastic) then
-                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-                end
-                local diff = (dist - target) / dist
                 local invA = invMass[i-1] or 0
                 local invB = invMass[i] or 0
                 local w = invA + invB
+                -- Two fixed links cannot receive a constraint correction.
                 if w > EPS then
+                    local a = positions[i-1]
+                    local b = positions[i]
+                    local ax,ay,az = a[1], a[2], a[3]
+                    local bx,by,bz = b[1], b[2], b[3]
+                    local dx,dy,dz = bx - ax, by - ay, bz - az
+                    local dist = vec_len(dx,dy,dz)
+                    if dist < EPS then dist = EPS end
+                    local target = segLen
+                    if params and params.LinkMaxDistance and (not params.IsElastic) then
+                        if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
+                    end
+                    local diff = (dist - target) / dist
                     local fa = (invA / w) * diff
                     local fb = (invB / w) * diff
                     if invA > 0 then
@@ -105,22 +106,23 @@ local function stepOnce(state, dt, params)
 
             -- Backward pass
             for i = n, 2, -1 do
-                local a = positions[i-1]
-                local b = positions[i]
-                local ax,ay,az = a[1], a[2], a[3]
-                local bx,by,bz = b[1], b[2], b[3]
-                local dx,dy,dz = bx - ax, by - ay, bz - az
-                local dist = vec_len(dx,dy,dz)
-                if dist < EPS then dist = EPS end
-                local target = segLen
-                if params and params.LinkMaxDistance and (not params.IsElastic) then
-                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-                end
-                local diff = (dist - target) / dist
                 local invA = invMass[i-1] or 0
                 local invB = invMass[i] or 0
                 local w = invA + invB
+                -- Two fixed links cannot receive a constraint correction.
                 if w > EPS then
+                    local a = positions[i-1]
+                    local b = positions[i]
+                    local ax,ay,az = a[1], a[2], a[3]
+                    local bx,by,bz = b[1], b[2], b[3]
+                    local dx,dy,dz = bx - ax, by - ay, bz - az
+                    local dist = vec_len(dx,dy,dz)
+                    if dist < EPS then dist = EPS end
+                    local target = segLen
+                    if params and params.LinkMaxDistance and (not params.IsElastic) then
+                        if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
+                    end
+                    local diff = (dist - target) / dist
                     local fa = (invA / w) * diff
                     local fb = (invB / w) * diff
                     if invA > 0 then
@@ -138,22 +140,23 @@ local function stepOnce(state, dt, params)
         else
             -- Single forward pass
             for i = 2, n do
-                local a = positions[i-1]
-                local b = positions[i]
-                local ax,ay,az = a[1], a[2], a[3]
-                local bx,by,bz = b[1], b[2], b[3]
-                local dx,dy,dz = bx - ax, by - ay, bz - az
-                local dist = vec_len(dx,dy,dz)
-                if dist < EPS then dist = EPS end
-                local target = segLen
-                if params and params.LinkMaxDistance and (not params.IsElastic) then
-                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-                end
-                local diff = (dist - target) / dist
                 local invA = invMass[i-1] or 0
                 local invB = invMass[i] or 0
                 local w = invA + invB
+                -- Two fixed links cannot receive a constraint correction.
                 if w > EPS then
+                    local a = positions[i-1]
+                    local b = positions[i]
+                    local ax,ay,az = a[1], a[2], a[3]
+                    local bx,by,bz = b[1], b[2], b[3]
+                    local dx,dy,dz = bx - ax, by - ay, bz - az
+                    local dist = vec_len(dx,dy,dz)
+                    if dist < EPS then dist = EPS end
+                    local target = segLen
+                    if params and params.LinkMaxDistance and (not params.IsElastic) then
+                        if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
+                    end
+                    local diff = (dist - target) / dist
                     local fa = (invA / w) * diff
                     local fb = (invB / w) * diff
                     if invA > 0 then
