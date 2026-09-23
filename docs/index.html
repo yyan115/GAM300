@@ -1,648 +1,161 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kusane</title>
-<meta name="description" content="Kusane is a 3D action game about dragging things out of the sky with a chain, for Windows, Linux and Android.">
-<meta property="og:title" content="Kusane">
-<meta property="og:description" content="The Karasu took the temple, and Kusane woke without her wings.">
-<meta property="og:image" content="media/hero-poster.jpg">
-<meta property="og:type" content="website">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --ink: #07060a;
-        --paper: #e8e4df;
-        --muted: #a9a29a;
-        --ember: #c0392b;
-        --ember-soft: rgba(192, 57, 43, 0.14);
-        --edge: rgba(232, 228, 223, 0.12);
-    }
-
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: var(--ink);
-        color: var(--paper);
-        line-height: 1.75;
-        overflow-x: hidden;
-        -webkit-font-smoothing: antialiased;
-    }
-
-    h1, h2, h3, .display { font-family: 'Cinzel', Georgia, serif; }
-
-    a { color: inherit; }
-
-    /* ── Top bar ─────────────────────────────────────────────────── */
-    .topbar {
-        position: fixed;
-        inset: 0 0 auto 0;
-        z-index: 40;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 14px clamp(16px, 4vw, 48px);
-        background: linear-gradient(to bottom, rgba(7, 6, 10, 0.92), rgba(7, 6, 10, 0));
-        transition: background 0.3s ease, border-color 0.3s ease;
-        border-bottom: 1px solid transparent;
-    }
-
-    .topbar.solid {
-        background: rgba(7, 6, 10, 0.94);
-        border-bottom-color: var(--edge);
-        backdrop-filter: blur(8px);
-    }
-
-    .topbar .mark {
-        font-family: 'Cinzel', serif;
-        font-weight: 700;
-        letter-spacing: 5px;
-        text-transform: uppercase;
-        font-size: 0.95rem;
-        text-decoration: none;
-    }
-
-    .topbar nav {
-        display: flex;
-        align-items: center;
-        gap: clamp(12px, 2vw, 28px);
-        font-size: 0.85rem;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-    }
-
-    .topbar nav a {
-        color: var(--muted);
-        text-decoration: none;
-        transition: color 0.2s ease;
-    }
-
-    .topbar nav a:hover { color: var(--paper); }
-
-    .btn {
-        display: inline-block;
-        padding: 13px 34px;
-        font-family: 'Cinzel', serif;
-        font-size: 0.9rem;
-        font-weight: 700;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        text-decoration: none;
-        color: #fff;
-        background: var(--ember);
-        border: 1px solid var(--ember);
-        transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
-    }
-
-    .btn:hover { transform: translateY(-2px); background: #d4442f; }
-
-    .btn.ghost {
-        background: transparent;
-        border-color: rgba(232, 228, 223, 0.45);
-        color: var(--paper);
-    }
-
-    .btn.ghost:hover { background: rgba(232, 228, 223, 0.08); }
-
-    .btn.small { padding: 9px 22px; font-size: 0.75rem; letter-spacing: 2px; }
-
-    /* ── Hero ────────────────────────────────────────────────────── */
-    .hero {
-        position: relative;
-        min-height: 100svh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 120px clamp(16px, 5vw, 48px) 80px;
-        overflow: hidden;
-    }
-
-    .hero video, .hero .fallback {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        z-index: -2;
-    }
-
-    .hero::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        background:
-            radial-gradient(ellipse 80% 60% at 50% 45%, rgba(7, 6, 10, 0.45), rgba(7, 6, 10, 0.88) 75%),
-            linear-gradient(to bottom, rgba(7, 6, 10, 0.75), rgba(7, 6, 10, 0.35) 40%, var(--ink));
-    }
-
-    .hero h1 {
-        font-size: clamp(3rem, 11vw, 7rem);
-        font-weight: 900;
-        letter-spacing: clamp(6px, 2vw, 16px);
-        text-transform: uppercase;
-        line-height: 1.05;
-        text-shadow: 0 6px 40px rgba(0, 0, 0, 0.75);
-    }
-
-    .hero .tagline {
-        font-size: clamp(1rem, 2.4vw, 1.35rem);
-        font-weight: 300;
-        color: #d6d0c8;
-        max-width: 620px;
-        margin: 22px auto 38px;
-        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
-    }
-
-    .hero-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 14px;
-        justify-content: center;
-    }
-
-    .hero .release-line {
-        margin-top: 26px;
-        font-size: 0.85rem;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: var(--muted);
-        min-height: 1.4em;
-    }
-
-    .scroll-cue {
-        position: absolute;
-        bottom: 26px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 0.7rem;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: rgba(232, 228, 223, 0.5);
-        animation: bob 2.6s ease-in-out infinite;
-    }
-
-    @keyframes bob {
-        0%, 100% { transform: translate(-50%, 0); }
-        50% { transform: translate(-50%, 7px); }
-    }
-
-    /* ── Sections ────────────────────────────────────────────────── */
-    .section { padding: clamp(64px, 10vw, 128px) clamp(16px, 5vw, 48px); }
-
-    .section:nth-of-type(even) { background: #0b0910; }
-
-    .container { max-width: 1120px; margin: 0 auto; }
-
-    .eyebrow {
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        color: var(--ember);
-        margin-bottom: 14px;
-    }
-
-    .section h2 {
-        font-size: clamp(1.7rem, 4vw, 2.6rem);
-        font-weight: 700;
-        line-height: 1.25;
-        margin-bottom: 24px;
-        max-width: 22ch;
-    }
-
-    .section p {
-        color: #c4bdb4;
-        font-weight: 300;
-        max-width: 68ch;
-        margin-bottom: 18px;
-    }
-
-    .pillars {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: clamp(20px, 3vw, 40px);
-        margin-top: 44px;
-    }
-
-    .pillar {
-        border-top: 2px solid var(--ember);
-        padding-top: 20px;
-        background: linear-gradient(to bottom, var(--ember-soft), transparent 60%);
-    }
-
-    .pillar h3 {
-        font-size: 1.1rem;
-        letter-spacing: 1px;
-        margin-bottom: 10px;
-    }
-
-    .pillar p { font-size: 0.95rem; margin: 0; }
-
-    /* ── Gallery ─────────────────────────────────────────────────── */
-    .gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
-        gap: 14px;
-        margin-top: 40px;
-    }
-
-    .gallery figure {
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--edge);
-        cursor: zoom-in;
-        aspect-ratio: 16 / 9;
-    }
-
-    .gallery img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.5s ease;
-    }
-
-    .gallery figure:hover img { transform: scale(1.05); }
-
-    .gallery figcaption {
-        position: absolute;
-        inset: auto 0 0 0;
-        padding: 26px 14px 10px;
-        font-size: 0.78rem;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: #efece7;
-        background: linear-gradient(to top, rgba(7, 6, 10, 0.9), transparent);
-    }
-
-    /* ── Clips ──────────────────────────────────────────────────── */
-    .clip-frame {
-        margin-top: 36px;
-        border: 1px solid var(--edge);
-        background: #000;
-        overflow: hidden;
-    }
-
-    .clip-frame video {
-        width: 100%;
-        display: block;
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-    }
-
-    .lede {
-        font-size: clamp(1.05rem, 2vw, 1.3rem);
-        font-weight: 300;
-        color: #d6d0c8;
-        margin-top: 26px;
-    }
-
-    .attrib {
-        font-size: 0.72rem;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-top: 10px;
-    }
-
-    /* ── Gallery ─────────────────────────────────────────────────── */
-    .gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
-        gap: 14px;
-        margin-top: 40px;
-    }
-
-    .gallery figure {
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--edge);
-        cursor: zoom-in;
-        aspect-ratio: 16 / 9;
-    }
-
-    .gallery img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.5s ease;
-    }
-
-    .gallery figure:hover img { transform: scale(1.05); }
-
-    .gallery figcaption {
-        position: absolute;
-        inset: auto 0 0 0;
-        padding: 26px 14px 10px;
-        font-size: 0.78rem;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: #efece7;
-        background: linear-gradient(to top, rgba(7, 6, 10, 0.9), transparent);
-    }
-
-    /* ── Clips ───────────────────────────────────────────────────── */
-    .clip {
-        display: grid;
-        grid-template-columns: 1.25fr 1fr;
-        gap: clamp(24px, 4vw, 56px);
-        align-items: center;
-        margin-top: clamp(48px, 7vw, 88px);
-    }
-
-    .clip.reverse { grid-template-columns: 1fr 1.25fr; }
-    .clip.reverse .clip-frame { order: 2; }
-
-    .clip-frame {
-        border: 1px solid var(--edge);
-        background: #000;
-        overflow: hidden;
-    }
-
-    .clip-frame video, .clip-frame img {
-        width: 100%;
-        display: block;
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-    }
-
-    .clip h3 {
-        font-size: clamp(1.2rem, 2.4vw, 1.6rem);
-        letter-spacing: 1px;
-        margin-bottom: 14px;
-    }
-
-    .clip p { margin-bottom: 14px; }
-    .clip p:last-child { margin-bottom: 0; }
-
-    /* ── Downloads ───────────────────────────────────────────────── */
-    .downloads { text-align: center; }
-
-    .release-tag {
-        font-size: 0.85rem;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 36px;
-        min-height: 1.4em;
-    }
-
-    .dl-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 16px;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    .dl-card {
-        border: 1px solid var(--edge);
-        padding: 34px 22px;
-        background: rgba(232, 228, 223, 0.03);
-        transition: border-color 0.25s ease, transform 0.25s ease;
-    }
-
-    .dl-card:hover { border-color: rgba(192, 57, 43, 0.6); transform: translateY(-3px); }
-
-    .dl-card .platform {
-        font-family: 'Cinzel', serif;
-        font-size: 1.2rem;
-        letter-spacing: 2px;
-        margin-bottom: 6px;
-    }
-
-    .dl-card .meta {
-        font-size: 0.8rem;
-        color: var(--muted);
-        margin-bottom: 20px;
-        word-break: break-word;
-    }
-
-    .note {
-        color: var(--muted);
-        font-size: 0.9rem;
-        max-width: 60ch;
-        margin: 28px auto 0;
-    }
-
-    /* ── Footer ──────────────────────────────────────────────────── */
-    .footer {
-        padding: 56px 24px 72px;
-        text-align: center;
-        border-top: 1px solid var(--edge);
-        font-size: 0.9rem;
-        color: var(--muted);
-    }
-
-    .footer a { color: var(--paper); text-decoration: none; }
-    .footer a:hover { color: var(--ember); }
-    .footer .copy { margin-top: 18px; font-size: 0.78rem; color: #6f6862; }
-
-    /* ── Lightbox ────────────────────────────────────────────────── */
-    .lightbox {
-        position: fixed;
-        inset: 0;
-        z-index: 60;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: rgba(4, 3, 6, 0.95);
-        cursor: zoom-out;
-    }
-
-    .lightbox.open { display: flex; }
-    .lightbox img { max-width: 100%; max-height: 100%; border: 1px solid var(--edge); }
-
-    @media (prefers-reduced-motion: reduce) {
-        html { scroll-behavior: auto; }
-        .scroll-cue { animation: none; }
-        .gallery figure:hover img { transform: none; }
-    }
-
-    @media (max-width: 640px) {
-        .topbar nav a:not(.btn) { display: none; }
-    }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15100e">
+  <title>Kusane</title>
+  <meta name="description" content="Kusane survived the fall of her clan, but lost her wings. A 3D hack and slash, available for Windows, Linux and Android.">
+  <meta property="og:title" content="Kusane">
+  <meta property="og:description" content="A wingless warrior fights to reclaim her temple. Play Kusane, a 3D hack and slash by Team Marbles.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yyan115.github.io/GAM300/">
+  <meta property="og:image" content="https://yyan115.github.io/GAM300/media/kusane-art.webp">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="preload" href="media/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="media/hero-poster.jpg" as="image" fetchpriority="high">
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="game-title">
+      <div class="hero-media" aria-hidden="true">
+        <img class="hero-still" src="media/hero-poster.jpg" alt="" width="1280" height="720" fetchpriority="high">
+        <video id="hero-video" muted loop playsinline preload="none" data-src="media/hero.mp4"></video>
+      </div>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="wrap hero-content">
+        <h1 id="game-title"><img src="media/kusane-logo.png" alt="Kusane" width="535" height="173"></h1>
+        <p class="genre">A 3D hack and slash</p>
+        <a class="play-button" href="#download"><span>Play now</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></a>
+        <p class="platforms">Windows <span>·</span> Linux <span>·</span> Android</p>
+      </div>
+    </section>
 
-<header class="topbar" id="topbar">
-    <a href="#top" class="mark">Kusane</a>
-    <nav>
-        <a href="#chain">The Chain</a>
-        <a href="#boss">The Boss</a>
-        <a href="#gallery">Gallery</a>
-        <a href="#download" class="btn small">Download</a>
-    </nav>
-</header>
-
-<section class="hero" id="top">
-    <video autoplay muted loop playsinline poster="media/hero-poster.jpg" aria-hidden="true">
-        <source src="media/hero.mp4" type="video/mp4">
-    </video>
-    <h1>Kusane</h1>
-    <p class="tagline">The Karasu took the temple, and Kusane woke without her wings.</p>
-    <div class="hero-actions">
-        <a href="#download" class="btn">Download</a>
-        <a href="#chain" class="btn ghost">See it</a>
-    </div>
-    <div class="release-line" id="hero-release"></div>
-    <div class="scroll-cue">Scroll</div>
-</section>
-
-<section class="section" id="chain">
-    <div class="container">
-        <div class="eyebrow">The Chain</div>
-        <h2>&ldquo;If I cannot strike them in the air, I will drag them down.&rdquo;</h2>
-        <div class="attrib">Kusane</div>
-        <div class="clip-frame">
-            <video autoplay muted loop playsinline poster="media/shot-statue.jpg" aria-hidden="true">
-                <source src="media/clip-chain.mp4" type="video/mp4">
-            </video>
+    <section class="story-section" id="story" aria-labelledby="story-heading">
+      <div class="wrap story-layout">
+        <div class="story-copy">
+          <h2 id="story-heading">The story</h2>
+          <p>The Karasu have destroyed Kusane’s clan and taken her wings. Armed with a temple weapon, she fights to reclaim her home.</p>
         </div>
-    </div>
-</section>
-
-<section class="section" id="boss">
-    <div class="container">
-        <div class="eyebrow">The Boss</div>
-        <h2>&ldquo;Do you like my new wings?&rdquo;</h2>
-        <div class="attrib">Boss</div>
-        <p class="lede">&ldquo;Those feathers belonged to us, our warriors.&rdquo;</p>
-        <div class="attrib">Kusane</div>
-        <div class="clip-frame">
-            <video autoplay muted loop playsinline poster="media/shot-boss-charge.jpg" aria-hidden="true">
-                <source src="media/clip-boss.mp4" type="video/mp4">
-            </video>
+        <div class="story-media" role="region" aria-roledescription="carousel" aria-label="Opening cutscene artwork">
+          <figure class="story-art">
+            <img class="is-current" src="media/kusane-art.webp" alt="Kusane reaches for the temple weapon in the opening cutscene" width="1920" height="1080" loading="lazy">
+            <img src="media/story-temple.webp" alt="Kusane enters the burning temple in the opening cutscene" width="1920" height="1080" loading="lazy" aria-hidden="true">
+            <img src="media/mountain-flight.webp" alt="Winged warriors return to their mountain temple" width="1920" height="1080" loading="lazy" aria-hidden="true">
+          </figure>
+          <div class="story-controls" hidden>
+            <span class="story-progress" aria-hidden="true"><span></span></span>
+            <span class="story-count" aria-label="Image 1 of 3">01 <span>/ 03</span></span>
+            <button id="story-previous" type="button" aria-label="Previous story image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></button>
+            <button id="story-next" type="button" aria-label="Next story image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+          </div>
         </div>
-    </div>
-</section>
+      </div>
+    </section>
 
-<section class="section" id="gallery">
-    <div class="container">
-        <div class="eyebrow">Screenshots</div>
-        <div class="gallery">
-            <figure><img src="media/shot-temple.jpg" alt="The chain resting on its holder in the Temple Hall" loading="lazy"><figcaption>The Temple Hall</figcaption></figure>
-            <figure><img src="media/shot-library.jpg" alt="A Karasu standing among the bookshelves of the Study" loading="lazy"><figcaption>The Study</figcaption></figure>
-            <figure><img src="media/shot-statue.jpg" alt="The winged statue the hall is named for" loading="lazy"><figcaption>The Guardian Statue Hall</figcaption></figure>
-            <figure><img src="media/shot-boss-charge.jpg" alt="The boss glowing yellow as it winds up a charge" loading="lazy"><figcaption>A charge</figcaption></figure>
-            <figure><img src="media/shot-boss-dive.jpg" alt="A red mark on the floor under the boss's dive" loading="lazy"><figcaption>The dive</figcaption></figure>
-            <figure><img src="media/shot-boss-glow.jpg" alt="The boss glowing purple in the air" loading="lazy"><figcaption>Out of reach</figcaption></figure>
+    <section class="gallery-section" id="game" aria-labelledby="gallery-heading">
+      <div class="wrap">
+        <div class="section-heading"><h2 id="gallery-heading">Gallery</h2><span class="heading-line" aria-hidden="true"></span></div>
+        <div class="gallery-grid">
+          <figure class="gallery-tile gallery-combat">
+            <a class="media-open" href="media/sword-combat.mp4" data-media data-kind="video" data-poster="media/combat-poster.webp" data-caption="Sword combo" data-alt="Kusane performs a sword combo in the Weapon Quarters" aria-label="Enlarge sword combo video">
+              <video id="gallery-video" muted loop playsinline preload="none" poster="media/combat-poster.webp" width="1280" height="720" aria-label="Kusane performs a sword combo in the Weapon Quarters"><source src="media/sword-combat.mp4" type="video/mp4"></video><span class="expand-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></span>
+            </a>
+            <figcaption>Sword combo</figcaption>
+          </figure>
+          <figure class="gallery-tile gallery-boss">
+            <a class="media-open" href="media/boss.webp" data-media data-caption="Boss fight" data-alt="Kusane faces the airborne Karasu boss in the Battle Dome" aria-label="Enlarge the boss fight screenshot"><img src="media/boss.webp" alt="Kusane faces the airborne Karasu boss in the Battle Dome" width="1280" height="720" loading="lazy"><span class="expand-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></span></a>
+            <figcaption>Boss fight</figcaption>
+          </figure>
+          <figure class="gallery-tile">
+            <a class="media-open" href="media/shot-temple.jpg" data-media data-caption="The Temple Hall" data-alt="A feather rests between the pillars of the Temple Hall" aria-label="Enlarge The Temple Hall"><img src="media/shot-temple.jpg" alt="A feather rests between the pillars of the Temple Hall" width="1280" height="720" loading="lazy"><span class="expand-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></span></a>
+            <figcaption>The Temple Hall</figcaption>
+          </figure>
+          <figure class="gallery-tile">
+            <a class="media-open" href="media/shot-library.jpg" data-media data-caption="The Library" data-alt="A Karasu waits among the bookshelves in the Library" aria-label="Enlarge The Library"><img src="media/shot-library.jpg" alt="A Karasu waits among the bookshelves in the Library" width="1280" height="720" loading="lazy"><span class="expand-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></span></a>
+            <figcaption>The Library</figcaption>
+          </figure>
+          <figure class="gallery-tile">
+            <a class="media-open" href="media/shot-statue.jpg" data-media data-caption="Guardian Hall" data-alt="Red pillars frame the winged statue inside Guardian Hall" aria-label="Enlarge Guardian Hall"><img src="media/shot-statue.jpg" alt="Red pillars frame the winged statue inside Guardian Hall" width="1280" height="720" loading="lazy"><span class="expand-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></span></a>
+            <figcaption>Guardian Hall</figcaption>
+          </figure>
         </div>
-    </div>
-</section>
+      </div>
+    </section>
 
-<section class="section downloads" id="download">
-    <div class="container">
-        <h2 style="margin: 0 auto 10px;">Download</h2>
-        <div class="release-tag" id="release-tag">Checking for the latest release...</div>
-        <div class="dl-grid" id="download-cards"></div>
-        <p class="note">
-            Windows is an installer. Linux is an AppImage, so mark it executable. Android is an APK.
-        </p>
-    </div>
-</section>
+    <section class="team-section" aria-labelledby="team-heading">
+      <div class="wrap">
+        <div class="team-heading">
+          <img class="team-logo" src="media/team-marbles.webp" alt="Team Marbles" width="1920" height="1080" loading="lazy">
+          <div class="team-intro"><h2 id="team-heading">Credits</h2><p>Created at Singapore Institute of Technology and DigiPen Institute of Technology, on a custom 3D C++ engine built from scratch, all open source.</p></div>
+        </div>
+        <div class="team-grid">
+          <div class="team-group degree-rtis"><h3>RTIS</h3><ul>
+            <li>YAN Yu<span>Technical lead</span></li>
+            <li>Ernest HO Yong Heng<span>Programmer · Animation</span></li>
+            <li>Lucas YEE Junjie<span>Programmer · Editor</span></li>
+            <li>WONG Woon Li<span>Programmer · Engine</span></li>
+            <li>TAN Shun Zhi Tomy<span>Programmer · Graphics</span></li>
+            <li>SOH Wei Jie<span>Programmer · Gameplay</span></li>
+            <li>Felix NG Chin Ee<span>Programmer</span></li>
+          </ul></div>
+          <div class="team-group degree-imgd"><h3>IMGD</h3><ul>
+            <li>MUHAMMAD Zikry Bin Zakaria<span>Programmer · Audio</span></li>
+            <li>Seven Maximilian NG<span>Programmer · Gameplay</span></li>
+            <li>ANG Jia Jun Austin<span>Programmer · Gameplay</span></li>
+          </ul></div>
+          <div class="team-group degree-uxgd"><h3>UXGD</h3><ul>
+            <li>GAN Kah Loke<span>Design lead · Producer</span></li>
+            <li>Joe DING<span>Mechanics and VFX designer</span></li>
+            <li>YEO Yi Jia<span>User interface designer</span></li>
+          </ul></div>
+          <div class="team-group degree-bfa"><h3>BFA</h3><ul>
+            <li>LEE Yan Xuan<span>Environment artist</span></li>
+            <li>WONG Ke Qing<span>Storyboard artist</span></li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+    <section class="download-section" id="download" aria-labelledby="download-heading">
+      <div class="download-art" aria-hidden="true"><img src="media/mountain-temple.webp" alt="" width="1920" height="1080" loading="lazy"></div>
+      <div class="wrap download-content">
+        <div class="download-heading"><div><h2 id="download-heading">Play Kusane</h2><p>Free to download.</p></div><a class="release-link" href="https://github.com/yyan115/GAM300/releases/latest">Latest release notes <span aria-hidden="true">↗</span></a></div>
+        <div class="download-list">
+            <a class="download-row" data-platform="windows" href="https://github.com/yyan115/GAM300/releases/latest/download/Kusane_Setup.exe" aria-label="Download Kusane for Windows">
+              <svg class="platform-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m2 4 8-1v8H2Zm10-1.3L22 1v10H12ZM2 13h8v8l-8-1Zm10 0h10v10l-10-1.5Z" fill="currentColor" stroke="none"/></svg>
+              <span class="download-name">Windows<small>Installer <span data-size></span></small></span>
+              <span class="download-action">Download <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></span>
+            </a>
+            <a class="download-row" data-platform="linux" href="https://github.com/yyan115/GAM300/releases/latest/download/Kusane-x86_64.AppImage" aria-label="Download Kusane for Linux">
+              <svg class="platform-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="17" rx="1"/><path d="m6 8 4 3-4 3m7 1h5"/></svg>
+              <span class="download-name">Linux<small>AppImage <span data-size></span></small></span>
+              <span class="download-action">Download <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></span>
+            </a>
+            <a class="download-row" data-platform="android" href="https://github.com/yyan115/GAM300/releases/latest/download/Kusane.apk" aria-label="Download Kusane for Android">
+              <svg class="platform-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 3 2 3m10-3-2 3M4 12a8 8 0 0 1 16 0Zm0 2h16v6H4ZM2 14v5m20-5v5M8 20v3m8-3v3"/><path d="M8 9h.01M16 9h.01" stroke-width="2.5"/></svg>
+              <span class="download-name">Android<small>APK <span data-size></span></small></span>
+              <span class="download-action">Download <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg></span>
+            </a>
+        </div>
+      </div>
+    </section>
 
-<footer class="footer">
-    <a href="https://github.com/yyan115/GAM300">GitHub</a>
-    &nbsp;&middot;&nbsp;
-    <a href="https://github.com/yyan115/GAM300/releases">All releases</a>
-    <div class="copy">
-        Kusane, by Team Marbles, on a custom C++ engine.<br>
-        All content &copy; 2025 DigiPen Institute of Technology Singapore. All rights reserved.
-    </div>
-</footer>
+  </main>
 
-<div class="lightbox" id="lightbox"><img alt=""></div>
+  <footer class="site-footer"><div class="wrap footer-layout"><p>All content © 2026 DigiPen Institute of Technology Singapore. All rights reserved.</p><div><a href="https://github.com/yyan115/GAM300">Source code ↗</a><a href="#top">Back to top ↑</a></div></div></footer>
 
-<script>
-    const REPO = 'yyan115/GAM300';
+  <button class="music-toggle" id="music-toggle" type="button" aria-pressed="false" aria-label="Play music" title="Play music" hidden>
+    <svg class="music-emblem" viewBox="0 0 48 48" aria-hidden="true"><circle class="music-rim" cx="24" cy="24" r="21"/><path class="music-orbit" d="M24 1a23 23 0 0 1 23 23M24 47A23 23 0 0 1 1 24"/><g class="music-bars"><path d="M15 20v8"/><path d="M21 15v18"/><path d="M27 18v12"/><path d="M33 21v6"/></g><path class="music-slash" d="m12 36 24-24"/></svg>
+  </button>
+  <audio id="site-music" loop preload="auto" data-src="media/opening-music.mp3"></audio>
 
-    // Top bar goes solid once the hero is behind you
-    const topbar = document.getElementById('topbar');
-    const onScroll = () => topbar.classList.toggle('solid', window.scrollY > 80);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-
-    // Gallery lightbox
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = lightbox.querySelector('img');
-    document.querySelectorAll('.gallery img').forEach(img => {
-        img.addEventListener('click', () => {
-            lightboxImg.src = img.src;
-            lightboxImg.alt = img.alt;
-            lightbox.classList.add('open');
-        });
-    });
-    lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') lightbox.classList.remove('open');
-    });
-
-    // Downloads, from the latest release
-    const PLATFORMS = [
-        { name: 'Windows', label: 'Download installer', match: a => a.name.endsWith('.exe') },
-        { name: 'Linux', label: 'Download AppImage', match: a => a.name.endsWith('.AppImage') },
-        { name: 'Android', label: 'Download APK', match: a => a.name.endsWith('.apk') },
-    ];
-
-    const fileSize = bytes => {
-        const mb = bytes / (1024 * 1024);
-        return mb >= 1024 ? (mb / 1024).toFixed(2) + ' GB' : mb.toFixed(1) + ' MB';
-    };
-
-    async function loadRelease() {
-        const cards = document.getElementById('download-cards');
-        const tag = document.getElementById('release-tag');
-        const heroLine = document.getElementById('hero-release');
-
-        try {
-            const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`);
-            if (res.status === 404) {
-                tag.textContent = '';
-                cards.innerHTML = '<p class="note">No releases yet. Downloads appear here with the first one.</p>';
-                return;
-            }
-            if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
-
-            const release = await res.json();
-            tag.textContent = `${release.tag_name} — ${release.name}`;
-            heroLine.textContent = `${release.tag_name} out now`;
-
-            const html = PLATFORMS.map(p => {
-                const asset = release.assets.find(p.match);
-                if (!asset) return '';
-                return `
-                    <div class="dl-card">
-                        <div class="platform">${p.name}</div>
-                        <div class="meta">${asset.name} &middot; ${fileSize(asset.size)}</div>
-                        <a class="btn" href="${asset.browser_download_url}">${p.label}</a>
-                    </div>`;
-            }).join('');
-
-            cards.innerHTML = html || '<p class="note">That release has no downloadable files yet.</p>';
-        } catch (err) {
-            console.error('Failed to load release:', err);
-            tag.textContent = '';
-            cards.innerHTML = `<p class="note">Could not reach GitHub.
-                <a href="https://github.com/${REPO}/releases">Open the releases page</a>.</p>`;
-        }
-    }
-
-    loadRelease();
-</script>
-
+  <dialog class="lightbox" id="lightbox" aria-label="Gameplay viewer">
+    <button class="lightbox-close" type="button" aria-label="Close gameplay viewer">Close <span aria-hidden="true">×</span></button>
+    <div class="lightbox-stage"><img id="lightbox-image" alt="" hidden><video id="lightbox-video" controls muted loop playsinline hidden></video></div>
+    <div class="lightbox-footer"><button class="arrow-button" id="lightbox-previous" type="button" aria-label="Previous image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg></button><p id="lightbox-caption" aria-live="polite"></p><button class="arrow-button" id="lightbox-next" type="button" aria-label="Next image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></div>
+  </dialog>
 </body>
 </html>
