@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <queue>
 #include <vector>
 
@@ -34,7 +35,15 @@ public:
 
 private:
 	std::queue<Entity> availableEntities{}; // Queue of available entity IDs.
-	std::bitset<MAX_ENTITIES> activeEntities; // Bitset to track active entities.
+	static constexpr Entity entitiesPerWord = 64;
+	std::array<std::uint64_t, (MAX_ENTITIES + entitiesPerWord - 1) / entitiesPerWord> activeEntities{};
+
+	void SetActiveBit(Entity entity, bool active) {
+		auto& word = activeEntities[entity / entitiesPerWord];
+		const auto bit = std::uint64_t{1} << (entity % entitiesPerWord);
+		if (active) word |= bit;
+		else word &= ~bit;
+	}
 
 	std::array<Signature, MAX_ENTITIES> entitySignatures{}; // Signatures for each entity.
 

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ECS/EntityManager.hpp"
 #include <assert.h>
+#include <algorithm>
+#include <bit>
 
 EntityManager::EntityManager() {
 	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
@@ -22,7 +24,7 @@ Entity EntityManager::CreateEntity() {
 	++activeEntityCount;
 	//ENGINE_LOG_INFO("[EntityManager] Active entity count: " + std::to_string(activeEntityCount));
 
-	activeEntities[entity] = true;
+	SetActiveBit(entity, true);
 
 	return entity;
 }
@@ -44,7 +46,7 @@ void EntityManager::DestroyEntity(Entity entity) {
 
 	//ENGINE_LOG_INFO("[EntityManager] Active entity count: " + std::to_string(activeEntityCount));
 
-	activeEntities[entity] = false;
+	SetActiveBit(entity, false);
 }
 
 Signature EntityManager::GetEntitySignature(Entity entity) const {
@@ -76,7 +78,7 @@ void EntityManager::DestroyAllEntities() {
 		signature.reset();
 	}
 
-	activeEntities.reset();
+	activeEntities.fill(0);
 	activeEntityCount = 0;
 
 	while (!availableEntities.empty()) {
@@ -95,7 +97,7 @@ void EntityManager::SetActive(Entity entity, bool isActive) {
 	}
 
 	//assert(entity < MAX_ENTITIES && "Entity out of range.");
-	activeEntities[entity] = isActive;
+	SetActiveBit(entity, isActive);
 }
 
 bool EntityManager::IsActive(Entity entity) const {
@@ -105,28 +107,24 @@ bool EntityManager::IsActive(Entity entity) const {
 	}
 
 	//assert(entity < MAX_ENTITIES && "Entity out of range.");
-	return activeEntities[entity];
+	return (activeEntities[entity / entitiesPerWord] &
+		(std::uint64_t{1} << (entity % entitiesPerWord))) != 0;
 }
 
 std::vector<Entity> EntityManager::GetActiveEntities() const {
 	std::vector<Entity> entities;
-	// Loop through ALL possible entity IDs, not just activeEntityCount
-	// activeEntityCount is the COUNT of entities, not the max entity ID!
-	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
-		if (activeEntities[entity]) {
-			entities.push_back(entity);
+	entities.reserve(std::min(activeEntityCount, MAX_ENTITIES));
+	// Visit only set bits, retaining the ascending entity order used by callers.
+	for (Entity wordIndex = 0; wordIndex < activeEntities.size(); ++wordIndex) {
+		auto word = activeEntities[wordIndex];
+		while (word != 0) {
+			entities.push_back(wordIndex * entitiesPerWord + std::countr_zero(word));
+			word &= word - 1;
 		}
 	}
 	return entities;
 }
 
 std::vector<Entity> EntityManager::GetAllEntities() const {
-	std::vector<Entity> entities;
-	// Loop through ALL possible entity IDs, not just activeEntityCount
-	for (Entity entity = 0; entity < MAX_ENTITIES; ++entity) {
-		if (activeEntities[entity]) {
-			entities.push_back(entity);
-		}
-	}
-	return entities;
+	return GetActiveEntities();
 }
