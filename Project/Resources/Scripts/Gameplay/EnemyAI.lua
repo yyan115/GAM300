@@ -2075,7 +2075,9 @@ return Component {
     end,
 
     ApplyHit = function(self, dmg, hitType, knockback)
-        if self.dead then
+        -- Physics can deliver several impacts before Update marks the enemy dead.
+        -- A lethal hit has already played its sound and published its death event.
+        if self.dead or self.health <= 0 then
             --print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: enemy is already dead", tostring(hitType)))
             return
         end
