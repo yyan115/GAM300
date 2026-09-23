@@ -9,6 +9,7 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Math/Matrix3x3.hpp>
 #include <ECS/NameComponent.hpp>
+#include <bitset>
 
 // --- HELPER: recursive update without repeated lookups ---
 static void UpdateTransformRecursive(
@@ -444,15 +445,14 @@ void TransformSystem::SetLocalTransform(Entity entity, const Vector3D& pos, cons
 }
 
 // Internal helper for SetDirtyRecursive with cycle detection
-static void SetDirtyRecursiveInternal(Entity entity, std::set<Entity>& visited) {
+static void SetDirtyRecursiveInternal(ECSManager& ecsManager, Entity entity, std::bitset<MAX_ENTITIES>& visited) {
+	if (entity >= MAX_ENTITIES) return;
 	// Cycle detection - prevent infinite recursion
-	if (visited.count(entity) > 0) {
+	if (visited.test(entity)) {
 		std::cerr << "[TransformSystem] ERROR: Circular hierarchy reference detected for entity " << entity << std::endl;
 		return;
 	}
-	visited.insert(entity);
-
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	visited.set(entity);
 
 	// Validate entity has Transform component
 	if (!ecsManager.HasComponent<Transform>(entity)) {
@@ -469,14 +469,26 @@ static void SetDirtyRecursiveInternal(Entity entity, std::set<Entity>& visited) 
 			if (child == static_cast<Entity>(-1)) {
 				continue; // Skip invalid children
 			}
-			SetDirtyRecursiveInternal(child, visited);
+			SetDirtyRecursiveInternal(ecsManager, child, visited);
 		}
 	}
 }
 
 void TransformSystem::SetDirtyRecursive(Entity entity) {
-	std::set<Entity> visited;
-	SetDirtyRecursiveInternal(entity, visited);
+	auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (!ecsManager.HasComponent<Transform>(entity)) return;
+
+	// A leaf needs no traversal or cycle tracking.
+	if (!ecsManager.HasComponent<ChildrenComponent>(entity) ||
+		ecsManager.GetComponent<ChildrenComponent>(entity).children.empty()) {
+		ecsManager.GetComponent<Transform>(entity).isDirty = true;
+		return;
+	}
+
+	// Entity IDs have a fixed upper bound. Track visits without allocating a
+	// tree node for every descendant each time a transform changes.
+	std::bitset<MAX_ENTITIES> visited;
+	SetDirtyRecursiveInternal(ecsManager, entity, visited);
 }
 
 // Internal helper for GetRootParentTransform with cycle detection
