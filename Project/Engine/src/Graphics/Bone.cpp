@@ -3,10 +3,39 @@
 #include <Logging.hpp>
 #include <algorithm>
 #include <cmath>
+#include <bit>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
 namespace {
+template<class Key>
+bool OrderedKeyTimes(const std::vector<Key>& keys)
+{
+    for (std::size_t i = 0; i < keys.size(); ++i) {
+        if (!std::isfinite(keys[i].timeStamp) ||
+            (i != 0 && keys[i].timeStamp < keys[i - 1].timeStamp)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<class Key>
+int KeyframeIndex(const std::vector<Key>& keys, int count, bool ordered, float time)
+{
+    if (count <= 2) return count - 2;
+    if (ordered) {
+        const auto next = std::upper_bound(keys.begin() + 1, keys.end(), time,
+            [](float value, const Key& key) { return value < key.timeStamp; });
+        return next == keys.end() ? count - 2 : static_cast<int>(next - keys.begin()) - 1;
+    }
+    // Preserve the original selection for malformed or unordered tracks.
+    for (int index = 0; index < count - 1; ++index) {
+        if (time < keys[index + 1].timeStamp) return index;
+    }
+    return count - 2;
+}
+
 constexpr float kMinKeyframeGap = 1.0e-6f;
 
 bool IsFiniteVec3(const glm::vec3& value)
@@ -118,6 +147,9 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
         data.timeStamp = timeStamp;
         mScales.push_back(data);
     }
+    mPositionTimesOrdered = OrderedKeyTimes(mPositions);
+    mRotationTimesOrdered = OrderedKeyTimes(mRotations);
+    mScaleTimesOrdered = OrderedKeyTimes(mScales);
 }
 
 /*interpolates  b/w positions,rotations & scaling keys based on the curren time of
@@ -125,10 +157,15 @@ Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
    tranformations*/
 void Bone::Update(float animationTime)
 {
+    const auto timeBits = std::bit_cast<std::uint32_t>(animationTime);
+    if (mHasUpdatedPose && mLastUpdateTimeBits == timeBits) return;
+
     mLocalTranslation = InterpolatePosition(animationTime);
     mLocalRotation = InterpolateRotation(animationTime);
     mLocalScale = InterpolateScaling(animationTime);
     mLocalTransform = glm::translate(glm::mat4(1.0f), mLocalTranslation) * glm::toMat4(mLocalRotation) * glm::scale(glm::mat4(1.0f), mLocalScale);
+    mLastUpdateTimeBits = timeBits;
+    mHasUpdatedPose = true;
 
     //// Log for key bones at start of animation
     //if ((mName == "mixamorig:Hips" || mName == "mixamorig:Spine") && animationTime < 0.5f) {
@@ -145,36 +182,21 @@ void Bone::Update(float animationTime)
 	the current animation time*/
 int Bone::GetPositionIndex(float animationTime)
 {
-	for (int index = 0; index < mNumPositions - 1; ++index)
-	{
-		if (animationTime < mPositions[index + 1].timeStamp)
-			return index;
-	}
-	return mNumPositions - 2;
+    return KeyframeIndex(mPositions, mNumPositions, mPositionTimesOrdered, animationTime);
 }
 
 /* Gets the current index on mKeyRotations to interpolate to based on the
 current animation time*/
 int Bone::GetRotationIndex(float animationTime)
 {
-	for (int index = 0; index < mNumRotations - 1; ++index)
-	{
-		if (animationTime < mRotations[index + 1].timeStamp)
-			return index;
-	}
-	return mNumRotations - 2;
+    return KeyframeIndex(mRotations, mNumRotations, mRotationTimesOrdered, animationTime);
 }
 
 /* Gets the current index on mKeyScalings to interpolate to based on the
 current animation time */
 int Bone::GetScaleIndex(float animationTime)
 {
-	for (int index = 0; index < mNumScalings - 1; ++index)
-	{
-		if (animationTime < mScales[index + 1].timeStamp)
-			return index;
-	}
-	return mNumScalings - 2;
+    return KeyframeIndex(mScales, mNumScalings, mScaleTimesOrdered, animationTime);
 }
 
 

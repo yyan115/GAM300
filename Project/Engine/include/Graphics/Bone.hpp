@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <glm/gtc/quaternion.hpp>
 #include <pch.h>
 #include <assimp/anim.h>
@@ -39,6 +40,12 @@ private:
     glm::vec3 mLocalTranslation;
     glm::quat mLocalRotation;
     glm::vec3 mLocalScale;
+
+    std::uint32_t mLastUpdateTimeBits{};
+    bool mHasUpdatedPose = false;
+    bool mPositionTimesOrdered = false;
+    bool mRotationTimesOrdered = false;
+    bool mScaleTimesOrdered = false;
 
 public:
     /*reads keyframes from aiNodeAnim*/
