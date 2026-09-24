@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pch.h"
+#include <string_view>
 
 #include "OpenGL.h"
 #include <glm/glm.hpp>
@@ -25,23 +26,23 @@ public:
 	void Activate();
 	void Delete();
 
-    void setBool(const std::string& name, GLboolean value);
-    void setInt(const std::string& name, int value);
-    void setIntArray(const std::string& name, const GLint* values, GLint count);
-    void setFloat(const std::string& name, GLfloat value);
-    void setVec2(const std::string& name, const glm::vec2& value);
-    void setVec2(const std::string& name, float x, float y);
-    void setVec3(const std::string& name, const glm::vec3& value);
-    void setVec3(const std::string& name, float x, float y, float z);
-    void setVec4(const std::string& name, const glm::vec4& value);
-    void setVec4(const std::string& name, float x, float y, float z, float w);
-    void setMat2(const std::string& name, const glm::mat2& mat);
-    void setMat3(const std::string& name, const glm::mat3& mat);
-    void setMat4(const std::string& name, const glm::mat4& mat);
+    void setBool(std::string_view name, GLboolean value);
+    void setInt(std::string_view name, int value);
+    void setIntArray(std::string_view name, const GLint* values, GLint count);
+    void setFloat(std::string_view name, GLfloat value);
+    void setVec2(std::string_view name, const glm::vec2& value);
+    void setVec2(std::string_view name, float x, float y);
+    void setVec3(std::string_view name, const glm::vec3& value);
+    void setVec3(std::string_view name, float x, float y, float z);
+    void setVec4(std::string_view name, const glm::vec4& value);
+    void setVec4(std::string_view name, float x, float y, float z, float w);
+    void setMat2(std::string_view name, const glm::mat2& mat);
+    void setMat3(std::string_view name, const glm::mat3& mat);
+    void setMat4(std::string_view name, const glm::mat4& mat);
 
     // Upload an array of matrices in a single GL call — use this for bone matrices
     // instead of calling setMat4 in a loop (avoids 100 hash lookups + 100 GL calls).
-    void setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count);
+    void setMat4Array(std::string_view firstName, const glm::mat4* matrices, GLsizei count);
 
     bool UsesCameraBlock() const noexcept { return m_usesCameraBlock; }
     bool UsesLightingBlock() const noexcept { return m_usesLightingBlock; }
@@ -49,8 +50,14 @@ public:
     //void clearUniformCache();
 
 private:
-    std::unordered_map<std::string, GLint> m_uniformCache;
-    GLint getUniformLocation(const std::string& name);
+    struct UniformNameHash {
+        using is_transparent = void;
+        std::size_t operator()(std::string_view name) const noexcept {
+            return std::hash<std::string_view>{}(name);
+        }
+    };
+    std::unordered_map<std::string, GLint, UniformNameHash, std::equal_to<>> m_uniformCache;
+    GLint getUniformLocation(std::string_view name);
 
     // Store shader binary data (precompiled shader).
     GLint binaryLength{};

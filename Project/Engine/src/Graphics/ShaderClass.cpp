@@ -651,7 +651,7 @@ void Shader::Delete()
 	glDeleteProgram(ID);
 }
 
-void Shader::setBool(const std::string& name, GLboolean value)
+void Shader::setBool(std::string_view name, GLboolean value)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -659,7 +659,7 @@ void Shader::setBool(const std::string& name, GLboolean value)
 	}
 }
 
-void Shader::setInt(const std::string& name, int value)
+void Shader::setInt(std::string_view name, int value)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -667,7 +667,7 @@ void Shader::setInt(const std::string& name, int value)
 	}
 }
 
-void Shader::setIntArray(const std::string& name, const GLint* values, GLint count)
+void Shader::setIntArray(std::string_view name, const GLint* values, GLint count)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -675,7 +675,7 @@ void Shader::setIntArray(const std::string& name, const GLint* values, GLint cou
 	}
 }
 
-void Shader::setFloat(const std::string& name, GLfloat value)
+void Shader::setFloat(std::string_view name, GLfloat value)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -683,7 +683,7 @@ void Shader::setFloat(const std::string& name, GLfloat value)
 	}
 }
 
-void Shader::setVec2(const std::string& name, const glm::vec2& value)
+void Shader::setVec2(std::string_view name, const glm::vec2& value)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -691,7 +691,7 @@ void Shader::setVec2(const std::string& name, const glm::vec2& value)
 	}
 }
 
-void Shader::setVec2(const std::string& name, float x, float y)
+void Shader::setVec2(std::string_view name, float x, float y)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -699,7 +699,7 @@ void Shader::setVec2(const std::string& name, float x, float y)
 	}
 }
 
-void Shader::setVec3(const std::string& name, const glm::vec3& value)
+void Shader::setVec3(std::string_view name, const glm::vec3& value)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -707,7 +707,7 @@ void Shader::setVec3(const std::string& name, const glm::vec3& value)
 	}
 }
 
-void Shader::setVec3(const std::string& name, float x, float y, float z)
+void Shader::setVec3(std::string_view name, float x, float y, float z)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -715,7 +715,7 @@ void Shader::setVec3(const std::string& name, float x, float y, float z)
 	}
 }
 
-void Shader::setVec4(const std::string& name, const glm::vec4& value)
+void Shader::setVec4(std::string_view name, const glm::vec4& value)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -723,7 +723,7 @@ void Shader::setVec4(const std::string& name, const glm::vec4& value)
 	}
 }
 
-void Shader::setVec4(const std::string& name, float x, float y, float z, float w)
+void Shader::setVec4(std::string_view name, float x, float y, float z, float w)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -731,7 +731,7 @@ void Shader::setVec4(const std::string& name, float x, float y, float z, float w
 	}
 }
 
-void Shader::setMat2(const std::string& name, const glm::mat2& mat)
+void Shader::setMat2(std::string_view name, const glm::mat2& mat)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -739,7 +739,7 @@ void Shader::setMat2(const std::string& name, const glm::mat2& mat)
 	}
 }
 
-void Shader::setMat3(const std::string& name, const glm::mat3& mat)
+void Shader::setMat3(std::string_view name, const glm::mat3& mat)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -747,7 +747,7 @@ void Shader::setMat3(const std::string& name, const glm::mat3& mat)
 	}
 }
 
-void Shader::setMat4(const std::string& name, const glm::mat4& mat)
+void Shader::setMat4(std::string_view name, const glm::mat4& mat)
 {
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
@@ -755,7 +755,7 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat)
 	}
 }
 
-void Shader::setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count)
+void Shader::setMat4Array(std::string_view firstName, const glm::mat4* matrices, GLsizei count)
 {
 	if (count <= 0) return;
 	// Look up the base element once — GL treats array uniforms as contiguous
@@ -766,7 +766,7 @@ void Shader::setMat4Array(const std::string& firstName, const glm::mat4* matrice
 	}
 }
 
-GLint Shader::getUniformLocation(const std::string& name)
+GLint Shader::getUniformLocation(std::string_view name)
 {
 	auto it = m_uniformCache.find(name);
 	if (it != m_uniformCache.end())
@@ -774,8 +774,10 @@ GLint Shader::getUniformLocation(const std::string& name)
 		return it->second;
 	}
 
-	GLint location = glGetUniformLocation(ID, name.c_str());
-	m_uniformCache[name] = location;
+	// Own names only on cache misses; views may refer to temporary or sliced text.
+    std::string ownedName(name);
+    GLint location = glGetUniformLocation(ID, ownedName.c_str());
+    m_uniformCache.emplace(std::move(ownedName), location);
 
 	// Debug output for missing uniforms (can be removed later)
 	if (location == -1)
