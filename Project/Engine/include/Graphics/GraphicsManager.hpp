@@ -19,6 +19,9 @@
 #include "Graphics/Frustum/Frustum.hpp"
 #include "RenderSorter.hpp"
 #include "Fog/FogComponent.hpp"
+#ifndef ANDROID
+#include "Fog/FogNoiseCache.hpp"
+#endif
 
 struct ViewportDimensions {
     int width = 0;
@@ -244,6 +247,9 @@ private:
         float _pad = 0.0f; // matches std140 implicit padding after vec3
     };
     GLuint m_cameraUBO = 0;
+#ifndef ANDROID
+    FogNoiseCache m_fogNoiseCache;
+#endif
     void InitCameraUBO();
     void UploadCameraUBO(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& camPos);
 

@@ -131,6 +131,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 
 void GraphicsManager::Shutdown()
 {
+#ifndef ANDROID
+	m_fogNoiseCache.Shutdown();
+#endif
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	renderQueue.clear();
@@ -159,6 +162,9 @@ void GraphicsManager::Shutdown()
 
 void GraphicsManager::BeginFrame()
 {
+#ifndef ANDROID
+	m_fogNoiseCache.BeginFrame();
+#endif
 	renderQueue.clear();
 	deferredQueue.clear();
 
@@ -2040,7 +2046,14 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 
 	// --- Draw ---
 	item.fogVAO->Bind();
+#ifndef ANDROID
+	const bool noiseCacheBound = m_fogNoiseCache.Bind(*item.fogShader, item.fogVAO->ID,
+		fogTime, item.scrollSpeedX, item.scrollSpeedY, item.noiseScale, item.warpStrength);
+#endif
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+#ifndef ANDROID
+	if (noiseCacheBound) m_fogNoiseCache.Unbind();
+#endif
 	item.fogVAO->Unbind();
 
 	// --- Restore state ---
