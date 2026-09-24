@@ -8,6 +8,7 @@ struct DirectionalLightComponent;
 struct PointLightComponent;
 struct SpotLightComponent;
 class Camera;
+class Frustum;
 
 // Shader-side array sizes for the Android lighting UBO — must match
 // NR_POINT_LIGHTS / NR_SPOT_LIGHTS in defaultandroid.frag EXACTLY.
@@ -38,6 +39,10 @@ public:
     void Update();
     void Shutdown();
     void ResetDefaults();
+
+    // Preserve the selected light list and shadow assignments; filter only the
+    // indices uploaded for this view. A null frustum keeps every selected light.
+    void ENGINE_API PrepareView(const Frustum* frustum);
 
     void ApplyLighting(Shader& shader);
 
@@ -88,7 +93,7 @@ public:
     // Allocate the UBO and bind to binding point 1 (CameraBlock uses 0).
     void InitLightingUBO();
 
-    // Populate and upload the UBO — call once per frame AFTER CollectLightData().
+    // Populate and upload the UBO after preparing the current render view.
     void UploadLightingUBO();
 
     // Getter so GraphicsManager can bind the UBO explicitly if needed.
@@ -142,6 +147,16 @@ public:
     void SetAmbientGround(glm::vec3 color) { ambientGround = color; }
 
 private:
+    std::vector<size_t> m_viewPointLights;
+    bool m_viewPointLightsPrepared = false;
+
+    size_t GetRenderedPointLightCount() const {
+        return m_viewPointLightsPrepared ? m_viewPointLights.size() : pointLightData.positions.size();
+    }
+    size_t GetRenderedPointLightIndex(size_t index) const {
+        return m_viewPointLightsPrepared ? m_viewPointLights[index] : index;
+    }
+
     // Simple arrays to store light data
     struct {
         std::vector<glm::vec3> positions;

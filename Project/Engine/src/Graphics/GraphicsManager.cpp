@@ -342,6 +342,11 @@ void GraphicsManager::Render()
 		PROFILE_SCOPED("GM::ShadowMaps");
 		if (ecsManager.lightingSystem)
 		{
+			Frustum lightingFrustum;
+			lightingFrustum.Update(frameProjection * frameView);
+			// Orthographic editor shaders can use a different projection from CameraBlock.
+			const bool filterLights = frustumCullingEnabled && !(IsRenderingForEditor() && Is2DMode());
+			ecsManager.lightingSystem->PrepareView(filterLights ? &lightingFrustum : nullptr);
 			ecsManager.lightingSystem->RenderShadowMaps(
 				PostProcessingManager::GetInstance().GetHDRFramebuffer(),
 				currentFrameViewport.width,

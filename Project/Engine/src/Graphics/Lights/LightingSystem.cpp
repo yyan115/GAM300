@@ -1,4 +1,6 @@
 #include "pch.h"
+#include <cmath>
+#include "Graphics/Frustum/Frustum.hpp"
 #include "Graphics/Lights/LightingSystem.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
@@ -61,12 +63,7 @@ void LightingSystem::Update()
     PROFILE_FUNCTION();
     CollectLightData();
 
-#ifdef __ANDROID__
-    // After CollectLightData has sorted/culled/packed the light lists, push
-    // everything into the UBO in one glBufferSubData call. All subsequent draws
-    // this frame read from the UBO with zero per-draw CPU overhead.
-    UploadLightingUBO();
-#endif
+    // The lighting UBO is uploaded after the render view is prepared.
 }
 
 void LightingSystem::Shutdown()
@@ -205,6 +202,34 @@ void LightingSystem::RenderShadowMaps(unsigned int restoreFramebuffer, int resto
     glViewport(0, 0, restoreViewportWidth, restoreViewportHeight);
 }
 
+void LightingSystem::PrepareView(const Frustum* frustum)
+{
+    m_viewPointLights.clear();
+    m_viewPointLights.reserve(pointLightData.positions.size());
+    for (size_t i = 0; i < pointLightData.positions.size(); ++i)
+    {
+        const float range = pointLightData.range[i];
+        const glm::vec3& position = pointLightData.positions[i];
+        // An enclosing box and the existing half-unit frustum tolerance keep
+        // lights near the view boundary. Nonpositive ranges are unlimited.
+        if (frustum && range > 0.0f && std::isfinite(range) &&
+            std::isfinite(position.x) && std::isfinite(position.y) && std::isfinite(position.z))
+        {
+            const AABB bounds(position - glm::vec3(range), position + glm::vec3(range));
+            bool finiteBounds = true;
+            for (int axis = 0; axis < 3; ++axis)
+                finiteBounds = finiteBounds && std::isfinite(bounds.min[axis]) && std::isfinite(bounds.max[axis]);
+            if (finiteBounds && !frustum->IsBoxVisible(bounds, 0.5f))
+                continue;
+        }
+        m_viewPointLights.push_back(i);
+    }
+    m_viewPointLightsPrepared = true;
+#ifdef __ANDROID__
+    UploadLightingUBO();
+#endif
+}
+
 void LightingSystem::ApplyLighting(Shader& shader)
 {
 #ifdef __ANDROID__
@@ -240,13 +265,14 @@ void LightingSystem::ApplyLighting(Shader& shader)
     }
 
     // Send counts to shader
-    shader.setInt("numPointLights", static_cast<int>(pointLightData.positions.size()));
+    shader.setInt("numPointLights", static_cast<int>(GetRenderedPointLightCount()));
     shader.setInt("numSpotLights", static_cast<int>(spotLightData.positions.size()));
 
     // Set active point lights
-    for (size_t i = 0; i < pointLightData.positions.size(); i++)
+    for (size_t outputIndex = 0; outputIndex < GetRenderedPointLightCount(); ++outputIndex)
     {
-        std::string base = "pointLights[" + std::to_string(i) + "]";
+        const size_t i = GetRenderedPointLightIndex(outputIndex);
+        std::string base = "pointLights[" + std::to_string(outputIndex) + "]";
         shader.setVec3(base + ".position", pointLightData.positions[i]);
         shader.setVec3(base + ".ambient", pointLightData.ambient[i]);
         shader.setVec3(base + ".diffuse", pointLightData.diffuse[i]);
@@ -317,14 +343,17 @@ void LightingSystem::ApplyShadows(Shader& shader)
     }
 
     // Send shadow indices for each point light
-    for (size_t i = 0; i < pointLightData.shadowIndex.size(); ++i)
+    for (size_t outputIndex = 0; outputIndex < GetRenderedPointLightCount(); ++outputIndex)
     {
-        shader.setInt("pointLights[" + std::to_string(i) + "].shadowIndex", pointLightData.shadowIndex[i]);
+        const size_t i = GetRenderedPointLightIndex(outputIndex);
+        shader.setInt("pointLights[" + std::to_string(outputIndex) + "].shadowIndex", pointLightData.shadowIndex[i]);
     }
 }
 
 void LightingSystem::CollectLightData()
 {
+    m_viewPointLightsPrepared = false;
+    m_viewPointLights.clear();
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // Clear previous frame data
@@ -622,15 +651,16 @@ void LightingSystem::UploadLightingUBO()
     }
 
     // ---- Light counts ----
-    const int numPoint = std::min(static_cast<int>(pointLightData.positions.size()),
+    const int numPoint = std::min(static_cast<int>(GetRenderedPointLightCount()),
                                   LIGHTING_UBO_MAX_POINT_LIGHTS);
     const int numSpot = std::min(static_cast<int>(spotLightData.positions.size()),
                                  LIGHTING_UBO_MAX_SPOT_LIGHTS);
     data.lightCounts = glm::ivec4(numPoint, numSpot, 0, 0);
 
     // ---- Point lights (5 vec4s each) ----
-    for (int i = 0; i < numPoint; ++i) {
-        int base = i * 5;
+    for (int outputIndex = 0; outputIndex < numPoint; ++outputIndex) {
+        const size_t i = GetRenderedPointLightIndex(static_cast<size_t>(outputIndex));
+        int base = outputIndex * 5;
         data.pointLights[base + 0] = glm::vec4(pointLightData.positions[i], pointLightData.range[i]);
         data.pointLights[base + 1] = glm::vec4(pointLightData.ambient[i],   pointLightData.constant[i]);
         data.pointLights[base + 2] = glm::vec4(pointLightData.diffuse[i],   pointLightData.linear[i]);
