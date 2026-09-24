@@ -56,6 +56,7 @@ std::unique_ptr<ParticleRenderItem> BuildRenderItem(
     renderItem->quadEBO = particleComp.quadEBO;
     renderItem->particleCount = particleComp.particles.size();
     renderItem->additiveBlending = particleComp.additiveBlending;
+    renderItem->softParticleDistance = particleComp.softParticleDistance;
 
     if (ecsManager.HasComponent<BloomComponent>(entity)) {
         auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);

@@ -369,6 +369,7 @@ void GraphicsManager::Render()
 	// Separate models from other render items, moving excluded items to deferred queue
 	m_modelRenderItems.clear();
 	m_otherRenderItems.clear();
+	bool needsParticleDepth = false;
 	m_modelRenderItems.reserve(renderQueue.size());
 	m_otherRenderItems.reserve(renderQueue.size());
 	deferredQueue.reserve(deferredQueue.size() + renderQueue.size());
@@ -394,6 +395,15 @@ void GraphicsManager::Render()
 			else
 			{
 				m_otherRenderItems.push_back(item.get());
+                if (item->isVisible) {
+                    if (item->GetRenderKind() == RenderComponentKind::Particle) {
+                        const auto* particles = static_cast<const ParticleComponent*>(item.get());
+                        needsParticleDepth |= particles->softParticleDistance > 0.0f && !particles->particles.empty();
+                    } else if (item->GetRenderKind() == RenderComponentKind::ParticleRenderItem) {
+                        const auto* particles = static_cast<const ParticleRenderItem*>(item.get());
+                        needsParticleDepth |= particles->softParticleDistance > 0.0f && particles->particleCount != 0;
+                    }
+                }
 			}
 		}
 	}
@@ -592,6 +602,12 @@ void GraphicsManager::Render()
 	// =========================================================================
 	// Render other items (sprites, text, particles, debug)
 	// =========================================================================
+    // Capture once per view after opaque geometry, before any particle or UI
+    // draw. Mixed orthographic editor views do not share the particle projection.
+    if (needsParticleDepth && !(IsRenderingForEditor() && Is2DMode())) {
+        PROFILE_SCOPED("GM::ParticleDepth");
+        PostProcessingManager::GetInstance().CaptureParticleDepth();
+    }
 	{
 		PROFILE_SCOPED("GM::OtherItemsRender");
 		for (IRenderComponent* item : m_otherRenderItems) {
@@ -1134,7 +1150,8 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item)
 		item.particleVAO,
 		item.quadEBO,
 		item.particles.size(),
-		item.additiveBlending);
+		item.additiveBlending,
+		item.softParticleDistance);
 }
 
 void GraphicsManager::RenderParticles(const ParticleRenderItem& item)
@@ -1146,7 +1163,8 @@ void GraphicsManager::RenderParticles(const ParticleRenderItem& item)
 		item.particleVAO,
 		item.quadEBO,
 		item.particleCount,
-		item.additiveBlending);
+		item.additiveBlending,
+		item.softParticleDistance);
 }
 
 void GraphicsManager::RenderParticleInstances(
@@ -1156,7 +1174,8 @@ void GraphicsManager::RenderParticleInstances(
 	VAO* vao,
 	EBO* ebo,
 	std::size_t particleCount,
-	bool additiveBlending)
+	bool additiveBlending,
+	float softParticleDistance)
 {
 #ifdef ANDROID
 	assert(eglGetCurrentContext() != EGL_NO_CONTEXT);
@@ -1198,6 +1217,19 @@ void GraphicsManager::RenderParticleInstances(
 		texture->Bind(0);
 		shader->setInt("particleTexture", 0);
 	}
+
+    const unsigned int particleDepth = PostProcessingManager::GetInstance().GetParticleDepthTexture();
+    const bool softParticles = !renderState.excludeFromPostProcess && particleDepth &&
+        std::isfinite(softParticleDistance) && softParticleDistance > 0.0f &&
+        !(IsRenderingForEditor() && Is2DMode());
+    shader->setFloat("softParticleDistance", softParticles ? softParticleDistance : 0.0f);
+    if (softParticles) {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, particleDepth);
+        shader->setInt("particleSceneDepth", 1);
+        shader->setVec2("particleDepthRange", glm::vec2(0.1f, m_farPlane));
+        glActiveTexture(GL_TEXTURE0);
+    }
 
 	// Per-entity bloom emission
 	shader->setFloat("bloomIntensity", renderState.bloomIntensity);

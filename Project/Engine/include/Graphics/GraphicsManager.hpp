@@ -202,7 +202,8 @@ private:
         VAO* vao,
         EBO* ebo,
         std::size_t particleCount,
-        bool additiveBlending);
+        bool additiveBlending,
+        float softParticleDistance);
 
     // Sprite rendering methods
     void RenderSprite(const SpriteRenderComponent& item);

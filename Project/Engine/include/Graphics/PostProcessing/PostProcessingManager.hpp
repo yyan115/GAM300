@@ -30,6 +30,10 @@ public:
     unsigned int GetHDRTexture() const { return hdrColorTexture; }
 
     unsigned int GetHDRDepthTexture() const { return hdrDepthTexture; }
+    // Copy opaque depth before particles, avoiding framebuffer feedback while
+    // retaining normal depth testing against the original attachment.
+    void CaptureParticleDepth();
+    unsigned int GetParticleDepthTexture() const { return particleDepthReady ? particleDepthTexture : 0; }
     unsigned int GetBloomEmissionTexture() const { return hdrBloomEmissionTexture; }
 
     void BeginHDRRender(int width, int height);
@@ -119,6 +123,10 @@ private:
     unsigned int hdrColorTexture{};
     unsigned int hdrBloomEmissionTexture{};  // MRT attachment 1: per-entity bloom emission
     unsigned int hdrDepthTexture{};
+    unsigned int particleDepthFramebuffer{};
+    unsigned int particleDepthTexture{};
+    bool particleDepthReady = false;
+    bool particleDepthUnavailable = false;
     int hdrWidth{};
     int hdrHeight{};
 

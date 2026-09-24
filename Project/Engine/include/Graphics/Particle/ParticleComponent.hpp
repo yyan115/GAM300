@@ -100,6 +100,9 @@ public:
     //             true  = additive (GL_SRC_ALPHA, GL_ONE) for glow/fire/magic effects
     bool additiveBlending = false;
 
+    // World-space intersection fade distance. Zero preserves hard depth testing.
+    float softParticleDistance = 0.0f;
+
     float timeSinceEmission = 0.0f;
     bool isEmitting = true;
     bool isPlayingInEditor = false;  // Manual play control in editor

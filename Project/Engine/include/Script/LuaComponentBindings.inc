@@ -258,6 +258,7 @@ BEGIN_COMPONENT(ParticleComponent, "ParticleComponent")
     PROPERTY("maxParticles", &ParticleComponent::maxParticles)
     // Particle settings
     PROPERTY("particleLifetime", &ParticleComponent::particleLifetime)
+    PROPERTY("softParticleDistance", &ParticleComponent::softParticleDistance)
     PROPERTY("startSize", &ParticleComponent::startSize)
     PROPERTY("endSize", &ParticleComponent::endSize)
     PROPERTY("startColor", &ParticleComponent::startColor)

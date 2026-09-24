@@ -315,8 +315,72 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     return hdrFramebuffer;
 }
 
+void PostProcessingManager::CaptureParticleDepth()
+{
+    particleDepthReady = false;
+    if (!hdrFramebuffer || particleDepthUnavailable) return;
+
+    GLint drawFBO = 0, readFBO = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFBO);
+    if (static_cast<unsigned int>(drawFBO) != hdrFramebuffer) return;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFBO);
+
+    if (!particleDepthFramebuffer) {
+        GLint textureBinding = 0;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &textureBinding);
+        glGenTextures(1, &particleDepthTexture);
+        glBindTexture(GL_TEXTURE_2D, particleDepthTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, hdrWidth, hdrHeight,
+                     0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glGenFramebuffers(1, &particleDepthFramebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, particleDepthFramebuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                               particleDepthTexture, 0);
+        const GLenum noColor = GL_NONE;
+        glDrawBuffers(1, &noColor);
+        glReadBuffer(GL_NONE);
+        const bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+        glBindTexture(GL_TEXTURE_2D, textureBinding);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, readFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFBO);
+        if (!complete) {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "Particle depth framebuffer is incomplete\n");
+            particleDepthUnavailable = true;
+            return;
+        }
+    }
+
+    // Both attachments use DEPTH_COMPONENT24 at the same resolution. A separate
+    // texture is required even though particles themselves disable depth writes.
+    const GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
+    if (scissor) glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, hdrFramebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, particleDepthFramebuffer);
+    glBlitFramebuffer(0, 0, hdrWidth, hdrHeight, 0, 0, hdrWidth, hdrHeight,
+                      GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, readFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, drawFBO);
+    if (scissor) glEnable(GL_SCISSOR_TEST);
+    particleDepthReady = true;
+}
+
 void PostProcessingManager::DeleteHDRFramebuffer()
 {
+    particleDepthReady = false;
+    particleDepthUnavailable = false;
+    if (particleDepthFramebuffer) {
+        glDeleteFramebuffers(1, &particleDepthFramebuffer);
+        particleDepthFramebuffer = 0;
+    }
+    if (particleDepthTexture) {
+        glDeleteTextures(1, &particleDepthTexture);
+        particleDepthTexture = 0;
+    }
     if (hdrColorTexture != 0)
     {
         glDeleteTextures(1, &hdrColorTexture);
@@ -342,6 +406,7 @@ void PostProcessingManager::DeleteHDRFramebuffer()
 void PostProcessingManager::BeginHDRRender(int width, int height)
 {
     PROFILE_FUNCTION();
+    particleDepthReady = false;
 
     // Create or resize HDR framebuffer if needed
     if (hdrFramebuffer == 0 || width != hdrWidth || height != hdrHeight)

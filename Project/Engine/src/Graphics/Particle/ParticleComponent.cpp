@@ -19,5 +19,6 @@ REFL_REGISTER_PROPERTY(gravity)
 REFL_REGISTER_PROPERTY(velocityRandomness)
 REFL_REGISTER_PROPERTY(initialVelocity)
 REFL_REGISTER_PROPERTY(additiveBlending)
+REFL_REGISTER_PROPERTY(softParticleDistance)
 REFL_REGISTER_END
 #pragma endregion

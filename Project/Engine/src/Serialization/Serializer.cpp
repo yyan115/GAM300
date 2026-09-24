@@ -3525,6 +3525,7 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
         // additive emitter loaded as alpha blended. Files saved before the
         // field existed do not have it and keep the default.
         particleComp.additiveBlending = Serializer::GetBool(d, startIdx + 14, false);
+        particleComp.softParticleDistance = Serializer::GetFloat(d, startIdx + 15, 0.0f);
     }
 }
 

@@ -20,6 +20,7 @@ public:
     EBO* quadEBO = nullptr;
     std::size_t particleCount = 0;
     bool additiveBlending = false;
+    float softParticleDistance = 0.0f;
 
     RenderComponentKind GetRenderKind() const override { return RenderComponentKind::ParticleRenderItem; }
 };
