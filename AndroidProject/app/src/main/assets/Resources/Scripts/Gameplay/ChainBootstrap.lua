@@ -41,6 +41,26 @@ local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
 local ControllerModule  = require("Gameplay.ChainController")
 local ChainAudioModule  = require("Gameplay.ChainAudio")
 
+-- Reuse protected-call functions instead of allocating a closure for each link.
+local function write_world_position(tr, x, y, z)
+    Engine.SetTransformWorldPosition(tr, x, y, z)
+end
+
+local function write_transform_position(tr, x, y, z)
+    tr:SetPosition(x, y, z)
+end
+
+local function write_local_position(tr, x, y, z)
+    local pos = tr.localPosition
+    if type(pos) == "table" then
+        pos.x, pos.y, pos.z = x, y, z
+        tr.isDirty = true
+    elseif type(pos) == "userdata" then
+        pos.x, pos.y, pos.z = x, y, z
+        tr.isDirty = true
+    end
+end
+
 return Component {
     fields = {
         NumberOfLinks = 200,
@@ -196,24 +216,15 @@ return Component {
     _write_world_pos = function(self, tr, x, y, z)
         if not tr then return false end
         if Engine and type(Engine.SetTransformWorldPosition) == "function" then
-            local ok = pcall(function() Engine.SetTransformWorldPosition(tr, x, y, z) end)
+            local ok = pcall(write_world_position, tr, x, y, z)
             if ok then return true end
         end
         if type(tr.SetPosition) == "function" then
-            local suc = pcall(function() tr:SetPosition(x, y, z) end)
+            local suc = pcall(write_transform_position, tr, x, y, z)
             if suc then return true end
         end
         if type(tr.localPosition) ~= "nil" then
-            pcall(function()
-                local pos = tr.localPosition
-                if type(pos) == "table" then
-                    pos.x, pos.y, pos.z = x, y, z
-                    tr.isDirty = true
-                elseif type(pos) == "userdata" then
-                    pos.x, pos.y, pos.z = x, y, z
-                    tr.isDirty = true
-                end
-            end)
+            pcall(write_local_position, tr, x, y, z)
             return true
         end
         return false

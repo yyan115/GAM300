@@ -1,6 +1,7 @@
 -- verletAdapter.lua (refactored: pure physics, does NOT mutate invMass; controller owns invMass)
 local M = {}
 local EPS = 1e-6
+local constraintCache = {}
 
 local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
 
@@ -68,10 +69,36 @@ local function stepOnce(state, dt, params)
 
     local iterations = math.min(20, tonumber((params and params.ConstraintIterations) or 2))
 
+    -- The solver does not mutate masses during a substep. Preserve pair order,
+    -- and reuse each pair's exact ratios throughout all constraint iterations.
+    local constraintCount = 0
+    if iterations >= 1 then
+        for i = 2, n do
+            local invA = invMass[i-1] or 0
+            local invB = invMass[i] or 0
+            local w = invA + invB
+            if w > EPS then
+                constraintCount = constraintCount + 1
+                local constraint = constraintCache[constraintCount]
+                if not constraint then
+                    constraint = {}
+                    constraintCache[constraintCount] = constraint
+                end
+                constraint[1], constraint[2], constraint[3] = i, invA / w, invB / w
+                constraint[4], constraint[5] = invA > 0, invB > 0
+            end
+        end
+    end
+    local target = segLen
+    if constraintCount > 0 and params and params.LinkMaxDistance and (not params.IsElastic) then
+        if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
+    end
+
     for it = 1, iterations do
         if needsBidirectional then
-            -- Forward pass
-            for i = 2, n do
+            for index = 1, constraintCount do
+                local constraint = constraintCache[index]
+                local i = constraint[1]
                 local a = positions[i-1]
                 local b = positions[i]
                 local ax,ay,az = a[1], a[2], a[3]
@@ -79,32 +106,24 @@ local function stepOnce(state, dt, params)
                 local dx,dy,dz = bx - ax, by - ay, bz - az
                 local dist = vec_len(dx,dy,dz)
                 if dist < EPS then dist = EPS end
-                local target = segLen
-                if params and params.LinkMaxDistance and (not params.IsElastic) then
-                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-                end
                 local diff = (dist - target) / dist
-                local invA = invMass[i-1] or 0
-                local invB = invMass[i] or 0
-                local w = invA + invB
-                if w > EPS then
-                    local fa = (invA / w) * diff
-                    local fb = (invB / w) * diff
-                    if invA > 0 then
-                        a[1] = ax + dx * fa
-                        a[2] = ay + dy * fa
-                        a[3] = az + dz * fa
-                    end
-                    if invB > 0 then
-                        b[1] = bx - dx * fb
-                        b[2] = by - dy * fb
-                        b[3] = bz - dz * fb
-                    end
+                local fa = constraint[2] * diff
+                local fb = constraint[3] * diff
+                if constraint[4] then
+                    a[1] = ax + dx * fa
+                    a[2] = ay + dy * fa
+                    a[3] = az + dz * fa
+                end
+                if constraint[5] then
+                    b[1] = bx - dx * fb
+                    b[2] = by - dy * fb
+                    b[3] = bz - dz * fb
                 end
             end
 
-            -- Backward pass
-            for i = n, 2, -1 do
+            for index = constraintCount, 1, -1 do
+                local constraint = constraintCache[index]
+                local i = constraint[1]
                 local a = positions[i-1]
                 local b = positions[i]
                 local ax,ay,az = a[1], a[2], a[3]
@@ -112,32 +131,24 @@ local function stepOnce(state, dt, params)
                 local dx,dy,dz = bx - ax, by - ay, bz - az
                 local dist = vec_len(dx,dy,dz)
                 if dist < EPS then dist = EPS end
-                local target = segLen
-                if params and params.LinkMaxDistance and (not params.IsElastic) then
-                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-                end
                 local diff = (dist - target) / dist
-                local invA = invMass[i-1] or 0
-                local invB = invMass[i] or 0
-                local w = invA + invB
-                if w > EPS then
-                    local fa = (invA / w) * diff
-                    local fb = (invB / w) * diff
-                    if invA > 0 then
-                        a[1] = ax + dx * fa
-                        a[2] = ay + dy * fa
-                        a[3] = az + dz * fa
-                    end
-                    if invB > 0 then
-                        b[1] = bx - dx * fb
-                        b[2] = by - dy * fb
-                        b[3] = bz - dz * fb
-                    end
+                local fa = constraint[2] * diff
+                local fb = constraint[3] * diff
+                if constraint[4] then
+                    a[1] = ax + dx * fa
+                    a[2] = ay + dy * fa
+                    a[3] = az + dz * fa
+                end
+                if constraint[5] then
+                    b[1] = bx - dx * fb
+                    b[2] = by - dy * fb
+                    b[3] = bz - dz * fb
                 end
             end
         else
-            -- Single forward pass
-            for i = 2, n do
+            for index = 1, constraintCount do
+                local constraint = constraintCache[index]
+                local i = constraint[1]
                 local a = positions[i-1]
                 local b = positions[i]
                 local ax,ay,az = a[1], a[2], a[3]
@@ -145,27 +156,18 @@ local function stepOnce(state, dt, params)
                 local dx,dy,dz = bx - ax, by - ay, bz - az
                 local dist = vec_len(dx,dy,dz)
                 if dist < EPS then dist = EPS end
-                local target = segLen
-                if params and params.LinkMaxDistance and (not params.IsElastic) then
-                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-                end
                 local diff = (dist - target) / dist
-                local invA = invMass[i-1] or 0
-                local invB = invMass[i] or 0
-                local w = invA + invB
-                if w > EPS then
-                    local fa = (invA / w) * diff
-                    local fb = (invB / w) * diff
-                    if invA > 0 then
-                        a[1] = ax + dx * fa
-                        a[2] = ay + dy * fa
-                        a[3] = az + dz * fa
-                    end
-                    if invB > 0 then
-                        b[1] = bx - dx * fb
-                        b[2] = by - dy * fb
-                        b[3] = bz - dz * fb
-                    end
+                local fa = constraint[2] * diff
+                local fb = constraint[3] * diff
+                if constraint[4] then
+                    a[1] = ax + dx * fa
+                    a[2] = ay + dy * fa
+                    a[3] = az + dz * fa
+                end
+                if constraint[5] then
+                    b[1] = bx - dx * fb
+                    b[2] = by - dy * fb
+                    b[3] = bz - dz * fb
                 end
             end
         end

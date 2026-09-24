@@ -1,6 +1,8 @@
 -- LinkTransformHandler.lua
 -- Cache transforms, provide ApplyPositions and ApplyRotations (parallel transport)
 local M = {}
+-- Collapsed links share a canonical target; continuity and writes still run.
+local collapsedTargets = {}
 
 local function normalize(x,y,z)
     local l = math.sqrt(x*x + y*y + z*z)
@@ -32,6 +34,16 @@ local function write_pos_safe(component, tr, x,y,z)
     return false
 end
 
+local function write_rotation(transform, w, x, y, z)
+    if transform and transform.localRotation then
+        local rot = transform.localRotation
+        if type(rot) == "table" or type(rot) == "userdata" then
+            rot.w, rot.x, rot.y, rot.z = w, x, y, z
+            transform.isDirty = true
+        end
+    end
+end
+
 function M.New(component)
     local self = {}
     self.component = component
@@ -39,6 +51,7 @@ function M.New(component)
     self.proxies = {}
     -- rotation continuity storage
     self.qprev = {}
+    self._forward = {}
     return setmetatable(self, {__index = M})
 end
 
@@ -109,7 +122,7 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
     if n == 0 then return end
 
     -- build forward array only for active links
-    local forward = {}
+    local forward = self._forward
     for i = 1, n do
         local fx,fy,fz = 0,0,0
         if n == 1 then
@@ -128,10 +141,13 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
             end
         end
         local nfx, nfy, nfz = normalize(fx,fy,fz)
-        if nfx == 0 and nfy == 0 and nfz == 0 then
+        local collapsed = nfx == 0 and nfy == 0 and nfz == 0
+        if collapsed then
             nfx, nfy, nfz = 1,0,0
         end
-        forward[i] = {nfx, nfy, nfz}
+        local direction = forward[i]
+        if not direction then direction = {}; forward[i] = direction end
+        direction[1], direction[2], direction[3], direction[4] = nfx, nfy, nfz, collapsed
     end
 
     -- compute world up
@@ -140,81 +156,90 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
 
     for i = 1, n do
         local fx,fy,fz = forward[i][1], forward[i][2], forward[i][3]
-        local refUpX, refUpY, refUpZ = WORLD_UP[1], WORLD_UP[2], WORLD_UP[3]
-        if math.abs(dot(fx,fy,fz, refUpX, refUpY, refUpZ)) > 0.99 then
-            refUpX, refUpY, refUpZ = 1,0,0
-        end
-        local rx,ry,rz = cross(refUpX, refUpY, refUpZ, fx, fy, fz)
-        rx,ry,rz = normalize(rx,ry,rz)
-        if rx == 0 and ry == 0 and rz == 0 then
-            if math.abs(fx) < 0.9 then rx,ry,rz = 1,0,0 else rx,ry,rz = 0,1,0 end
-            local proj = dot(rx,ry,rz, fx,fy,fz)
-            rx,ry,rz = normalize(rx - proj * fx, ry - proj * fy, rz - proj * fz)
-        end
-        local ux,uy,uz = cross(fx,fy,fz, rx,ry,rz)
-        ux,uy,uz = normalize(ux,uy,uz)
-
-        if altTwist and (i % 2) == 0 then
-            local angle = math.pi * 0.5
-            local ca = math.cos(angle); local sa = math.sin(angle)
-            local ax,ay,az = fx,fy,fz
-            local cross_rx_x = (ay * rz - az * ry)
-            local cross_rx_y = (az * rx - ax * rz)
-            local cross_rx_z = (ax * ry - ay * rx)
-            local dota = ax*rx + ay*ry + az*rz
-            rx = rx*ca + cross_rx_x*sa + ax*(dota*(1-ca))
-            ry = ry*ca + cross_rx_y*sa + ay*(dota*(1-ca))
-            rz = rz*ca + cross_rx_z*sa + az*(dota*(1-ca))
-            local cross_ux_x = (ay * uz - az * uy)
-            local cross_ux_y = (az * ux - ax * uz)
-            local cross_ux_z = (ax * uy - ay * ux)
-            local dota2 = ax*ux + ay*uy + az*uz
-            ux = ux*ca + cross_ux_x*sa + ax*(dota2*(1-ca))
-            uy = uy*ca + cross_ux_y*sa + ay*(dota2*(1-ca))
-            uz = uz*ca + cross_ux_z*sa + az*(dota2*(1-ca))
-            rx,ry,rz = normalize(rx,ry,rz)
-            ux,uy,uz = normalize(ux,uy,uz)
-        end
-
-        -- build matrix columns RIGHT(rx,ry,rz), UP(ux,uy,uz), FORWARD(fx,fy,fz)
-        -- convert to quaternion via compact mat->quat
-        local m00,m10,m20 = rx,ry,rz
-        local m01,m11,m21 = ux,uy,uz
-        local m02,m12,m22 = fx,fy,fz
-        local tr = m00 + m11 + m22
+        local targetIndex = (altTwist and (i % 2) == 0) and 2 or 1
+        local cachedTarget = forward[i][4] and collapsedTargets[targetIndex]
         local qw,qx,qy,qz
-        if tr > 0 then
-            local S = math.sqrt(tr + 1.0) * 2.0
-            qw = 0.25 * S
-            qx = (m21 - m12) / S
-            qy = (m02 - m20) / S
-            qz = (m10 - m01) / S
+        if cachedTarget then
+            qw,qx,qy,qz = cachedTarget[1],cachedTarget[2],cachedTarget[3],cachedTarget[4]
         else
-            if (m00 > m11) and (m00 > m22) then
-                local S = math.sqrt(1.0 + m00 - m11 - m22) * 2.0
-                qw = (m21 - m12) / S
-                qx = 0.25 * S
-                qy = (m01 + m10) / S
-                qz = (m02 + m20) / S
-            elseif m11 > m22 then
-                local S = math.sqrt(1.0 + m11 - m00 - m22) * 2.0
-                qw = (m02 - m20) / S
-                qx = (m01 + m10) / S
-                qy = 0.25 * S
-                qz = (m12 + m21) / S
+            local refUpX, refUpY, refUpZ = WORLD_UP[1], WORLD_UP[2], WORLD_UP[3]
+            if math.abs(dot(fx,fy,fz, refUpX, refUpY, refUpZ)) > 0.99 then
+                refUpX, refUpY, refUpZ = 1,0,0
+            end
+            local rx,ry,rz = cross(refUpX, refUpY, refUpZ, fx, fy, fz)
+            rx,ry,rz = normalize(rx,ry,rz)
+            if rx == 0 and ry == 0 and rz == 0 then
+                if math.abs(fx) < 0.9 then rx,ry,rz = 1,0,0 else rx,ry,rz = 0,1,0 end
+                local proj = dot(rx,ry,rz, fx,fy,fz)
+                rx,ry,rz = normalize(rx - proj * fx, ry - proj * fy, rz - proj * fz)
+            end
+            local ux,uy,uz = cross(fx,fy,fz, rx,ry,rz)
+            ux,uy,uz = normalize(ux,uy,uz)
+
+            if altTwist and (i % 2) == 0 then
+                local angle = math.pi * 0.5
+                local ca = math.cos(angle); local sa = math.sin(angle)
+                local ax,ay,az = fx,fy,fz
+                local cross_rx_x = (ay * rz - az * ry)
+                local cross_rx_y = (az * rx - ax * rz)
+                local cross_rx_z = (ax * ry - ay * rx)
+                local dota = ax*rx + ay*ry + az*rz
+                rx = rx*ca + cross_rx_x*sa + ax*(dota*(1-ca))
+                ry = ry*ca + cross_rx_y*sa + ay*(dota*(1-ca))
+                rz = rz*ca + cross_rx_z*sa + az*(dota*(1-ca))
+                local cross_ux_x = (ay * uz - az * uy)
+                local cross_ux_y = (az * ux - ax * uz)
+                local cross_ux_z = (ax * uy - ay * ux)
+                local dota2 = ax*ux + ay*uy + az*uz
+                ux = ux*ca + cross_ux_x*sa + ax*(dota2*(1-ca))
+                uy = uy*ca + cross_ux_y*sa + ay*(dota2*(1-ca))
+                uz = uz*ca + cross_ux_z*sa + az*(dota2*(1-ca))
+                rx,ry,rz = normalize(rx,ry,rz)
+                ux,uy,uz = normalize(ux,uy,uz)
+            end
+
+            -- build matrix columns RIGHT(rx,ry,rz), UP(ux,uy,uz), FORWARD(fx,fy,fz)
+            -- convert to quaternion via compact mat->quat
+            local m00,m10,m20 = rx,ry,rz
+            local m01,m11,m21 = ux,uy,uz
+            local m02,m12,m22 = fx,fy,fz
+            local tr = m00 + m11 + m22
+            if tr > 0 then
+                local S = math.sqrt(tr + 1.0) * 2.0
+                qw = 0.25 * S
+                qx = (m21 - m12) / S
+                qy = (m02 - m20) / S
+                qz = (m10 - m01) / S
             else
-                local S = math.sqrt(1.0 + m22 - m00 - m11) * 2.0
-                qw = (m10 - m01) / S
-                qx = (m02 + m20) / S
-                qy = (m12 + m21) / S
-                qz = 0.25 * S
+                if (m00 > m11) and (m00 > m22) then
+                    local S = math.sqrt(1.0 + m00 - m11 - m22) * 2.0
+                    qw = (m21 - m12) / S
+                    qx = 0.25 * S
+                    qy = (m01 + m10) / S
+                    qz = (m02 + m20) / S
+                elseif m11 > m22 then
+                    local S = math.sqrt(1.0 + m11 - m00 - m22) * 2.0
+                    qw = (m02 - m20) / S
+                    qx = (m01 + m10) / S
+                    qy = 0.25 * S
+                    qz = (m12 + m21) / S
+                else
+                    local S = math.sqrt(1.0 + m22 - m00 - m11) * 2.0
+                    qw = (m10 - m01) / S
+                    qx = (m02 + m20) / S
+                    qy = (m12 + m21) / S
+                    qz = 0.25 * S
+                end
+            end
+            qw,qx,qy,qz = qw or 1, qx or 0, qy or 0, qz or 0
+
+            -- normalize target quaternion
+            local tlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+            if tlen > 1e-12 then qw,qx,qy,qz = qw/tlen, qx/tlen, qy/tlen, qz/tlen else qw,qx,qy,qz = 1,0,0,0 end
+            if forward[i][4] then
+                collapsedTargets[targetIndex] = {qw,qx,qy,qz}
             end
         end
-        qw,qx,qy,qz = qw or 1, qx or 0, qy or 0, qz or 0
-
-        -- normalize target quaternion
-        local tlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
-        if tlen > 1e-12 then qw,qx,qy,qz = qw/tlen, qx/tlen, qy/tlen, qz/tlen else qw,qx,qy,qz = 1,0,0,0 end
 
         -- continuity: load previous quaternion (self.qprev)
         local prev_w,prev_x,prev_y,prev_z = 1,0,0,0
@@ -258,15 +283,7 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
 
         -- write rotation to transform safely
         local transform = self.transforms[i]
-        pcall(function()
-            if transform and transform.localRotation then
-                local rot = transform.localRotation
-                if type(rot) == "table" or type(rot) == "userdata" then
-                    rot.w, rot.x, rot.y, rot.z = final_w, final_x, final_y, final_z
-                    transform.isDirty = true
-                end
-            end
-        end)
+        pcall(write_rotation, transform, final_w, final_x, final_y, final_z)
 
         self.qprev[i] = { final_w, final_x, final_y, final_z }
     end

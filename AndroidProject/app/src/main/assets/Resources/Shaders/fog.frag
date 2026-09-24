@@ -52,6 +52,15 @@ uniform mat4 modelInverse;
 
 uniform int fogShape;
 
+// Exact bounded corner cache. Original arithmetic is the fallback.
+uniform bool noiseCacheBuild;
+uniform bool noiseCacheEnabled;
+uniform sampler2D noiseCornerCache;
+uniform int noiseCacheWidth;
+uniform ivec4 noiseCacheOrigins[9]; // xyz origin, w first texel
+uniform ivec3 noiseCacheSizes[9];
+
+
 // Depth-based soft intersection with solid geometry
 uniform sampler2D depthTexture;
 uniform vec2      viewportSize;
@@ -87,6 +96,45 @@ float valueNoise(vec3 p)
     );
 }
 
+float valueNoiseCached(vec3 p, int region)
+{
+    if (noiseCacheEnabled) {
+        vec3 i = floor(p);
+        vec3 relative = i - vec3(noiseCacheOrigins[region].xyz);
+        if (all(greaterThanEqual(relative, vec3(0.0))) &&
+            all(lessThan(relative, vec3(noiseCacheSizes[region])))) {
+            ivec3 cell = ivec3(relative);
+            ivec3 size = noiseCacheSizes[region];
+            int slot = noiseCacheOrigins[region].w + 2 * (cell.x + size.x * (cell.y + size.y * cell.z));
+            vec4 a = texelFetch(noiseCornerCache, ivec2(slot & 255, slot >> 8), 0);
+            vec4 b = texelFetch(noiseCornerCache, ivec2((slot + 1) & 255, (slot + 1) >> 8), 0);
+            vec3 f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(mix(a.x, a.y, f.x), mix(a.z, a.w, f.x), f.y),
+                       mix(mix(b.x, b.y, f.x), mix(b.z, b.w, f.x), f.y), f.z);
+        }
+    }
+    return valueNoise(p);
+}
+
+vec4 buildNoiseCache()
+{
+    int slot = int(gl_FragCoord.x) + int(gl_FragCoord.y) * noiseCacheWidth;
+    for (int region = 0; region < 9; ++region) {
+        ivec3 size = noiseCacheSizes[region];
+        int relative = slot - noiseCacheOrigins[region].w;
+        int count = size.x * size.y * size.z * 2;
+        if (relative >= 0 && relative < count) {
+            int cell = relative / 2;
+            ivec3 coordinate = ivec3(cell % size.x, (cell / size.x) % size.y, cell / (size.x * size.y));
+            vec3 p = vec3(noiseCacheOrigins[region].xyz + coordinate) + vec3(0, 0, relative % 2);
+            return vec4(hash(p + vec3(0,0,0)), hash(p + vec3(1,0,0)),
+                        hash(p + vec3(0,1,0)), hash(p + vec3(1,1,0)));
+        }
+    }
+    return vec4(0.0);
+}
+
 // Fractional Brownian Motion - layered noise for natural wisps
 // 3 octaves instead of 4: ~25% cheaper with negligible visual difference
 float fbm(vec3 p)
@@ -97,7 +145,7 @@ float fbm(vec3 p)
 
     for (int i = 0; i < 3; i++)
     {
-        value += amplitude * valueNoise(p * frequency);
+        value += amplitude * valueNoiseCached(p * frequency, 6 + i);
         amplitude *= 0.5;
         frequency *= 2.0;
     }
@@ -106,7 +154,7 @@ float fbm(vec3 p)
 
 // Cheaper 2-octave fbm used only for domain warp — retains visible motion
 // at roughly half the cost of the full fbm
-float fbmWarp(vec3 p)
+float fbmWarp(vec3 p, int warpRegion)
 {
     float value = 0.0;
     float amplitude = 0.5;
@@ -114,7 +162,7 @@ float fbmWarp(vec3 p)
 
     for (int i = 0; i < 2; i++)
     {
-        value += amplitude * valueNoise(p * frequency);
+        value += amplitude * valueNoiseCached(p * frequency, warpRegion * 2 + i);
         amplitude *= 0.5;
         frequency *= 2.0;
     }
@@ -127,6 +175,11 @@ float fbmWarp(vec3 p)
 
 void main()
 {
+    if (noiseCacheBuild) {
+        FragColor = buildNoiseCache();
+        BloomEmission = vec4(0.0);
+        return;
+    }
     // --- 1. Ray in world space ---
     vec3 rayDir = normalize(FragPos - cameraPos);
 
@@ -257,9 +310,9 @@ void main()
         if (warpStrength > 0.0)
         {
             vec3 warp = vec3(
-                fbmWarp(noiseCoord + vec3(1.7, 9.2, 3.4)),
-                fbmWarp(noiseCoord + vec3(8.3, 2.8, 5.1)),
-                fbmWarp(noiseCoord + vec3(4.5, 6.1, 1.9))
+                fbmWarp(noiseCoord + vec3(1.7, 9.2, 3.4), 0),
+                fbmWarp(noiseCoord + vec3(8.3, 2.8, 5.1), 1),
+                fbmWarp(noiseCoord + vec3(4.5, 6.1, 1.9), 2)
             );
             noiseCoord += warpStrength * warp;
         }

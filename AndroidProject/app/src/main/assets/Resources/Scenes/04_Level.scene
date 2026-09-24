@@ -238466,6 +238466,10 @@
                                     {
                                         "type": "bool",
                                         "data": false
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0.35
                                     }
                                 ]
                             }
@@ -238637,6 +238641,10 @@
                                     {
                                         "type": "bool",
                                         "data": false
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0.35
                                     }
                                 ]
                             }
