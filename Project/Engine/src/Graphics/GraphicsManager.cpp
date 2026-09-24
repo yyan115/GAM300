@@ -1702,13 +1702,17 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		}
 	}
 
-	// Also render instanced batches — they bypass the renderQueue so they'd otherwise
-	// cast no shadows. The depth shader is already active and has light matrices set.
+	// Instanced models bypass the render queue. The PC point-light pass already
+	// draws them through the complete ECS traversal above; only the queue-based
+	// shadow paths need this additional batch pass.
 	if (InstancingManager::GetInstance().IsEnabled())
 	{
 		depthShader.setBool("useInstancing", true);
 		depthShader.setBool("isAnimated", false);
-		InstancingManager::GetInstance().RenderBatchesDepthOnly(glm::mat4(1.0f));
+#ifndef ANDROID
+		if (!(m_shadowFarPlane > 0.0f))
+#endif
+			InstancingManager::GetInstance().RenderBatchesDepthOnly(glm::mat4(1.0f));
 		depthShader.setBool("useInstancing", false);
 	}
 
