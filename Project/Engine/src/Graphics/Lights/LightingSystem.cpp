@@ -218,8 +218,8 @@ void LightingSystem::PrepareView(const Frustum* frustum)
     {
         const float range = pointLightData.range[i];
         const glm::vec3& position = pointLightData.positions[i];
-        // An enclosing box and the existing half-unit frustum tolerance keep
-        // lights near the view boundary. Nonpositive ranges are unlimited.
+        // Range-bounded lights cannot affect fragments outside their sphere.
+        // Keep the existing half-unit boundary tolerance and unlimited ranges.
         if (frustum && range > 0.0f && std::isfinite(range) &&
             std::isfinite(position.x) && std::isfinite(position.y) && std::isfinite(position.z))
         {
@@ -227,7 +227,8 @@ void LightingSystem::PrepareView(const Frustum* frustum)
             bool finiteBounds = true;
             for (int axis = 0; axis < 3; ++axis)
                 finiteBounds = finiteBounds && std::isfinite(bounds.min[axis]) && std::isfinite(bounds.max[axis]);
-            if (finiteBounds && !frustum->IsBoxVisible(bounds, 0.5f))
+            if (finiteBounds && (!frustum->IsBoxVisible(bounds, 0.5f) ||
+                !frustum->IsSphereVisible(position, range + 0.5f)))
                 continue;
         }
         m_viewPointLights.push_back(i);
