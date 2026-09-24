@@ -216,6 +216,26 @@ static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
     return std::make_tuple(p.x, p.y, p.z);
 }
 
+// Equivalent to writing the individual Lua properties, including the dirty flag.
+static void Lua_SetTransformLocalPosition(Transform* transform, float x, float y, float z)
+{
+    if (!transform) return;
+    transform->localPosition.x = x;
+    transform->localPosition.y = y;
+    transform->localPosition.z = z;
+    transform->isDirty = true;
+}
+
+static void Lua_SetTransformLocalRotation(Transform* transform, float w, float x, float y, float z)
+{
+    if (!transform) return;
+    transform->localRotation.w = w;
+    transform->localRotation.x = x;
+    transform->localRotation.y = y;
+    transform->localRotation.z = z;
+    transform->isDirty = true;
+}
+
 static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* t)
 {
     if (!t)

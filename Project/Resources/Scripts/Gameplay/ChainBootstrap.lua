@@ -223,6 +223,9 @@ return Component {
             local suc = pcall(write_transform_position, tr, x, y, z)
             if suc then return true end
         end
+        if type(tr) == "userdata" and Engine and type(Engine.SetTransformLocalPosition) == "function" then
+            if pcall(Engine.SetTransformLocalPosition, tr, x, y, z) then return true end
+        end
         if type(tr.localPosition) ~= "nil" then
             pcall(write_local_position, tr, x, y, z)
             return true

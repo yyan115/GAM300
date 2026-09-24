@@ -35,6 +35,9 @@ local function write_pos_safe(component, tr, x,y,z)
 end
 
 local function write_rotation(transform, w, x, y, z)
+    if type(transform) == "userdata" and Engine and type(Engine.SetTransformLocalRotation) == "function" then
+        if pcall(Engine.SetTransformLocalRotation, transform, w, x, y, z) then return end
+    end
     if transform and transform.localRotation then
         local rot = transform.localRotation
         if type(rot) == "table" or type(rot) == "userdata" then
