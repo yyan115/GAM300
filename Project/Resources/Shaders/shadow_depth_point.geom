@@ -1,29 +1,33 @@
 #version 330 core
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 18) out;
-
 uniform mat4 shadowMatrices[6];
+out vec4 FragPos;
 
-out vec4 FragPos; // FragPos from GS (output per EmitVertex)
+bool outsideFace(vec4 a, vec4 b, vec4 c)
+{
+    // A triangle outside one common homogeneous clip plane cannot cover a pixel.
+    return (a.x < -a.w && b.x < -b.w && c.x < -c.w) ||
+           (a.x >  a.w && b.x >  b.w && c.x >  c.w) ||
+           (a.y < -a.w && b.y < -b.w && c.y < -c.w) ||
+           (a.y >  a.w && b.y >  b.w && c.y >  c.w) ||
+           (a.z < -a.w && b.z < -b.w && c.z < -c.w) ||
+           (a.z >  a.w && b.z >  b.w && c.z >  c.w);
+}
 
 void main()
 {
-    // Render to all 6 faces of the cubemap
     for (int face = 0; face < 6; ++face)
     {
-        // gl_Layer specifies which face of the cubemap we render to
-        // 0 = +X, 1 = -X, 2 = +Y, 3 = -Y, 4 = +Z, 5 = -Z
+        vec4 clip[3];
+        for (int i = 0; i < 3; ++i)
+            clip[i] = shadowMatrices[face] * gl_in[i].gl_Position;
+        if (outsideFace(clip[0], clip[1], clip[2])) continue;
         gl_Layer = face;
-        
-        // Process each vertex of the triangle
         for (int i = 0; i < 3; ++i)
         {
-            // Pass world position to fragment shader for distance calculation
             FragPos = gl_in[i].gl_Position;
-            
-            // Transform to light's clip space for this face
-            gl_Position = shadowMatrices[face] * FragPos;
-            
+            gl_Position = clip[i];
             EmitVertex();
         }
         EndPrimitive();
