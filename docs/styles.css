@@ -59,12 +59,10 @@ h2 { font-family: Inknut, Georgia, serif; font-weight: 400; font-size: clamp(27p
 .heading-line { height: 1px; background: var(--line); flex: 1; }
 .gallery-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 25px 22px; }
 .gallery-tile { grid-column: span 4; min-width: 0; }
-.gallery-combat { grid-column: span 7; }
-.gallery-boss { grid-column: span 5; }
+.gallery-video-tile { grid-column: span 6; }
 .media-open { display: block; position: relative; overflow: hidden; background: #090705; aspect-ratio: 16 / 9; cursor: zoom-in; }
 .media-open > img, .media-open > video { width: 100%; height: 100%; object-fit: cover; transition: transform .45s ease; }
 .media-open:hover > img { transform: scale(1.035); }
-.gallery-combat .media-open, .gallery-boss .media-open { aspect-ratio: auto; height: clamp(250px, 27vw, 390px); }
 .gallery-boss img { object-position: 60%; }
 .expand-label { position: absolute; right: 13px; bottom: 13px; width: 35px; height: 35px; display: grid; place-items: center; background: #15100eb8; border: 1px solid #ffffff38; color: white; opacity: 0; transform: translateY(5px); transition: opacity .2s, transform .2s; }
 .expand-label svg { width: 16px; height: 16px; }
@@ -183,8 +181,6 @@ h2 { font-family: Inknut, Georgia, serif; font-weight: 400; font-size: clamp(27p
   .gallery-section { padding-block: 30px 60px; }
   .section-heading { margin-bottom: 24px; }
   .gallery-grid { gap: 22px 16px; }
-  .gallery-combat, .gallery-boss { grid-column: span 6; }
-  .gallery-combat .media-open, .gallery-boss .media-open { height: 240px; }
   .expand-label { opacity: 1; transform: none; width: 29px; height: 29px; right: 9px; bottom: 9px; }
   .gallery-tile figcaption { font-size: 10px; }
   .download-section { padding-block: 55px 60px; }
@@ -224,11 +220,8 @@ h2 { font-family: Inknut, Georgia, serif; font-weight: 400; font-size: clamp(27p
   .section-heading { gap: 20px; }
   .gallery-grid { grid-template-columns: 1fr 1fr; gap: 22px 14px; }
   .gallery-tile { grid-column: span 1; }
-  .gallery-combat { grid-column: span 2; }
-  .gallery-combat .media-open { height: auto; aspect-ratio: 16 / 9; }
-  .gallery-boss { grid-column: span 1; }
-  .gallery-boss .media-open { height: auto; aspect-ratio: 4 / 3; }
-  .gallery-tile:not(.gallery-combat) .media-open { aspect-ratio: 4 / 3; }
+  .gallery-video-tile { grid-column: span 2; }
+  .gallery-tile:not(.gallery-video-tile) .media-open { aspect-ratio: 4 / 3; }
   .gallery-tile figcaption { padding-top: 9px; font-size: 10px; line-height: 1.6; }
   .download-section { padding-block: 45px 48px; }
   .download-heading { align-items: flex-start; gap: 18px; flex-wrap: wrap; }

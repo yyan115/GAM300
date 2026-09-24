@@ -135,16 +135,17 @@
     caption: link.dataset.caption,
     alt: link.dataset.alt,
   }));
-  const video = document.getElementById('gallery-video');
+  const galleryVideos = new Map([...document.querySelectorAll('.gallery-grid video')].map(video => [video, false]));
   const largeImage = document.getElementById('lightbox-image');
   const largeVideo = document.getElementById('lightbox-video');
   let current = 0;
-  let galleryVisible = false;
   function syncGallery() {
-    if (galleryVisible && !document.hidden && !lightbox.open && !reducedMotion.matches && !saveData) {
-      video.play().catch(() => {});
-    } else {
-      video.pause();
+    for (const [video, visible] of galleryVideos) {
+      if (visible && !document.hidden && !lightbox.open && !reducedMotion.matches && !saveData) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
     }
   }
 
@@ -202,8 +203,8 @@
         if (entry.target === hero) {
           heroVisible = entry.isIntersecting;
           syncHero();
-        } else if (entry.target === video) {
-          galleryVisible = entry.isIntersecting;
+        } else if (galleryVideos.has(entry.target)) {
+          galleryVideos.set(entry.target, entry.isIntersecting);
           syncGallery();
         } else {
           storyVisible = entry.isIntersecting;
@@ -212,11 +213,11 @@
       }
     }, {threshold: .1});
     observer.observe(hero);
-    observer.observe(video);
+    galleryVideos.forEach((_, video) => observer.observe(video));
     observer.observe(story);
   } else {
     heroVisible = true;
-    galleryVisible = true;
+    galleryVideos.forEach((_, video) => galleryVideos.set(video, true));
     storyVisible = true;
     syncHero();
     syncGallery();
