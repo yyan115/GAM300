@@ -174,6 +174,14 @@ void LightingSystem::RenderShadowMaps(unsigned int restoreFramebuffer, int resto
     {
         if (pointLightData.shadowIndex[i] >= 0)
         {
+            // Prepared lighting already excludes this light from the view.
+            // Retain the original schedule for maps with custom update intervals.
+            if (m_viewPointLightsPrepared && pointShadowMaps[shadowIndex].UpdatesEveryFrame() &&
+                !std::binary_search(m_viewPointLights.begin(), m_viewPointLights.end(), i)) {
+                ++skippedCount;
+                ++shadowIndex;
+                continue;
+            }
             glm::vec3 lightPos = pointLightData.positions[i];
 
             float lightRange = pointLightData.range[i];

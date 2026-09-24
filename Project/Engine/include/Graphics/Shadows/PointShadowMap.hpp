@@ -52,6 +52,11 @@ public:
     // Set the phase offset for round-robin staggered updates (0..updateInterval-1)
     void SetPhaseOffset(int phase) { m_phaseOffset = phase; }
 
+    // Skipped views must never delay the next visible shadow update.
+    bool UpdatesEveryFrame() const {
+        return cacheConfig.updateInterval == 0 && cacheConfig.maxStaleFrames == 1 && m_phaseOffset == 0;
+    }
+
     // Configuration for caching behavior
     struct CacheConfig {
         float positionThreshold = 0.05f;   // Min movement to trigger update (world units)
