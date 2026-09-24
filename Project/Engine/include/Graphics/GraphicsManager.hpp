@@ -295,4 +295,14 @@ private:
 
     // Fog
     void RenderFogVolume(const FogVolumeComponent& item);
+#ifndef ANDROID
+    struct PointShadowCaster {
+        ModelRenderComponent* component;
+        glm::mat4 modelMatrix;
+        AABB worldBounds;
+    };
+    std::vector<PointShadowCaster> m_pointShadowCasters;
+    bool m_cachePointShadowCasters = false;
+    bool m_pointShadowCastersReady = false;
+#endif
 };

@@ -353,6 +353,23 @@ void GraphicsManager::Render()
 			// Orthographic editor shaders can use a different projection from CameraBlock.
 			const bool filterLights = frustumCullingEnabled && !(IsRenderingForEditor() && Is2DMode());
 			ecsManager.lightingSystem->PrepareView(filterLights ? &lightingFrustum : nullptr);
+#ifndef ANDROID
+            // Reuse caster transforms and bounds only within this shadow pass.
+            // Each editor/game view starts fresh after the systems have updated.
+            m_pointShadowCasters.clear();
+            m_pointShadowCastersReady = false;
+            m_cachePointShadowCasters = true;
+            struct ResetPointShadowCasters {
+                std::vector<PointShadowCaster>& casters;
+                bool& ready;
+                bool& enabled;
+                ~ResetPointShadowCasters() {
+                    casters.clear();
+                    ready = false;
+                    enabled = false;
+                }
+            } resetCasters{m_pointShadowCasters, m_pointShadowCastersReady, m_cachePointShadowCasters};
+#endif
 			ecsManager.lightingSystem->RenderShadowMaps(
 				PostProcessingManager::GetInstance().GetHDRFramebuffer(),
 				currentFrameViewport.width,
@@ -1640,18 +1657,25 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		if (!ecsManager.modelSystem)
 			return;
 
-		for (const auto& entity : ecsManager.modelSystem->entities)
-		{
-			if (!ecsManager.IsEntityActiveInHierarchy(entity))
-				continue;
+        if (!m_cachePointShadowCasters || !m_pointShadowCastersReady) {
+            m_pointShadowCasters.clear();
+            m_pointShadowCasters.reserve(ecsManager.modelSystem->entities.size());
+            for (const auto& entity : ecsManager.modelSystem->entities) {
+                if (!ecsManager.IsEntityActiveInHierarchy(entity)) continue;
+                auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+                if (!modelComp.isVisible || !modelComp.model) continue;
+                const glm::mat4 modelMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM();
+                m_pointShadowCasters.push_back({&modelComp, modelMatrix,
+                    modelComp.model->GetBoundingBox().Transform(modelMatrix)});
+            }
+            m_pointShadowCastersReady = true;
+        }
 
-			auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-			if (!modelComp.isVisible || !modelComp.model)
-				continue;
-
-			glm::mat4 modelMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM();
-
-			AABB worldBBox = modelComp.model->GetBoundingBox().Transform(modelMatrix);
+        for (const auto& caster : m_pointShadowCasters)
+        {
+            auto& modelComp = *caster.component;
+            const glm::mat4& modelMatrix = caster.modelMatrix;
+            const AABB& worldBBox = caster.worldBounds;
 			float sqDist = 0.0f;
 			for (int i = 0; i < 3; ++i)
 			{
