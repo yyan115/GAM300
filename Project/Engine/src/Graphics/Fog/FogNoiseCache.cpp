@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "Graphics/Fog/FogNoiseCache.hpp"
 
-#ifndef ANDROID
 #include "Graphics/ShaderClass.h"
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 namespace {
 // Only cache generation changes these states. The normal volume draw retains
@@ -26,10 +26,17 @@ struct BuildState {
         glGetIntegerv(GL_VIEWPORT, viewport);
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vertexArray);
         glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING, &unpackBuffer);
+#ifdef ANDROID
+        glGetBooleanv(GL_COLOR_WRITEMASK, colorMask);
+        blend = glIsEnabled(GL_BLEND);
+        glDisable(GL_BLEND);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+#else
         glGetBooleani_v(GL_COLOR_WRITEMASK, 0, colorMask);
         blend = glIsEnabledi(GL_BLEND, 0);
         glDisablei(GL_BLEND, 0);
         glColorMaski(0, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+#endif
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         for (std::size_t i = 0; i < capabilities.size(); ++i) {
             enabled[i] = glIsEnabled(capabilities[i]);
@@ -41,8 +48,13 @@ struct BuildState {
         glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         glBindVertexArray(vertexArray);
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, unpackBuffer);
+#ifdef ANDROID
+        glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
+        if (blend) glEnable(GL_BLEND);
+#else
         glColorMaski(0, colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
         if (blend) glEnablei(GL_BLEND, 0);
+#endif
         for (std::size_t i = 0; i < capabilities.size(); ++i) {
             if (enabled[i]) glEnable(capabilities[i]);
         }
@@ -184,6 +196,21 @@ bool FogNoiseCache::Bind(Shader& shader, unsigned int volumeVAO, float time,
     glUniform1i(m_uniforms.enabled, 0);
     glUniform1i(m_uniforms.build, 0);
     if (!m_supported) return false;
+#ifdef ANDROID
+    if (!m_floatTargetChecked) {
+        int major = 0, minor = 0, extensions = 0;
+        glGetIntegerv(GL_MAJOR_VERSION, &major);
+        glGetIntegerv(GL_MINOR_VERSION, &minor);
+        m_floatTargetSupported = major > 3 || (major == 3 && minor >= 2);
+        glGetIntegerv(GL_NUM_EXTENSIONS, &extensions);
+        for (int i = 0; !m_floatTargetSupported && i < extensions; ++i) {
+            const char* name = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+            m_floatTargetSupported = name && std::strcmp(name, "GL_EXT_color_buffer_float") == 0;
+        }
+        m_floatTargetChecked = true;
+    }
+    if (!m_floatTargetSupported) return false;
+#endif
     Descriptor descriptor;
     if (!BuildDescriptor(time, scrollSpeedX, scrollSpeedY, noiseScale, warpStrength, descriptor)) return false;
     Entry* entry = GetEntry(volumeVAO);
@@ -193,7 +220,11 @@ bool FogNoiseCache::Bind(Shader& shader, unsigned int volumeVAO, float time,
     glGetIntegerv(GL_ACTIVE_TEXTURE, &m_previousActiveTexture);
     glActiveTexture(GL_TEXTURE3);
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &m_previousTexture);
+#ifdef ANDROID
+    glGetIntegerv(GL_SAMPLER_BINDING, &m_previousSampler);
+#else
     glGetIntegeri_v(GL_SAMPLER_BINDING, 3, &m_previousSampler);
+#endif
     glBindSampler(3, 0);
     m_bound = true;
     glUniform1i(m_uniforms.sampler, 3);
@@ -231,5 +262,8 @@ void FogNoiseCache::Shutdown()
     m_uniforms = Uniforms{};
     m_supported = false;
     m_frame = 0;
-}
+#ifdef ANDROID
+    m_floatTargetChecked = false;
+    m_floatTargetSupported = false;
 #endif
+}

@@ -66,6 +66,10 @@ private:
     std::uint64_t m_frame = 0;
     Uniforms m_uniforms;
     bool m_supported = false;
+#ifdef ANDROID
+    bool m_floatTargetChecked = false;
+    bool m_floatTargetSupported = false;
+#endif
     bool m_bound = false;
     int m_previousTexture = 0;
     int m_previousSampler = 0;
