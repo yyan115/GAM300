@@ -48,14 +48,6 @@ layout(std140) uniform CameraBlock {
 
 uniform mat4 modelInverse;
 
-// Exact bounded corner cache. Original arithmetic is the fallback.
-uniform bool noiseCacheBuild;
-uniform bool noiseCacheEnabled;
-uniform sampler2D noiseCornerCache;
-uniform int noiseCacheWidth;
-uniform ivec4 noiseCacheOrigins[9]; // xyz origin, w first texel
-uniform ivec3 noiseCacheSizes[9];
-
 // ============================================================================
 // Procedural Noise Functions
 // ============================================================================
@@ -81,45 +73,6 @@ float valueNoise(vec3 p)
     );
 }
 
-float valueNoiseCached(vec3 p, int region)
-{
-    if (noiseCacheEnabled) {
-        vec3 i = floor(p);
-        vec3 relative = i - vec3(noiseCacheOrigins[region].xyz);
-        if (all(greaterThanEqual(relative, vec3(0.0))) &&
-            all(lessThan(relative, vec3(noiseCacheSizes[region])))) {
-            ivec3 cell = ivec3(relative);
-            ivec3 size = noiseCacheSizes[region];
-            int slot = noiseCacheOrigins[region].w + 2 * (cell.x + size.x * (cell.y + size.y * cell.z));
-            vec4 a = texelFetch(noiseCornerCache, ivec2(slot & 255, slot >> 8), 0);
-            vec4 b = texelFetch(noiseCornerCache, ivec2((slot + 1) & 255, (slot + 1) >> 8), 0);
-            vec3 f = fract(p);
-            f = f * f * (3.0 - 2.0 * f);
-            return mix(mix(mix(a.x, a.y, f.x), mix(a.z, a.w, f.x), f.y),
-                       mix(mix(b.x, b.y, f.x), mix(b.z, b.w, f.x), f.y), f.z);
-        }
-    }
-    return valueNoise(p);
-}
-
-vec4 buildNoiseCache()
-{
-    int slot = int(gl_FragCoord.x) + int(gl_FragCoord.y) * noiseCacheWidth;
-    for (int region = 0; region < 9; ++region) {
-        ivec3 size = noiseCacheSizes[region];
-        int relative = slot - noiseCacheOrigins[region].w;
-        int count = size.x * size.y * size.z * 2;
-        if (relative >= 0 && relative < count) {
-            int cell = relative / 2;
-            ivec3 coordinate = ivec3(cell % size.x, (cell / size.x) % size.y, cell / (size.x * size.y));
-            vec3 p = vec3(noiseCacheOrigins[region].xyz + coordinate) + vec3(0, 0, relative % 2);
-            return vec4(hash(p + vec3(0,0,0)), hash(p + vec3(1,0,0)),
-                        hash(p + vec3(0,1,0)), hash(p + vec3(1,1,0)));
-        }
-    }
-    return vec4(0.0);
-}
-
 float fbm(vec3 p)
 {
     float value = 0.0;
@@ -128,14 +81,14 @@ float fbm(vec3 p)
 
     for (int i = 0; i < 3; i++)
     {
-        value += amplitude * valueNoiseCached(p * frequency, 6 + i);
+        value += amplitude * valueNoise(p * frequency);
         amplitude *= 0.5;
         frequency *= 2.0;
     }
     return value;
 }
 
-float fbmWarp(vec3 p, int warpRegion)
+float fbmWarp(vec3 p)
 {
     float value = 0.0;
     float amplitude = 0.5;
@@ -143,7 +96,7 @@ float fbmWarp(vec3 p, int warpRegion)
 
     for (int i = 0; i < 2; i++)
     {
-        value += amplitude * valueNoiseCached(p * frequency, warpRegion * 2 + i);
+        value += amplitude * valueNoise(p * frequency);
         amplitude *= 0.5;
         frequency *= 2.0;
     }
@@ -155,10 +108,6 @@ float fbmWarp(vec3 p, int warpRegion)
 // ============================================================================
 void main()
 {
-    if (noiseCacheBuild) {
-        FragColor = buildNoiseCache();
-        return;
-    }
     vec3 rayDir = normalize(FragPos - cameraPos);
     vec3 localCamPos = (modelInverse * vec4(cameraPos, 1.0)).xyz;
     
@@ -258,9 +207,9 @@ void main()
         if (warpStrength > 0.0)
         {
             vec3 warp = vec3(
-                fbmWarp(noiseCoord + vec3(1.7, 9.2, 3.4), 0),
-                fbmWarp(noiseCoord + vec3(8.3, 2.8, 5.1), 1),
-                fbmWarp(noiseCoord + vec3(4.5, 6.1, 1.9), 2)
+                fbmWarp(noiseCoord + vec3(1.7, 9.2, 3.4)),
+                fbmWarp(noiseCoord + vec3(8.3, 2.8, 5.1)),
+                fbmWarp(noiseCoord + vec3(4.5, 6.1, 1.9))
             );
             noiseCoord += warpStrength * warp;
         }
