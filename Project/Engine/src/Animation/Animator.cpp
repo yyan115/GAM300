@@ -8,6 +8,7 @@
 #include <Hierarchy/ParentComponent.hpp>
 #include <Hierarchy/EntityGUIDRegistry.hpp>
 #include <ECS/NameComponent.hpp>
+#include <Transform/TransformSystem.hpp>
 
 Animator::Animator(Animation* animation)
 {
@@ -149,15 +150,16 @@ void Animator::StartCrossfade(Animation* newAnim, float duration, bool prevLoop,
 
 void Animator::CalculateBlendedBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent, float blendFactor)
 {
+    TransformDirtyBatch dirtyBatch;
 	CalculateBlendedBoneTransformInternal(node, parentTransform, entity, bakeParent,
 		ECSRegistry::GetInstance().GetActiveECSManager(),
 		mCurrentAnimation->GetBoneIDMap(),
 		mCurrentAnimation->GetGlobalInverse(),
-		blendFactor);
+		blendFactor, dirtyBatch);
 }
 
 void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-	ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor)
+	ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor, TransformDirtyBatch& dirtyBatch)
 {
 	bool isRoot = (node == &mCurrentAnimation->GetRootNode());
 
@@ -242,7 +244,7 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 					glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
 					Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale), dirtyBatch);
 				}
 				else
 				{
@@ -255,7 +257,8 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 							boneEntity,
 							Vector3D::ConvertGLMToVector3D(finalPos),
 							engineRot,
-							Vector3D::ConvertGLMToVector3D(finalScale)
+							Vector3D::ConvertGLMToVector3D(finalScale),
+							dirtyBatch
 						);
 					}
 					else
@@ -265,7 +268,7 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 						glm::decompose(node->transformation, scale, rotation, translation, skew, perspective);
 
 						Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale), dirtyBatch);
 					}
 				}
 			}
@@ -289,20 +292,21 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 	{
 		bool shouldChildBake = isRoot;
 		CalculateBlendedBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
-			ecsManager, boneInfoMap, globalInverse, blendFactor);
+			ecsManager, boneInfoMap, globalInverse, blendFactor, dirtyBatch);
 	}
 }
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent)
 {
+    TransformDirtyBatch dirtyBatch;
     CalculateBoneTransformInternal(node, parentTransform, entity, bakeParent,
         ECSRegistry::GetInstance().GetActiveECSManager(),
         mCurrentAnimation->GetBoneIDMap(),
-        mCurrentAnimation->GetGlobalInverse());
+        mCurrentAnimation->GetGlobalInverse(), dirtyBatch);
 }
 
 void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-    ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse)
+    ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, TransformDirtyBatch& dirtyBatch)
 {
     bool isRoot = (node == &mCurrentAnimation->GetRootNode());
 
@@ -338,7 +342,7 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
 					glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
 					Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale), dirtyBatch);
 				}
 				else
 				{
@@ -352,7 +356,8 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
 							boneEntity,
 							Vector3D::ConvertGLMToVector3D(bone->GetLocalPosition()),
 							engineRot,
-							Vector3D::ConvertGLMToVector3D(bone->GetLocalScale())
+							Vector3D::ConvertGLMToVector3D(bone->GetLocalScale()),
+							dirtyBatch
 						);
 					}
 					else
@@ -362,7 +367,7 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
 						glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
 						glm::decompose(node->transformation, scale, rotation, translation, skew, perspective);
 						Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale), dirtyBatch);
 					}
 				}
             }
@@ -403,6 +408,6 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
     {
         bool shouldChildBake = isRoot;
         CalculateBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
-            ecsManager, boneInfoMap, globalInverse);
+            ecsManager, boneInfoMap, globalInverse, dirtyBatch);
     }
 }

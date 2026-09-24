@@ -4,6 +4,7 @@
 #include "ECS/Entity.hpp"
 
 class ECSManager;
+struct TransformDirtyBatch;
 
 class ENGINE_API Animator
 {
@@ -22,7 +23,7 @@ public:
 
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent = false);
 	void CalculateBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse);
+		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, TransformDirtyBatch& dirtyBatch);
 
 	//const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return mFinalBoneMatrices; }
 	float GetCurrentTime() const { return mCurrentTime; }
@@ -31,7 +32,7 @@ public:
 private:
 	void CalculateBlendedBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent, float blendFactor);
 	void CalculateBlendedBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor);
+		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor, TransformDirtyBatch& dirtyBatch);
 
 	Animation* mCurrentAnimation = nullptr;
 	float mCurrentTime = 0.0f;

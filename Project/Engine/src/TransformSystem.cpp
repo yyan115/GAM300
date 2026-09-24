@@ -491,6 +491,64 @@ void TransformSystem::SetDirtyRecursive(Entity entity) {
 	SetDirtyRecursiveInternal(ecsManager, entity, visited);
 }
 
+// A batch is confined to a bone traversal: hierarchy links and dirty flags are
+// not reset during that traversal. Invalid or shared child graphs keep the
+// original traversal, including its diagnostics.
+static bool SetDirtyBatchInternal(ECSManager& ecs, Entity entity,
+    std::bitset<MAX_ENTITIES>& dirtied, std::bitset<MAX_ENTITIES>& visited)
+{
+    if (entity >= MAX_ENTITIES) return true;
+    if (visited.test(entity)) return false;
+    visited.set(entity);
+    if (dirtied.test(entity)) return true;
+    if (!ecs.HasComponent<Transform>(entity)) {
+        dirtied.set(entity);
+        return true;
+    }
+    ecs.GetComponent<Transform>(entity).isDirty = true;
+    if (ecs.HasComponent<ChildrenComponent>(entity)) {
+        auto& registry = EntityGUIDRegistry::GetInstance();
+        for (const auto& guid : ecs.GetComponent<ChildrenComponent>(entity).children) {
+            Entity child = registry.GetEntityByGUID(guid);
+            if (child == static_cast<Entity>(-1)) continue;
+            if (child < MAX_ENTITIES && ecs.HasComponent<Transform>(child)) {
+                if (!ecs.HasComponent<ParentComponent>(child) ||
+                    registry.GetEntityByGUID(ecs.GetComponent<ParentComponent>(child).parent) != entity)
+                    return false;
+            }
+            if (!SetDirtyBatchInternal(ecs, child, dirtied, visited)) return false;
+        }
+    }
+    dirtied.set(entity);
+    return true;
+}
+
+void TransformSystem::SetLocalTransform(Entity entity, const Vector3D& pos,
+    const Quaternion& rot, const Vector3D& scale, TransformDirtyBatch& batch)
+{
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    auto& tr = ecs.GetComponent<Transform>(entity);
+    tr.localPosition = pos;
+    tr.localRotation = rot;
+    tr.localScale = scale;
+    if (!batch.reusable) {
+        SetDirtyRecursive(entity);
+        return;
+    }
+    if (batch.dirtied.test(entity)) return;
+    if (!ecs.HasComponent<ChildrenComponent>(entity) ||
+        ecs.GetComponent<ChildrenComponent>(entity).children.empty()) {
+        tr.isDirty = true;
+        batch.dirtied.set(entity);
+        return;
+    }
+    std::bitset<MAX_ENTITIES> visited;
+    if (!SetDirtyBatchInternal(ecs, entity, batch.dirtied, visited)) {
+        batch.reusable = false;
+        SetDirtyRecursive(entity);
+    }
+}
+
 // Internal helper for GetRootParentTransform with cycle detection
 static Transform& GetRootParentTransformInternal(Entity currentEntity, std::set<Entity>& visited) {
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();

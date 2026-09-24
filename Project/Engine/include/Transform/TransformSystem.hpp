@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <bitset>
 #include "ECS/System.hpp"
 #include "Math/Matrix4x4.hpp"
 #include "TransformComponent.hpp"
@@ -8,6 +9,18 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
 #endif
+
+// One pure animation traversal may update many bones in the same hierarchy.
+// Do not retain this cache across hierarchy edits or dirty-flag resets.
+struct TransformDirtyBatch {
+    TransformDirtyBatch() = default;
+    TransformDirtyBatch(const TransformDirtyBatch&) = delete;
+    TransformDirtyBatch& operator=(const TransformDirtyBatch&) = delete;
+private:
+    friend class TransformSystem;
+    std::bitset<MAX_ENTITIES> dirtied;
+    bool reusable = true;
+};
 
 class TransformSystem : public System {
 public:
@@ -35,6 +48,7 @@ public:
 	void ENGINE_API SetLocalScale(Entity entity, Vector3D scale);
 
 	void SetLocalTransform(Entity entity, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale);
+	void SetLocalTransform(Entity entity, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale, TransformDirtyBatch& batch);
 
 	Vector3D& GetWorldPosition(Entity entity);
 	Quaternion& GetWorldRotation(Entity entity);
