@@ -164,7 +164,6 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
 
     // Track current state to avoid redundant switches
     Shader* currentShader = nullptr;
-    Material* currentMaterial = nullptr;
 
     int batchIndex = 0;
     for (InstanceBatch* batch : m_sortedBatches) 
@@ -199,20 +198,9 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
             }
 
             currentShader = batch->GetShader();
-            currentMaterial = nullptr;  // Force material rebind on shader change
         }
 
-        // Check if we need to switch material
-        if (batch->GetMaterial() != currentMaterial) 
-        {
-            if (batch->GetMaterial()) 
-            {
-                batch->GetMaterial()->ApplyToShader(*currentShader);
-            }
-            currentMaterial = batch->GetMaterial();
-        }
-
-        // Render the batch
+        // Each batch applies its material immediately before drawing.
         batch->Render(view, projection, cameraPos);
         ++batchIndex;
         m_stats.drawCalls += static_cast<int>(batch->GetModel()->meshes.size());
