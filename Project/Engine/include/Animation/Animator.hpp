@@ -30,9 +30,13 @@ public:
 	void SetCurrentTime(float time, Entity entity); // For editor preview
 
 private:
+    void CalculateBoneTransformCached(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
+        ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse,
+        TransformDirtyBatch& dirtyBatch, bool useNodeBindings);
+
 	void CalculateBlendedBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent, float blendFactor);
 	void CalculateBlendedBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor, TransformDirtyBatch& dirtyBatch);
+		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor, TransformDirtyBatch& dirtyBatch, bool useNodeBindings);
 
 	Animation* mCurrentAnimation = nullptr;
 	float mCurrentTime = 0.0f;

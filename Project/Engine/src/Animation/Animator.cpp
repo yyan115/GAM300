@@ -155,11 +155,11 @@ void Animator::CalculateBlendedBoneTransform(const AssimpNodeData* node, glm::ma
 		ECSRegistry::GetInstance().GetActiveECSManager(),
 		mCurrentAnimation->GetBoneIDMap(),
 		mCurrentAnimation->GetGlobalInverse(),
-		blendFactor, dirtyBatch);
+		blendFactor, dirtyBatch, node == &mCurrentAnimation->GetRootNode());
 }
 
 void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
-	ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor, TransformDirtyBatch& dirtyBatch)
+	ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, float blendFactor, TransformDirtyBatch& dirtyBatch, bool useNodeBindings)
 {
 	bool isRoot = (node == &mCurrentAnimation->GetRootNode());
 
@@ -177,7 +177,7 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 
 	// Look up bone in both animations
 	Bone* oldBone = mPrevAnimation ? mPrevAnimation->FindBone(nodeName) : nullptr;
-	Bone* newBone = mCurrentAnimation->FindBone(nodeName);
+	Bone* newBone = useNodeBindings && !isRoot ? node->animationBone : mCurrentAnimation->FindBone(nodeName);
 
 	if (oldBone && newBone)
 	{
@@ -279,11 +279,17 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 	glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
 	// 4. Update shader matrices
-	auto infoIt = boneInfoMap.find(nodeName);
-	if (infoIt != boneInfoMap.end())
+	const BoneInfo* info = nullptr;
+	if (useNodeBindings && !isRoot) {
+	    if (node->hasBoneInfo) info = &node->boneInfo;
+	} else {
+	    const auto infoIt = boneInfoMap.find(nodeName);
+	    if (infoIt != boneInfoMap.end()) info = &infoIt->second;
+	}
+	if (info)
 	{
-		int index = infoIt->second.id;
-		const glm::mat4& offset = infoIt->second.offset;
+		int index = info->id;
+		const glm::mat4& offset = info->offset;
 		modelComp.mFinalBoneMatrices[index] = globalInverse * globalTransformation * offset;
 	}
 
@@ -292,7 +298,7 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 	{
 		bool shouldChildBake = isRoot;
 		CalculateBlendedBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
-			ecsManager, boneInfoMap, globalInverse, blendFactor, dirtyBatch);
+			ecsManager, boneInfoMap, globalInverse, blendFactor, dirtyBatch, useNodeBindings);
 	}
 }
 
@@ -308,6 +314,17 @@ void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 pare
 void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
     ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse, TransformDirtyBatch& dirtyBatch)
 {
+    // Public callers may supply a foreign hierarchy or a different bone map.
+    const bool useNodeBindings = node == &mCurrentAnimation->GetRootNode() &&
+        &boneInfoMap == &mCurrentAnimation->GetBoneIDMap();
+    CalculateBoneTransformCached(node, parentTransform, entity, bakeParent,
+        ecsManager, boneInfoMap, globalInverse, dirtyBatch, useNodeBindings);
+}
+
+void Animator::CalculateBoneTransformCached(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
+    ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse,
+    TransformDirtyBatch& dirtyBatch, bool useNodeBindings)
+{
     bool isRoot = (node == &mCurrentAnimation->GetRootNode());
 
     const std::string& nodeName = isRoot
@@ -317,7 +334,7 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
     glm::mat4 nodeTransform = node->transformation; // Default Bind Pose
 
     // 1. Calculate Animation Matrix
-    Bone* bone = mCurrentAnimation->FindBone(nodeName);
+    Bone* bone = useNodeBindings && !isRoot ? node->animationBone : mCurrentAnimation->FindBone(nodeName);
     if (bone)
     {
         bone->Update(mCurrentTime);
@@ -394,11 +411,17 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
     glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
     // 5. Update Shader Matrices
-    auto infoIt = boneInfoMap.find(nodeName);
-    if (infoIt != boneInfoMap.end())
+    const BoneInfo* info = nullptr;
+    if (useNodeBindings && !isRoot) {
+        if (node->hasBoneInfo) info = &node->boneInfo;
+    } else {
+        const auto infoIt = boneInfoMap.find(nodeName);
+        if (infoIt != boneInfoMap.end()) info = &infoIt->second;
+    }
+    if (info)
     {
-        int index = infoIt->second.id;
-        const glm::mat4& offset = infoIt->second.offset;
+        int index = info->id;
+        const glm::mat4& offset = info->offset;
         modelComp.mFinalBoneMatrices[index] =
             globalInverse * globalTransformation * offset;
     }
@@ -407,7 +430,7 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
     for (int i = 0; i < node->childrenCount; i++)
     {
         bool shouldChildBake = isRoot;
-        CalculateBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
-            ecsManager, boneInfoMap, globalInverse, dirtyBatch);
+        CalculateBoneTransformCached(&node->children[i], globalTransformation, entity, shouldChildBake,
+            ecsManager, boneInfoMap, globalInverse, dirtyBatch, useNodeBindings);
     }
 }

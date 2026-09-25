@@ -12,6 +12,11 @@ struct AssimpNodeData
     std::string name{};
     int childrenCount{};
     std::vector<AssimpNodeData> children{};
+
+    // Resolved after loading the clip; copied with the existing bone lookup.
+    Bone* animationBone = nullptr;
+    BoneInfo boneInfo{};
+    bool hasBoneInfo = false;
 };
 
 class Animation : public IAsset
@@ -47,6 +52,8 @@ public:
     void DebugCoreMatricesOnce() const;
 
 private:
+    void CacheNodeBindings(AssimpNodeData& node);
+
 	void ReadMissingBones(const aiAnimation* animation, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
 
 	void ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::mat4 accTrf = glm::mat4(1.0f));

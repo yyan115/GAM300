@@ -215,6 +215,7 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 	for (auto& bone : mBones) {
 		mBoneLookup[bone.GetBoneName()] = &bone;
 	}
+	CacheNodeBindings(mRootNode);
 
 	//// FINAL CHECK: Log what ended up in mBoneInfoMap
 	//ENGINE_LOG_DEBUG("[ReadMissingBones] Final mBoneInfoMap has " + std::to_string(mBoneInfoMap.size()) + " bones\n");
@@ -227,6 +228,15 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 	//			std::to_string(info.offset[0][3]) + " " + std::to_string(info.offset[1][3]) + " " + std::to_string(info.offset[2][3]) + " " + std::to_string(info.offset[3][3]) + "]\n");
 	//	}
 	//}
+}
+
+void Animation::CacheNodeBindings(AssimpNodeData& node)
+{
+    node.animationBone = FindBone(node.name);
+    const auto info = mBoneInfoMap.find(node.name);
+    node.hasBoneInfo = info != mBoneInfoMap.end();
+    node.boneInfo = node.hasBoneInfo ? info->second : BoneInfo{};
+    for (auto& child : node.children) CacheNodeBindings(child);
 }
 
 void Animation::ReadHierarchyData(AssimpNodeData& dest, const aiNode* src, glm::mat4 accum)
