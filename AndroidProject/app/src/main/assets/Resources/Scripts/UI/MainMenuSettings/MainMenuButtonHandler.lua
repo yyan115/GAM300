@@ -1,28 +1,9 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local MAIN_MENU_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
-local MAIN_MENU_TEXTS   = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText", "ControlsText"}
-
-local function setButtonsInteractable(interactable)
-    for _, name in ipairs(MAIN_MENU_BUTTONS) do
-        local e = Engine.GetEntityByName(name)
-        if e then
-            local btn = GetComponent(e, "ButtonComponent")
-            if btn then btn.interactable = interactable end
-        end
-    end
-end
-
-local function setTextsActive(active)
-    for _, name in ipairs(MAIN_MENU_TEXTS) do
-        local e = Engine.GetEntityByName(name)
-        if e then
-            local comp = GetComponent(e, "ActiveComponent")
-            if comp then comp.isActive = active end
-        end
-    end
-end
+local MenuUI = require("UI.MainMenuSettings.MainMenuUI")
+local setButtonsInteractable = MenuUI.setButtonsInteractable
+local setTextsActive = MenuUI.setTextsActive
 
 -- Pre-position the SettingsUI slider notches/fills using the current saved
 -- GameSettings values. We run this on scene load (before the UI is visible)
@@ -143,6 +124,7 @@ return Component {
     end,
 
     Start = function(self)
+        MenuUI.applyPlatformLayout()
         -- Ensure game is not paused when entering main menu
         Time.SetPaused(false)
         Time.SetTimeScale(1.0)
@@ -220,6 +202,7 @@ return Component {
     end,
 
     OnClickControlsButton = function(self)
+        if not MenuUI.supportsControls() then return end
         local active = GetComponent(Engine.GetEntityByName("ControlsUI"), "ActiveComponent")
         if active then active.isActive = true end
         setButtonsInteractable(false)
@@ -256,13 +239,7 @@ return Component {
                 if highlight then highlight.isActive = false end
             end
 
-            for _, name in ipairs(MAIN_MENU_BUTTONS) do
-                local e = Engine.GetEntityByName(name)
-                if e then
-                    local btn = GetComponent(e, "ButtonComponent")
-                    if btn then btn.interactable = false end
-                end
-            end
+            setButtonsInteractable(false)
 
             self._fadeTimer = self._fadeTimer + dt
             self._fadeAlpha = math.min(self._fadeTimer / (self.fadeDuration or 1.0), 1.0)

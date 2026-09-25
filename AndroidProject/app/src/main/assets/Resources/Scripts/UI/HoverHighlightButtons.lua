@@ -1,5 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+local MenuUI = require("UI.MainMenuSettings.MainMenuUI")
 
 local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
 -- The quit prompt is not here: the engine puts it up, and nothing else in the
@@ -18,6 +19,7 @@ end
 
 return Component {
     Start = function(self)
+        MenuUI.applyPlatformLayout()
         self.lastState    = nil
         self.buttonBounds = {}
         self.UIState      = {}
@@ -25,7 +27,7 @@ return Component {
 
         for index, name in ipairs(TARGET_BUTTONS) do
             local e = Engine.GetEntityByName(name)
-            if e then
+            if e and MenuUI.isEntryAvailable(name) then
                 local transform = GetComponent(e, "Transform")
                 local pos, scale = transform.localPosition, transform.localScale
                 local sprite     = GetComponent(e, "SpriteRenderComponent")
@@ -33,7 +35,7 @@ return Component {
                 local child = Engine.GetChildAtIndex(e, 0)
                 local text  = child and GetComponent(child, "TextRenderComponent")
 
-                self.buttonBounds[index] = {
+                self.buttonBounds[#self.buttonBounds + 1] = {
                     spriteComponent = sprite,
                     textComponent   = text,
                     minX = pos.x - scale.x * 0.5,

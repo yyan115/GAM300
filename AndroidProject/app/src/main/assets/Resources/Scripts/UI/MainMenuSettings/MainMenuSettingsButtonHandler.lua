@@ -1,28 +1,9 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local MAIN_MENU_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
-local MAIN_MENU_TEXTS   = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText", "ControlsText"}
-
-local function setButtonsInteractable(interactable)
-    for _, name in ipairs(MAIN_MENU_BUTTONS) do
-        local e = Engine.GetEntityByName(name)
-        if e then
-            local btn = GetComponent(e, "ButtonComponent")
-            if btn then btn.interactable = interactable end
-        end
-    end
-end
-
-local function setTextsActive(active)
-    for _, name in ipairs(MAIN_MENU_TEXTS) do
-        local e = Engine.GetEntityByName(name)
-        if e then
-            local comp = GetComponent(e, "ActiveComponent")
-            if comp then comp.isActive = active end
-        end
-    end
-end
+local MenuUI = require("UI.MainMenuSettings.MainMenuUI")
+local setButtonsInteractable = MenuUI.setButtonsInteractable
+local setTextsActive = MenuUI.setTextsActive
 
 -- Combined handler for CloseButton and ResetButton inside the SettingsUI panel.
 -- Attach this script to the SettingsUI entity.

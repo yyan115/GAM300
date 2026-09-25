@@ -3935,6 +3935,8 @@ Resources/Scripts/UI/MainMenuSettings/MainMenuButtonHandler.lua
 Resources/Scripts/UI/MainMenuSettings/QuitPrompt.lua
 Resources/Scripts/UI/MainMenuSettings/QuitPrompt.lua.meta
 Resources/Scripts/UI/MainMenuSettings/QuitPromptButton.lua
+Resources/Scripts/UI/MainMenuSettings/MainMenuUI.lua
+Resources/Scripts/UI/MainMenuSettings/MainMenuUI.lua.meta
 Resources/Scripts/UI/CutsceneHandler.lua.meta
 Resources/Scripts/UI/PauseMenuSettings/ButtonStateHandler.lua.meta
 Resources/Scripts/UI/PauseMenuSettings/ConfirmationMenuHandler.lua.meta

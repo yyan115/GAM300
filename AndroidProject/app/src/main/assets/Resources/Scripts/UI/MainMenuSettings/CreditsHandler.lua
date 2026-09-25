@@ -1,5 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+local MenuUI = require("UI.MainMenuSettings.MainMenuUI")
 
 return Component {
     fields = {
@@ -73,16 +74,7 @@ return Component {
                 --print("[CreditsHandler] _isScrolling set to: " .. tostring(self._isScrolling))
 
                 -- Hide main menu button highlight sprites while credits is open
-                local mainButtons = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
-                for _, name in ipairs(mainButtons) do
-                    local ent = Engine.GetEntityByName(name)
-                    if ent then
-                        local button = GetComponent(ent, "ButtonComponent")
-                        if button then
-                            button.interactable = false
-                        end
-                    end
-                end
+                MenuUI.setButtonsInteractable(false)
             end
 
             self._wasActive = isActive
@@ -162,28 +154,9 @@ return Component {
 
         -- Reset visual state for next open
         -- Re-enable main menu buttons
-        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings", "Controls"}
-        for _, buttonName in ipairs(targetButtons) do
-            local entity = Engine.GetEntityByName(buttonName)
-            if entity then
-                local button = GetComponent(entity, "ButtonComponent")
-                if button then
-                    button.interactable = true
-                end
-            end
-        end
+        MenuUI.setButtonsInteractable(true)
 
-        -- Re-enable button text entities
-        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText", "ControlsText"}
-        for _, textName in ipairs(targetTexts) do
-            local textEntity = Engine.GetEntityByName(textName)
-            if textEntity then
-                local textActive = GetComponent(textEntity, "ActiveComponent")
-                if textActive then
-                    textActive.isActive = true
-                end
-            end
-        end
+        MenuUI.setTextsActive(true)
 
         -- Reset all state so rising edge detection works on next open
         self._isScrolling = false
