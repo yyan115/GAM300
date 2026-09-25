@@ -687,8 +687,6 @@ Resources/Shaders/defaultandroid.frag
 Resources/Shaders/defaultandroid.vert
 Resources/Shaders/fog.frag
 Resources/Shaders/fog.vert
-Resources/Shaders/fogandroid.frag
-Resources/Shaders/fogandroid.vert
 Resources/Shaders/light.vert
 Resources/Shaders/lightandroid.vert
 Resources/Shaders/particle.vert
@@ -700,6 +698,8 @@ Resources/Shaders/shadow_depthandroid.vert
 Resources/Shaders/skybox.frag
 Resources/Shaders/skyboxandroid.frag
 Resources/Shaders/tonemappingandroid.frag
+Resources/Shaders/fogandroid.frag
+Resources/Shaders/fogandroid.vert
 Resources/Textures/M4/Chain Link_standardSurface1_BaseColor.png
 Resources/Textures/M4/Chain Link_standardSurface1_Height.png
 Resources/Textures/M4/Chain Link_standardSurface1_Metallic.png
