@@ -11,6 +11,7 @@
 // Forward declarations for FMOD types to keep header lightweight
 typedef struct FMOD_SYSTEM FMOD_SYSTEM;
 typedef struct FMOD_SOUND FMOD_SOUND;
+typedef struct FMOD_DSP FMOD_DSP;
 typedef struct FMOD_CHANNEL FMOD_CHANNEL;
 typedef struct FMOD_CHANNELGROUP FMOD_CHANNELGROUP;
 typedef struct FMOD_REVERB3D FMOD_REVERB3D;
@@ -58,6 +59,13 @@ struct ChannelUpdate {
     uint32_t flags = 0; // Bitmask of ChannelUpdateFlags
 };
 
+// A named voice budget shared by all sources and clip variants in a sound family.
+// An empty group or zero limit preserves unrestricted playback.
+struct AudioConcurrency {
+    std::string Group;
+    unsigned int MaxVoices = 0;
+};
+
 // AudioManager: singleton backend for FMOD system management
 // Handles low-level audio operations, channel management, and global audio state
 class AudioManager {
@@ -72,10 +80,10 @@ public:
     void Update();
 
     // Play/Stop/Pause API
-    ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f);
-    ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f);
-    ChannelHandle PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f);
-    ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
+    ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f, const AudioConcurrency& concurrency = {});
+    ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f, const AudioConcurrency& concurrency = {});
+    ChannelHandle PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f, const AudioConcurrency& concurrency = {});
+    ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f, const AudioConcurrency& concurrency = {});
     
     void Stop(ChannelHandle channel);
     void ENGINE_API StopAll();
@@ -148,6 +156,7 @@ private:
         ChannelHandle Id = 0;
         AudioSourceState State = AudioSourceState::Stopped;
         std::string AssetPath; // For debugging
+        std::string ConcurrencyGroup;
         float BaseVolume = 1.0f; // Original volume before master multiplier
     };
 
@@ -157,6 +166,7 @@ private:
     
     // FMOD handles
     FMOD_SYSTEM* System = nullptr;
+    FMOD_DSP* OutputLimiter = nullptr;
     
     // Channel management
     std::unordered_map<ChannelHandle, ChannelData> ChannelMap;
@@ -182,6 +192,8 @@ private:
     std::atomic<bool> GlobalPaused{ false };
 
     // Internal helpers
+    // Caller holds Mutex through admission and channel registration.
+    bool CanStartVoice(const AudioConcurrency& concurrency) const;
     void CleanupStoppedChannels();
     bool IsChannelValid(ChannelHandle channel);
     void UpdateChannelState(ChannelHandle channel);

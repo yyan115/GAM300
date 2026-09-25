@@ -68,6 +68,23 @@ bool AudioManager::Initialise() {
         return false;
     }
 
+    // Keep legitimate combinations of different sounds within the output range.
+    // Unity gain below full scale: no permanent attenuation or loudness boost.
+    FMOD_CHANNELGROUP* master = nullptr;
+    result = FMOD_System_GetMasterChannelGroup(System, &master);
+    if (result == FMOD_OK) result = FMOD_System_CreateDSPByType(System, FMOD_DSP_TYPE_LIMITER, &OutputLimiter);
+    if (result == FMOD_OK) result = FMOD_DSP_SetParameterFloat(OutputLimiter, FMOD_DSP_LIMITER_CEILING, 0.0f);
+    if (result == FMOD_OK) result = FMOD_DSP_SetParameterFloat(OutputLimiter, FMOD_DSP_LIMITER_MAXIMIZERGAIN, 0.0f);
+    if (result == FMOD_OK) result = FMOD_ChannelGroup_AddDSP(master, FMOD_CHANNELCONTROL_DSP_HEAD, OutputLimiter);
+    if (result != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] Output limiter initialization failed: ", FMOD_ErrorString(result), "\n");
+        if (OutputLimiter) FMOD_DSP_Release(OutputLimiter);
+        OutputLimiter = nullptr;
+        FMOD_System_Release(System);
+        System = nullptr;
+        return false;
+    }
+
     ENGINE_PRINT("[AudioManager] FMOD initialized successfully.\n");
 
     // Start dedicated audio thread for FMOD processing
@@ -91,6 +108,7 @@ void AudioManager::Shutdown() {
 
     // Stop all channels and collect FMOD objects
     FMOD_SYSTEM* sys = nullptr;
+    FMOD_DSP* limiter = nullptr;
     std::vector<FMOD_CHANNEL*> channels;
     std::vector<FMOD_CHANNELGROUP*> groups;
 
@@ -117,6 +135,8 @@ void AudioManager::Shutdown() {
         // Take ownership of system
         sys = System;
         System = nullptr;
+        limiter = OutputLimiter;
+        OutputLimiter = nullptr;
     }
 
     // Release FMOD resources outside of mutex
@@ -129,6 +149,13 @@ void AudioManager::Shutdown() {
     }
 
     if (sys) {
+        if (limiter) {
+            FMOD_CHANNELGROUP* master = nullptr;
+            if (FMOD_System_GetMasterChannelGroup(sys, &master) == FMOD_OK) {
+                FMOD_ChannelGroup_RemoveDSP(master, limiter);
+            }
+            FMOD_DSP_Release(limiter);
+        }
         FMOD_System_Close(sys);
         FMOD_System_Release(sys);
     }
@@ -174,7 +201,25 @@ void AudioManager::AudioThreadLoop() {
     }
 }
 
-ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
+bool AudioManager::CanStartVoice(const AudioConcurrency& concurrency) const {
+    if (concurrency.Group.empty() || concurrency.MaxVoices == 0) return true;
+
+    unsigned int active = 0;
+    for (const auto& entry : ChannelMap) {
+        const auto& voice = entry.second;
+        if (!voice.Channel || voice.ConcurrencyGroup != concurrency.Group) continue;
+
+        // Query FMOD rather than a duration timer or the periodically cleaned map.
+        // Paused voices still own their slot; finished or stolen voices do not.
+        FMOD_BOOL playing = false;
+        if (FMOD_Channel_IsPlaying(voice.Channel, &playing) == FMOD_OK && playing) {
+            if (++active >= concurrency.MaxVoices) return false;
+        }
+    }
+    return true;
+}
+
+ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume, const AudioConcurrency& concurrency) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
     std::unique_lock<std::shared_mutex> lock(Mutex);
@@ -182,6 +227,8 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAudio called with invalid parameters.\n");
         return 0;
     }
+
+    if (!CanStartVoice(concurrency)) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
 
@@ -218,6 +265,7 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
     chd.BaseVolume = volume;
+    chd.ConcurrencyGroup = concurrency.Group;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
@@ -225,11 +273,13 @@ ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool lo
     return chId;
 }
 
-ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance) {
+ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance, const AudioConcurrency& concurrency) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
     std::unique_lock<std::shared_mutex> lock(Mutex);
     if (!System || !audioAsset || !audioAsset->sound) return 0;
+
+    if (!CanStartVoice(concurrency)) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
 
@@ -276,6 +326,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
     chd.BaseVolume = volume;
+    chd.ConcurrencyGroup = concurrency.Group;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
@@ -287,7 +338,7 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     return chId;
 }
 
-ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance) {
+ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance, const AudioConcurrency& concurrency) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
     std::unique_lock<std::shared_mutex> lock(Mutex);
@@ -295,6 +346,8 @@ ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audi
 
     FMOD_CHANNELGROUP* group = GetOrCreateBus(busName);
     if (!group) return 0;
+
+    if (!CanStartVoice(concurrency)) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
 
@@ -344,6 +397,7 @@ ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audi
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
     chd.BaseVolume = volume;
+    chd.ConcurrencyGroup = concurrency.Group;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
@@ -351,7 +405,7 @@ ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audi
     return chId;
 }
 
-ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
+ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume, const AudioConcurrency& concurrency) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 
     std::unique_lock<std::shared_mutex> lock(Mutex);
@@ -359,6 +413,8 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
 
     FMOD_CHANNELGROUP* group = GetOrCreateBus(busName);
     if (!group) return 0;
+
+    if (!CanStartVoice(concurrency)) return 0;
 
     FMOD_CHANNEL* channel = nullptr;
 
@@ -391,6 +447,7 @@ ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, co
     chd.State = AudioSourceState::Playing;
     chd.AssetPath = audioAsset->assetPath;
     chd.BaseVolume = volume;
+    chd.ConcurrencyGroup = concurrency.Group;
     ChannelMap[chId] = chd;
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));

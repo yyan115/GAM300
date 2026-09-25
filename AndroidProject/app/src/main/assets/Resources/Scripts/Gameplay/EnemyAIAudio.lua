@@ -52,6 +52,8 @@ return Component {
         enemyRangedHitSFX    = {},
         enemyFootstepSFX     = {},
         enemyGroundSlamSFX   = {},
+        HurtMaxVoices       = 1,
+        DeathMaxVoices      = 1,
     },
 
     Awake = function(self)
@@ -76,9 +78,9 @@ return Component {
             local audio = GetComponent(data.entityId, "AudioComponent")
             local t = data.sfxType
             if t == "hurt" then
-                AudioHelper.PlayRandomSFX(audio, self.enemyHurtSFX)
+                AudioHelper.PlayRandomSFXLimited(audio, self.enemyHurtSFX, "enemy.hurt", self.HurtMaxVoices)
             elseif t == "death" then
-                AudioHelper.PlayRandomSFX(audio, self.enemyDeathSFX)
+                AudioHelper.PlayRandomSFXLimited(audio, self.enemyDeathSFX, "enemy.death", self.DeathMaxVoices)
             elseif t == "alert" then
                 local cd = self._alertCooldowns[data.entityId] or 0
                 if cd > 0 then return end

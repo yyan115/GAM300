@@ -391,6 +391,7 @@ BEGIN_COMPONENT(AudioComponent, "AudioComponent")
     // Playback methods
     METHOD("Play", &AudioComponent::Play)
     METHOD("PlayOneShot", &AudioComponent::PlayOneShot)
+    METHOD("PlayOneShotLimited", &AudioComponent::PlayOneShotLimited)
     METHOD("Stop", &AudioComponent::Stop)
     METHOD("Pause", &AudioComponent::Pause)
     METHOD("UnPause", &AudioComponent::UnPause)

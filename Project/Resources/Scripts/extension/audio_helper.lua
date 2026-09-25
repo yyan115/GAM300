@@ -120,4 +120,19 @@ function M.PlayRandomSFXPitched(audio, clips, pitchVar, volume)
     end)
 end
 
+-- Shares a live voice budget across components and all variants in this family.
+-- Rejected requests neither interrupt the current sound nor queue a later burst.
+function M.PlayRandomSFXLimited(audio, clips, group, maxVoices, volume)
+    if not audio or not clips or #clips == 0 then return false end
+
+    local previous = clips._lastIdx
+    local clip = _pickClipNonRepeating(clips)
+    if not clip then return false end
+
+    audio:SetVolume(_clamp(tonumber(volume) or 1.0, 0.0, 1.0))
+    local played = audio:PlayOneShotLimited(clip, group, maxVoices)
+    if not played then clips._lastIdx = previous end
+    return played
+end
+
 return M

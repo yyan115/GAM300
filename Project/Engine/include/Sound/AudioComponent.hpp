@@ -54,6 +54,8 @@ public:
     void ENGINE_API Play();
     void PlayDelayed(float delay);        // Unity: Play with delay
     void ENGINE_API PlayOneShot(std::string guidStr = ""); // Unity: One-shot playback
+    // Returns false when muted, unavailable, or the shared voice budget is full.
+    bool ENGINE_API PlayOneShotLimited(const std::string& guidStr, const std::string& group, int maxVoices);
     void PlayScheduled(double time);      // Unity: Scheduled playback (placeholder)
     void ENGINE_API Stop();
     void ENGINE_API Pause();
@@ -92,6 +94,7 @@ private:
     bool EnsureAssetLoaded();
     void UpdateChannelProperties();
     void UpdatePlaybackState();
+    ChannelHandle PlayOneShotInternal(const std::string& guidStr, const AudioConcurrency& concurrency);
     ChannelHandle PlayInternal(bool oneShot = false);
     void StopInternal();
 };

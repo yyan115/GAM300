@@ -61,6 +61,8 @@ return Component {
         playerHealSFX        = {},
 
         FootstepVolume       = 0.5,
+        FeatherPickupMaxVoices = 1,
+        FeatherReleaseMaxVoices = 1,
         -- A volley of knives dodged together is one dodge, not several
         DodgeSoundCooldown   = 0.3,
     },
@@ -169,7 +171,8 @@ return Component {
         -- ── Feather skill ─────────────────────────────────────────────────────
         self._featherPickupSub = _G.event_bus.subscribe("featherCollected", function(data)
             if data then
-                AudioHelper.PlayRandomSFX(self._audio, self.featherPickupSFX)
+                AudioHelper.PlayRandomSFXLimited(self._audio, self.featherPickupSFX,
+                    "player.feather.pickup", self.FeatherPickupMaxVoices)
             end
         end)
 
@@ -178,7 +181,8 @@ return Component {
         end)
 
         self._featherSkillReleaseSub = _G.event_bus.subscribe("feather_skill_release", function(_)
-            AudioHelper.PlayRandomSFX(self._audio, self.featherSkillReleaseSFX)
+            AudioHelper.PlayRandomSFXLimited(self._audio, self.featherSkillReleaseSFX,
+                "player.feather.release", self.FeatherReleaseMaxVoices)
         end)
 
         -- ── Checkpoint heal ───────────────────────────────────────────────────

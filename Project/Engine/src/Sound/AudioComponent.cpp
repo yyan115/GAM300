@@ -55,7 +55,16 @@ void AudioComponent::PlayDelayed(float delay) {
 }
 
 void AudioComponent::PlayOneShot(std::string guidStr) {
-    if (Mute) return;
+    PlayOneShotInternal(guidStr, {});
+}
+
+bool AudioComponent::PlayOneShotLimited(const std::string& guidStr, const std::string& group, int maxVoices) {
+    if (group.empty() || maxVoices <= 0) return false;
+    return PlayOneShotInternal(guidStr, {group, static_cast<unsigned int>(maxVoices)}) != 0;
+}
+
+ChannelHandle AudioComponent::PlayOneShotInternal(const std::string& guidStr, const AudioConcurrency& concurrency) {
+    if (Mute) return 0;
     
     std::shared_ptr<Audio> clipToPlay = CachedAudioAsset;
     
@@ -65,11 +74,11 @@ void AudioComponent::PlayOneShot(std::string guidStr) {
         clipToPlay = ResourceManager::GetInstance().GetResourceFromGUID<Audio>(guid, assetPath);
         if (!clipToPlay) {
             ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioComponent] PlayOneShot: Failed to load audio from GUID: ", guidStr, "\n");
-            return;
+            return 0;
         }
     }
     
-    if (!clipToPlay && !EnsureAssetLoaded()) return;
+    if (!clipToPlay && !EnsureAssetLoaded()) return 0;
     if (!clipToPlay) clipToPlay = CachedAudioAsset;
     
     AudioManager& audioMgr = AudioManager::GetInstance();
@@ -77,14 +86,14 @@ void AudioComponent::PlayOneShot(std::string guidStr) {
     
     if (Spatialize && SpatialBlend > 0.0f) {
         if (!OutputAudioMixerGroup.empty()) {
-            oneShotChannel = audioMgr.PlayAudioAtPositionOnBus(clipToPlay, OutputAudioMixerGroup, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance);
+            oneShotChannel = audioMgr.PlayAudioAtPositionOnBus(clipToPlay, OutputAudioMixerGroup, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance, concurrency);
         } else {
-            oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance);
+            oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance, concurrency);
         }
     } else if (!OutputAudioMixerGroup.empty()) {
-        oneShotChannel = audioMgr.PlayAudioOnBus(clipToPlay, OutputAudioMixerGroup, false, Volume);
+        oneShotChannel = audioMgr.PlayAudioOnBus(clipToPlay, OutputAudioMixerGroup, false, Volume, concurrency);
     } else {
-        oneShotChannel = audioMgr.PlayAudio(clipToPlay, false, Volume);
+        oneShotChannel = audioMgr.PlayAudio(clipToPlay, false, Volume, concurrency);
     }
     
     if (oneShotChannel != 0) {
@@ -96,6 +105,7 @@ void AudioComponent::PlayOneShot(std::string guidStr) {
         }
         audioMgr.SetChannelDopplerLevel(oneShotChannel, DopplerLevel);
     }
+    return oneShotChannel;
 }
 
 void AudioComponent::PlayScheduled(double time) {

@@ -34,6 +34,7 @@ return Component {
         SpawnForceY = 0.1,
         AliveDuration = 10.0,
         featherDropSFX = {},
+        DropMaxVoices = 1,
     },
 
     Awake = function(self)
@@ -153,13 +154,9 @@ return Component {
         local otherEntityLayer = Engine.GetEntityLayer(otherEntityId)
         if otherEntityLayer == "Ground" then
             self._dropSFXPlayed = true
-            local now = os.clock()
-            local last = _G._featherDropSFXTime or 0
             self._audio = self:GetComponent("AudioComponent")
-            if self._audio and self.featherDropSFX[1] and (now - last) > 0.3 then
-                _G._featherDropSFXTime = now
-                AudioHelper.PlayRandomSFX(self._audio, self.featherDropSFX)
-            end
+            AudioHelper.PlayRandomSFXLimited(self._audio, self.featherDropSFX,
+                "feather.drop", self.DropMaxVoices)
         end
     end,
 
