@@ -1,338 +1,212 @@
--- Camera/camera_lockon.lua
--- Combat lock-on: when the player hits an enemy the camera orbits behind the
--- player so the enemy stays centered on screen.  The lock breaks when the
--- player moves the mouse, moves too far from the enemy, or line-of-sight
--- to the enemy is blocked by geometry.
-
+-- Combat camera: retain the engaged target until it becomes invalid or the
+-- player deliberately takes over. Resolve hit candidates once per frame so a
+-- multi-target attack cannot choose a different camera target for every hit.
 local utils = require("Camera.camera_utils")
-local atan2 = utils.atan2
-
+local CameraInput = require("Camera.camera_input")
 local event_bus = _G.event_bus
-
 local M = {}
 
 local function shortestDelta(from, to)
-    local d = (to - from) % 360.0
-    if d > 180.0 then d = d - 360.0 end
-    return d
+    return (to - from + 180.0) % 360.0 - 180.0
 end
 
--- Returns true if there is an unobstructed line from the player to the enemy.
--- Casts from player center-mass toward the enemy; if geometry is hit before
--- reaching the enemy the line-of-sight is blocked.
-local function hasLineOfSight(self, ex, ey, ez)
-    if not Physics then return true end
+local function clearPending(self)
+    for id in pairs(self._lockonPending) do self._lockonPending[id] = nil end
+end
 
-    -- Raycast origin: player position raised to roughly center-mass
-    local ox = self._targetPos.x
-    local oy = self._targetPos.y + (self.lockOnLOSHeight or 1.0)
-    local oz = self._targetPos.z
-
-    -- Target: enemy position (also raised slightly above feet)
-    local tx = ex
-    local ty = ey + (self.lockOnLOSHeight or 1.0)
-    local tz = ez
-
-    local dx = tx - ox
-    local dy = ty - oy
-    local dz = tz - oz
-    local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-    if dist < 0.01 then return true end
-
-    local ndx, ndy, ndz = dx / dist, dy / dist, dz / dist
-
-    -- Prefer RaycastFull (returns bodyId so we can tell if we hit the enemy
-    -- itself rather than a wall), fall back to basic Raycast.
-    if Physics.RaycastFull then
-        local ok, hit, hitDist = pcall(function()
-            return Physics.RaycastFull(ox, oy, oz, ndx, ndy, ndz, dist)
-        end)
-        if ok and hit and hitDist and hitDist > 0 and hitDist < dist - 0.3 then
-            return false -- something between player and enemy
-        end
-        return true
-    elseif Physics.Raycast then
-        local ok, hitDist = pcall(function()
-            return Physics.Raycast(ox, oy, oz, ndx, ndy, ndz, dist)
-        end)
-        if ok and hitDist and hitDist > 0 and hitDist < dist - 0.3 then
-            return false
-        end
-        return true
+local function suspended(self)
+    if self._chainAiming or self._cinematicActive then return true end
+    for _, active in pairs(self._lockonModes) do
+        if active then return true end
     end
-
-    return true -- no physics available, assume clear
+    return false
 end
 
--- Call once from CameraFollow.Awake
-function M.init(self)
-    self._lockonActive   = false
+-- Use the world-geometry LOS query. A general ray can hit the player's own
+-- capsule at its origin and hide the wall behind it, or treat another enemy as
+-- an obstruction. Neither should determine whether the camera can keep a lock.
+local function hasLineOfSight(self, ex, ey, ez)
+    if not (Physics and Physics.RaycastLOS) then return false end
+    local height = self.lockOnLOSHeight or 1.0
+    local ox, oy, oz = self._targetPos.x, self._targetPos.y + height, self._targetPos.z
+    local dx, dy, dz = ex - ox, ey + height - oy, ez - oz
+    local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if distance < 0.01 then return true end
+    local hit = Physics.RaycastLOS(ox, oy, oz, dx / distance, dy / distance, dz / distance, distance)
+    return not hit or hit < 0 or hit >= distance
+end
+
+local function targetPosition(self, id, range)
+    if not id or self._deadEnemies[id] then return nil end
+    if not (Engine and Engine.GetEntityPosition and Engine.GetEntityTag) then return nil end
+    if Engine.IsEntityActive and not Engine.IsEntityActive(id) then return nil end
+    local tag = Engine.GetEntityTag(id)
+    if tag ~= "Enemy" and tag ~= "Boss" then return nil end
+    local x, y, z = Engine.GetEntityPosition(id)
+    if not x then return nil end
+    local dx, dz = x - self._targetPos.x, z - self._targetPos.z
+    local distanceSquared = dx * dx + dz * dz
+    if distanceSquared > range * range then return nil end
+    return x, y, z, distanceSquared
+end
+
+function M.breakLock(self, keepPending)
+    self._lockonActive = false
     self._lockonEntityId = nil
     self._lockonLOSLostTimer = 0.0
-    self._deadEnemies    = {}  -- track dead entity IDs to prevent re-locking
-
-    -- Hits are queued here and resolved once per frame in M.update.
-    -- deal_damage_to_entity is published once PER ENEMY per swing, so a swing
-    -- that clips two enemies fires two events back to back. Assigning the
-    -- target inside the subscriber made the last event through the bus win,
-    -- which is why the camera snapped back and forth while fighting a group.
-    self._lockonPending    = {}
-    self._lockonHitCounts  = {}   -- entityId -> { count, firstHitAt }
-    self._lockonEngagedAt  = 0.0  -- time of the last hit on the locked enemy
-    self._lockonClock      = 0.0
-
-    if event_bus and event_bus.subscribe then
-        self._lockonDeathSub = event_bus.subscribe("enemy_died", function(data)
-            if data and data.entityId then
-                self._deadEnemies[data.entityId] = true
-                if data.entityId == self._lockonEntityId then
-                    M.breakLock(self)
-                end
-            end
-        end)
-
-        self._lockonDamageSub = event_bus.subscribe("deal_damage_to_entity", function(data)
-            if not data or not data.entityId then return end
-            -- Don't lock on to already-dead enemies
-            if self._deadEnemies[data.entityId] then return end
-            -- Don't activate during chain aim or cinematics
-            if self._chainAiming or self._cinematicActive then return end
-            -- Verify the hit entity is actually an enemy (not a wall/prop/ground)
-            if Engine and Engine.FindEntitiesWithScript then
-                local isEnemy = false
-                for _, scriptName in ipairs(self.enemyComponents or {}) do
-                    local entities = Engine.FindEntitiesWithScript(scriptName)
-                    if entities then
-                        for i = 1, #entities do
-                            if entities[i] == data.entityId then
-                                isEnemy = true
-                                break
-                            end
-                        end
-                    end
-                    if isEnemy then break end
-                end
-                if not isEnemy then return end
-            end
-            -- Verify the enemy exists and is within range + line-of-sight
-            if Engine and Engine.GetEntityPosition then
-                local ex, ey, ez = Engine.GetEntityPosition(data.entityId)
-                if not ex then return end
-                local dx = ex - self._targetPos.x
-                local dz = ez - self._targetPos.z
-                local dist = math.sqrt(dx * dx + dz * dz)
-                -- Acquire inside a TIGHTER radius than the one that breaks
-                -- the lock. If both used the same distance an enemy sitting on
-                -- the boundary would acquire and release repeatedly.
-                if dist > (self.lockOnAcquireDistance or 12.0) then return end
-                if not hasLineOfSight(self, ex, ey, ez) then return end
-            end
-            -- Queue the candidate; M.update decides. See M.init.
-            -- Capped because M.update is skipped in some camera modes (chain
-            -- aim, cinematics, cursor unlocked) and the queue would otherwise
-            -- grow without bound while the player keeps swinging.
-            local q = self._lockonPending
-            if #q < 8 then q[#q + 1] = data.entityId end
-        end)
-    end
+    self._lockonEngagedAt = 0.0
+    if self._lockonPending and not keepPending then clearPending(self) end
 end
 
--- Call each frame BEFORE updateMouseLook.
--- When returning true the caller should skip normal mouse look (the lock-on
--- consumes the mouse axis to detect intentional camera movement).
--- Is this entity still a legal lock-on target RIGHT NOW?
---
--- Queued hits are resolved a frame after the event, so everything the
--- subscriber checked can have changed in between - most importantly the enemy
--- can have died from that very hit. Without re-checking here the camera locked
--- onto a corpse, or onto an entity already being torn down, which read as the
--- camera swinging to face nothing.
-local function isLockable(self, id)
-    if not id then return false end
-    if self._deadEnemies[id] then return false end
-    if not (Engine and Engine.GetEntityPosition) then return false end
-    local ex, ey, ez = Engine.GetEntityPosition(id)
-    if not ex then return false end
-    local dx = ex - self._targetPos.x
-    local dz = ez - self._targetPos.z
-    if math.sqrt(dx * dx + dz * dz) > (self.lockOnAcquireDistance or 12.0) then return false end
-    return hasLineOfSight(self, ex, ey, ez)
-end
-
--- Resolve this frame's queued hits into at most one target change.
---
--- Policy, in order:
---   1. A hit on the enemy already engaged always wins and refreshes the
---      engagement. This is what stops a swing that clips a bystander from
---      stealing the camera.
---   2. Otherwise another enemy takes over only if the player means it: either
---      the current engagement has gone quiet for lockOnSwitchDelay, or that
---      enemy has been hit lockOnSwitchHits times inside lockOnSwitchWindow.
---   3. With no lock at all, any valid hit acquires immediately.
-local function resolvePendingHits(self, dt)
-    self._lockonClock = (self._lockonClock or 0.0) + dt
-
-    local pending = self._lockonPending
-    if #pending == 0 then return end
-
-    local now          = self._lockonClock
-    local switchWindow = self.lockOnSwitchWindow or 2.0
-    local switchHits   = self.lockOnSwitchHits or 2
-    local switchDelay  = self.lockOnSwitchDelay or 0.75
-    local engaged      = self._lockonEntityId
-
-    -- 1. engaged enemy hit again -> refresh, ignore everyone else this frame
-    if engaged and not self._deadEnemies[engaged] then
-        for i = 1, #pending do
-            if pending[i] == engaged then
-                self._lockonEngagedAt = now
-                self._lockonPending   = {}
-                return
-            end
-        end
-    end
-
-    -- Count hits per candidate inside the switch window.
-    local counts = self._lockonHitCounts
-    local candidate
-    for i = 1, #pending do
-        local id = pending[i]
-        if not isLockable(self, id) then goto continue end
-        local rec = counts[id]
-        if not rec or (now - rec.firstHitAt) > switchWindow then
-            rec = { count = 0, firstHitAt = now }
-            counts[id] = rec
-        end
-        rec.count = rec.count + 1
-        candidate = candidate or id
-        ::continue::
-    end
+function M.init(self)
+    M.cleanup(self)
     self._lockonPending = {}
-    if not candidate then return end
+    self._lockonModes = {}
+    self._lockonClock = 0.0
+    self._lockonManualUntil = 0.0
+    self._deadEnemies = self._deadEnemies or {}
+    self._lockonSubscriptions = {}
+    M.breakLock(self)
 
-    if not engaged then
-        self._lockonEntityId     = candidate
-        self._lockonActive       = true
-        self._lockonLOSLostTimer = 0.0
-        self._lockonEngagedAt    = now
+    -- Desktop keeps manual camera control and does not collect lock candidates.
+    if not self.lockOnEnabled or not (event_bus and event_bus.subscribe) then return end
+    local function subscribe(name, callback)
+        self._lockonSubscriptions[#self._lockonSubscriptions + 1] = event_bus.subscribe(name, callback)
+    end
+    local function died(data)
+        if not data or not data.entityId then return end
+        local id = data.entityId
+        self._deadEnemies[id] = true
+        self._lockonPending[id] = nil
+        if id == self._lockonEntityId then
+            -- Other survivors hit in this frame remain eligible for acquisition.
+            M.breakLock(self, true)
+        end
+    end
+    subscribe("enemy_died", died)
+    subscribe("boss_killed", died)
+    subscribe("deal_damage_to_entity", function(data)
+        if not data or not data.entityId or self._deadEnemies[data.entityId] then return end
+        if suspended(self) or self._lockonClock < self._lockonManualUntil then return end
+        self._lockonPending[data.entityId] = true
+    end)
+
+    local function mode(name, active)
+        self._lockonModes[name] = active == true
+        if active then M.breakLock(self) end
+    end
+    -- Keep separate mode flags: changing CameraFollow's flags here would affect
+    -- its own rising-edge callbacks, which initialize chain aim and cinematics.
+    subscribe("chain.aim_camera", function(p) mode("chain", p and p.active) end)
+    subscribe("cinematic.active", function(active) mode("cinematic", active) end)
+    subscribe("flythrough.active", function(active) mode("flythrough", active) end)
+    subscribe("game_paused", function(active) mode("paused", active) end)
+    subscribe("playerDead", function(dead) mode("dead", dead) end)
+    local function respawn()
+        mode("dead", false)
+        self._lockonManualUntil = self._lockonClock
+        M.breakLock(self)
+    end
+    subscribe("respawnPlayer", function(active) if active then respawn() end end)
+    subscribe("playerRespawned", respawn)
+end
+
+local function resolvePendingHits(self)
+    local pending = self._lockonPending
+    if self._lockonActive then
+        if pending[self._lockonEntityId] then self._lockonEngagedAt = self._lockonClock end
+        -- Incidental hits and multi-hit spells cannot steal a valid engagement.
+        clearPending(self)
         return
     end
 
-    -- 2. deliberate switch: stale engagement, or repeated hits on the new one
-    local stale   = (now - (self._lockonEngagedAt or 0.0)) >= switchDelay
-    local insists = (counts[candidate] and counts[candidate].count or 0) >= switchHits
-    if stale or insists then
-        self._lockonEntityId     = candidate
-        self._lockonActive       = true
-        self._lockonLOSLostTimer = 0.0
-        self._lockonEngagedAt    = now
-        counts[candidate]        = nil
-    end
-end
-
-function M.update(self, dt)
-    resolvePendingHits(self, dt)
-
-    if not self._lockonActive or not self._lockonEntityId then
-        return false
-    end
-
-    -- Break if another mode took over
-    if self._chainAiming or self._cinematicActive then
-        M.breakLock(self)
-        return false
-    end
-
-    -- Read the mouse axis — if the player moves the mouse beyond a small
-    -- dead-zone, break the lock and let normal mouse look resume next frame.
-    if Input and Input.GetAxis then
-        local lookAxis = Input.GetAxis("Look")
-        if lookAxis then
-            local mag = math.sqrt(lookAxis.x * lookAxis.x + lookAxis.y * lookAxis.y)
-            if mag > (self.lockOnMouseThreshold or 2.0) then
-                M.breakLock(self)
-                return false
+    local bestId, bestAngle, bestDistance
+    for id in pairs(pending) do
+        local x, y, z, distance = targetPosition(self, id, self.lockOnAcquireDistance or 12.0)
+        if x and hasLineOfSight(self, x, y, z) then
+            local yaw = math.deg(utils.atan2(x - self._targetPos.x, z - self._targetPos.z)) + 180.0
+            local angle = math.abs(shortestDelta(self._yaw, yaw))
+            -- Prefer the hit nearest the current view, then distance and entity
+            -- ID. The result is independent of event delivery/table iteration order.
+            if not bestId or angle < bestAngle
+                or (angle == bestAngle and (distance < bestDistance
+                    or (distance == bestDistance and id < bestId))) then
+                bestId, bestAngle, bestDistance = id, angle, distance
             end
         end
     end
+    clearPending(self)
+    if bestId then
+        self._lockonEntityId = bestId
+        self._lockonActive = true
+        self._lockonLOSLostTimer = 0.0
+        self._lockonEngagedAt = self._lockonClock
+    end
+end
 
-    -- Verify the enemy still exists
-    if not (Engine and Engine.GetEntityPosition) then
+-- Return true only when this module owns yaw for this frame. Otherwise ordinary
+-- look input runs in the same frame, including the drag that releases a lock.
+function M.update(self, dt)
+    if not self.lockOnEnabled then return false end
+    dt = math.max(dt, 0.0)
+    self._lockonClock = self._lockonClock + dt
+    if suspended(self) then
         M.breakLock(self)
         return false
     end
-    local ex, ey, ez = Engine.GetEntityPosition(self._lockonEntityId)
-    if not ex then
-        M.breakLock(self)
-        return false
-    end
 
-    -- Break if the player is too far from the enemy
-    local dx = ex - self._targetPos.x
-    local dz = ez - self._targetPos.z
-    local dist = math.sqrt(dx * dx + dz * dz)
-    if dist > (self.lockOnBreakDistance or 15.0) then
-        M.breakLock(self)
-        return false
-    end
-
-    -- Break if line-of-sight is blocked for too long (small grace period so
-    -- brief occlusions like the player's own model don't flicker the lock).
-    if not hasLineOfSight(self, ex, ey, ez) then
-        self._lockonLOSLostTimer = self._lockonLOSLostTimer + dt
-        if self._lockonLOSLostTimer > (self.lockOnLOSGrace or 0.5) then
+    local look = Input and Input.GetAxis and Input.GetAxis("Look")
+    if look then
+        local sensitivity = CameraInput.lookSensitivity(self)
+        local degrees = math.sqrt(look.x * look.x + look.y * look.y) * sensitivity
+        if degrees > (self.lockOnManualThreshold or 0.3) then
+            self._lockonManualUntil = self._lockonClock + (self.lockOnManualCooldown or 0.6)
             M.breakLock(self)
             return false
         end
-    else
-        self._lockonLOSLostTimer = 0.0
+    end
+    if self._lockonClock < self._lockonManualUntil then
+        M.breakLock(self)
+        return false
     end
 
-    -- Target yaw: place the camera on the opposite side of the player from
-    -- the enemy so the camera looks past the player toward the enemy.
-    local enemyAngle = math.deg(atan2(dx, dz))
-    local targetYaw  = enemyAngle + 180.0
+    if self._lockonActive then
+        local x, y, z = targetPosition(self, self._lockonEntityId, self.lockOnBreakDistance or 15.0)
+        if not x then
+            M.breakLock(self, true)
+        elseif hasLineOfSight(self, x, y, z) then
+            self._lockonLOSLostTimer = 0.0
+        else
+            self._lockonLOSLostTimer = self._lockonLOSLostTimer + dt
+            if self._lockonLOSLostTimer >= (self.lockOnLOSGrace or 0.5) then M.breakLock(self, true) end
+        end
+    end
+    resolvePendingHits(self)
+    if not self._lockonActive then return false end
 
-    -- Snap-then-smooth rotation: immediately cover most of the gap so the
-    -- enemy stays centered even when the player or enemy is moving quickly.
-    local deltaYaw = shortestDelta(self._yaw, targetYaw)
-    local snapFraction = self.lockOnSnapFraction or 0.85
-    local smoothT = 1.0 - math.exp(-(self.lockOnRotSpeed or 20.0) * dt)
-    local t = snapFraction + (1.0 - snapFraction) * smoothT
-    if t > 1.0 then t = 1.0 end
-    self._yaw = self._yaw + deltaYaw * t
+    local x, _, z = Engine.GetEntityPosition(self._lockonEntityId)
+    local targetYaw = math.deg(utils.atan2(x - self._targetPos.x, z - self._targetPos.z)) + 180.0
+    local delta = shortestDelta(self._yaw, targetYaw)
+    local smooth = 1.0 - math.exp(-(self.lockOnRotSpeed or 20.0) * dt)
+    local maxStep = (self.lockOnMaxYawSpeed or 120.0) * dt
+    self._yaw = self._yaw + utils.clamp(delta * smooth, -maxStep, maxStep)
 
+    -- Movement must use the camera's new heading even though normal mouse-look
+    -- publication is skipped while lock-on owns the rotation.
+    _G.CAMERA_YAW = self._yaw
+    if event_bus and event_bus.publish then event_bus.publish("camera_yaw", self._yaw) end
     return true
 end
 
-function M.breakLock(self)
-    self._lockonActive       = false
-    self._lockonEntityId     = nil
-    self._lockonLOSLostTimer = 0.0
-    self._lockonEngagedAt    = 0.0
-    self._lockonPending      = {}
-    self._lockonHitCounts    = {}
-end
-
--- Call from CameraFollow.OnDisable
 function M.cleanup(self)
     if event_bus and event_bus.unsubscribe then
-        if self._lockonDamageSub then
-            event_bus.unsubscribe(self._lockonDamageSub)
-            self._lockonDamageSub = nil
-        end
-        if self._lockonDeathSub then
-            event_bus.unsubscribe(self._lockonDeathSub)
-            self._lockonDeathSub = nil
+        for _, subscription in ipairs(self._lockonSubscriptions or {}) do
+            event_bus.unsubscribe(subscription)
         end
     end
-    self._lockonActive       = false
-    self._lockonEntityId     = nil
-    self._lockonLOSLostTimer = 0.0
-    self._deadEnemies        = {}
-    self._lockonPending      = {}
-    self._lockonHitCounts    = {}
-    self._lockonEngagedAt    = 0.0
+    self._lockonSubscriptions = nil
+    self._lockonModes = {}
+    M.breakLock(self)
 end
 
 return M

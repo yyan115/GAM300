@@ -92,25 +92,15 @@ return Component {
         ShakeFrequency     = 25.0,
 
         -- === Lock-On ===
-        -- Off: the camera no longer turns by itself toward an enemy the player
-        -- hits. Only the mouse turns it.
+        -- Platform policy is applied in Awake: touch combat uses lock-on;
+        -- desktop camera rotation remains entirely manual.
         lockOnEnabled         = false,
-        -- Acquire inside a tighter radius than the one that breaks the lock, so
-        -- an enemy hovering at the boundary cannot acquire/release repeatedly.
         lockOnAcquireDistance = 12.0,
         lockOnBreakDistance   = 15.0,
-        -- Target switching. A hit on the enemy already engaged always wins;
-        -- another enemy takes over only once the engagement has been quiet for
-        -- lockOnSwitchDelay seconds, or after lockOnSwitchHits hits on that
-        -- enemy inside lockOnSwitchWindow seconds. This is what keeps the
-        -- camera from flipping between enemies mid-fight while still allowing a
-        -- deliberate switch.
-        lockOnSwitchDelay     = 0.75,
-        lockOnSwitchHits      = 2,
-        lockOnSwitchWindow    = 2.0,
         lockOnRotSpeed        = 20.0,
-        lockOnSnapFraction    = 0.85,
-        lockOnMouseThreshold  = 2.0,
+        lockOnMaxYawSpeed     = 120.0, -- degrees/second, including initial acquisition
+        lockOnManualThreshold = 0.3,   -- look input expressed in degrees on either platform
+        lockOnManualCooldown  = 0.6,
         lockOnLOSHeight       = 1.0,
         lockOnLOSGrace        = 0.5,
 
@@ -197,7 +187,8 @@ return Component {
         -- Slam tilt
         SlamTilt.init(self)
 
-        -- Lock-on
+        -- Apply after serialized fields so the shared scene cannot disable mobile support.
+        self.lockOnEnabled = (Platform and Platform.IsAndroid and Platform.IsAndroid()) or false
         LockOn.init(self)
 
         -- Configure C++ entity cache intervals
@@ -323,7 +314,7 @@ return Component {
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
                 "_cinematicActiveSub", "_flythroughActiveSub", "_cinematicTargetSub",
-                "_playerRespawnedSub", "_cameraShakeSub",
+                "_playerRespawnedSub", "_cameraShakeSub", "_enemyDiedSub",
             }) do
                 if self[sub] then
                     event_bus.unsubscribe(self[sub])

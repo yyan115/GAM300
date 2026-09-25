@@ -8,6 +8,13 @@ local event_bus = _G.event_bus
 
 local M = {}
 
+-- Shared by manual look and combat lock release so normalized touch input and
+-- pixel-based mouse input are compared in the same angular units.
+function M.lookSensitivity(self)
+    local android = Platform and Platform.IsAndroid and Platform.IsAndroid()
+    return android and 550.0 or (self.mouseSensitivity or 0.15)
+end
+
 -- Read mouse/touch delta and update self._yaw / self._pitch.
 -- Also publishes camera_yaw to event_bus and _G.CAMERA_YAW.
 function M.updateMouseLook(self, dt)
@@ -22,10 +29,7 @@ function M.updateMouseLook(self, dt)
         return
     end
 
-    local isAndroid      = Platform and Platform.IsAndroid and Platform.IsAndroid()
-    local baseSensitivity = self.mouseSensitivity or 0.15
-    -- Android touch coords are normalized (0-1); needs much higher sensitivity than pixel deltas
-    local sensitivity    = isAndroid and 550.0 or baseSensitivity
+    local sensitivity = M.lookSensitivity(self)
 
     local xoffset = lookAxis.x * sensitivity
     local yoffset = lookAxis.y * sensitivity

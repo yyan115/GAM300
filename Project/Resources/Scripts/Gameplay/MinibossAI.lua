@@ -1802,7 +1802,7 @@ return Component {
         self._animator:SetTrigger("Death")
 
         if _G.event_bus and _G.event_bus.publish then
-            _G.event_bus.publish("boss_killed")
+            _G.event_bus.publish("boss_killed", { entityId = self.entityId })
         end
 
         --print("[Miniboss][Death] DEAD")
