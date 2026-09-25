@@ -32,6 +32,7 @@ return Component {
         self._playing  = false
         self._frame    = 1
         self._timer    = 0
+        self._hookedTarget = nil
 
         --print(string.format("[AndroidChainButtonAnim] Start | sprite=%s hookFrames=%d pullFrames=%d slamFrames=%d",
         --    tostring(self._sprite ~= nil), #HOOK_FRAMES, #PULL_FRAMES, #SLAM_FRAMES))
@@ -45,40 +46,42 @@ return Component {
             return
         end
 
+        -- Attachment selects the next available action. Pull/slam notifications
+        -- mean that action has been consumed, so both must return to throw.
+        local function reset()
+            self._hookedTarget = nil
+            self:_setState(HOOK_FRAMES)
+        end
         self._subPull = _G.event_bus.subscribe("chain.pull_chain", function(p)
-            if p then
-                --print("[AndroidChainButtonAnim] State -> PULL")
-                self:_setState(PULL_FRAMES)
-            end
+            if p then reset() end
         end)
         self._subSlam = _G.event_bus.subscribe("chain.slam_chain", function(p)
-            if p then
-                --print("[AndroidChainButtonAnim] State -> SLAM")
-                self:_setState(SLAM_FRAMES)
-            end
+            if p then reset() end
         end)
+        -- Boss hooks need not publish the normal enemy's pull/slam animation
+        -- event. Reset on the shared execution event as well; listener order
+        -- must not leave the consumed action displayed.
+        self._subConsumed = _G.event_bus.subscribe("chain.enemy_hooked", reset)
         self._subRetract = _G.event_bus.subscribe("chain.retract_chain", function(p)
-            if p then
-                --print("[AndroidChainButtonAnim] State -> HOOK (retract)")
-                self:_setState(HOOK_FRAMES)
-            end
+            if p then reset() end
         end)
-        self._subDetach = _G.event_bus.subscribe("chain.detached", function()
-            --print("[AndroidChainButtonAnim] State -> HOOK (detach)")
-            self:_setState(HOOK_FRAMES)
-        end)
-        -- Fires the instant an enemy is hooked (EnemyAI publishes this from its
-        -- chain.endpoint_hit_entity handler). Flying enemies -> Slam icon,
-        -- grounded enemies -> Pull icon. This runs BEFORE the player taps to
-        -- actually pull/slam, so the button shows the right next-action hint.
+        self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", reset)
+        self._subDetach = _G.event_bus.subscribe("chain.detached", reset)
         self._subHookedType = _G.event_bus.subscribe("chain.hooked_target_type", function(p)
             if not p then return end
-            print("[AndroidChainButtonAnim] hooked_target_type received: isFlying=" .. tostring(p.isFlying))
-            if p.isFlying then
-                self:_setState(SLAM_FRAMES)
-            else
-                self:_setState(PULL_FRAMES)
+            self._hookedTarget = p.entityId
+            self:_setState(p.isFlying and SLAM_FRAMES or PULL_FRAMES)
+        end)
+        self._subTargetDied = _G.event_bus.subscribe("enemy_died", function(p)
+            if p and self._hookedTarget ~= nil and p.entityId == self._hookedTarget then
+                reset()
             end
+        end)
+        self._subPlayerDead = _G.event_bus.subscribe("playerDead", function(dead)
+            if dead then reset() end
+        end)
+        self._subRespawn = _G.event_bus.subscribe("respawnPlayer", function(respawn)
+            if respawn then reset() end
         end)
     end,
 
@@ -86,15 +89,11 @@ return Component {
         self._current = frames
         self._playing = false
         self._frame   = 1
-        -- Refresh sprite pointer to guard against stale LuaBridge pointers
-        local entity = Engine.GetEntityByName("ChainIcon")
-        if entity then
-            self._sprite = GetComponent(entity, "SpriteRenderComponent")
-        end
+        self._timer   = 0
+        self._sprite = self:GetComponent("SpriteRenderComponent")
         if self._sprite then
             self._sprite:SetTextureFromPath(frames[1])
         end
-        print("[AndroidChainButtonAnim] _setState -> " .. tostring(frames[1]) .. " sprite=" .. tostring(self._sprite ~= nil))
     end,
 
     Update = function(self, dt)
@@ -131,7 +130,10 @@ return Component {
 
     OnDisable = function(self)
         if not _G.event_bus or not _G.event_bus.unsubscribe then return end
-        local subs = { "_subPull", "_subSlam", "_subRetract", "_subDetach", "_subHookedType" }
+        local subs = {
+            "_subPull", "_subSlam", "_subConsumed", "_subRetract", "_subRetracted",
+            "_subDetach", "_subHookedType", "_subTargetDied", "_subPlayerDead", "_subRespawn",
+        }
         for _, k in ipairs(subs) do
             if self[k] then
                 pcall(function() _G.event_bus.unsubscribe(self[k]) end)

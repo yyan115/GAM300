@@ -630,7 +630,6 @@ Resources/Shaders/fogandroid.meta
 Resources/Shaders/text.frag
 Resources/Shaders/textandroid.frag
 Resources/Shaders/bloom.frag
-Resources/Shaders/particle.frag
 Resources/Shaders/sprite.frag
 Resources/Shaders/spriteandroid.frag
 Resources/Shaders/ssao.meta
@@ -685,12 +684,9 @@ Resources/Shaders/default.frag
 Resources/Shaders/default.vert
 Resources/Shaders/defaultandroid.frag
 Resources/Shaders/defaultandroid.vert
-Resources/Shaders/fog.frag
-Resources/Shaders/fog.vert
 Resources/Shaders/light.vert
 Resources/Shaders/lightandroid.vert
 Resources/Shaders/particle.vert
-Resources/Shaders/particleandroid.frag
 Resources/Shaders/particleandroid.vert
 Resources/Shaders/selection_outline.vert
 Resources/Shaders/shadow_depth_pointandroid.vert
@@ -700,6 +696,10 @@ Resources/Shaders/skyboxandroid.frag
 Resources/Shaders/tonemappingandroid.frag
 Resources/Shaders/fogandroid.frag
 Resources/Shaders/fogandroid.vert
+Resources/Shaders/fog.frag
+Resources/Shaders/fog.vert
+Resources/Shaders/particle.frag
+Resources/Shaders/particleandroid.frag
 Resources/Textures/M4/Chain Link_standardSurface1_BaseColor.png
 Resources/Textures/M4/Chain Link_standardSurface1_Height.png
 Resources/Textures/M4/Chain Link_standardSurface1_Metallic.png
@@ -3734,8 +3734,8 @@ Resources/Scripts/extension/mono_helper.lua
 Resources/Scripts/extension/audio_helper.lua
 Resources/Scripts/extension/transform_mixin.lua
 Resources/Scripts/extension/scheduler.lua
-Resources/Scripts/extension/verletAdapter.lua
 Resources/Scripts/extension/engine_bootstrap.lua
+Resources/Scripts/extension/verletAdapter.lua
 Resources/Scripts/template/ai_patrol.lua
 Resources/Scripts/template/data_chest.lua
 Resources/Scripts/template/listener.lua
@@ -3878,7 +3878,6 @@ Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua
 Resources/Scripts/Gameplay/ChainAudio.lua
 Resources/Scripts/Gameplay/ChainController.lua
 Resources/Scripts/Gameplay/ChainEndpointController.lua
-Resources/Scripts/Gameplay/ChainLinkTransformHandler.lua
 Resources/Scripts/Gameplay/DamageZone.lua
 Resources/Scripts/Gameplay/DoorTrigger.lua
 Resources/Scripts/Gameplay/FlyingIdleState.lua
@@ -3902,14 +3901,15 @@ Resources/Scripts/Gameplay/GroundHookedState.lua
 Resources/Scripts/Gameplay/GroundHurtState.lua
 Resources/Scripts/Gameplay/HitStop.lua
 Resources/Scripts/Gameplay/PlayerHealth.lua
-Resources/Scripts/Gameplay/ChainBootstrap.lua
 Resources/Scripts/Gameplay/PauseListener.lua
 Resources/Scripts/Gameplay/AttackHitbox.lua
-Resources/Scripts/Gameplay/EnemyAI.lua
 Resources/Scripts/Gameplay/GroundAttackState.lua
 Resources/Scripts/Gameplay/ComboManager.lua
 Resources/Scripts/Gameplay/PlayerMovement(Updated).lua
 Resources/Scripts/Gameplay/MinibossAI.lua
+Resources/Scripts/Gameplay/ChainBootstrap.lua
+Resources/Scripts/Gameplay/ChainLinkTransformHandler.lua
+Resources/Scripts/Gameplay/EnemyAI.lua
 Resources/Scripts/UI/ButtonHover.lua.meta
 Resources/Scripts/UI/AndroidOnly.lua
 Resources/Scripts/UI/AndroidOnly.lua.meta
@@ -5576,8 +5576,8 @@ Resources/Prefabs/VFXPrefabs/HealingVFXv3.prefab
 Resources/Prefabs/VFXPrefabs/IncenseSmokeVFXBig.prefab
 Resources/Prefabs/VFXPrefabs/IncenseSmokeVFXSmall.prefab
 Resources/Prefabs/VFXPrefabs/RockParticlesVFX.prefab
-Resources/Prefabs/VFXPrefabs/WeaponPickupVFX.prefab
 Resources/Prefabs/VFXPrefabs/MinibossDiveMarkVFX.prefab
+Resources/Prefabs/VFXPrefabs/WeaponPickupVFX.prefab
 Resources/Prefabs/Incense_LowPoly.prefab
 Resources/Prefabs/PauseMenu.prefab
 Resources/Prefabs/QuitPromptUI.prefab

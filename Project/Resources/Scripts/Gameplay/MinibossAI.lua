@@ -585,11 +585,11 @@ return Component {
             if payload.rootName ~= self._entityName then return end
             --print("[MinibossAI] chain.endpoint_hit_entity received")
             self._animator:SetTrigger("Hooked")
-            -- Miniboss is grounded — tell the chain icon to switch to the Pull variant.
+            -- Offer the action appropriate to the boss's current flight state.
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("chain.hooked_target_type", {
                     entityId = self.entityId,
-                    isFlying = false,
+                    isFlying = self._inAir == true,
                 })
             end
         end)
