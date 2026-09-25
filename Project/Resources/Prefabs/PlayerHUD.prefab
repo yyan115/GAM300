@@ -4677,7 +4677,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 0
                         },
                         {
                             "type": "int",
@@ -4930,7 +4930,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 0
                         },
                         {
                             "type": "int",
