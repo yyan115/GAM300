@@ -188,7 +188,21 @@ return Component {
         SlamTilt.init(self)
 
         -- Apply after serialized fields so the shared scene cannot disable mobile support.
-        self.lockOnEnabled = (Platform and Platform.IsAndroid and Platform.IsAndroid()) or false
+        local mobile = (Platform and Platform.IsAndroid and Platform.IsAndroid()) or false
+        self.lockOnEnabled = mobile
+        self.chainAimAssistEnabled = mobile
+        ChainAim.clearAssist(self)
+        self._chainAimOriginEntity = nil
+        self._chainAimMaxLength = nil
+        if mobile then
+            -- Preserve authored enemy classes and include the boss explicitly.
+            local names, seen = {}, {}
+            for _, name in ipairs(self.chainAimAssistComponents or {}) do
+                if not seen[name] then names[#names + 1], seen[name] = name, true end
+            end
+            if not seen.MinibossAI then names[#names + 1] = "MinibossAI" end
+            self.chainAimAssistComponents = names
+        end
         LockOn.init(self)
 
         -- Configure C++ entity cache intervals
@@ -228,6 +242,11 @@ return Component {
                 if not payload then return end
                 local wasAiming = self._chainAiming
                 self._chainAiming = payload.active or false
+                if self.chainAimAssistEnabled then
+                    ChainAim.clearAssist(self)
+                    self._chainAimMaxLength = payload.maxLength
+                    self._chainAimOriginEntity = payload.originName and Engine.GetEntityByName(payload.originName) or nil
+                end
                 if self._chainAiming and not wasAiming then
                     self._chainAimInitialized = false
                     self._preChainAimPitch = self._normalPitch

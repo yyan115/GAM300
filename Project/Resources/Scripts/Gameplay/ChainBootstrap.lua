@@ -6,8 +6,8 @@
 -- =============================================================================
 --
 -- 1. TAP — chain fully retracted (len = 0)
---    Fires chain toward the closest LockOn-tagged entity within LockOnAngleDeg
---    of player forward. Falls back to player forward if none in range.
+--    On touch devices, assists toward the closest living enemy within reach and
+--    LockOnAngleDeg of player forward. Desktop and unassisted throws use player forward.
 --
 -- 2. TAP — chain mid-extension (actively shooting out)
 --    Chain tip drops into flop/physics mode at current position.
@@ -85,9 +85,9 @@ return Component {
         ChainSlackDistance = 1.0,   -- extra metres player can move past chainLen before chain flops
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
-        -- Off: a tapped chain goes straight out in front of the player instead
-        -- of turning toward an enemy in the cone below.
+        -- Runtime platform policy keeps desktop throws manual and enables touch assistance.
         LockOnAssistEnabled = false,
+        LockOnHeightOffset = 1.0,  -- body aim height above an enemy's root
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
 
         -- === Spin ===
@@ -541,7 +541,9 @@ return Component {
             _G.CHAIN_AIM_ACTIVE = true
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("request_player_forward", true)
-                _G.event_bus.publish("chain.aim_camera", {active = true})
+                _G.event_bus.publish("chain.aim_camera", {
+                    active = true, maxLength = self.MaxLength, originName = self.PlayerName,
+                })
             end
             -- Android: the same finger that is holding the chain button should
             -- now also drive camera drag so the player can swipe to aim without
@@ -563,6 +565,15 @@ return Component {
     end,
 
     Start = function(self)
+        self.LockOnAssistEnabled = (Platform and Platform.IsAndroid and Platform.IsAndroid()) or false
+        self._assistDeadEnemies = {}
+        if self.LockOnAssistEnabled and _G.event_bus and _G.event_bus.subscribe then
+            local function died(payload)
+                if payload and payload.entityId then self._assistDeadEnemies[payload.entityId] = true end
+            end
+            self._assistEnemyDiedSub = _G.event_bus.subscribe("enemy_died", died)
+            self._assistBossDiedSub = _G.event_bus.subscribe("boss_killed", died)
+        end
         if self.NumberOfLinks > 0 then
             Engine.CreateEntityDup(self.LinkName, self.LinkName, self.NumberOfLinks)
         end
@@ -669,7 +680,7 @@ return Component {
         )
         self.audioHandler:Start()
 
-        -- LockOn targets are queried live via Engine.GetEntitiesByTag at fire time.
+        -- Touch targets are queried live at fire time, after dead-target filtering.
 
         self._lastPublishedExtended = false
         self._retractTriggeredThisPress = false
@@ -843,108 +854,43 @@ return Component {
         return self._cameraForward
     end,
 
-    -- Returns a normalised direction {x,y,z} toward the closest LockOn target within
-    -- the half-cone, or nil if none qualify. pfx/pfz = normalised player forward XZ.
+    -- A quick touch throw selects a living enemy in front of the player, inside
+    -- the actual chain reach. Targeting does not bypass collision or hook immunity.
     _pickLockOnDirection = function(self, pfx, pfy, pfz)
         if not self.LockOnAssistEnabled then return nil end
-        if not Engine or not Engine.GetEntitiesByTag then return nil end
-
-        local halfCos = math.cos(math.rad(tonumber(self.LockOnAngleDeg) or 45.0))
-        local sx = self.controller.startPos[1]
-        local sy = self.controller.startPos[2]
-        local sz = self.controller.startPos[3]
-
-        local ok, entities = pcall(function()
-            return Engine.GetEntitiesByTag("LockOn", 32)
-        end)
-        if not ok or type(entities) ~= "table" then entities = nil end
-
-        -- Nothing in the project carries the LockOn tag. It is defined in
-        -- TagsAndLayers.json at index 16 and applied to no entity, so this
-        -- lookup has always come back empty and every tap-fire aimed at raw
-        -- player forward: the aim assist has never once run.
-        --
-        -- Enemy and Boss are tagged, and are what the assist is for, so they
-        -- stand in when no LockOn point exists. Tagging the LockOnTarget child
-        -- the enemies already carry would give a better aim point than the
-        -- root, and would take precedence here automatically, but that is
-        -- scene data and belongs to the editor.
-        if not entities or #entities == 0 then
-            entities = {}
-            for _, tag in ipairs({ "Enemy", "Boss" }) do
-                local tok, found = pcall(function()
-                    return Engine.GetEntitiesByTag(tag, 32)
-                end)
-                if tok and type(found) == "table" then
-                    for _, id in ipairs(found) do entities[#entities + 1] = id end
+        if not (Engine and Engine.GetEntitiesByTag and Engine.GetEntityPosition
+            and Physics and Physics.RaycastLOS) then return nil end
+        local halfCos = math.cos(math.rad(self.LockOnAngleDeg or 45.0))
+        local start = self.controller.startPos
+        local height = self.LockOnHeightOffset or 1.0
+        local reach = self.MaxLength
+        local bestDistance, bestId, bestX, bestY, bestZ, bestPoint
+        for _, tag in ipairs({"Enemy", "Boss"}) do
+            for _, id in ipairs(Engine.GetEntitiesByTag(tag, 32) or {}) do
+                if not (self._assistDeadEnemies and self._assistDeadEnemies[id])
+                    and (not Engine.IsEntityActive or Engine.IsEntityActive(id)) then
+                    local x, y, z = Engine.GetEntityPosition(id)
+                    if x then
+                        local dx, dy, dz = x - start[1], y + height - start[2], z - start[3]
+                        local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+                        local flat = math.sqrt(dx * dx + dz * dz)
+                        local dot = flat > 0.0001 and (dx * pfx + dz * pfz) / flat or 0.0
+                        if distance > 0.0001 and distance <= reach and dot >= halfCos then
+                            local hit = Physics.RaycastLOS(start[1], start[2], start[3],
+                                dx / distance, dy / distance, dz / distance, distance)
+                            local clear = not hit or hit < 0 or hit >= distance
+                            if clear and (not bestDistance or distance < bestDistance
+                                or (distance == bestDistance and id < bestId)) then
+                                bestDistance, bestId = distance, id
+                                bestX, bestY, bestZ = dx / distance, dy / distance, dz / distance
+                                bestPoint = {x = x, y = y + height, z = z}
+                            end
+                        end
+                    end
                 end
             end
         end
-        if #entities == 0 then return nil end
-
-        local bestDist = math.huge
-        local bestDX, bestDY, bestDZ = nil, nil, nil
-
-        for _, entityId in ipairs(entities) do
-            repeat
-                local tr = nil
-                pcall(function() tr = Engine.FindTransformByID(entityId) end)
-                if not tr then break end
-
-                local tx, ty, tz
-                local rok, a, b, c = pcall(function()
-                    return Engine.GetTransformWorldPosition(tr)
-                end)
-                if rok and a ~= nil then
-                    if type(a) == "table" then tx, ty, tz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                    elseif type(a) == "number" then tx, ty, tz = a, b, c end
-                end
-                if not tx then break end
-
-                local dx, dy, dz = tx - sx, ty - sy, tz - sz
-                local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-                if dist < 1e-4 then break end
-
-                -- Cone check on XZ plane only
-                local flatLen = math.sqrt(dx*dx + dz*dz)
-                local dot = flatLen > 1e-4 and ((dx/flatLen)*pfx + (dz/flatLen)*pfz) or 0
-                if dot < halfCos then break end
-
-                -- LOS check: raycast from player toward target.
-                -- Accept only if nothing is hit before reaching the target (clear LOS),
-                -- OR if the first thing hit belongs to the target entity itself.
-                if Physics then
-                    local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
-                    local hasLOS = true
-                    if Physics.RaycastFull then
-                        local rok2, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
-                            return Physics.RaycastFull(sx, sy, sz, ndx, ndy, ndz, dist)
-                        end)
-                        if rok2 and hit and hitDist and hitDist < dist - 0.1 then
-                            hasLOS = (hitBodyId == entityId)
-                        end
-                    elseif Physics.Raycast then
-                        local rok2, hitDist = pcall(function()
-                            return Physics.Raycast(sx, sy, sz, ndx, ndy, ndz, dist)
-                        end)
-                        if rok2 and hitDist and hitDist > 0 and hitDist < dist - 0.1 then
-                            hasLOS = false
-                        end
-                    end
-                    if not hasLOS then
-                        dbg(string.format("[ChainBootstrap] LockOn entityId=%d blocked by geometry", entityId))
-                        break
-                    end
-                end
-
-                if dist < bestDist then
-                    bestDist = dist
-                    bestDX, bestDY, bestDZ = dx/dist, dy/dist, dz/dist
-                end
-            until true
-        end
-
-        return bestDX, bestDY, bestDZ
+        return bestX, bestY, bestZ, bestPoint
     end,
 
     -- =========================================================================
@@ -1053,7 +999,7 @@ return Component {
                 local direction = pf
 
                 -- Check for a LockOn target in the cone around player forward
-                local lx, ly, lz = self:_pickLockOnDirection(pf[1], pf[2], pf[3])
+                local lx, ly, lz, target = self:_pickLockOnDirection(pf[1], pf[2], pf[3])
                 if lx then
                     direction = {lx, ly, lz}
                     dbg(string.format("[ChainBootstrap] TAP -> LockOn target (%.3f,%.3f,%.3f)", lx, ly, lz))
@@ -1061,7 +1007,8 @@ return Component {
                     dbg(string.format("[ChainBootstrap] TAP -> player forward (%.3f,%.3f,%.3f)", pf[1], pf[2], pf[3]))
                 end
 
-                self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
+                -- Keep the release point fixed while the throwing hand animates.
+                self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance, target)
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("force_player_rotation_to_direction", {x = direction[1], z = direction[3]})
                 end
@@ -1592,6 +1539,9 @@ return Component {
 
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
+            if self._cameraWorldTargetSub then _G.event_bus.unsubscribe(self._cameraWorldTargetSub) end
+            if self._assistEnemyDiedSub then _G.event_bus.unsubscribe(self._assistEnemyDiedSub) end
+            if self._assistBossDiedSub then _G.event_bus.unsubscribe(self._assistBossDiedSub) end
             if self._chainSubDown     then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown)     end) end
             if self._chainSubUp       then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp)       end) end
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end

@@ -18,34 +18,33 @@ local function shortestDelta(from, to)
     return d
 end
 
--- Returns true if there is an unobstructed line from the given origin to the enemy.
--- ox/oy/oz should be the camera position, which is outside the player's physics
--- capsule. Starting inside the capsule causes Physics.Raycast to return -1 (no hit)
--- making every enemy appear visible regardless of walls.
+-- Aim visibility uses solid world geometry; enemy/player capsules and debris
+-- must not obscure their own target or require guessed collider tolerances.
 local function hasLineOfSight(ox, oy, oz, ex, ey, ez)
-    if not (Physics and Physics.Raycast) then return true end
+    if not (Physics and Physics.RaycastLOS) then return false end
+    local dx, dy, dz = ex - ox, ey - oy, ez - oz
+    local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if distance < 0.01 then return true end
+    local hit = Physics.RaycastLOS(ox, oy, oz, dx / distance, dy / distance, dz / distance, distance)
+    return not hit or hit < 0 or hit >= distance
+end
 
-    local dx = ex - ox
-    local dy = ey - oy
-    local dz = ez - oz
-    local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-    if dist < 0.01 then return true end
-
-    local ndx, ndy, ndz = dx / dist, dy / dist, dz / dist
-
-    -- hitDist > 0 means geometry was hit. If it's closer than the enemy
-    -- (with 0.3 m tolerance for the enemy's own collider) the LOS is blocked.
-    local hitDist = Physics.Raycast(ox, oy, oz, ndx, ndy, ndz, dist)
-    if hitDist and hitDist > 0 and hitDist < dist - 0.3 then
-        return false
-    end
-    return true
+function M.clearAssist(self)
+    self._assistTargetId = nil
+    self._assistTargetX = nil
+    self._assistTargetY = nil
+    self._assistTargetZ = nil
+    self._assistPrevTargetYaw = nil
+    self._assistPrevTargetPitch = nil
 end
 
 -- Advance the chain-aim blend each frame and compute the aim camera position.
 -- Returns: chainAimActive (bool), chainDesiredX, chainDesiredY, chainDesiredZ
 -- chainDesiredX/Y/Z are nil when chainAimActive is false.
 function M.updateChainAim(self, dt)
+    if not self._chainAiming or not self.chainAimAssistEnabled then
+        M.clearAssist(self)
+    end
     -- Blend factor: snap to 1 immediately when aiming so there is zero lerp
     -- on position, rotation, and CAMERA_YAW. Smooth out only on release.
     if self._chainAiming then
@@ -111,13 +110,8 @@ function M.updateChainAim(self, dt)
     if self.chainAimAssistEnabled and self._chainAiming and self._chainAimYaw and not manuallyAiming then
         M.updateAimAssist(self, dt, camX, camY, camZ)
     elseif manuallyAiming then
-        -- Clear stale assist target so the chain fires where the player is
-        -- actually looking, not at the last auto-aimed enemy.
-        self._assistTargetX = nil
-        self._assistTargetY = nil
-        self._assistTargetZ = nil
-        self._assistPrevTargetYaw   = nil
-        self._assistPrevTargetPitch = nil
+        -- A touch drag owns both the camera and the eventual throw direction.
+        M.clearAssist(self)
     end
 
     -- Publish forward basis and crosshair world target for chain-throw direction.
@@ -219,117 +213,102 @@ function M.updateChainAim(self, dt)
     return true, camX, camY, camZ
 end
 
--- Aim assist during chain aim.
--- Two-component design:
---   1) Velocity tracking  — matches the enemy's angular movement so the camera
---      keeps pace automatically with no trailing.
---   2) Corrective pull    — small constant-speed nudge that closes any remaining
---      gap. Weak enough that normal mouse input overrides it easily.
--- Direction is computed from the player's world position (self._targetPos).
+-- Retain a visible, reachable enemy inside the assist window. Tracking history
+-- belongs to that entity, so acquiring another enemy cannot turn a target switch
+-- into artificial angular velocity.
 function M.updateAimAssist(self, dt, camX, camY, camZ)
-    if not (Engine and Engine.FindEntitiesWithScript and Engine.GetEntityPosition) then return end
+    if not self.chainAimAssistEnabled
+        or not (Engine and Engine.FindEntitiesWithScript and Engine.GetEntityPosition) then
+        M.clearAssist(self)
+        return
+    end
+    dt = math.max(dt, 0.0)
+    local assistAngle = self.chainAimAssistAngle or 30.0
+    local assistStrength = self.chainAimAssistStrength or 15.0
+    local assistRange = self.chainAimAssistRange or 12.0
+    local heightOffset = self.chainAimAssistHeightOffset or 1.0
+    local currentYaw, currentPitch = self._chainAimYaw, self._chainAimPitch or 0.0
 
-    local assistAngle    = self.chainAimAssistAngle         or 30.0
-    local assistStrength = self.chainAimAssistStrength     or 15.0   -- corrective pull deg/s
-    local assistRange    = self.chainAimAssistRange        or 12.0
-    local heightOffset   = self.chainAimAssistHeightOffset or 1.0
-    local enemyNames     = self.chainAimAssistComponents   or {}
+    -- ChainBootstrap supplies its authored reach and launch entity when aiming
+    -- starts. Read the entity's current position because the hand moves while
+    -- the player aims; a cached starting position would drift out of date.
+    local originX, originY, originZ
+    local originId = self._chainAimOriginEntity
+    if originId and (not Engine.IsEntityActive or Engine.IsEntityActive(originId)) then
+        originX, originY, originZ = Engine.GetEntityPosition(originId)
+    end
+    if not originX then
+        originX, originY, originZ = self._targetPos.x,
+            self._targetPos.y + (self.chainAimHeightOffset or 1.5), self._targetPos.z
+    end
+    local reach = self._chainAimMaxLength or assistRange
 
-    local currentYaw   = self._chainAimYaw
-    local currentPitch = self._chainAimPitch or 0.0
+    local function candidate(id)
+        if self._deadEnemies and self._deadEnemies[id] then return nil end
+        if Engine.IsEntityActive and not Engine.IsEntityActive(id) then return nil end
+        if Engine.GetEntityTag then
+            local tag = Engine.GetEntityTag(id)
+            if tag ~= "Enemy" and tag ~= "Boss" then return nil end
+        end
+        local x, y, z = Engine.GetEntityPosition(id)
+        if not x then return nil end
+        y = y + heightOffset
+        local dx, dy, dz = x - camX, y - camY, z - camZ
+        local distanceSquared = dx * dx + dy * dy + dz * dz
+        local rx, ry, rz = x - originX, y - originY, z - originZ
+        if distanceSquared > assistRange * assistRange
+            or rx * rx + ry * ry + rz * rz > reach * reach then return nil end
+        local distance = math.sqrt(distanceSquared)
+        if distance < 0.01 then return nil end
+        local yaw = math.deg(atan2(dx, dz))
+        local pitch = -math.deg(math.asin(utils.clamp(dy / distance, -1.0, 1.0)))
+        local dYaw, dPitch = shortestDelta(currentYaw, yaw), shortestDelta(currentPitch, pitch)
+        local deviation = math.sqrt(dYaw * dYaw + dPitch * dPitch)
+        if deviation >= assistAngle then return nil end
+        if not hasLineOfSight(camX, camY, camZ, x, y, z)
+            or not hasLineOfSight(originX, originY, originZ, x, y, z) then return nil end
+        return {id = id, x = x, y = y, z = z, yaw = yaw, pitch = pitch,
+            dYaw = dYaw, dPitch = dPitch, deviation = deviation, distance = distanceSquared}
+    end
 
-    local bestDeviation  = math.huge
-    local bestDYaw       = 0.0
-    local bestDPitch     = 0.0
-    local bestTargetYaw  = currentYaw
-    local bestTargetPitch= currentPitch
-    local bestEX, bestEY, bestEZ = nil, nil, nil
-
-    for _, scriptName in ipairs(enemyNames) do
-        local entities = Engine.FindEntitiesWithScript(scriptName)
-        if entities then
-            for i = 1, #entities do
-                local entityId = entities[i]
-                local isDead = self._deadEnemies and self._deadEnemies[entityId]
-                if not isDead and not (Engine.IsEntityActive and not Engine.IsEntityActive(entityId)) then
-                    local ex, ey, ez = Engine.GetEntityPosition(entityId)
-                    if ex then
-                        -- Use camera position as origin for angular calculation
-                        -- so the camera crosshair aligns with the enemy
-                        local dx = ex - camX
-                        local dy = (ey + heightOffset) - camY
-                        local dz = ez - camZ
-                        local distSq = dx*dx + dy*dy + dz*dz
-                        if distSq <= assistRange * assistRange
-                        and hasLineOfSight(camX, camY, camZ, ex, ey + heightOffset, ez) then
-                            local len3d = math.sqrt(dx*dx + dy*dy + dz*dz)
-                            if len3d > 0.01 then
-                                local targetYaw   = math.deg(atan2(dx, dz))
-                                local targetPitch = -math.deg(math.asin(
-                                    math.max(-1.0, math.min(1.0, dy / len3d))
-                                ))
-                                local dYaw      = shortestDelta(currentYaw,   targetYaw)
-                                local dPitch    = shortestDelta(currentPitch, targetPitch)
-                                local deviation = math.sqrt(dYaw*dYaw + dPitch*dPitch)
-                                if deviation < bestDeviation then
-                                    bestDeviation  = deviation
-                                    bestDYaw       = dYaw
-                                    bestDPitch     = dPitch
-                                    bestTargetYaw  = targetYaw
-                                    bestTargetPitch= targetPitch
-                                    bestEX = ex
-                                    bestEY = ey + heightOffset
-                                    bestEZ = ez
-                                end
-                            end
-                        end
+    local best = self._assistTargetId and candidate(self._assistTargetId)
+    if not best then
+        local visited = {}
+        for _, scriptName in ipairs(self.chainAimAssistComponents or {}) do
+            for _, id in ipairs(Engine.FindEntitiesWithScript(scriptName) or {}) do
+                if not visited[id] then
+                    visited[id] = true
+                    local target = candidate(id)
+                    if target and (not best or target.deviation < best.deviation
+                        or (target.deviation == best.deviation and (target.distance < best.distance
+                            or (target.distance == best.distance and target.id < best.id)))) then
+                        best = target
                     end
                 end
             end
         end
     end
-
-    if bestDeviation < assistAngle then
-        -- Component 1: velocity tracking
-        -- Measure how far the enemy's angular position moved since last frame
-        -- and apply the same delta to the camera so it keeps pace automatically.
-        local safeDt = math.max(dt, 0.001)
-        local prevYaw   = self._assistPrevTargetYaw   or bestTargetYaw
-        local prevPitch = self._assistPrevTargetPitch or bestTargetPitch
-        local angVelYaw   = math.max(-180, math.min(180,
-            shortestDelta(prevYaw,   bestTargetYaw)   / safeDt))
-        local angVelPitch = math.max(-90,  math.min(90,
-            shortestDelta(prevPitch, bestTargetPitch) / safeDt))
-
-        local trackYaw   = angVelYaw   * dt
-        local trackPitch = angVelPitch * dt
-
-        -- Component 2: corrective pull — small fixed-speed nudge toward center.
-        -- assistStrength deg/s is intentionally weak so mouse input beats it.
-        local corrStep = assistStrength * dt
-        local corrYaw   = math.max(-corrStep, math.min(corrStep, bestDYaw))
-        local corrPitch = math.max(-corrStep, math.min(corrStep, bestDPitch))
-
-        self._chainAimYaw   = currentYaw + trackYaw + corrYaw
-        self._chainAimPitch = math.max(
-            self.minPitch or -80.0,
-            math.min(self.maxPitch or 80.0, currentPitch + trackPitch + corrPitch)
-        )
-
-        self._assistPrevTargetYaw   = bestTargetYaw
-        self._assistPrevTargetPitch = bestTargetPitch
-        -- Store enemy world position so ChainAim_basis can fire toward it from player pos
-        self._assistTargetX = bestEX
-        self._assistTargetY = bestEY
-        self._assistTargetZ = bestEZ
-    else
-        -- Enemy left the window — clear velocity memory so there's no stale jump
-        self._assistPrevTargetYaw   = nil
-        self._assistPrevTargetPitch = nil
-        self._assistTargetX = nil
-        self._assistTargetY = nil
-        self._assistTargetZ = nil
+    if not best then
+        M.clearAssist(self)
+        return
     end
+
+    if best.id ~= self._assistTargetId then
+        self._assistPrevTargetYaw = nil
+        self._assistPrevTargetPitch = nil
+    end
+    local safeDt = math.max(dt, 0.001)
+    local trackYaw = utils.clamp(shortestDelta(self._assistPrevTargetYaw or best.yaw, best.yaw)
+        / safeDt, -180.0, 180.0) * dt
+    local trackPitch = utils.clamp(shortestDelta(self._assistPrevTargetPitch or best.pitch, best.pitch)
+        / safeDt, -90.0, 90.0) * dt
+    local correction = assistStrength * dt
+    self._chainAimYaw = currentYaw + trackYaw + utils.clamp(best.dYaw, -correction, correction)
+    self._chainAimPitch = utils.clamp(currentPitch + trackPitch
+        + utils.clamp(best.dPitch, -correction, correction), self.minPitch or -80.0, self.maxPitch or 80.0)
+    self._assistTargetId = best.id
+    self._assistPrevTargetYaw, self._assistPrevTargetPitch = best.yaw, best.pitch
+    self._assistTargetX, self._assistTargetY, self._assistTargetZ = best.x, best.y, best.z
 end
 
 -- Set the camera's rotation, blending between orbit look-at and chain-aim yaw/pitch.
