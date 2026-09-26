@@ -19,3 +19,5 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# The native frame-pacing library looks up this companion by class/method name.
+-keep class com.google.androidgamesdk.SwappyDisplayManager { *; }

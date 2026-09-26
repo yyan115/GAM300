@@ -4,6 +4,8 @@
 #include <android/native_window_jni.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
+#include <swappy/swappyGL.h>
+#include <swappy/swappyGL_extra.h>
 
 // Include engine headers
 #include "Engine.h"
@@ -28,6 +30,7 @@
 // Global state
 static bool engineInitialized = false;
 static bool graphicsResourcesLoaded = false;
+static bool framePacingInitialized = false;
 static ANativeWindow* nativeWindow = nullptr;
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -88,7 +91,7 @@ Java_com_teammarbles_kusane_MainActivity_initEngine(JNIEnv* env, jobject thiz, j
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_teammarbles_kusane_MainActivity_setSurface(JNIEnv* env, jobject /* this */, jobject surface) {
+Java_com_teammarbles_kusane_MainActivity_setSurface(JNIEnv* env, jobject thiz, jobject surface) {
     if (surface) {
         nativeWindow = ANativeWindow_fromSurface(env, surface);
         LOGI("Surface set: %p", nativeWindow);
@@ -104,6 +107,22 @@ Java_com_teammarbles_kusane_MainActivity_setSurface(JNIEnv* env, jobject /* this
 
             if (androidPlatform->InitializeGraphics()) {
                 LOGI("Graphics initialized successfully");
+
+                if (!framePacingInitialized) {
+                    framePacingInitialized = SwappyGL_init(env, thiz);
+                    if (framePacingInitialized) {
+                        SwappyGL_setAutoSwapInterval(false);
+                        SwappyGL_setAutoPipelineMode(false);
+                        SwappyGL_setSwapIntervalNS(SWAPPY_SWAP_60FPS);
+                    } else {
+                        LOGE("Frame pacing initialization failed; using EGL presentation");
+                        SwappyGL_destroy();
+                    }
+                }
+                if (framePacingInitialized) {
+                    SwappyGL_setWindow(nativeWindow);
+                    androidPlatform->SetBufferSwapFunction(SwappyGL_swap);
+                }
 
                 // Only load graphics resources on first launch, not on resume
                 if (!graphicsResourcesLoaded) {
@@ -128,6 +147,9 @@ Java_com_teammarbles_kusane_MainActivity_setSurface(JNIEnv* env, jobject /* this
         IPlatform* platform = WindowManager::GetPlatform();
         if (platform && engineInitialized) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
+            // surfaceDestroyed has joined the game thread before reaching here.
+            androidPlatform->SetBufferSwapFunction(nullptr);
+            if (framePacingInitialized) SwappyGL_setWindow(nullptr);
             androidPlatform->DestroySurface();
         }
         if (nativeWindow) {
@@ -168,11 +190,18 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_teammarbles_kusane_MainActivity_destroyEngine(JNIEnv* env, jobject /* this */) {
     LOGI("Destroying GAM300 Engine");
     
+    if (engineInitialized) {
+        auto* platform = static_cast<AndroidPlatform*>(WindowManager::GetPlatform());
+        if (platform) platform->SetBufferSwapFunction(nullptr);
+    }
+    SwappyGL_destroy();
+    framePacingInitialized = false;
+
     if (nativeWindow) {
         ANativeWindow_release(nativeWindow);
         nativeWindow = nullptr;
     }
-    
+
     if (engineInitialized) {
         // Shutdown in reverse order (same as game's main.cpp)
         GameManager::Shutdown();

@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private SurfaceView surfaceView;
     private SurfaceHolder surfaceHolder;
     private GameThread gameThread;
-    private boolean engineReady = false;
+    private volatile boolean engineReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,6 +150,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         Log.i(TAG, "Surface changed: " + width + "x" + height);
 
+        // Surface callbacks and the game thread share native rendering state.
+        // Finish the old frame before replacing its surface or pacing callback.
+        if (gameThread != null) {
+            stopGameThread();
+            setSurface(null);
+        }
+
         // Initialize engine first with surface dimensions and AssetManager
         initEngine(getAssets(), getFilesDir().getAbsolutePath(), width, height);
 
@@ -171,18 +178,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.i(TAG, "Surface destroyed");
-        engineReady = false;
-        
-        // Stop game thread
-        if (gameThread != null) {
-            gameThread.stopGameThread();
-            try {
-                gameThread.join();
-            } catch (InterruptedException e) {
-                Log.e(TAG, "Error joining game thread", e);
-            }
-        }
-        
+        stopGameThread();
         setSurface(null);
     }
 
@@ -206,7 +202,24 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     protected void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "MainActivity onDestroy");
+        stopGameThread();
         destroyEngine();
+    }
+
+    private void stopGameThread() {
+        engineReady = false;
+        if (gameThread == null) return;
+        gameThread.stopGameThread();
+        boolean interrupted = false;
+        while (gameThread.isAlive()) {
+            try {
+                gameThread.join();
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        gameThread = null;
+        if (interrupted) Thread.currentThread().interrupt();
     }
 
     // Game loop thread
@@ -231,11 +244,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     break;
                 }
 
-                try {
-                    Thread.sleep(16); // ~60 FPS
-                } catch (InterruptedException e) {
-                    break;
-                }
+                // Native presentation is paced against display refresh. Sleeping
+                // again here adds a full frame interval after the rendering work.
             }
 
             Log.i(TAG, "Game thread stopped");

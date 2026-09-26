@@ -31,6 +31,7 @@ private:
     EGLContext context;
     EGLSurface surface;
     EGLConfig  savedConfig;
+    bool (*bufferSwapFunction)(EGLDisplay, EGLSurface) = nullptr;
     int windowWidth, windowHeight;
     bool shouldClose;
     bool isFocused;
@@ -92,6 +93,9 @@ public:
     ENGINE_API void SetNativeWindow(ANativeWindow* nativeWindow);
     ENGINE_API void SetAssetManager(AAssetManager* manager);
     ENGINE_API void DestroySurface();
+    // The Android launcher owns frame pacing; the platform owns the EGL surface.
+    // Set or clear this only while the game thread is stopped.
+    ENGINE_API void SetBufferSwapFunction(bool (*swap)(EGLDisplay, EGLSurface));
     ENGINE_API AAssetManager* GetAssetManager() const { return assetManager; }
     ENGINE_API void SetWritablePath(const std::string& path) { writablePath = path; }
     std::string GetWritablePath() override { return writablePath; }

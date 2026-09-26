@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.22.1)
 project("gam300android")
 
+find_package(games-frame-pacing REQUIRED CONFIG)
+
 # Path to the main engine project (relative to this CMakeLists.txt)
 set(ENGINE_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Project")
 
@@ -281,6 +283,7 @@ set_target_properties(Game PROPERTIES
 add_dependencies(${CMAKE_PROJECT_NAME} build_engine_and_game copy_libraries)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
+        games-frame-pacing::swappy_static
         Game
         Engine
         ${ENGINE_PROJECT_DIR}/Libraries/android/arm64/libfmod.so

@@ -3,9 +3,14 @@ AndroidX and Material Components for Android
 The Android build includes these libraries and the AndroidX libraries they
 depend on, unmodified:
 
+  androidx.games:games-frame-pacing 2.1.3
   androidx.appcompat:appcompat 1.6.1
   com.google.android.material:material 1.10.0
   androidx.constraintlayout:constraintlayout 2.1.4
+
+The SwappyDisplayManager.java companion is included unmodified from the
+Android Games SDK to package its display listener in the APK.
+Source: https://android.googlesource.com/platform/frameworks/opt/gamesdk/+/f81f888fe11e9540dd580edf5993232172ed3cbe/games-frame-pacing/extras/src/main/java/com/google/androidgamesdk/SwappyDisplayManager.java
 
 Copyright The Android Open Source Project.
 Licensed under the Apache License, Version 2.0.

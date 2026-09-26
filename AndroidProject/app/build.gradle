@@ -60,6 +60,7 @@ android {
         }
     }
     buildFeatures {
+        prefab true
         viewBinding true
     }
 
@@ -125,6 +126,7 @@ tasks.configureEach { task ->
 
 dependencies {
 
+    implementation "androidx.games:games-frame-pacing:2.1.3"
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout

@@ -87,12 +87,17 @@ void AndroidPlatform::DestroySurface() {
     }
 }
 
+void AndroidPlatform::SetBufferSwapFunction(bool (*swap)(EGLDisplay, EGLSurface)) {
+    bufferSwapFunction = swap;
+}
+
 void AndroidPlatform::SwapBuffers() {
-    if (surface != EGL_NO_SURFACE) {
+    if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE) return;
+    if (bufferSwapFunction) {
+        bufferSwapFunction(display, surface);
+    } else {
         eglSwapBuffers(display, surface);
-    // __android_log_print(ANDROID_LOG_INFO, "GAM300", "SWAPPED BUFFED\n");
     }
-    // __android_log_print(ANDROID_LOG_INFO, "GAM300", "End buffer\n");
 }
 
 void AndroidPlatform::PollEvents() {
