@@ -1941,7 +1941,11 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
         }
     }
     const auto& lighting = ECSRegistry::GetInstance().GetActiveECSManager().lightingSystem;
-    shader = shader->GetMaterialVariant(requiresAlphaTest, !lighting || lighting->shadowsEnabled);
+    bool canSpecializeTextures = material != nullptr;
+    for (const auto& mesh : item.model->meshes)
+        canSpecializeTextures &= mesh.textures.empty();
+    shader = shader->GetMaterialVariant(requiresAlphaTest, !lighting || lighting->shadowsEnabled,
+        canSpecializeTextures ? material->GetTextureFeatureMask() : Shader::UnspecifiedTextures);
 #endif
 
 

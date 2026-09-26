@@ -4,6 +4,7 @@
 #include <string_view>
 #include <array>
 #include <memory>
+#include <unordered_set>
 
 #include "OpenGL.h"
 #include <glm/glm.hpp>
@@ -52,7 +53,12 @@ public:
 
     // Built-in mobile materials can specialize features whose result is known
     // before drawing. Unsupported shaders and failed variants keep the base program.
-    Shader* GetMaterialVariant(bool requiresAlphaTest, bool receivesShadows) noexcept;
+    static constexpr unsigned UnspecifiedTextures = 256;
+    Shader* GetMaterialVariant(bool requiresAlphaTest, bool receivesShadows,
+                               unsigned textureMask = UnspecifiedTextures) noexcept;
+    // Prepare only observed material combinations during scene loading.
+    // Drawing never compiles: unseen or failed combinations use the base variant.
+    void PrepareMaterialTextureVariants(unsigned textureMask);
 
 
 private:
@@ -76,7 +82,12 @@ private:
     bool m_usesPointLightGrid = false;
 
     std::array<std::unique_ptr<Shader>, 3> m_materialVariants;
+    std::unordered_map<unsigned, std::unique_ptr<Shader>> m_textureVariants;
+    std::unordered_set<unsigned> m_preparedTextureMasks;
+    std::string m_textureVariantPath;
+    void ClearTextureVariants();
     void PrepareMaterialVariants(const std::string& path);
-    bool SetupShader(const std::string& path, unsigned materialFeatures = 0);
+    bool SetupShader(const std::string& path, unsigned materialFeatures = 0,
+                     unsigned textureMask = UnspecifiedTextures);
     void BindKnownUniformBlocks();
 };

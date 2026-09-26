@@ -106,13 +106,16 @@ Shader* InstanceBatch::GetRenderShader(bool receivesShadows) const
 #ifdef ANDROID
     if (m_shader) {
         bool requiresAlphaTest = !m_material || m_material->RequiresAlphaTest();
+        bool canSpecializeTextures = m_material != nullptr;
         // Legacy mesh texture bindings can override the batch material.
         if (m_model) {
             for (const auto& mesh : m_model->meshes) {
                 requiresAlphaTest |= !mesh.textures.empty();
+                canSpecializeTextures &= mesh.textures.empty();
             }
         }
-        return m_shader->GetMaterialVariant(requiresAlphaTest, receivesShadows);
+        return m_shader->GetMaterialVariant(requiresAlphaTest, receivesShadows,
+            canSpecializeTextures ? m_material->GetTextureFeatureMask() : Shader::UnspecifiedTextures);
     }
 #else
     (void)receivesShadows;

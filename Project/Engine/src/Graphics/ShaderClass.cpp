@@ -103,7 +103,7 @@ std::string get_file_contents(const char* filename)
 	return "";
 }
 
-bool Shader::SetupShader(const std::string& path, unsigned materialFeatures) {
+bool Shader::SetupShader(const std::string& path, unsigned materialFeatures, unsigned textureMask) {
 #ifdef __ANDROID__
 	// Ensure OpenGL context is current for Android
 	auto platform = WindowManager::GetPlatform();
@@ -141,13 +141,15 @@ bool Shader::SetupShader(const std::string& path, unsigned materialFeatures) {
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile.c_str());
 	std::string fragmentCode = get_file_contents(fragmentFile.c_str());
-    if (materialFeatures != 0) {
+    if (materialFeatures != 0 || textureMask < UnspecifiedTextures) {
         // GLSL requires #version to remain the first directive.
         const auto firstLine = fragmentCode.find('\n');
         if (firstLine == std::string::npos) return false;
         std::string defines;
         if (materialFeatures & 1u) defines += "#define MATERIAL_OPAQUE 1\n";
         if (materialFeatures & 2u) defines += "#define MATERIAL_UNSHADOWED 1\n";
+        if (textureMask < UnspecifiedTextures)
+            defines += "#define MATERIAL_TEXTURE_MASK " + std::to_string(textureMask) + "\n";
         fragmentCode.insert(firstLine + 1, defines);
     }
 
@@ -635,17 +637,49 @@ std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, 
 	return currentMetaData;
 }
 
-Shader* Shader::GetMaterialVariant(bool requiresAlphaTest, bool receivesShadows) noexcept
+Shader* Shader::GetMaterialVariant(bool requiresAlphaTest, bool receivesShadows, unsigned textureMask) noexcept
 {
     const unsigned features = (requiresAlphaTest ? 0u : 1u) | (receivesShadows ? 0u : 2u);
+    if (textureMask < UnspecifiedTextures) {
+        const auto specialized = m_textureVariants.find((textureMask << 2) | features);
+        if (specialized != m_textureVariants.end()) return specialized->second.get();
+    }
     if (features != 0 && m_materialVariants[features - 1]) {
         return m_materialVariants[features - 1].get();
     }
     return this;
 }
 
+void Shader::ClearTextureVariants()
+{
+    for (auto& entry : m_textureVariants) entry.second->Delete();
+    m_textureVariants.clear();
+    m_preparedTextureMasks.clear();
+    m_textureVariantPath.clear();
+}
+
+void Shader::PrepareMaterialTextureVariants(unsigned textureMask)
+{
+#ifdef ANDROID
+    if (textureMask >= UnspecifiedTextures || m_textureVariantPath.empty() ||
+        !m_preparedTextureMasks.insert(textureMask).second) return;
+    for (unsigned features = 0; features < 4; ++features) {
+        auto variant = std::make_unique<Shader>();
+        if (variant->SetupShader(m_textureVariantPath, features, textureMask)) {
+            m_textureVariants.emplace((textureMask << 2) | features, std::move(variant));
+        } else {
+            variant->Delete();
+            ENGINE_LOG_WARN("[SHADER] Texture variant unavailable; using base material program: " + m_textureVariantPath);
+        }
+    }
+#else
+    (void)textureMask;
+#endif
+}
+
 void Shader::PrepareMaterialVariants(const std::string& path)
 {
+    ClearTextureVariants();
 #ifdef ANDROID
     for (auto& variant : m_materialVariants) {
         if (variant) variant->Delete();
@@ -657,6 +691,8 @@ void Shader::PrepareMaterialVariants(const std::string& path)
     const std::string fragment = get_file_contents((basePath + ".frag").c_str());
     // Explicit source opt-in: custom shaders keep their original behavior.
     if (fragment.find("#define MATERIAL_VARIANTS") == std::string::npos) return;
+    if (fragment.find("#define MATERIAL_TEXTURE_VARIANTS") != std::string::npos)
+        m_textureVariantPath = path;
 
     // Compile during resource loading so the first material using a variant
     // cannot cause a shader compilation stall during gameplay.
@@ -701,6 +737,7 @@ void Shader::BindKnownUniformBlocks()
 
 void Shader::Delete()
 {
+    ClearTextureVariants();
     for (auto& variant : m_materialVariants) {
         if (variant) variant->Delete();
         variant.reset();

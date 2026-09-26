@@ -58,6 +58,16 @@ bool ModelSystem::Initialise()
             ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             modelComp.childBonesSaved = true;
 
+#ifdef ANDROID
+            if (modelComp.shader && modelComp.material) {
+                bool canSpecializeTextures = true;
+                for (const auto& mesh : modelComp.model->meshes)
+                    canSpecializeTextures &= mesh.textures.empty();
+                if (canSpecializeTextures)
+                    modelComp.shader->PrepareMaterialTextureVariants(modelComp.material->GetTextureFeatureMask());
+            }
+#endif
+
             // Force shader compilation / activation
             modelComp.shader->Activate();
 

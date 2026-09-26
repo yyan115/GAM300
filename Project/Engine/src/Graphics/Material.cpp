@@ -99,6 +99,20 @@ bool Material::HasTexture(TextureType type) const
 	return m_textureInfo.find(type) != m_textureInfo.end();
 }
 
+unsigned Material::GetTextureFeatureMask() const
+{
+    // Bit order is shared with the built-in mobile material shader.
+    constexpr TextureType types[] = {
+        TextureType::DIFFUSE, TextureType::SPECULAR, TextureType::NORMAL,
+        TextureType::EMISSIVE, TextureType::METALLIC, TextureType::ROUGHNESS,
+        TextureType::AMBIENT_OCCLUSION, TextureType::OPACITY
+    };
+    unsigned mask = 0;
+    for (unsigned i = 0; i < 8; ++i)
+        if (HasTexture(types[i])) mask |= 1u << i;
+    return mask;
+}
+
 bool Material::RequiresAlphaTest() const
 {
     const auto texture = GetTextureInfo(TextureType::DIFFUSE);

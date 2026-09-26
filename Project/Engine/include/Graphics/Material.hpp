@@ -72,6 +72,7 @@ public:
 	const std::unordered_map<TextureType, std::unique_ptr<TextureInfo>>&  GetAllTextureInfo();
 	bool HasTexture(TextureType type) const;
     bool RequiresAlphaTest() const;
+    unsigned GetTextureFeatureMask() const;
 	void RemoveTexture(TextureType type);
 
 	// Utility methods

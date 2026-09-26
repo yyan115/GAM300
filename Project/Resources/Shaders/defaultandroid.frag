@@ -1,5 +1,6 @@
 #version 300 es
 #define MATERIAL_VARIANTS
+#define MATERIAL_TEXTURE_VARIANTS
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -47,6 +48,16 @@ uniform sampler2D aoMap;
 uniform sampler2D opacityMap;
 
 // Texture availability flags (separate from struct for ES compatibility)
+#ifdef MATERIAL_TEXTURE_MASK
+const bool hasDiffuseMap = (MATERIAL_TEXTURE_MASK & 1) != 0;
+const bool hasSpecularMap = (MATERIAL_TEXTURE_MASK & 2) != 0;
+const bool hasNormalMap = (MATERIAL_TEXTURE_MASK & 4) != 0;
+const bool hasEmissiveMap = (MATERIAL_TEXTURE_MASK & 8) != 0;
+const bool hasMetallicMap = (MATERIAL_TEXTURE_MASK & 16) != 0;
+const bool hasRoughnessMap = (MATERIAL_TEXTURE_MASK & 32) != 0;
+const bool hasAOMap = (MATERIAL_TEXTURE_MASK & 64) != 0;
+const bool hasOpacityMap = (MATERIAL_TEXTURE_MASK & 128) != 0;
+#else
 uniform bool hasDiffuseMap;
 uniform bool hasSpecularMap;
 uniform bool hasNormalMap;
@@ -55,6 +66,7 @@ uniform bool hasMetallicMap;
 uniform bool hasRoughnessMap;
 uniform bool hasAOMap;
 uniform bool hasOpacityMap;
+#endif
 
 in vec2 TexCoords;
 in vec3 FragPos;
