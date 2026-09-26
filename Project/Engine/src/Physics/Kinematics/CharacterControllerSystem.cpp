@@ -168,7 +168,12 @@ void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) 
     for (auto& [entityId, controller] : m_controllers) {
         if (!controller) continue;
 
-        controller->Update(deltaTime);
+        if (!m_updateAllocator) {
+            m_updateAllocator = std::make_unique<JPH::TempAllocatorImpl>(10 * 1024 * 1024);
+        }
+        assert(m_updateAllocator->IsEmpty());
+        controller->Update(deltaTime, *m_updateAllocator);
+        assert(m_updateAllocator->IsEmpty());
 
         // Sync CharacterVirtual position back to Transform (same role as PhysicsSyncBack for regular bodies)
         if (ecsManager.HasComponent<Transform>(entityId)) {
@@ -217,6 +222,7 @@ void CharacterControllerSystem::Shutdown() {
     }
     // Clear the map
     m_controllers.clear();
+    m_updateAllocator.reset();
 }
 
 void CharacterControllerSystem::RemoveController(Entity entity)

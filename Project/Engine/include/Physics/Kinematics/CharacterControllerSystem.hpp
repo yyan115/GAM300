@@ -68,4 +68,7 @@ private:
     JPH::PhysicsSystem* m_physicsSystem = nullptr;
     std::unordered_map<Entity, std::unique_ptr<CharacterController>> m_controllers;
     CharacterVsCharacterCollisionFiltered* m_charVsCharCollision = nullptr;
+
+    // Controllers are updated sequentially, so one buffer serves the whole scene.
+    std::unique_ptr<JPH::TempAllocatorImpl> m_updateAllocator;
 };

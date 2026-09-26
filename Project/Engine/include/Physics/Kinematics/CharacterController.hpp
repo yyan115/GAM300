@@ -25,6 +25,9 @@ public:
     // Called each frame
     void Update(float deltaTime);
 
+    // Reuse caller-owned scratch storage between non-overlapping updates.
+    void Update(float deltaTime, JPH::TempAllocator& tempAllocator);
+
     // Expose raw character for internal use
     const JPH::CharacterVirtual* GetCharacterVirtual() const { return mCharacter; }
 

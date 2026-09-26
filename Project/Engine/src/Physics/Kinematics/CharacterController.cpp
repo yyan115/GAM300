@@ -153,10 +153,19 @@ void CharacterController::Update(float deltaTime)
     if (!mCharacter || !mPhysicsSystem)
         return;
 
+    // Keep the standalone/script API available without sharing mutable scratch
+    // storage across unrelated callers. The system uses its reusable buffer.
+    JPH::TempAllocatorImpl tempAllocator(10 * 1024 * 1024);
+    Update(deltaTime, tempAllocator);
+}
+
+void CharacterController::Update(float deltaTime, JPH::TempAllocator& tempAllocator)
+{
+    if (!mCharacter || !mPhysicsSystem)
+        return;
+
     if (mJumpGraceTimer > 0.0f)
         mJumpGraceTimer -= deltaTime;
-
-    JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
 
     const JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
     const JPH::Vec3 currentVel = mCharacter->GetLinearVelocity();
@@ -228,7 +237,7 @@ void CharacterController::Update(float deltaTime)
         mPhysicsSystem->GetDefaultLayerFilter(mCharacterLayer),
         {},
         {},
-        temp_allocator
+        tempAllocator
     );
 
     mVelocity = JPH::Vec3::sZero();
