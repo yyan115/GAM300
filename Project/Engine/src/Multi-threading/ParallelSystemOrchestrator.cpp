@@ -30,10 +30,10 @@ void ParallelSystemOrchestrator::Update() {
     // -------------------------------------------------------------------------
     // 2. SIMULATION PHASE (Parallel)
     // -------------------------------------------------------------------------
-    // We group the heavy systems to run simultaneously.
-    // Thread 1: Animation (3.1ms)
-    // Thread 2: Physics + CC (2.25ms) + Audio (Light)
-    // -------------------------------------------------------------------------
+    // Keep the main thread occupied with physics while animation runs on a
+    // worker. Submitting both leaves the caller polling the scheduler while
+    // physics dispatches its own jobs, competing for CPU time unnecessarily.
+    // The join below still completes both systems before transform propagation.
 
     // JOB A: Animation
     if (!gamePaused) {
@@ -43,21 +43,17 @@ void ParallelSystemOrchestrator::Update() {
             });
     }
 
-    // JOB B: Physics & Movement
-    // Physics touches Root/Collider Entities. These are usually different
-    // from Bones, so it is safe to run in parallel with Animation.
-    frameChannel.Submit([&] {
-        if (!gamePaused) {
-            float dt = (float)TimeManager::GetDeltaTime();
-            PROFILE_PLOT_TIMED("Physics",             mainECS.physicsSystem->Update(dt, mainECS));
-            PROFILE_PLOT_TIMED("CharacterController", mainECS.characterControllerSystem->Update(dt, mainECS));
-        }
+    // Physics touches root/collider entities while animation updates bones.
+    // Preserve physics -> character movement -> audio ordering on this thread.
+    if (!gamePaused) {
+        float dt = (float)TimeManager::GetDeltaTime();
+        PROFILE_PLOT_TIMED("Physics",             mainECS.physicsSystem->Update(dt, mainECS));
+        PROFILE_PLOT_TIMED("CharacterController", mainECS.characterControllerSystem->Update(dt, mainECS));
+    }
 
-        // Audio is usually thread-safe and light, fit it in the gap here
-        if (mainECS.audioSystem) {
-            PROFILE_PLOT_TIMED("Audio", mainECS.audioSystem->Update((float)TimeManager::GetDeltaTime()));
-        }
-        });
+    if (mainECS.audioSystem) {
+        PROFILE_PLOT_TIMED("Audio", mainECS.audioSystem->Update((float)TimeManager::GetDeltaTime()));
+    }
 
     // Wait for Simulation to finish before updating Transforms.
     {
@@ -71,8 +67,8 @@ void ParallelSystemOrchestrator::Update() {
     // Anchors write local transforms, so apply them before propagating world
     // matrices. Transform must still run after Physics/Animation.
     // Physics collision/trigger callbacks call into Lua, which can create GL
-    // resources, so they are dispatched here on the main thread rather than
-    // inline on the physics worker. See PhysicsSystem::DispatchScriptEvents.
+    // resources. Keep dispatch after the simulation join so callbacks cannot
+    // mutate entities while animation runs. See PhysicsSystem::DispatchScriptEvents.
     if (mainECS.physicsSystem)
         PROFILE_PLOT_TIMED("PhysicsScriptEvents", mainECS.physicsSystem->DispatchScriptEvents(mainECS));
 
@@ -159,8 +155,7 @@ void ParallelSystemOrchestrator::Draw() {
     //
     // Before adding a system back to the parallel channel above, check it
     // cannot reach ResourceManager::GetResource/LoadResource or any gl* call.
-    // Animation, Physics, CharacterController and Audio were checked and are
-    // clean, which is why they are still parallel.
+    // Animation was checked and remains parallel with main-thread simulation.
     // ---------------------------------------------------------------------
     PROFILE_PLOT_TIMED("Model", ecs.modelSystem->Update());
 
