@@ -24,7 +24,7 @@
 
 The Karasu have destroyed Kusane’s clan and taken her wings. Armed with a temple weapon, she fights to reclaim her home.
 
-Combine sword attacks, pull enemies into reach with the chain, slam airborne enemies to the ground, and collect feathers to power magic attacks. Explore the temple and face the Karasu in the Battle Dome.
+Chain sword attacks into combos, pull enemies into reach with the chain, slam airborne enemies to the ground, and collect feathers to power magic attacks. Explore the temple and face the Karasu in the Battle Dome.
 
 This repository contains the game, the 3D engine itself, its desktop scene editor, Lua gameplay scripts, and the Windows, Linux and Android build pipelines. Visit the [website](https://yyan115.github.io/GAM300/) for gameplay clips, screenshots and the full team credits.
 
