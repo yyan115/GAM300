@@ -446,6 +446,11 @@ vec3 calculateSpotlight(int lightIdx, vec3 N, vec3 V, vec3 fragPos, vec3 albedo,
 // Main
 // ============================================================================
 
+uniform highp usampler3D u_pointLightGrid;
+uniform vec3 u_lightGridOrigin;
+uniform vec3 u_lightGridInverseCell;
+uniform bool u_lightGridReady;
+
 void main()
 {
     vec2 tiledUV = (TexCoords * material.uTiling) + material.uOffset;
@@ -477,8 +482,25 @@ void main()
         result += calculateDirectionLight(norm, viewDir, dirShadow, albedo, metallic, roughness);
     }
 
+    // Outside the grid, or when its bounds are unsafe, evaluate every light.
+    uint localPointMask = 65535u;
+    vec3 gridCell = (FragPos - u_lightGridOrigin) * u_lightGridInverseCell;
+    if (u_lightGridReady && all(greaterThanEqual(gridCell, vec3(0.0))) &&
+        all(lessThan(gridCell, vec3(64.0)))) {
+        localPointMask = texelFetch(u_pointLightGrid, ivec3(gridCell), 0).r;
+    }
     int pointCount = min(u_lightCounts.x, NR_POINT_LIGHTS);
-    for (int i = 0; i < pointCount; i++) {
+    localPointMask &= (1u << uint(pointCount)) - 1u;
+    while (localPointMask != 0u) {
+        // Visit remaining bits in ascending UBO order, preserving accumulation.
+        // GLSL ES 3.0 has no findLSB intrinsic.
+        uint remaining = localPointMask;
+        int i = 0;
+        if ((remaining & 255u) == 0u) { i += 8; remaining >>= 8; }
+        if ((remaining & 15u) == 0u) { i += 4; remaining >>= 4; }
+        if ((remaining & 3u) == 0u) { i += 2; remaining >>= 2; }
+        if ((remaining & 1u) == 0u) { i += 1; }
+        localPointMask &= localPointMask - 1u;
         result += calculatePointLight(i, norm, viewDir, FragPos, albedo, metallic, roughness);
     }
 

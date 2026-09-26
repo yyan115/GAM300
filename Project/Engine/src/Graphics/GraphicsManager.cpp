@@ -131,6 +131,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 
 void GraphicsManager::Shutdown()
 {
+#ifdef ANDROID
+    m_pointLightGrid.Shutdown();
+#endif
 #ifndef ANDROID
 	m_fogNoiseCache.Shutdown();
 #endif

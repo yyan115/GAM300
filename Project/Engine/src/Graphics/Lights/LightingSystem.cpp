@@ -236,6 +236,14 @@ void LightingSystem::PrepareView(const Frustum* frustum)
     m_viewPointLightsPrepared = true;
 #ifdef __ANDROID__
     UploadLightingUBO();
+    std::array<LightRangeGrid::Light, LIGHTING_UBO_MAX_POINT_LIGHTS> gridLights;
+    const size_t count = std::min(GetRenderedPointLightCount(), gridLights.size());
+    for (size_t output = 0; output < count; ++output) {
+        const size_t i = GetRenderedPointLightIndex(output);
+        const auto& position = pointLightData.positions[i];
+        gridLights[output] = { position.x, position.y, position.z, pointLightData.range[i] };
+    }
+    GraphicsManager::GetInstance().GetPointLightGrid().Update(gridLights.data(), count);
 #endif
 }
 
@@ -245,6 +253,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
     // Built-in Android shaders use the LightingBlock populated once per frame.
     // Keep the legacy uniform path available for custom shaders without that block.
     if (shader.UsesLightingBlock()) {
+        GraphicsManager::GetInstance().GetPointLightGrid().Apply(shader);
         return;
     }
 #endif

@@ -691,6 +691,7 @@ void Shader::BindKnownUniformBlocks()
         glUniformBlockBinding(ID, cameraBlock, 0);
     }
 
+    m_usesPointLightGrid = glGetUniformLocation(ID, "u_pointLightGrid") >= 0;
     const GLuint lightingBlock = glGetUniformBlockIndex(ID, "LightingBlock");
     m_usesLightingBlock = lightingBlock != GL_INVALID_INDEX;
     if (m_usesLightingBlock) {

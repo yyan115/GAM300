@@ -48,6 +48,7 @@ public:
 
     bool UsesCameraBlock() const noexcept { return m_usesCameraBlock; }
     bool UsesLightingBlock() const noexcept { return m_usesLightingBlock; }
+    bool UsesPointLightGrid() const noexcept { return m_usesPointLightGrid; }
 
     // Built-in mobile materials can specialize features whose result is known
     // before drawing. Unsupported shaders and failed variants keep the base program.
@@ -72,6 +73,7 @@ private:
 
     bool m_usesCameraBlock = false;
     bool m_usesLightingBlock = false;
+    bool m_usesPointLightGrid = false;
 
     std::array<std::unique_ptr<Shader>, 3> m_materialVariants;
     void PrepareMaterialVariants(const std::string& path);

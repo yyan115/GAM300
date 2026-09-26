@@ -19,6 +19,9 @@
 #include "Graphics/Frustum/Frustum.hpp"
 #include "RenderSorter.hpp"
 #include "Fog/FogComponent.hpp"
+#ifdef ANDROID
+#include "Graphics/Lights/PointLightGrid.hpp"
+#endif
 #ifndef ANDROID
 #include "Fog/FogNoiseCache.hpp"
 #endif
@@ -67,6 +70,10 @@ public:
 	// Initialization
 	bool Initialize(int window_width, int window_height);
 	void Shutdown();
+
+#ifdef ANDROID
+    PointLightGrid& GetPointLightGrid() { return m_pointLightGrid; }
+#endif
 
     // Frame management
     void BeginFrame();
@@ -150,6 +157,9 @@ public:
     bool HasBloomEmissionThisFrame() const { return m_hasBloomEmissionThisFrame; }
 
 private:
+#ifdef ANDROID
+    PointLightGrid m_pointLightGrid;
+#endif
     GraphicsManager() = default;
     ~GraphicsManager() = default;
 
