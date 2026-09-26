@@ -24,9 +24,9 @@
 
 The Karasu have destroyed Kusane’s clan and taken her wings. Armed with a temple weapon, she fights to reclaim her home.
 
-Combine ground and aerial sword attacks, pull enemies into reach with the chain, slam airborne enemies to the ground, and collect feathers to power magic attacks. Explore the temple and face the Karasu in the Battle Dome.
+Combine sword attacks, pull enemies into reach with the chain, slam airborne enemies to the ground, and collect feathers to power magic attacks. Explore the temple and face the Karasu in the Battle Dome.
 
-This repository contains the game, **Engine Engine**, its desktop scene editor, Lua gameplay scripts, and the Windows, Linux and Android build pipelines. Visit the [website](https://yyan115.github.io/GAM300/) for gameplay clips, screenshots and the full team credits.
+This repository contains the game, the 3D engine itself, its desktop scene editor, Lua gameplay scripts, and the Windows, Linux and Android build pipelines. Visit the [website](https://yyan115.github.io/GAM300/) for gameplay clips, screenshots and the full team credits.
 
 ## Play
 
@@ -38,17 +38,11 @@ Ready-to-play builds are available from [GitHub Releases](https://github.com/yya
 | Linux · x86_64 | [AppImage](https://github.com/yyan115/GAM300/releases/latest/download/Kusane-x86_64.AppImage) | Make the AppImage executable, then launch it. |
 | Android · ARM64 | [APK](https://github.com/yyan115/GAM300/releases/latest/download/Kusane.apk) | Install `Kusane.apk` on an Android 13 or newer device. |
 
-```bash
-# Linux
-chmod +x Kusane-x86_64.AppImage
-./Kusane-x86_64.AppImage
-```
-
-Desktop builds require OpenGL 4.5. The Linux AppImage requires glibc 2.38 or newer; Ubuntu 24.04 and Debian 13 have been validated. Android uses on-screen touch controls; desktop controls are available from the game’s main menu.
+Desktop builds require OpenGL 4.5. The Linux AppImage requires glibc 2.38 or newer. Ubuntu 24.04 and Debian 13 have been validated. Android uses on-screen touch controls. Desktop controls are available from the game’s main menu.
 
 ## Build from source
 
-The desktop engine and editor use **C++20, CMake, Ninja and vcpkg**. Android uses the **Gradle wrapper and Android NDK**; gameplay is written in **Lua**.
+The desktop engine and editor use **C++20, CMake, Ninja and vcpkg**. Android uses the **Gradle wrapper and Android NDK**. Gameplay is written in **Lua**.
 
 ```bash
 git clone https://github.com/yyan115/GAM300.git
@@ -57,7 +51,7 @@ cd GAM300
 
 **Run the desktop editor first to compile assets before launching a standalone game build.** Android assets must be generated using the editor’s **File → Compile Assets for Android** command.
 
-See the [build guide](docs/BUILDING.md) for prerequisites, commands and troubleshooting:
+See the [build guide](docs/BUILDING.md) for prerequisites, commands and troubleshooting.
 
 - [Windows](docs/BUILDING.md#windows)
 - [Linux](docs/BUILDING.md#linux)
@@ -79,15 +73,20 @@ See the [build guide](docs/BUILDING.md) for prerequisites, commands and troubles
 | [`docs/`](docs/) | Game website, media and development documentation. |
 | [`.github/workflows/`](.github/workflows/) | Build checks and release packaging. |
 
-## Technology
+## Libraries
 
-- **Rendering:** OpenGL on desktop and OpenGL ES on Android.
-- **Simulation:** Jolt Physics, skeletal animation and an entity-component system.
-- **Gameplay:** Lua scripting with C++ bindings.
-- **Audio:** FMOD.
-- **Tools:** Dear ImGui, ImGuizmo, Assimp, FreeType and meshoptimizer.
+- Jolt Physics
+- Lua and LuaBridge
+- FMOD
+- Dear ImGui and ImGuizmo
+- Assimp
+- FreeType
+- meshoptimizer
+- GLFW and GLAD
+- GLM and GLI
+- RapidJSON and spdlog
 
-The engine builds as a shared library. The standalone game links against it; editor configurations also link the game as a static library so it can run inside the editor.
+The engine builds as a shared library. The standalone game links against it. Editor configurations also link the game as a static library so it can run inside the editor.
 
 ## Issues and contributions
 
@@ -97,7 +96,7 @@ Keep pull requests focused and describe the behaviour changed and how it was tes
 
 ## Credits and notices
 
-Developed by **Team Marbles** as a student project at **Singapore Institute of Technology and DigiPen Institute of Technology**. Full credits are available [on the website](https://yyan115.github.io/GAM300/#team-heading) and in the game.
+Developed by **Team Marbles** as a student project at **Singapore Institute of Technology and DigiPen Institute of Technology**.
 
 All content © 2026 DigiPen Institute of Technology Singapore. All rights reserved.
 

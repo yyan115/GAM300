@@ -14,7 +14,7 @@ The first configure downloads and builds dependencies. Allow it to finish before
 
 Install **Visual Studio 2022** with **Desktop development with C++**, including its CMake tools and Windows SDK. Ninja must be available to the selected build environment.
 
-From the repository root:
+Run the setup script from the repository root.
 
 ```bat
 setup-vcpkg.bat
@@ -22,7 +22,7 @@ setup-vcpkg.bat
 
 Open the `Project` folder in Visual Studio using **Open a local folder**, then select `editor-release` or `editor-debug`. Build and run `Editor.exe` first, and allow asset compilation to finish. Select `release` or `debug` to build the standalone game.
 
-The equivalent commands in a Visual Studio developer command prompt are:
+These commands build and run the editor from a Visual Studio developer command prompt.
 
 ```bat
 cd Project
@@ -32,7 +32,7 @@ cd Build\EditorRelease
 Editor.exe
 ```
 
-After the editor finishes compiling assets, close it and return to `Project`:
+After the editor finishes compiling assets, close it and return to `Project`.
 
 ```bat
 cd ..\..
@@ -48,7 +48,7 @@ Presets are defined in [`Project/CMakePresets.json`](../Project/CMakePresets.jso
 
 Fedora is the validated local development environment. CI also builds the Linux release on Ubuntu. Other distributions need equivalent development packages.
 
-Install prerequisites on Fedora:
+Install prerequisites on Fedora.
 
 ```bash
 sudo dnf install -y git git-lfs cmake ninja-build gcc-c++ make zip unzip tar \
@@ -57,7 +57,7 @@ sudo dnf install -y git git-lfs cmake ninja-build gcc-c++ make zip unzip tar \
   libXxf86vm-devel mesa-libGLU-devel
 ```
 
-From the repository root, set up dependencies and build the editor:
+From the repository root, set up dependencies and build the editor.
 
 ```bash
 ./setup-vcpkg.sh
@@ -68,7 +68,7 @@ cd Build/LinuxEditorRelease
 ./Editor
 ```
 
-Let the editor finish compiling assets, then close it. Build and run the game:
+Let the editor finish compiling assets, then close it. Build and run the game.
 
 ```bash
 cd ../..
@@ -82,7 +82,7 @@ The `linux-editor-debug` and `linux-debug` presets are also available. Linux pre
 
 ## Android
 
-Install Android Studio and the SDK tools. The current project configuration uses:
+Install Android Studio and the SDK tools. The current project configuration is shown below.
 
 | Component | Version / setting |
 | --- | --- |
@@ -93,11 +93,11 @@ Install Android Studio and the SDK tools. The current project configuration uses
 | ABI | `arm64-v8a` |
 | Native build tools | CMake and Ninja |
 
-Install the required SDK, NDK and CMake components through Android Studio’s **SDK Manager → SDK Tools**. On Windows, [`setup-android-dev.bat`](../setup-android-dev.bat) helps install the development tools. Android Studio and Gradle build the native engine directly; VS Code is optional.
+Install the required SDK, NDK and CMake components through Android Studio’s **SDK Manager → SDK Tools**. On Windows, [`setup-android-dev.bat`](../setup-android-dev.bat) helps install the development tools. Android Studio and Gradle build the native engine directly. VS Code is optional.
 
 ### Export game assets
 
-The checked-in mobile assets live in `AndroidProject/app/src/main/assets/Resources/`. After changing shared resources:
+The checked-in mobile assets live in `AndroidProject/app/src/main/assets/Resources/`. Re-export assets after changing shared resources.
 
 1. Build and open the desktop editor.
 2. Select **File → Compile Assets for Android**.
@@ -109,7 +109,7 @@ For a complete clean export, remove the generated Android `Resources/` directory
 
 Open `AndroidProject/` in Android Studio, let Gradle sync, connect a device with USB debugging enabled, and run the `app` configuration.
 
-For a release APK from the command line:
+Build a release APK from the command line.
 
 ```bash
 cd AndroidProject
@@ -118,7 +118,7 @@ cd AndroidProject
 
 Use `gradlew.bat assembleRelease` on Windows. The output is `AndroidProject/app/build/outputs/apk/release/app-release.apk`.
 
-To view engine messages and the Android FPS log:
+View engine messages and the Android FPS log with ADB.
 
 ```bash
 adb logcat -s GAM300
@@ -131,28 +131,18 @@ adb logcat -s GAM300
 | Missing models or textures in a desktop build | Run the editor to finish asset compilation, then rebuild the game to stage the compiled resources. |
 | Android shows older content | Re-export through **Compile Assets for Android**, rebuild the APK and reinstall it. |
 | Android NDK or CMake configuration fails | Install the pinned NDK and SDK components, sync Gradle, and check the configured SDK path. On Windows, `clean-android.bat` can clear stale native build output. |
-| Linux setup reports missing X11 or GLU packages | Install the development packages listed above; the setup script checks them before configuring vcpkg. |
+| Linux setup reports missing X11 or GLU packages | Install the development packages listed above. The setup script checks them before configuring vcpkg. |
 | Linux AppImage reports a glibc version error | Use a distribution with glibc 2.38 or newer, or build from source on your target system. |
 
 Desktop standalone builds start fullscreen. Add `--windowed` to launch in a window without changing the saved fullscreen preference. Set `GAM300_SHOW_FPS=1` to show the desktop frame rate in the window title during testing.
 
 ## Creating a release
 
-The [Release Build workflow](https://github.com/yyan115/GAM300/actions/workflows/release.yml) is **manually triggered**. Pushing `main` runs build checks; pushing a version tag alone does not start installer packaging.
+The [Release Build workflow](https://github.com/yyan115/GAM300/actions/workflows/release.yml) is **manually triggered**. Pushing `main` runs build checks. Pushing a version tag alone does not start installer packaging.
 
 1. Ensure the desired game changes and editor-generated Android assets are committed and pushed.
 2. Open **Actions → Release Build → Run workflow** and select the branch to release.
 3. Enter a version such as `v1.1.2`, a release name such as `Kusane v1.1.2`, and release notes. Leave **Build everything but do not create a release** unchecked to publish.
 4. Wait for the Windows, Linux and Android jobs to pass. The final job creates the GitHub release and uploads all three packages.
 
-The workflow creates the version tag when publishing if it does not already exist. If you created the tag first, use that exact ref with the GitHub CLI so the built commit matches the tag:
-
-```bash
-gh workflow run release.yml --ref v1.1.2 \
-  -f version=v1.1.2 \
-  -f release_name="Kusane v1.1.2" \
-  -f changelog="Describe the changes included in this release." \
-  -f skip_publish=false
-```
-
-Enable **Build everything but do not create a release** when validating packages on a branch without publishing a release.
+The workflow creates the version tag when publishing if it does not already exist.
