@@ -1,4 +1,5 @@
 #version 300 es
+#define MATERIAL_VARIANTS
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -105,7 +106,11 @@ layout(std140) uniform LightingBlock {
 
 // Directional shadow mapping uniforms
 uniform sampler2D shadowMap;
+#ifdef MATERIAL_UNSHADOWED
+const bool shadowsEnabled = false;
+#else
 uniform bool shadowsEnabled;
+#endif
 uniform float shadowBias;
 uniform float shadowNormalBias;
 uniform float shadowSoftness;
@@ -445,9 +450,11 @@ void main()
 {
     vec2 tiledUV = (TexCoords * material.uTiling) + material.uOffset;
 
+#ifndef MATERIAL_OPAQUE
     if (hasDiffuseMap && texture(diffuseMap, tiledUV).a < 0.5) {
         discard;
     }
+#endif
 
     vec3 norm     = getNormalFromMap(tiledUV);
     vec3 viewDir  = normalize(cameraPos - FragPos);

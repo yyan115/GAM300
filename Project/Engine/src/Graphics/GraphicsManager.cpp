@@ -1918,6 +1918,17 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 
 	Shader* shader = item.shader.get();
 	Material* material = item.material.get();
+#ifdef ANDROID
+    bool requiresAlphaTest = material && material->RequiresAlphaTest();
+    if (!material) {
+        for (const auto& mesh : item.model->meshes) {
+            requiresAlphaTest |= mesh.material && mesh.material->RequiresAlphaTest();
+        }
+    }
+    const auto& lighting = ECSRegistry::GetInstance().GetActiveECSManager().lightingSystem;
+    shader = shader->GetMaterialVariant(requiresAlphaTest, !lighting || lighting->shadowsEnabled);
+#endif
+
 
 	// Switch shader only if different
 	if (shader != m_currentShader) {

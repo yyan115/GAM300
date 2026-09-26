@@ -101,25 +101,45 @@ void InstanceBatch::AddInstance(const glm::mat4& modelMatrix, const glm::vec3& b
     m_bufferDirty = true;
 }
 
-void InstanceBatch::Render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos)
+Shader* InstanceBatch::GetRenderShader(bool receivesShadows) const
+{
+#ifdef ANDROID
+    if (m_shader) {
+        bool requiresAlphaTest = !m_material || m_material->RequiresAlphaTest();
+        // Legacy mesh texture bindings can override the batch material.
+        if (m_model) {
+            for (const auto& mesh : m_model->meshes) {
+                requiresAlphaTest |= !mesh.textures.empty();
+            }
+        }
+        return m_shader->GetMaterialVariant(requiresAlphaTest, receivesShadows);
+    }
+#else
+    (void)receivesShadows;
+#endif
+    return m_shader.get();
+}
+
+void InstanceBatch::Render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos, Shader* drawShader)
 {
     if (m_instances.empty() || !m_model || !m_shader)
     {
         return;
     }
 
+    if (!drawShader) drawShader = m_shader.get();
     UpdateInstanceBuffer();
-    m_shader->Activate();
-    m_shader->setBool("useInstancing", true);
+    drawShader->Activate();
+    drawShader->setBool("useInstancing", true);
 
     if (m_material)
     {
-        m_material->ApplyToShader(*m_shader);
+        m_material->ApplyToShader(*drawShader);
     }
 
     for (auto& mesh : m_model->meshes)
     {
-        mesh.DrawInstanced(*m_shader, m_instanceVBO, static_cast<GLsizei>(m_instances.size()));
+        mesh.DrawInstanced(*drawShader, m_instanceVBO, static_cast<GLsizei>(m_instances.size()));
     }
 }
 

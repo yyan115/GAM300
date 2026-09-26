@@ -103,7 +103,7 @@ std::string get_file_contents(const char* filename)
 	return "";
 }
 
-bool Shader::SetupShader(const std::string& path) {
+bool Shader::SetupShader(const std::string& path, unsigned materialFeatures) {
 #ifdef __ANDROID__
 	// Ensure OpenGL context is current for Android
 	auto platform = WindowManager::GetPlatform();
@@ -141,6 +141,16 @@ bool Shader::SetupShader(const std::string& path) {
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile.c_str());
 	std::string fragmentCode = get_file_contents(fragmentFile.c_str());
+    if (materialFeatures != 0) {
+        // GLSL requires #version to remain the first directive.
+        const auto firstLine = fragmentCode.find('\n');
+        if (firstLine == std::string::npos) return false;
+        std::string defines;
+        if (materialFeatures & 1u) defines += "#define MATERIAL_OPAQUE 1\n";
+        if (materialFeatures & 2u) defines += "#define MATERIAL_UNSHADOWED 1\n";
+        fragmentCode.insert(firstLine + 1, defines);
+    }
+
 
 #ifndef __ANDROID__
 	// NEW: Try to read geometry shader (optional)
@@ -492,7 +502,10 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 
 bool Shader::LoadResource(const std::string& resourcePath, const std::string& assetPath)
 {
-	assetPath;
+    const auto finishLoad = [&]() {
+        PrepareMaterialVariants(assetPath.empty() ? resourcePath : assetPath);
+        return true;
+    };
 	if (!binarySupported) {
 		// Fallback to regular shader compilation if binary is not supported.
 		if (!SetupShader(resourcePath)) {
@@ -500,7 +513,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 			return false;
 		}
 
-		return true;
+		return finishLoad();
 	}
 
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
@@ -553,13 +566,13 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 				ENGINE_LOG_INFO("[SHADER]: Shader setup failed. Aborting load.");
 				return false;
 			}
-			else return true;
+			else return finishLoad();
 #endif
 		}
 
         BindKnownUniformBlocks();
 
-		return true;
+		return finishLoad();
 	}
 	//std::ifstream shaderFile(resourcePath, std::ios::binary);
 	//if (shaderFile.is_open()) {
@@ -588,7 +601,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 	//		return LoadResource(resourcePath);
 	//	}
 
-	//	return true;
+	//	return finishLoad();
 	//}
 	else {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader file not found: ", resourcePath, ", attempting to compile from source", "\n");
@@ -607,7 +620,7 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 		//__android_log_print(ANDROID_LOG_INFO, "GAM300", "[SHADER]: Successfully compiled shader from source: %s", assetPath.c_str());
 #endif
 		ENGINE_PRINT("[SHADER]: Successfully compiled shader from source: ", resourcePath, "\n");
-		return true;
+		return finishLoad();
 	}
 }
 
@@ -620,6 +633,45 @@ std::shared_ptr<AssetMeta> Shader::ExtendMetaFile(const std::string& assetPath, 
 {
 	assetPath, currentMetaData, forAndroid;
 	return currentMetaData;
+}
+
+Shader* Shader::GetMaterialVariant(bool requiresAlphaTest, bool receivesShadows) noexcept
+{
+    const unsigned features = (requiresAlphaTest ? 0u : 1u) | (receivesShadows ? 0u : 2u);
+    if (features != 0 && m_materialVariants[features - 1]) {
+        return m_materialVariants[features - 1].get();
+    }
+    return this;
+}
+
+void Shader::PrepareMaterialVariants(const std::string& path)
+{
+#ifdef ANDROID
+    for (auto& variant : m_materialVariants) {
+        if (variant) variant->Delete();
+        variant.reset();
+    }
+
+    const std::filesystem::path sourcePath(path);
+    const std::string basePath = (sourcePath.parent_path() / sourcePath.stem()).generic_string();
+    const std::string fragment = get_file_contents((basePath + ".frag").c_str());
+    // Explicit source opt-in: custom shaders keep their original behavior.
+    if (fragment.find("#define MATERIAL_VARIANTS") == std::string::npos) return;
+
+    // Compile during resource loading so the first material using a variant
+    // cannot cause a shader compilation stall during gameplay.
+    for (unsigned features = 1; features <= m_materialVariants.size(); ++features) {
+        auto variant = std::make_unique<Shader>();
+        if (variant->SetupShader(path, features)) {
+            m_materialVariants[features - 1] = std::move(variant);
+        } else {
+            variant->Delete();
+            ENGINE_LOG_WARN("[SHADER] Material variant unavailable; using base program: " + path);
+        }
+    }
+#else
+    (void)path;
+#endif
 }
 
 void Shader::Activate()
@@ -648,7 +700,15 @@ void Shader::BindKnownUniformBlocks()
 
 void Shader::Delete()
 {
-	glDeleteProgram(ID);
+    for (auto& variant : m_materialVariants) {
+        if (variant) variant->Delete();
+        variant.reset();
+    }
+    if (ID != 0) {
+        glDeleteProgram(ID);
+        ID = 0;
+    }
+    m_uniformCache.clear();
 }
 
 void Shader::setBool(std::string_view name, GLboolean value)

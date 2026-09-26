@@ -36,6 +36,9 @@ public:
 	// Deletes a texture
 	void Delete();
 
+    // True only for a loaded format whose sampled alpha is guaranteed to be one.
+    bool HasOpaqueAlpha() const noexcept { return m_opaqueAlpha; }
+
 	std::string GetType();
 
 	// Asset browser preview thumbnail (for normal maps)
@@ -43,6 +46,7 @@ public:
 		const uint8_t* rgbaTexData, int texWidth, int texHeight);
 
 private:
+    bool m_opaqueAlpha = false;
 	//std::string type;
 	//bool flipUVs;
 	//bool generateMipmaps;

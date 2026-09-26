@@ -31,7 +31,7 @@ public:
 
 	void AddInstance(const glm::mat4& modelMatrix, const glm::vec3& bloomColor = glm::vec3(0.0f), float bloomIntensity = 0.0f);
 
-	void Render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos);
+	void Render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos, Shader* drawShader = nullptr);
 
 	void RenderDepthOnly(const glm::mat4& lightSpaceMatrix);
 
@@ -42,6 +42,7 @@ public:
 	Model* GetModel() const { return m_model.get(); }
 	Material* GetMaterial() const { return m_material.get(); }
 	Shader* GetShader() const { return m_shader.get(); }
+    Shader* GetRenderShader(bool receivesShadows) const;
 
 	// For sorting/comparison
 	size_t GetSortKey() const;

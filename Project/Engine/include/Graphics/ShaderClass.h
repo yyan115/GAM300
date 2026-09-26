@@ -2,6 +2,8 @@
 
 #include "pch.h"
 #include <string_view>
+#include <array>
+#include <memory>
 
 #include "OpenGL.h"
 #include <glm/glm.hpp>
@@ -47,7 +49,10 @@ public:
     bool UsesCameraBlock() const noexcept { return m_usesCameraBlock; }
     bool UsesLightingBlock() const noexcept { return m_usesLightingBlock; }
 
-    //void clearUniformCache();
+    // Built-in mobile materials can specialize features whose result is known
+    // before drawing. Unsupported shaders and failed variants keep the base program.
+    Shader* GetMaterialVariant(bool requiresAlphaTest, bool receivesShadows) noexcept;
+
 
 private:
     struct UniformNameHash {
@@ -68,6 +73,8 @@ private:
     bool m_usesCameraBlock = false;
     bool m_usesLightingBlock = false;
 
-    bool SetupShader(const std::string& path);
+    std::array<std::unique_ptr<Shader>, 3> m_materialVariants;
+    void PrepareMaterialVariants(const std::string& path);
+    bool SetupShader(const std::string& path, unsigned materialFeatures = 0);
     void BindKnownUniformBlocks();
 };

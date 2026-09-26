@@ -351,6 +351,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 }
 
 bool Texture::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
+    m_opaqueAlpha = false;
 	//ENGINE_LOG_DEBUG("[TEXTURE] Texture::LoadResource()");
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
@@ -386,6 +387,7 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                    m_opaqueAlpha = channels == 1 || channels == 3;
 					stbi_image_free(pixels);
 					ENGINE_LOG_INFO("[TEXTURE] Loaded raw PNG fallback: " + assetPath);
 					return true;
@@ -549,6 +551,12 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	}
 #endif
 
+    // These RGB formats have no alpha channel. Leave all RGBA, compressed
+    // cutout, and unrecognized formats on the conservative alpha-test path.
+    m_opaqueAlpha = format.Internal == GL_RGB8 || format.Internal == GL_SRGB8
+        || format.Internal == GL_COMPRESSED_RGB8_ETC2
+        || format.Internal == GL_COMPRESSED_SRGB8_ETC2;
+
 	//std::cout << "[TEXTURE] DEBUG: Texture loading completed successfully! Final ID: " << ID << std::endl;
 	return true;
 }
@@ -658,6 +666,7 @@ void Texture::Unbind(GLint runtimeUnit)
 
 void Texture::Delete()
 {
+    m_opaqueAlpha = false;
 	glDeleteTextures(1, &ID);
 }
 

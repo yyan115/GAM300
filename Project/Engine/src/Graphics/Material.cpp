@@ -99,6 +99,14 @@ bool Material::HasTexture(TextureType type) const
 	return m_textureInfo.find(type) != m_textureInfo.end();
 }
 
+bool Material::RequiresAlphaTest() const
+{
+    const auto texture = GetTextureInfo(TextureType::DIFFUSE);
+    if (!texture) return false;
+    // A pending or failed texture load must never select the opaque variant.
+    return !texture->get().texture || !texture->get().texture->HasOpaqueAlpha();
+}
+
 void Material::RemoveTexture(TextureType type)
 {
 	m_textureInfo.erase(type);

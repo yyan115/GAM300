@@ -8,6 +8,7 @@
 #include "Logging.hpp"
 #include <ECS/ECSRegistry.hpp>
 #include "Graphics/GraphicsManager.hpp"
+#include "Graphics/Lights/LightingSystem.hpp"
 
 InstancingManager& InstancingManager::GetInstance() 
 {
@@ -164,44 +165,52 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
 
     // Track current state to avoid redundant switches
     Shader* currentShader = nullptr;
+    const auto& lighting = ECSRegistry::GetInstance().GetActiveECSManager().lightingSystem;
+    const bool receivesShadows = !lighting || lighting->shadowsEnabled;
+
 
     int batchIndex = 0;
     for (InstanceBatch* batch : m_sortedBatches) 
       {
+        Shader* batchShader = batch->GetRenderShader(receivesShadows);
         // Check if we need to switch shader
-        if (batch->GetShader() != currentShader) 
+        if (batchShader != currentShader)
         {
-            batch->GetShader()->Activate();
-            if (!batch->GetShader()->UsesCameraBlock()) {
-                batch->GetShader()->setMat4("view", view);
-                batch->GetShader()->setMat4("projection", projection);
-                batch->GetShader()->setVec3("cameraPos", cameraPos);
+            batchShader->Activate();
+            if (!batchShader->UsesCameraBlock()) {
+                batchShader->setMat4("view", view);
+                batchShader->setMat4("projection", projection);
+                batchShader->setVec3("cameraPos", cameraPos);
             }
-            batch->GetShader()->setBool("useInstancing", true);
-            batch->GetShader()->setBool("hasBones", false);
-            batch->GetShader()->setFloat("brightnessBoost", 1.0f);
+            batchShader->setBool("useInstancing", true);
+            batchShader->setBool("hasBones", false);
+            batchShader->setFloat("brightnessBoost", 1.0f);
+#ifdef ANDROID
+            // Instanced objects are fully opaque and never distance-faded.
+            batchShader->setFloat("u_distanceFadeOpacity", 1.0f);
+#endif
 
             // Apply lighting on shader switch
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
             if (ecsManager.lightingSystem)
             {
-                ecsManager.lightingSystem->ApplyLighting(*batch->GetShader());
-                ecsManager.lightingSystem->ApplyShadows(*batch->GetShader());
+                ecsManager.lightingSystem->ApplyLighting(*batchShader);
+                ecsManager.lightingSystem->ApplyShadows(*batchShader);
             }
 
             // Environment reflections (skybox already bound to texture unit 12 by GraphicsManager)
             auto& gfx = GraphicsManager::GetInstance();
-            batch->GetShader()->setBool("hasEnvMap", gfx.IsEnvReflectionActive());
+            batchShader->setBool("hasEnvMap", gfx.IsEnvReflectionActive());
             if (gfx.IsEnvReflectionActive()) {
-                batch->GetShader()->setInt("envMap", 12);
-                batch->GetShader()->setFloat("envReflectionIntensity", gfx.GetEnvReflectionIntensity());
+                batchShader->setInt("envMap", 12);
+                batchShader->setFloat("envReflectionIntensity", gfx.GetEnvReflectionIntensity());
             }
 
-            currentShader = batch->GetShader();
+            currentShader = batchShader;
         }
 
         // Each batch applies its material immediately before drawing.
-        batch->Render(view, projection, cameraPos);
+        batch->Render(view, projection, cameraPos, batchShader);
         ++batchIndex;
         m_stats.drawCalls += static_cast<int>(batch->GetModel()->meshes.size());
     }
