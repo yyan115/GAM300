@@ -30,6 +30,7 @@
 #include "Script/LuaBindableSystems.hpp"
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
+#include "Asset Manager/ResourceManager.hpp"
 #include "Game AI/BrainSystems.hpp"
 #include <Scene/SceneManager.hpp>
 #include "TimeManager.hpp"
@@ -1008,6 +1009,11 @@ void Engine::Shutdown() {
 
     PostProcessingManager::GetInstance().Shutdown();
     GraphicsManager::GetInstance().Shutdown();
+    // Android may start another Activity in this process. Release scene and
+    // resource caches before EGL goes away so no old entity or GL/FMOD handle
+    // can survive into the next engine session.
+    ECSRegistry::GetInstance().Clear();
+    ResourceManager::GetInstance().Shutdown();
 
     // Destroy the platform (EGL display/context on Android, GLFW window on PC).
     // Must happen last so GL cleanup in the managers above can still run.

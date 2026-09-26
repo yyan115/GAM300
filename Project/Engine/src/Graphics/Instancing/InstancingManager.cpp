@@ -16,6 +16,14 @@ InstancingManager& InstancingManager::GetInstance()
     return instance;
 }
 
+void InstancingManager::Shutdown()
+{
+    m_sortedBatches.clear();
+    m_batches.clear();
+    m_frustum = nullptr;
+    m_stats.Reset();
+}
+
 void InstancingManager::BeginFrame()
 {
     m_stats.Reset();

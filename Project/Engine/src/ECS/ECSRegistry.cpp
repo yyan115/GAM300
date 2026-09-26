@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "ECS/ECSRegistry.hpp"
 #include "Logging.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 ECSRegistry& ECSRegistry::GetInstance() {
 	static ECSRegistry instance;
@@ -42,4 +43,10 @@ void ECSRegistry::SetActiveECSManager(const std::string& name) {
 ECSManager& ECSRegistry::GetActiveECSManager() {
 	assert(!activeECSManagerName.empty() && "No active ECSManager set.");
 	return *ecsManagers[activeECSManagerName];
+}
+
+void ECSRegistry::Clear() {
+    ecsManagers.clear();
+    activeECSManagerName.clear();
+    EntityGUIDRegistry::GetInstance().Clear();
 }

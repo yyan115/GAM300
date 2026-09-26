@@ -140,10 +140,22 @@ void GraphicsManager::Shutdown()
 	ECSManager& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	renderQueue.clear();
+    deferredQueue.clear();
+    m_modelRenderItems.clear();
+    m_otherRenderItems.clear();
+    m_deferredModelRenderItems.clear();
+    m_deferredOtherRenderItems.clear();
+    m_modelSortEntries.clear();
+    m_idCache.Clear();
+    m_currentShader = nullptr;
+    m_currentMaterial = nullptr;
+    m_depthPrepassShader.reset();
+    InstancingManager::GetInstance().Shutdown();
 	currentCamera = nullptr;
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
 	mainECS.cameraSystem->Shutdown();
+    mainECS.lightingSystem->Shutdown();
 
 	if (m_cameraUBO != 0) {
 		glDeleteBuffers(1, &m_cameraUBO);

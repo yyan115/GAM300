@@ -349,6 +349,11 @@ void SceneManager::ExitScene() {
         currentScene.reset();
         currentScenePath.clear();
     }
+    currentSceneName.clear();
+    loadSceneNextFrame = false;
+    sceneToLoadNextFrame.clear();
+    deferredSceneFromLua = false;
+    isExecutingDeferredLoad = false;
 }
 
 

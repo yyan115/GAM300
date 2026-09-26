@@ -23,6 +23,8 @@ public:
 
 	ECSManager& CreateECSManager(const std::string& name);
 	void DestroyECSManager(const std::string& name);
+	// Call after scene/system shutdown, while graphics resources can be released.
+	void Clear();
 	ECSManager& GetECSManager(const std::string& name);
 
 	void SetActiveECSManager(const std::string& name);

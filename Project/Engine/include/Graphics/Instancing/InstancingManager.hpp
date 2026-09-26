@@ -67,6 +67,7 @@ public:
 	void SetMinInstancesForBatching(int count) { m_minInstancesForBatching = count; }
 	int GetMinInstancesForBatching() const { return m_minInstancesForBatching; }
 
+	void Shutdown();
 	void BeginFrame();
 	void EndFrame();
 

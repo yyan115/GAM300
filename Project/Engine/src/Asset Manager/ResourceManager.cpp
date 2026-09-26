@@ -6,3 +6,14 @@ ResourceManager& ResourceManager::GetInstance() {
     static ResourceManager instance;
     return instance;
 }
+
+void ResourceManager::Shutdown() {
+    // These asset types use explicit GL cleanup rather than destructors.
+    for (auto& entry : GetResourceMap<Shader>()) {
+        if (entry.second) entry.second->Delete();
+    }
+    for (auto& entry : GetResourceMap<Texture>()) {
+        if (entry.second) entry.second->Delete();
+    }
+    resourceMaps.clear();
+}

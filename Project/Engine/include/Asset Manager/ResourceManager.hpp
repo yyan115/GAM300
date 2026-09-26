@@ -23,6 +23,8 @@
 class ResourceManager {
 public:
 	ENGINE_API static ResourceManager& GetInstance();
+	// Release cached handles before their graphics/audio context is destroyed.
+	void Shutdown();
 
 	template <typename T>
 	std::shared_ptr<T> GetResourceFromGUID(const GUID_128& guid, const std::string& assetPath) {
