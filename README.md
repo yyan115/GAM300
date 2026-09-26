@@ -1,168 +1,103 @@
-# Kusane
+<p align="center">
+  <a href="https://yyan115.github.io/GAM300/">
+    <img src="docs/media/kusane-readme.svg" alt="Kusane" width="640">
+  </a>
+</p>
 
-[![Kusane](docs/media/hero-poster.jpg)](https://yyan115.github.io/GAM300/)
+<p align="center">
+  <strong>A 3D hack-and-slash built on a custom C++ engine.</strong><br>
+  Created by Team Marbles at Singapore Institute of Technology and DigiPen Institute of Technology.
+</p>
 
-GAM300 - Team Marbles.
+<p align="center">
+  <a href="https://yyan115.github.io/GAM300/"><strong>Visit the website</strong></a> ·
+  <a href="https://github.com/yyan115/GAM300/releases/latest"><strong>Download the game</strong></a> ·
+  <a href="https://github.com/yyan115/GAM300/issues">Report an issue</a>
+</p>
 
-Kusane is a 3D action platformer of chains, blades and unforgiving combat, built on our own C++ engine. It runs on Windows, Linux and Android.
+<p align="center">
+  <a href="https://github.com/yyan115/GAM300/actions/workflows/build-test.yml"><img src="https://github.com/yyan115/GAM300/actions/workflows/build-test.yml/badge.svg?branch=main" alt="Build status"></a>
+  <a href="https://github.com/yyan115/GAM300/releases/latest"><img src="https://img.shields.io/github/v/release/yyan115/GAM300?color=b43b2d" alt="Latest release"></a>
+</p>
 
-**Play it:** https://yyan115.github.io/GAM300/ · **Downloads:** [Releases](https://github.com/yyan115/GAM300/releases/latest)
+## About
 
-Our engine is called Engine Engine, because we have great naming sense.
+The Karasu have destroyed Kusane’s clan and taken her wings. Armed with a temple weapon, she fights to reclaim her home.
 
-## Quick Start
+Chain sword attacks into combos, pull enemies into reach with the chain, slam airborne enemies to the ground, and collect feathers to power magic attacks. Explore the temple and face the Karasu in the Battle Dome.
 
-On Windows, run setup-vcpkg.bat and setup-android-dev.bat to set up all development requirements for Windows and android. On Linux, run ./setup-vcpkg.sh instead and see the Linux section below.
+This repository contains the game, the 3D engine itself, its desktop scene editor, Lua gameplay scripts, and the Windows, Linux and Android build pipelines. Visit the [website](https://yyan115.github.io/GAM300/) for gameplay clips, screenshots and the full team credits.
 
-1. Open Visual Studio, press "open a local folder", select "Project" folder and open it
-2. Let cmake set up and config everything for you. First run will take 5-10mins. You can see it configure in the output console in Visual Studio. Wait for it to say "1> CMake generation finished."
-3. Select your compile option and startup item (green button there), its either gonna be Editor.exe or Game.exe. EDITOR MUST BE RAN FIRST TO COMPILE ASSETS BEFORE GAME CAN BE RAN.
+## Play
 
-There is no solution files anymore as this is the modern way of using cmake with Visual Studios.
+Ready-to-play builds are available from [GitHub Releases](https://github.com/yyan115/GAM300/releases/latest).
 
-Standalone launches, including installer shortcuts, always start fullscreen. For standalone testing, run `Kusane.exe --windowed` on Windows or `./Kusane --windowed` on Linux. This starts the game in a window without changing the saved fullscreen preference. You can also add `--windowed` to a shortcut's arguments. The window title stays clean in a standalone build. Set `GAM300_SHOW_FPS=1` to put the frame rate back in it while testing.
+| Platform | Download | How to run |
+| --- | --- | --- |
+| Windows · x64 | [Installer](https://github.com/yyan115/GAM300/releases/latest/download/Kusane_Setup.exe) | Run `Kusane_Setup.exe` and follow the setup wizard. |
+| Linux · x86_64 | [AppImage](https://github.com/yyan115/GAM300/releases/latest/download/Kusane-x86_64.AppImage) | Make the AppImage executable, then launch it. |
+| Android · ARM64 | [APK](https://github.com/yyan115/GAM300/releases/latest/download/Kusane.apk) | Install `Kusane.apk` on an Android 13 or newer device. |
 
-## Project Structure
+Desktop builds require OpenGL 4.5. The Linux AppImage requires glibc 2.38 or newer. Ubuntu 24.04 and Debian 13 have been validated. Android uses on-screen touch controls. Desktop controls are available from the game’s main menu.
 
-The project supports using either Visual Studio or Visual Studio Code. Android Studio is required for Android development.
+## Build from source
 
-The project is separated into 3 smaller project - Engine, Game, and Edtior.
+The desktop engine and editor use **C++20, CMake, Ninja and vcpkg**. Android uses the **Gradle wrapper and Android NDK**. Gameplay is written in **Lua**.
 
-Game Assets such as fonts, shaders, sprites, etc are stored in Project/Resources. This resources folder gets copied to the built binary folder location during compilation for the game to access.
+```bash
+git clone https://github.com/yyan115/GAM300.git
+cd GAM300
+```
 
-### Engine Architecture
+**Run the desktop editor first to compile assets before launching a standalone game build.** Android assets must be generated using the editor’s **File → Compile Assets for Android** command.
 
-The engine always get compiled into a dynamic library for the game to use.
+See the [build guide](docs/BUILDING.md) for prerequisites, commands and troubleshooting.
 
-For game developers, simply include "Engine.h" to start developing.
+- [Windows](docs/BUILDING.md#windows)
+- [Linux](docs/BUILDING.md#linux)
+- [Android](docs/BUILDING.md#android)
+- [Creating a release](docs/BUILDING.md#creating-a-release)
 
-The engine ideally does not expose any other APIs other than Engine.h (E.G. The game developers should not know GraphicsManager exists and should not have access to it), however due to development time constraints and issues, some APIs might be exposed here and there.
+## Repository layout
 
-### Game Architecture
+| Path | Contents |
+| --- | --- |
+| [`Project/Engine/`](Project/Engine/) | Rendering, ECS, physics, animation, audio, input and asset management. |
+| [`Project/Game/`](Project/Game/) | Game entry point and engine integration. |
+| [`Project/Editor/`](Project/Editor/) | Desktop scene editor and asset compilation tools. |
+| [`Project/Scripting/`](Project/Scripting/) | Lua runtime and C++ bindings. |
+| [`Project/Resources/`](Project/Resources/) | Authored scenes, models, textures, audio, shaders and gameplay scripts. |
+| [`Project/Tools/`](Project/Tools/) | Asset cooking, packaging and validation utilities. |
+| [`AndroidProject/`](AndroidProject/) | Android application, native integration and exported mobile assets. |
+| [`Installer/`](Installer/) | Windows installer configuration and artwork. |
+| [`docs/`](docs/) | Game website, media and development documentation. |
+| [`.github/workflows/`](.github/workflows/) | Build checks and release packaging. |
 
-The game can be compiled with either "Debug" or "Release" options.
+## Libraries
 
-Include "Engine.h" to start developing.
-
-Gameplay is written in Lua, under Project/Resources/Scripts. The engine reloads them on each build, so a script change does not need a recompile of the game.
-
-### Editor Architecture
-
-The editor can be compiled with either "EditorDebug" or "EditorRelease" options.
-
-The game gets built into a static library for the editor to use.
-
-The editor uses IMGUI, and does not get compiled when game is the built target (so that we do not ship the editor).
-
-### Libraries Used
-
-The libraries used as of 2025-09-28:
-- ASSIMP 
-- Filewatch (Desktop only)
+- Jolt Physics
+- Lua and LuaBridge
 - FMOD
-- Freetype
-- GLFW (Desktop only)
-- GLAD (Desktop only)
-- GLI
-- GLM
-- Rapidjson
-- Spdlog
+- Dear ImGui and ImGuizmo
+- Assimp
+- FreeType
+- meshoptimizer
+- GLFW and GLAD
+- GLM and GLI
+- RapidJSON and spdlog
 
-Libraries used for editor only:
-- IconFontCppHeaders
-- IMGUI
+The engine builds as a shared library. The standalone game links against it. Editor configurations also link the game as a static library so it can run inside the editor.
 
-Libraries are rather messy as some needs to manually compiled, some have available binaries for download, and some are availabe in vcpkg. They will be pointed out in the Visual Studio, Visual Studio Code, and Android development sections.
+## Issues and contributions
 
-## Set up Development Environment
+Please [open an issue](https://github.com/yyan115/GAM300/issues) for bugs or proposed changes. For a bug report, include the release version, platform, device or CPU/GPU, steps to reproduce, and any relevant logs or recordings.
 
-Visual Studio Code IS SLOW TO UPDATE, MAY BREAK, AND IS NOT RECOMMENDED. Please use Visual Studio instead.
+Keep pull requests focused and describe the behaviour changed and how it was tested. Check affected desktop and mobile paths, and regenerate Android assets through the editor when changing shared game resources. Discuss substantial engine or gameplay changes in an issue first.
 
-Everyone should set up Android Studio to make sure their code works on Android.
+## Credits and notices
 
-Some additional library set ups may be required but not covered as everyone should already be familiar with them (E.G. GLFW, git). If possible, I will write a more comprehensive guide next time, as I currently do not know which exact libraries I need to point out.
+Developed by **Team Marbles** as a student project at **Singapore Institute of Technology and DigiPen Institute of Technology**.
 
-### Visual Studios
+All content © 2026 DigiPen Institute of Technology Singapore. All rights reserved.
 
-1. Run setup-vcpkg.bat
-2. Open Visual Studio, press "open a local folder", select "Project" folder and open it
-3. Let cmake set up and config everything for you. First run will take 5-10mins. You can see it configure in the output console in Visual Studio. Wait for it to say "1> CMake generation finished."
-4. Select your compile option and startup item (green button there), its either gonna be Editor.exe or Game.exe
-
-### Visual Studio Code
-
-Visual Studio Code uses CMake and Ninja to compile and run.
-
-Install Visual Studio Code and install official extensions for C++ and Cmake.
-
-Conveniently, "setup-android-dev.bat" also helps to install tools for visual studio code. So please run that. More specifically, it installs cmake and ninja for you, if you'd like to install that yourself.
-
-Lastly, run setup-vcpkg.bat to install and setup vcpkg.
-
-You can then choose the compile option in Visual Studio Code to compile and run.
-
-Visual Studio Code primarily uses vcpkg to source libraries. However, some libraries are not available inside, such as FMOD, so they have to be downloaded instead.
-
-### Linux
-
-Linux uses Visual Studio Code with CMake Tools, CMake, Ninja, and vcpkg.
-Windows still uses the existing Visual Studio folder workflow with `Project/CMakePresets.json`.
-
-Linux presets live in `Project/CMakeUserPresets.json` so the existing Windows preset file does not need to change.
-CMake automatically reads both files when you run commands from `Project`.
-
-Supported Linux host status: Fedora is the only validated Linux development host right now. Other distributions may work, but their package names have not been verified yet.
-
-Install system tools first. On Fedora:
-
-```bash
-sudo dnf install -y git git-lfs cmake ninja-build gcc-c++ make zip unzip tar pkgconf-pkg-config libX11-devel libXcursor-devel libXinerama-devel libXrandr-devel libXi-devel libXext-devel libXrender-devel libXfixes-devel libXxf86vm-devel mesa-libGLU-devel
-```
-
-For other Linux distributions, install equivalent packages for: Git, Git LFS, CMake, Ninja, a C++ compiler, archive tools, pkg-config, X11 development headers/libraries, and GLU development headers/libraries.
-
-Then set up vcpkg and build:
-
-```bash
-./setup-vcpkg.sh
-cd Project
-cmake --preset linux-editor-debug
-cmake --build --preset linux-editor-debug
-```
-
-Available Linux presets:
-
-- `linux-editor-debug`
-- `linux-editor-release`
-- `linux-debug`
-- `linux-release`
-
-Run the editor first to compile assets before running the game, same as Windows.
-
-## Android Development
-
-First install Android Studio. Go through the initial setup.
-
-Then, run "setup-android-dev.bat" to install required tools for Android.
-
-Once that is done, ideally you should restart your computer for best results. Then, open Android Studio and press run. If you get any errors, see section for frequent errors for Android Studio.
-
-Android depends on Visual Studio code to compile, which is why you should have Visual Studio Code installed. You do not need Visual Studio Code open to run for Android, as I've configured the gradle and cmake so that you only need to open Android Studio to run for Android.
-
-Some Android binaries are not available, so some of them are manually compiled. A few scripts are provided to compile them currently in Project/Libraries/build-scripts. They will eventually be cleaned up for a more proper CI/CD pipeline. Currently they only need to be compiled once, so I have already compiled them, and the developers need not do anything unless they want to use another version of the libraries.
-
-### Frequent Errors for Android Studio
-
-On first install, you might need to clean project before it can build.
-
-If you see any CMake error, try running clean-android.bat. Then, clean project in Android Studio. Then try running again.
-
-If you see something like ndk="" as an error, you might need to run setup-android-ndk.bat and restart your computer.
-
-If you see an error telling you to update NDK, do it. The default NDK isntalled when you install Android Studio is NDK 27. However, I've set Android Studio to explicitly use NDK 29, the latest version.
-
-Lastly, make sure you have NDK and CMake installed/ticked in Files - Tools - SDK Manager - SDK Tools.
-
-## End
-
-Written by Yan Yu, the tech lead. Please contact if there are any issues.
+Third-party software, fonts and audio retain their respective licenses and attributions. See [`Project/Distribution/Licenses/`](Project/Distribution/Licenses/) for the notices included with the game.
