@@ -47,9 +47,10 @@ local function write_rotation(transform, w, x, y, z)
     end
 end
 
-function M.New(component)
+function M.New(component, useLocalPositionBatch)
     local self = {}
     self.component = component
+    self.useLocalPositionBatch = useLocalPositionBatch or false
     self.transforms = {}
     self.proxies = {}
     -- rotation continuity storage
@@ -60,6 +61,16 @@ end
 
 function M:InitTransforms(transformArray)
     self.transforms = transformArray or {}
+    self.nativeTransforms = true
+    self.nativeLocalPositions = self.useLocalPositionBatch
+    for _, tr in ipairs(self.transforms) do
+        if type(tr) ~= "userdata" then
+            self.nativeTransforms = false
+        elseif type(tr.SetPosition) == "function" then
+            self.nativeLocalPositions = false
+        end
+    end
+
     -- cache a minimal proxy API to avoid repeated GetComponent checks
     self.proxies = {}
     for i, tr in ipairs(self.transforms) do
@@ -99,6 +110,13 @@ end
 -- Links beyond activeN are snapped to the start position (hidden in pool).
 function M:ApplyPositions(positions, activeN)
     activeN = activeN or #self.proxies
+    -- The caller opts in only when its position writer uses local properties.
+    if self.nativeTransforms and self.nativeLocalPositions and Engine
+        and not Engine.SetTransformWorldPosition
+        and type(Engine.SetTransformLocalPositions) == "function" then
+        local ok, written = pcall(Engine.SetTransformLocalPositions, self.transforms, positions, activeN)
+        if ok and written then return end
+    end
     for i = 1, #self.proxies do
         local proxy = self.proxies[i]
         if not proxy then break end
@@ -123,6 +141,9 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
     activeN = activeN or #self.proxies
     local n = activeN
     if n == 0 then return end
+    local batchRotations = self.nativeTransforms and Engine
+        and type(Engine.SetTransformLocalRotations) == "function"
+
 
     -- build forward array only for active links
     local forward = self._forward
@@ -285,10 +306,21 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, act
         end
 
         -- write rotation to transform safely
-        local transform = self.transforms[i]
-        pcall(write_rotation, transform, final_w, final_x, final_y, final_z)
+        if not batchRotations then
+            local transform = self.transforms[i]
+            pcall(write_rotation, transform, final_w, final_x, final_y, final_z)
+        end
 
         self.qprev[i] = { final_w, final_x, final_y, final_z }
+    end
+    if batchRotations then
+        local ok, written = pcall(Engine.SetTransformLocalRotations, self.transforms, self.qprev, n)
+        if not ok or not written then
+            for i = 1, n do
+                local q = self.qprev[i]
+                pcall(write_rotation, self.transforms[i], q[1], q[2], q[3], q[4])
+            end
+        end
     end
 end
 

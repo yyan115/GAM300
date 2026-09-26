@@ -586,7 +586,7 @@ return Component {
             if tr then table.insert(self._runtime.childTransforms, tr) end
         end
 
-        self.linkHandler = LinkHandlerModule.New(self)
+        self.linkHandler = LinkHandlerModule.New(self, true)
         self.linkHandler:InitTransforms(self._runtime.childTransforms)
 
         local params = {

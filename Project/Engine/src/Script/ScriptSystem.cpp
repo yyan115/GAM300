@@ -236,6 +236,59 @@ static void Lua_SetTransformLocalRotation(Transform* transform, float w, float x
     transform->isDirty = true;
 }
 
+// Batch the same local-property writes without crossing Lua once per link.
+// A rejected batch returns false so callers can use their individual setters.
+// Earlier valid rows may already be written; replaying those writes is harmless.
+template <bool Rotation>
+static int Lua_SetTransformLocalBatch(lua_State* L)
+{
+    auto fail = [&]() { lua_settop(L, 3); lua_pushboolean(L, false); return 1; };
+    auto isPlainTable = [&](int index) {
+        if (!lua_istable(L, index)) return false;
+        if (!lua_getmetatable(L, index)) return true;
+        lua_pop(L, 1);
+        return false;
+    };
+    if (lua_gettop(L) != 3 || !isPlainTable(1) || !isPlainTable(2) ||
+        lua_type(L, 3) != LUA_TNUMBER) return fail();
+    // Serialized counts can be integral Lua floats (for example, 200.0).
+    int isInteger = 0;
+    const lua_Integer active = lua_tointegerx(L, 3, &isInteger);
+    if (!isInteger || active < 0) return fail();
+    const size_t count = lua_rawlen(L, 1);
+    if (Rotation && static_cast<lua_Unsigned>(active) > count) return fail();
+    const size_t limit = Rotation ? static_cast<size_t>(active) : count;
+    for (size_t i = 1; i <= limit; ++i)
+    {
+        lua_rawgeti(L, 1, static_cast<lua_Integer>(i));
+        if (!luabridge::Stack<Transform*>::isInstance(L, -1)) return fail();
+        auto transform = luabridge::Stack<Transform*>::get(L, -1);
+        if (!transform || !transform.value()) return fail();
+        lua_pop(L, 1);
+        const lua_Integer row = Rotation || i <= static_cast<lua_Unsigned>(active)
+            ? static_cast<lua_Integer>(i) : 1;
+        lua_rawgeti(L, 2, row);
+        if (!Rotation && lua_isnil(L, -1)) { lua_pop(L, 1); continue; }
+        if (!isPlainTable(-1)) return fail();
+        float values[Rotation ? 4 : 3];
+        for (int c = 0; c < (Rotation ? 4 : 3); ++c)
+        {
+            lua_rawgeti(L, -1, c + 1);
+            auto value = luabridge::Stack<float>::get(L, -1);
+            if (!value) return fail();
+            values[c] = value.value();
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+        if constexpr (Rotation)
+            Lua_SetTransformLocalRotation(transform.value(), values[0], values[1], values[2], values[3]);
+        else
+            Lua_SetTransformLocalPosition(transform.value(), values[0], values[1], values[2]);
+    }
+    lua_pushboolean(L, true);
+    return 1;
+}
+
 static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* t)
 {
     if (!t)
